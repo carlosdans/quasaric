@@ -493,20 +493,23 @@ La documentación de Canonical establece que:
 
 ---
 
-## Estado actualizado — 30 de octubre de 2026 (corrección de semántica de binarios Ubuntu OSV, PR #22)
+## Estado actualizado — 30 de octubre de 2026 (corrección de semántica de binarios Ubuntu OSV, PR #22 integrada)
 
 ### Hallazgo corregido
 - El matcher anterior exigía que la versión binaria instalada coincidiera exactamente con `ecosystem_specific.binaries[].binary_version`.
-- La documentación de Canonical describe esos binarios como paquetes y versiones asociados al build fuente corregido. Por tanto, una comparación exacta podía confundir el build corregido con el build vulnerable y dejar en `needs_review` instalaciones cuya versión fuente sí figura en `affected[].versions` o en el rango fuente.
+- Canonical documenta `ecosystem_specific.binaries` como los binarios y sus versiones publicados para cada entrada de paquete fuente. Cuando la entrada tiene un evento fuente `fixed`, esa versión binaria sirve como límite del build corregido. Si no hay evento `fixed`, la versión binaria publicada no debe interpretarse automáticamente como límite de corrección.
 - La versión del paquete fuente (`source:Version`) y la versión binaria instalada (`Version`) son evidencias distintas y se comparan solo con sus respectivos límites.
 
-### PR #22 — cambio acotado en revisión
-- Rama: `fix/ubuntu-binary-build-semantics`.
-- El matcher ahora usa el nombre binario, paquete fuente y release exactos para validar la relación publicada por Canonical; conserva la versión binaria instalada y la versión binaria fija publicada como datos separados.
+### PR #22 — integrada
+- PR: https://github.com/carlosdans/quasaric/pull/22.
+- Integrada mediante squash en `main`: `b18b75c57f8edbfb7f6c37cd21dfc2be202aae9e`.
+- CI de la PR: success, 77/77 tests y build (run `41129409758`). CI de `main`: success, 77/77 tests y build (run `41129512724`).
+- Azure Static Web Apps: run `41129512795`; estaba en curso al actualizar este documento (verificar conclusión antes de afirmar despliegue).
+- El matcher usa nombre binario, paquete fuente y release exactos para validar la relación publicada por Canonical; conserva por separado la versión binaria instalada y `advisoryBinaryVersion`.
 - La clasificación de vulnerabilidad sigue usando exclusivamente `sourceVersion` frente a versiones/rangos fuente Ubuntu OSV, con comparación Debian.
 - Para una fuente afectada con límite binario fijo, el binario instalado debe quedar por debajo del build fijo; si está en/por encima, la evidencia entra en conflicto y se conserva `needs_review`.
 - Para una fuente en/por encima del límite fijo, solo se emite `patched_candidate` si la versión binaria instalada también está en/por encima del build binario fijo. No se confirma remediación.
 - Si no hay build binario fijo (por ejemplo, avisos Pro sin evento `fixed`), la clasificación afectada solo se permite cuando la versión fuente está explícitamente listada y el nombre binario aparece en el mismo paquete fuente/release. Cualquier falta o contradicción permanece en `needs_review`.
 - Pruebas añadidas/actualizadas: fixtures Canonical OpenSSL Ubuntu 22.04/24.04, binario vulnerable anterior al build fijo, límites de build fijo, contradicciones fuente/binario, aislamiento por release y paquete fuente.
-- La PR no debe integrarse hasta revisar el diff completo y confirmar CI verde. El cambio no altera el inventario local, la privacidad, DNS, secretos ni infraestructura.
+- El cambio no altera el inventario local, la privacidad, DNS, secretos ni infraestructura.
 
