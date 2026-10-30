@@ -504,7 +504,7 @@ La documentación de Canonical establece que:
 - PR: https://github.com/carlosdans/quasaric/pull/22.
 - Integrada mediante squash en `main`: `b18b75c57f8edbfb7f6c37cd21dfc2be202aae9e`.
 - CI de la PR: success, 77/77 tests y build (run `41129409758`). CI de `main`: success, 77/77 tests y build (run `41129512724`).
-- Azure Static Web Apps: run `41129512795`; estaba en curso al actualizar este documento (verificar conclusión antes de afirmar despliegue).
+- Azure Static Web Apps de `main`: success, run `41129512795`; el log confirma `Deployment Complete`. URL publicada: `https://orange-meadow-04bd1081e.4.azurestaticapps.net`.
 - El matcher usa nombre binario, paquete fuente y release exactos para validar la relación publicada por Canonical; conserva por separado la versión binaria instalada y `advisoryBinaryVersion`.
 - La clasificación de vulnerabilidad sigue usando exclusivamente `sourceVersion` frente a versiones/rangos fuente Ubuntu OSV, con comparación Debian.
 - Para una fuente afectada con límite binario fijo, el binario instalado debe quedar por debajo del build fijo; si está en/por encima, la evidencia entra en conflicto y se conserva `needs_review`.
