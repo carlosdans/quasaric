@@ -604,7 +604,7 @@ La documentación de Canonical establece que:
 
 ### Próximo trabajo
 
-1. Confirmar el despliegue Azure del commit ca1f4c31.
+1. Despliegue Azure del commit ca1f4c31 verificado: run 41145107186 completó con Deployment Complete.
 2. Diseñar recuperación VEX por CVE y adjuntar el estado por componente solo cuando coincidan PURL fuente, paquete binario, versión completa, arquitectura y distro exactos.
 3. Mantener separadas las evidencias OSV y OpenVEX; resolver explícitamente discrepancias y no elevar not_affected de un producto a un estado global del CVE.
 4. Si VEX no existe, falla o no contiene el PURL exacto, conservar la clasificación OSV existente y señalar la ausencia de evidencia VEX sin inferir un estado negativo.
