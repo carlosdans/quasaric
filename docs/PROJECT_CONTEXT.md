@@ -577,7 +577,7 @@ La documentación de Canonical establece que:
 - Fixture basado en extractos oficiales de Canonical CVE-2025-9230: https://github.com/canonical/ubuntu-security-notices/blob/main/vex/cve/2025/CVE-2025-9230.json.
 - CI de PR #27: run 41144510693, success; 90 tests, 90 pass, 0 fail y build correcto.
 - CI de main tras merge: run 41144582967, success; 90 tests, 90 pass, 0 fail y build correcto.
-- Azure Static Web Apps de main para 995862f3: run 41144582958; comprobar conclusión y log Deployment Complete antes de afirmar despliegue.
+- Azure Static Web Apps de main para 995862f3: run 41144582958, success; el log confirma Deployment Complete y la URL https://orange-meadow-04bd1081e.4.azurestaticwebapps.net.
 
 ### Limitaciones y siguiente integración
 - El matcher es una pieza de base y todavía no se invoca desde analyzeInventory; no hay descarga de VEX ni cambios de interfaz.
