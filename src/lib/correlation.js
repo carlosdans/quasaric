@@ -41,8 +41,8 @@ export function classifyUbuntuOsvComponent(record, component) {
 
   let status = 'needs_review';
   let reason = sourceClassification.reason;
-  const fixedBinaryVersions = [...new Set(
-    (binaryMatch.evidence || []).map(item => item.fixedBinaryVersion).filter(Boolean)
+  const advisoryBinaryVersions = [...new Set(
+    (binaryMatch.evidence || []).map(item => item.advisoryBinaryVersion).filter(Boolean)
   )];
   const hasFixedSourceBoundary = (affectedEntry?.ranges || []).some(range =>
     range.type === 'ECOSYSTEM' && (range.events || []).some(event => event.fixed !== undefined)
@@ -50,17 +50,17 @@ export function classifyUbuntuOsvComponent(record, component) {
 
   if (binaryMatch.status !== 'matched') {
     reason = `Ubuntu binary-to-source mapping is unconfirmed: ${binaryMatch.reason} Source-version assessment: ${sourceClassification.reason}`;
-  } else if (hasFixedSourceBoundary && fixedBinaryVersions.length > 1) {
+  } else if (hasFixedSourceBoundary && advisoryBinaryVersions.length > 1) {
     reason = 'The advisory lists multiple fixed binary versions for this binary package; manual review is required.';
   } else if (sourceClassification.status === 'affected') {
-    if (!hasFixedSourceBoundary || !fixedBinaryVersions.length) {
+    if (!hasFixedSourceBoundary || !advisoryBinaryVersions.length) {
       // A binary list can exist even when Ubuntu has not published a fixed
       // source boundary. In that case its version is not a fixed boundary.
       // The exact source version must be explicitly listed as affected.
       status = 'affected';
       reason = 'The exact source version is listed as affected and the binary package is listed under the matching Ubuntu source package.';
     } else {
-      const binaryOrder = compareDebianVersions(binaryVersion, fixedBinaryVersions[0]);
+      const binaryOrder = compareDebianVersions(binaryVersion, advisoryBinaryVersions[0]);
       if (binaryOrder !== null && binaryOrder < 0) {
         status = 'affected';
         reason = 'The source version is affected and the installed binary version is below the advisory fixed binary build.';
@@ -69,8 +69,8 @@ export function classifyUbuntuOsvComponent(record, component) {
       }
     }
   } else if (sourceClassification.status === 'patched_candidate') {
-    if (hasFixedSourceBoundary && fixedBinaryVersions.length === 1) {
-      const binaryOrder = compareDebianVersions(binaryVersion, fixedBinaryVersions[0]);
+    if (hasFixedSourceBoundary && advisoryBinaryVersions.length === 1) {
+      const binaryOrder = compareDebianVersions(binaryVersion, advisoryBinaryVersions[0]);
       if (binaryOrder !== null && binaryOrder >= 0) {
         status = 'patched_candidate';
         reason = 'The source version is at or beyond the fixed boundary and the installed binary version is at or beyond the published fixed binary build; verify the official Ubuntu notice before confirming remediation.';
