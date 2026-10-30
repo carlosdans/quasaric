@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyCpeApplicability } from '../src/lib/correlation.js';
+import { classifyCpeApplicability, collectCpeMatches } from '../src/lib/correlation.js';
 
 const cpe = (criteria, extra = {}) => ({ criteria, vulnerable: true, ...extra });
 
@@ -34,4 +34,15 @@ test('ignores non-vulnerable CPE matches', () => {
 test('matches Apache HTTP Server CPE but not unrelated Apache products', () => {
   assert.equal(classifyCpeApplicability([cpe('cpe:2.3:a:apache:http_server:2.4.58:*:*:*:*:*:*:*')], { name: 'Apache', version: '2.4.58' }).status, 'possible');
   assert.equal(classifyCpeApplicability([cpe('cpe:2.3:a:apache:tomcat:2.4.58:*:*:*:*:*:*:*')], { name: 'Apache', version: '2.4.58' }).status, 'needs_review');
+});
+
+test('collects CPE matches recursively from nested NVD configuration nodes', () => {
+  const nested = [
+    { cpeMatch: [{ criteria: 'root' }], children: [
+      { cpeMatch: [{ criteria: 'child' }], children: [
+        { cpeMatch: [{ criteria: 'grandchild' }] }
+      ] }
+    ] }
+  ];
+  assert.deepEqual(collectCpeMatches(nested).map(x => x.criteria), ['root', 'child', 'grandchild']);
 });
