@@ -214,3 +214,32 @@ Pega este mensaje:
 - Revisar Ubuntu OSV usando la documentación oficial: Ubuntu OSV identifica paquetes fuente en `affected[].package.name` y publica paquetes binarios y versiones en `affected[].ecosystem_specific.binaries`. No inferir la relación binario→fuente sin datos explícitos.
 - Añadir pruebas con fixtures reales anonimizados/sintéticos basados en el esquema oficial para comprobar nombre de binario, versión binaria completa, release Ubuntu y estado de parche. Hasta entonces, mantener candidatos como `needs_review`.
 - Referencia oficial: https://documentation.ubuntu.com/security/security-updates/osv/.
+
+---
+
+## Estado actualizado — 30 de octubre de 2026 (PR #5)
+
+**Estado verificado al cierre de este bloque; esta sección prevalece sobre fotografías históricas anteriores.**
+
+- main previo a esta PR: 281d2577e05ea86e60051852ab8f68ddb654ca1b.
+- PR #5 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/5.
+- Commit de merge en main: ee837a019788595a1b714c18640e02f08d386033.
+- Rama: feat/ubuntu-osv-binary-mapping.
+- CI final de PR #5 satisfactorio para 1f2e2e82dddc3bb05cdf684b82843cb006d9e11a: https://github.com/carlosdans/quasaric/actions/runs/41060935538.
+- El primer CI falló por una expectativa textual incorrecta en un test, no por la lógica del matcher. Se corrigió y el CI posterior completó tests y build correctamente.
+- Nuevo export en src/lib/vulnerabilitySources.js: matchUbuntuOsvBinary(record, binaryName, binaryVersion, ecosystem).
+- La función solo devuelve matched cuando coinciden exactamente nombre binario, versión binaria completa y ecosistema/release Ubuntu presentes en affected[].ecosystem_specific.binaries[]; si no hay evidencia suficiente, devuelve needs_review.
+- Añadidos cinco tests con fixture para coincidencia exacta, revisión distinta, release distinta, mapeo no inferido y campos obligatorios.
+- Importante: este bloque añade y prueba el matcher puro; todavía no conecta automáticamente el inventario dpkg-query con la consulta OSV. La función de consulta existente sigue esperando un paquete fuente y versión. Próximo paso: diseñar el flujo de búsqueda/advisory que use evidencia binaria OSV sin comparar versiones de fuente contra versiones binarias ni inventar el mapeo.
+- Azure Static Web Apps para main sigue fallando antes del build remoto con 'No matching Static Web App was found or the api key was invalid'. Runs observados: https://github.com/carlosdans/quasaric/actions/runs/41060241920 y https://github.com/carlosdans/quasaric/actions/runs/41060073320. El CI principal para el commit previo de documentación fue satisfactorio: https://github.com/carlosdans/quasaric/actions/runs/41060242047.
+- El secreto esperado por el workflow es AZURE_STATIC_WEB_APPS_API_TOKEN_GREEN_CLIFF_074E49A0F. Verificar/regenerar el token desde Azure Portal > Static Web App > Manage deployment token y actualizar directamente el GitHub Actions secret; nunca compartir el valor en chat.
+- No afirmar que el branding o el commit de PR #5 están publicados en quasaric.com hasta que el workflow Azure de main termine satisfactoriamente.
+- No se añadieron recursos de pago ni se cambió el modelo de infraestructura; mantener Azure Static Web Apps Free y coste 0 € en servicios bajo nuestro control.
+
+### Próximos pasos técnicos
+
+1. Conectar el matcher con un flujo real de consulta OSV para paquetes binarios, partiendo de advisories obtenidos por una vía documentada y sin API experimental de mapeo.
+2. Añadir fixtures de avisos Ubuntu para varias releases y paquetes con más de un binario; cubrir estados patched/unaffected/affected solo cuando el esquema y datos oficiales lo permitan.
+3. Diferenciar claramente ausencia de evidencia, binario coincidente y paquete corregido; nunca convertir la ausencia en 'no vulnerable'.
+4. Actualizar la interfaz para solicitar release/codename y versión completa del paquete cuando falten; documentar qué representa la versión que introduce el usuario.
+5. Revisar CI/build y actualizar este documento tras cada PR. Resolver token Azure por separado.
