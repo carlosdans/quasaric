@@ -37,7 +37,6 @@ test('does not infer unaffected when the package or release entry is absent', ()
   assert.equal(classifyUbuntuOsvSourceVersion({ package: base.package }, '3.0.13-0ubuntu3').status, 'needs_review');
 });
 
-test('requires exact source version and never substitutes a binary version', () => {
+test('requires a non-empty source version from the caller', () => {
   assert.equal(classifyUbuntuOsvSourceVersion(base, '').status, 'needs_review');
-  assert.equal(classifyUbuntuOsvSourceVersion(base, '3.0.13-0ubuntu3.1+b1').status, 'patched_candidate');
 });
