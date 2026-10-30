@@ -16,6 +16,15 @@ function cpeProduct(criteria) {
   return { vendor: (parts[3] || '').replaceAll('_', ' '), product: (parts[4] || '').replaceAll('_', ' '), version: parts[5] || '*' };
 }
 
+export function summarizeApplicabilityStatus(matchedComponents) {
+  const statuses = unique((matchedComponents || [])
+    .map(item => item?.applicability?.status)
+    .filter(Boolean));
+  // A single CVE can map to several installed components. Never let the
+  // first match hide contradictory or incomplete per-component assessments.
+  return statuses.length === 1 ? statuses[0] : 'needs_review';
+}
+
 export function classifyUbuntuOsvComponent(record, component) {
   const sourcePackage = String(component?.sourcePackage || '').trim();
   const ecosystem = String(component?.ecosystem || component?.vendor || '').trim();
@@ -235,7 +244,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
       kevRequiredAction: kevEntry?.requiredAction || null,
       ubuntu: ubuntuOsv.get(cve.id) || [],
       components: matched,
-      applicabilityStatus: ['possible', 'affected', 'patched_candidate', 'unaffected'].find(status => matched.some(x => x.applicability.status === status)) || 'needs_review'
+      applicabilityStatus: summarizeApplicabilityStatus(matched)
     };
   }).sort((a, b) => Number(b.kev) - Number(a.kev) || (b.epss ?? -1) - (a.epss ?? -1) || (b.cvss ?? -1) - (a.cvss ?? -1));
 
