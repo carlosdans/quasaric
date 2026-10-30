@@ -1,3 +1,4 @@
+import React from 'react';
 import { useMemo, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
 import {
