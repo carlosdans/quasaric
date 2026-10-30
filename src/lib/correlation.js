@@ -6,7 +6,7 @@ const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+
 const unique = values => [...new Set(values)];
 
 function componentQueries(component) {
-  const aliases = { apache: 'apache http server', 'apache http server': 'apache http server', node: 'node.js', nodejs: 'node.js' };
+  const aliases = { apache: 'apache http server', 'apache http server': 'apache http server', node: 'node.js', nodejs: 'node.js', 'php-fpm': 'php', iis: 'internet information services', 'microsoft iis': 'internet information services' };
   const name = normalize(component.name);
   return [aliases[name] || name].filter(Boolean);
 }
@@ -28,7 +28,7 @@ function compareVersions(a, b) {
   return 0;
 }
 
-function cpeMatchesComponent(criteria, component) {
+export function cpeMatchesComponent(criteria, component) {
   const cpe = cpeProduct(criteria);
   const vendor = normalize(cpe.vendor);
   const product = normalize(cpe.product);
@@ -40,6 +40,12 @@ function cpeMatchesComponent(criteria, component) {
     apache: [['apache', 'http server']],
     'apache http server': [['apache', 'http server']],
     php: [['php', 'php']],
+    'php-fpm': [['php', 'php']],
+    python: [['python', 'python']],
+    postgresql: [['postgresql', 'postgresql']],
+    mongodb: [['mongodb', 'mongodb']],
+    iis: [['microsoft', 'internet information services'], ['microsoft', 'internet_information_services']],
+    'microsoft iis': [['microsoft', 'internet information services'], ['microsoft', 'internet_information_services']],
     wordpress: [['wordpress', 'wordpress']],
     joomla: [['joomla', 'joomla']],
     drupal: [['drupal', 'drupal']],
@@ -117,12 +123,14 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     }
   }
   const allCandidates = new Map();
+  const limits = [];
   let done = 0;
   for (const component of components) {
     const queries = componentQueries(component);
     for (const query of queries) {
       try {
         const records = await fetchNvdByKeyword(query, { signal, maxResults: 400 });
+        if (records.truncated) limits.push({ source: 'NVD', component: component.name, maxResults: 400, totalResults: records.totalResults });
         for (const cve of records) {
           if (!matchesProductText(cve, component)) continue;
           const current = allCandidates.get(cve.id) || { cve, components: [] };
@@ -209,12 +217,13 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
   return {
     findings,
     sources: {
-      nvd: errors.some(x => x.source === 'NVD') ? 'partial_or_unavailable' : 'queried',
+      nvd: errors.some(x => x.source === 'NVD') ? 'partial_or_unavailable' : (limits.length ? 'limited' : 'queried'),
       epss: errors.some(x => x.source === 'FIRST EPSS') ? 'unavailable' : 'queried',
       kev: errors.some(x => x.source === 'CISA KEV') ? 'unavailable' : 'queried',
       ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : 'queried') : 'not_configured'
     },
     errors,
+    limits,
     analyzedAt: new Date().toISOString(),
     disclaimer: 'Candidate correlation only. Verify applicability against the exact vendor advisory, distribution package revision, edition, build and installed updates before treating a finding as confirmed.'
   };
