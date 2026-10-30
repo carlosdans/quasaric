@@ -539,7 +539,7 @@ La documentación de Canonical establece que:
 - Casos añadidos: varios binarios para un paquete fuente; Ubuntu Pro 20.04 con sufijo `+esm`; versiones Debian con epoch `1:`; entrada sin evento `fixed` donde una versión no listada permanece en `needs_review`.
 - La primera ejecución de CI falló porque el fixture ESM identificaba el ecosistema como Ubuntu 20.04 estándar; se corrigió al identificador oficial `Ubuntu:Pro:20.04:LTS`. La CI final de PR #25 fue satisfactoria: run `41130731361`.
 - CI de `main` tras merge: run `41143961674`, success; 83 tests, 83 pass, 0 fail y build Vite correcto.
-- Azure Static Web Apps tras merge: run `41143961689`; en el momento de esta actualización seguía en progreso. No afirmar despliegue completado hasta revisar el resultado y el log `Deployment Complete`.
+- Azure Static Web Apps tras merge: run `41143961689`, success; el log confirma `Deployment Complete` y publica `https://orange-meadow-04bd1081e.4.azurestaticapps.net`.
 - Cambios solo en tests/fixtures. No se modificó lógica de producción, inventario, DNS, secretos ni infraestructura.
 
 ### Hallazgo de interpretación de estados Ubuntu OSV
