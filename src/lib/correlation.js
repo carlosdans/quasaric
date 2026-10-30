@@ -47,7 +47,7 @@ function cpeMatchesComponent(criteria, component) {
     php: ['php'], mysql: ['mysql'], mariadb: ['mariadb'], ubuntu: ['ubuntu']
   };
   const accepted = aliases[name] || [name];
-  return accepted.some(alias => cpe.product === alias || cpe.vendor === alias || cpe.product.includes(alias));
+  return accepted.some(alias => cpe.product === alias) || (name.startsWith('apache') && cpe.vendor === 'apache' && cpe.product === 'http server');
 }
 
 function matchesProductText(cve, component) {
@@ -57,16 +57,10 @@ function matchesProductText(cve, component) {
   return Boolean(name && (configurations.includes(name.replaceAll(' ', '_')) || description.includes(name)));
 }
 
-function applicability(cve, component) {
+export function classifyCpeApplicability(cpeItems, component) {
   const version = String(component.version || '').trim();
   if (!version) return { status: 'version_missing', confidence: 'low', reason: 'No exact version was supplied.' };
-  const cpes = (cve.configurations || []).flatMap(config =>
-    (config.nodes || []).flatMap(node => [
-      ...(node.cpeMatch || []),
-      ...(node.children || []).flatMap(child => child.cpeMatch || [])
-    ])
-  );
-  const relevant = cpes.filter(item => cpeMatchesComponent(item.criteria, component));
+  const relevant = cpeItems.filter(item => cpeMatchesComponent(item.criteria, component));
   if (!relevant.length) return { status: 'needs_review', confidence: 'low', reason: 'No matching product CPE was found; product-text matches remain unverified candidates.' };
 
   const affected = relevant.some(item => {
@@ -81,6 +75,11 @@ function applicability(cve, component) {
   });
   if (affected) return { status: 'possible', confidence: 'medium', reason: 'The supplied version falls within an NVD CPE match/range. Confirm against the vendor advisory and distribution build before treating as affected.' };
   return { status: 'needs_review', confidence: 'low', reason: 'A product CPE exists, but the supplied version was not proven to fall in its affected range.' };
+}
+
+function applicability(cve, component) {
+  const cpes = (cve.configurations || []).flatMap(config => (config.nodes || []).flatMap(node => [...(node.cpeMatch || []), ...(node.children || []).flatMap(child => child.cpeMatch || [])]));
+  return classifyCpeApplicability(cpes, component);
 }
 
 export async function analyzeInventory(components, { signal, onProgress } = {}) {
