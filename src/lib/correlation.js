@@ -156,7 +156,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     if (!component) continue;
     const existing = allCandidates.get(cveId);
     if (existing) {
-      if (!existing.components.some(match => match.component.id === component.id)) {
+      if (!existing.components.some(match => match.component.name === component.name && match.component.version === component.version)) {
         existing.components.push({
           component,
           applicability: {
