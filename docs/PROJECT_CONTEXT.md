@@ -180,3 +180,12 @@ Pega este mensaje:
 - Azure de PR #3 satisfactorio para el build de la rama de PR: https://github.com/carlosdans/quasaric/actions/runs/41057961544. Esto no acredita por sí solo el despliegue de `main`.
 - Siguiente PR: identidad visual Quasaric.com, con el mismo SVG como favicon y marca de cabecera; título y descripción SEO actualizados.
 - La prueba de rangos solo caracteriza la semántica CPE básica; no acredita comparadores correctos para versiones Ubuntu/Debian ni esquemas específicos de fabricantes.
+
+
+### Ajuste de despliegue Azure — 2026-10-30
+
+- El log de Azure para la PR #4 confirma que Oryx instaló Node y `npm run build` terminó correctamente. El rechazo se produjo después, al intentar crear/publicar el entorno de staging: Azure indicó que se alcanzó el máximo de entornos de staging.
+- No se debe atribuir este error a un token inválido: en este intento la acción llegó a la fase de publicación y la razón explícita fue el límite de entornos.
+- Workflow actualizado en la rama de la PR #4: los despliegues `upload` se ejecutan solo en push a `main`; el evento `pull_request: closed` se conserva para solicitar la limpieza del entorno de esa PR. Las PR mantienen su CI independiente y no consumen plazas de staging nuevas.
+- Se retiró el parámetro `github_id_token` y la preparación OIDC que la acción `Azure/static-web-apps-deploy@v1` advertía como input no reconocido. La autenticación de despliegue sigue usando el secreto Azure existente.
+- Antes de fusionar, validar CI y comprobar que el workflow modificado se comporta como se espera. Tras el merge, confirmar el workflow de push a `main` para acreditar el despliegue de producción.
