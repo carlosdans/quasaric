@@ -104,7 +104,7 @@ La Ubuntu Security API está descrita por Canonical como trabajo en curso y no r
 **No asumir que este estado sigue vigente.** Al comenzar una sesión nueva, consultar GitHub antes de actuar.
 
 - Repositorio privado: `carlosdans/quasaric`.
-- `main` conocido: commit `793b1dc0e8e479ae63f965ab4fb9df94d1103811`.
+- `main` actual tras integrar PR #1: commit `bb4e5a69f3cde135dbc4fb2bc0497a7c3a251bb8` (30-10-2026).
 - PR #1: https://github.com/carlosdans/quasaric/pull/1
 - Rama PR: `fix/component-classification-search`.
 - Objetivo PR #1: corregir clasificación de tecnologías y reducir búsquedas excesivas/ambiguas de CVE.
@@ -114,9 +114,10 @@ La Ubuntu Security API está descrita por Canonical como trabajo en curso y no r
 - CI #43: https://github.com/carlosdans/quasaric/actions/runs/41055602751
 - Azure #53: https://github.com/carlosdans/quasaric/actions/runs/41055602950
 - CI #40 y Azure #50 fueron satisfactorios para el commit conocido de `main`.
-- **No fusionar PR #1 hasta verificar que el CI del último commit está en verde y revisar el diff.** Un despliegue de una rama de PR no equivale a publicación en producción desde `main`.
+- PR #1 se integró mediante squash el 30-10-2026 tras revisar el diff y confirmar CI #43 y Azure #53 satisfactorios en el commit de rama `6bb7b98a04ab67eded68cc9726467b62b8d821ca`. Merge commit en `main`: `bb4e5a69f3cde135dbc4fb2bc0497a7c3a251bb8`.
+- La integración actualiza `main`, pero todavía debe comprobarse el workflow Azure disparado por el merge antes de afirmar que el dominio público ya sirve esos cambios.
 
-### Cambios incluidos en PR #1 (pendiente de confirmar estado actual)
+### Cambios integrados mediante PR #1
 
 - Nuevo `src/lib/componentTypes.js`: catálogo de tecnologías conocidas y clasificación esperada.
 - Nuevo `src/lib/componentTypes.test.js`: pruebas del catálogo.
@@ -141,11 +142,10 @@ La Ubuntu Security API está descrita por Canonical como trabajo en curso y no r
 
 ## 9. Próximos pasos inmediatos
 
-1. Consultar el estado actual de PR #1, CI #43 y Azure #53; no confiar en el estado histórico de esta nota.
-2. Si CI está verde, revisar el diff completo y decidir la integración de PR #1.
-3. Una vez resuelta la PR, actualizar esta nota con el commit y despliegue reales.
-4. Diseñar pruebas de regresión de correlación con CVE/CPE conocidos y casos negativos.
-5. Resolver y probar el mapeo Ubuntu paquete binario → paquete fuente antes de presentar cobertura OSV de inventarios `dpkg-query` como completa.
+1. Comprobar el workflow Azure disparado por el merge `bb4e5a69f3cde135dbc4fb2bc0497a7c3a251bb8`; no afirmar publicación hasta verificarlo.
+2. Añadir pruebas de regresión de correlación con fixtures CPE reales y casos negativos. Revisar especialmente el mapeo actual, que solo contempla explícitamente algunos productos; PHP-FPM, Python, Java, PostgreSQL, MongoDB e IIS requieren una política CPE validada y no deben considerarse cubiertos solo por estar en el catálogo de tipos.
+3. Hacer visible el límite de 400 resultados NVD por componente y evitar presentar los resultados como exhaustivos.
+4. Resolver y probar el mapeo Ubuntu paquete binario → paquete fuente antes de presentar cobertura OSV de inventarios `dpkg-query` como completa.
 
 ## 10. Cómo retomar en una conversación nueva
 
@@ -159,4 +159,6 @@ Pega este mensaje:
 
 - Se preparó este documento como punto de continuidad del proyecto.
 - Estado de partida documentado desde el README de `main` y el estado conocido de PR #1.
-- Pendiente: comprobar de nuevo CI #43 y Azure #53, que estaban en ejecución en la última consulta.
+- PR #1 fusionada en `main` tras CI #43 y Azure #53 satisfactorios para el commit de rama.
+- Merge commit: `bb4e5a69f3cde135dbc4fb2bc0497a7c3a251bb8`.
+- Pendiente: verificar el workflow Azure posterior al merge y continuar con las pruebas de regresión CPE y la comunicación del límite NVD.
