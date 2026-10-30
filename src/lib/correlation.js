@@ -1,6 +1,6 @@
 import { normalizeComponentType } from './componentTypes.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
-import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, extractCveSummary } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
 const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+_-]/g, ' ').trim();
 
