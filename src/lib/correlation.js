@@ -1,4 +1,4 @@
-import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, extractCveSummary } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForPackage, extractCveSummary } from './vulnerabilitySources.js';
 
 const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+_-]/g, ' ').trim();
 
@@ -105,7 +105,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
   if (!Array.isArray(components) || components.length === 0) throw new Error('Add at least one component before analysis.');
   if (components.length > 10) throw new Error('An analysis supports up to 10 components.');
 
-  const errors = [];
+  const errors = [];\n  const ubuntuOsv = new Map();\n  const ubuntuComponents = components.filter(component => /^Ubuntu:(?:Pro:)?\\d{2}\\.\\d{2}(?::LTS)?$/.test(String(component.vendor || '').trim()));\n  for (const component of ubuntuComponents) {\n    try {\n      const records = await fetchUbuntuOsvForPackage(component.name, component.version, component.vendor, { signal });\n      for (const record of records) {\n        if (!/^CVE-\\d{4}-\\d+$/.test(record.id)) continue;\n        const existing = ubuntuOsv.get(record.id) || [];\n        existing.push(record);\n        ubuntuOsv.set(record.id, existing);\n      }\n    } catch (error) {\n      if (error.name === 'AbortError') throw error;\n      errors.push({ source: 'Ubuntu OSV', component: component.name, message: error.message });\n    }\n  }
   const allCandidates = new Map();
   let done = 0;
   for (const component of components) {
@@ -145,7 +145,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
       kev: Boolean(kevEntry),
       kevDueDate: kevEntry?.dueDate || null,
       kevRequiredAction: kevEntry?.requiredAction || null,
-      components: matched,
+      ubuntu: ubuntuOsv.get(cve.id) || [],\n      components: matched,
       applicabilityStatus: matched.some(x => x.applicability.status === 'possible') ? 'possible' : 'needs_review'
     };
   }).sort((a, b) => Number(b.kev) - Number(a.kev) || (b.epss ?? -1) - (a.epss ?? -1) || (b.cvss ?? -1) - (a.cvss ?? -1));
@@ -155,7 +155,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     sources: {
       nvd: errors.some(x => x.source === 'NVD') ? 'partial_or_unavailable' : 'queried',
       epss: errors.some(x => x.source === 'FIRST EPSS') ? 'unavailable' : 'queried',
-      kev: errors.some(x => x.source === 'CISA KEV') ? 'unavailable' : 'queried'
+      kev: errors.some(x => x.source === 'CISA KEV') ? 'unavailable' : 'queried',\n      ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : 'queried') : 'not_configured'
     },
     errors,
     analyzedAt: new Date().toISOString(),
