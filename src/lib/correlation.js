@@ -107,10 +107,11 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
 
   const errors = [];
   const ubuntuOsv = new Map();
-  const ubuntuComponents = components.filter(component => /^Ubuntu:(?:Pro:)?\d{2}\.\d{2}(?::LTS)?$/.test(String(component.vendor || '').trim()));
+  const ubuntuComponents = components.filter(component => /^Ubuntu:(?:Pro:)?\d{2}\.\d{2}(?::LTS)?$/.test(String(component.ecosystem || component.vendor || '').trim()));
   for (const component of ubuntuComponents) {
     try {
-      const records = await fetchUbuntuOsvForPackage(component.name, component.version, component.vendor, { signal });
+      const ecosystem = String(component.ecosystem || component.vendor || '').trim();
+      const records = await fetchUbuntuOsvForPackage(component.sourcePackage || component.name, component.version, ecosystem, { signal });
       for (const record of records) {
         if (!/^CVE-\d{4}-\d+$/.test(record.id)) continue;
         const existing = ubuntuOsv.get(record.id) || [];
@@ -142,6 +143,50 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     }
     done++;
     onProgress?.({ completed: done, total: components.length });
+  }
+
+  // Preserve Ubuntu-only advisories even when NVD keyword search has no matching record.
+  for (const [cveId, records] of ubuntuOsv) {
+    const record = records[0];
+    const component = components.find(item =>
+      ubuntuComponents.includes(item) &&
+      String(item.sourcePackage || item.name).trim() === record.package &&
+      String(item.version || '').trim() === record.packageVersion
+    );
+    if (!component) continue;
+    const existing = allCandidates.get(cveId);
+    if (existing) {
+      if (!existing.components.some(match => match.component.id === component.id)) {
+        existing.components.push({
+          component,
+          applicability: {
+            status: 'needs_review',
+            confidence: 'medium',
+            reason: 'Ubuntu OSV returned a package/release match. Verify the complete Ubuntu package revision and release status before treating this as confirmed.'
+          }
+        });
+      }
+    } else {
+      allCandidates.set(cveId, {
+        cve: {
+          id: cveId,
+          descriptions: [{ lang: 'en', value: record.summary || 'Ubuntu OSV advisory; consult the upstream record for technical details.' }],
+          published: record.published,
+          lastModified: record.modified,
+          references: record.references || [],
+          metrics: {},
+          weaknesses: []
+        },
+        components: [{
+          component,
+          applicability: {
+            status: 'needs_review',
+            confidence: 'medium',
+            reason: 'Ubuntu OSV returned a package/release match. Verify the complete Ubuntu package revision and release status before treating this as confirmed.'
+          }
+        }]
+      });
+    }
   }
 
   const ids = [...allCandidates.keys()];
