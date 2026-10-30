@@ -145,7 +145,7 @@ const libarchiveRecord = {
   id: 'CVE-2026-14164', package: 'libarchive', ecosystem: 'Ubuntu:24.04:LTS',
   affected: [
     {
-      package: { name: 'libarchive', ecosystem: 'Ubuntu:20.04:LTS' },
+      package: { name: 'libarchive', ecosystem: 'Ubuntu:Pro:20.04:LTS' },
       versions: ['3.4.0-2ubuntu1.5', '3.4.0-2ubuntu1.5+esm1', '3.4.0-2ubuntu1.5+esm2'],
       ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '3.4.0-2ubuntu1.5+esm3' }] }],
       ecosystem_specific: { binaries: [
