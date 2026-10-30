@@ -28,7 +28,7 @@ export function summarizeApplicabilityStatus(matchedComponents) {
 export function classifyUbuntuOsvComponent(record, component) {
   const sourcePackage = String(component?.sourcePackage || '').trim();
   const ecosystem = String(component?.ecosystem || component?.vendor || '').trim();
-  const binaryMatch = matchUbuntuOsvBinary(record, component?.name, component?.version, ecosystem);
+  const binaryMatch = matchUbuntuOsvBinary(record, component?.name, component?.version, ecosystem, sourcePackage);
   const affectedEntry = (record?.affected || []).find(entry =>
     entry.package?.name === sourcePackage && entry.package?.ecosystem === ecosystem
   );
