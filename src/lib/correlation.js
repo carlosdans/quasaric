@@ -1,4 +1,5 @@
 import { normalizeComponentType } from './componentTypes.js';
+import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, extractCveSummary } from './vulnerabilitySources.js';
 
 const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+_-]/g, ' ').trim();
@@ -13,6 +14,38 @@ function componentQueries(component) {
 function cpeProduct(criteria) {
   const parts = String(criteria || '').split(':');
   return { vendor: (parts[3] || '').replaceAll('_', ' '), product: (parts[4] || '').replaceAll('_', ' '), version: parts[5] || '*' };
+}
+
+export function classifyUbuntuOsvComponent(record, component) {
+  const sourcePackage = String(component?.sourcePackage || '').trim();
+  const ecosystem = String(component?.ecosystem || component?.vendor || '').trim();
+  const binaryMatch = matchUbuntuOsvBinary(record, component?.name, component?.version, ecosystem);
+  const affectedEntry = (record?.affected || []).find(entry =>
+    entry.package?.name === sourcePackage && entry.package?.ecosystem === ecosystem
+  );
+  const sourceClassification = classifyUbuntuOsvSourceVersion(
+    affectedEntry && affectedEntry.package?.name === record.package ? affectedEntry : null,
+    component?.sourceVersion
+  );
+  let status = 'needs_review';
+  let reason = sourceClassification.reason;
+  if (binaryMatch.status !== 'matched') {
+    reason = `No exact Ubuntu binary build confirmation: ${binaryMatch.reason} Source-version assessment: ${sourceClassification.reason}`;
+  } else if (sourceClassification.status === 'affected') status = 'affected';
+  else if (sourceClassification.status === 'patched_candidate') status = 'patched_candidate';
+  else if (sourceClassification.status === 'unaffected') status = 'unaffected';
+  return {
+    status,
+    confidence: status === 'affected' ? 'high' : 'medium',
+    reason,
+    ubuntuSourceEvidence: {
+      sourcePackage: sourcePackage || null,
+      sourceVersion: component?.sourceVersion || null,
+      ecosystem: ecosystem || null,
+      classification: sourceClassification.status
+    },
+    ubuntuBinaryEvidence: binaryMatch.status === 'matched' ? binaryMatch.evidence : []
+  };
 }
 
 function compareVersions(a, b) {
@@ -158,8 +191,9 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     onProgress?.({ completed: done, total: components.length });
   }
 
-  // Match Ubuntu OSV records only through the exact binary evidence published
-  // by Canonical. Never compare source-package ranges to binary package versions.
+  // Correlate Ubuntu advisories using two independent pieces of evidence:
+  // source-package version ranges and the exact binary build mapping. A binary
+  // match alone never proves the source version is affected or patched.
   for (const [cveId, records] of ubuntuOsv) {
     for (const record of records) {
       const related = ubuntuComponents.filter(component =>
@@ -167,19 +201,15 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
         String(component.ecosystem || component.vendor || '').trim() === record.ecosystem
       );
       for (const component of related) {
-        const match = matchUbuntuOsvBinary(record, component.name, component.version, record.ecosystem);
-        if (match.status !== 'matched') continue;
+        const applicability = classifyUbuntuOsvComponent(record, component);
+
         const current = allCandidates.get(cveId) || {
           cve: { id: cveId, descriptions: [{ lang: 'en', value: record.summary || 'Ubuntu OSV advisory; consult the upstream record for technical details.' }],
             published: record.published, lastModified: record.modified, references: record.references || [], metrics: {}, weaknesses: [] },
           components: []
         };
         if (!current.components.some(item => item.component.id === component.id)) {
-          current.components.push({ component, applicability: {
-            status: 'needs_review', confidence: 'high',
-            reason: 'Coincidencia exacta de nombre, versión binaria completa y release en Ubuntu OSV. Verifica el estado de parche y el aviso oficial antes de confirmar afectación.',
-            ubuntuBinaryEvidence: match.evidence
-          }});
+          current.components.push({ component, applicability });
         }
         allCandidates.set(cveId, current);
       }
@@ -205,7 +235,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
       kevRequiredAction: kevEntry?.requiredAction || null,
       ubuntu: ubuntuOsv.get(cve.id) || [],
       components: matched,
-      applicabilityStatus: matched.some(x => x.applicability.status === 'possible') ? 'possible' : 'needs_review'
+      applicabilityStatus: ['possible', 'affected', 'patched_candidate', 'unaffected'].find(status => matched.some(x => x.applicability.status === status)) || 'needs_review'
     };
   }).sort((a, b) => Number(b.kev) - Number(a.kev) || (b.epss ?? -1) - (a.epss ?? -1) || (b.cvss ?? -1) - (a.cvss ?? -1));
 
