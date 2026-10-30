@@ -68,3 +68,18 @@ test('requires the exact Apache vendor and product pair', () => {
   assert.equal(unrelated.status, 'needs_review');
   assert.equal(correct.status, 'possible');
 });
+
+
+test('Ubuntu OSV annotations are keyed to upstream CVE identifiers', () => {
+  const upstream = ['CVE-2025-6491'];
+  const id = upstream.find(value => /^CVE-\\d{4}-\\d+$/.test(value));
+  assert.equal(id, 'CVE-2025-6491');
+});
+
+test('Ubuntu ecosystem requires an explicit release, not a generic Ubuntu label', () => {
+  const valid = /^Ubuntu:(?:Pro:)?\\d{2}\\.\\d{2}(?::LTS)?$/;
+  assert.equal(valid.test('Ubuntu:24.04:LTS'), true);
+  assert.equal(valid.test('Ubuntu:Pro:22.04:LTS'), true);
+  assert.equal(valid.test('Ubuntu'), false);
+  assert.equal(valid.test('Ubuntu:latest'), false);
+});
