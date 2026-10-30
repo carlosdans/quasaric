@@ -89,7 +89,7 @@ test('OpenVEX download failure leaves NVD and Ubuntu OSV assessment intact', asy
   const finding = result.findings.find(item => item.id === 'CVE-2026-12345');
   assert.equal(finding.components[0].applicability.status, 'possible');
   assert.equal(finding.components[0].ubuntuVex.status, 'unavailable');
-  assert.match(finding.components[0].ubuntuVex.reason, /classification OSV\/NVD is preserved/i);
+  assert.match(finding.components[0].ubuntuVex.reason, /se conserva sin cambios/i);
   assert.equal(result.sources.ubuntuVex, 'unavailable');
   assert.equal(result.errors.some(error => error.source === 'Canonical OpenVEX'), true);
 });
