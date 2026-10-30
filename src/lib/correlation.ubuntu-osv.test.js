@@ -81,3 +81,28 @@ test('summary does not promote a partial result over missing evidence', () => {
     { applicability: { status: 'needs_review' } }
   ]), 'needs_review');
 });
+
+
+test('binary evidence from another source package cannot validate this component', () => {
+  const multiSourceRecord = {
+    ...record,
+    affected: [
+      ...record.affected,
+      {
+        package: { name: 'curl', ecosystem: 'Ubuntu:24.04:LTS' },
+        versions: ['8.5.0-2ubuntu10'],
+        ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '8.5.0-2ubuntu10.2' }] }],
+        ecosystem_specific: { binaries: [
+          { binary_name: 'curl', binary_version: '8.5.0-2ubuntu10.1' }
+        ] }
+      }
+    ]
+  };
+  const result = classifyUbuntuOsvComponent(
+    multiSourceRecord,
+    component({ name: 'curl', version: '8.5.0-2ubuntu10.1' })
+  );
+  assert.equal(result.status, 'needs_review');
+  assert.deepEqual(result.ubuntuBinaryEvidence, []);
+  assert.match(result.reason, /No exact binary-package name and version match/);
+});
