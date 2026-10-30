@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyUbuntuOsvComponent } from './correlation.js';
+import { classifyUbuntuOsvComponent, summarizeApplicabilityStatus } from './correlation.js';
 
 const record = {
   package: 'openssl',
@@ -58,4 +58,26 @@ test('explicit not-affected status requires exact binary evidence too', () => {
     }
   }] };
   assert.equal(classifyUbuntuOsvComponent(explicit, component()).status, 'unaffected');
+});
+
+
+test('summary keeps a single shared component status', () => {
+  assert.equal(summarizeApplicabilityStatus([
+    { applicability: { status: 'affected' } },
+    { applicability: { status: 'affected' } }
+  ]), 'affected');
+});
+
+test('summary is conservative when components have conflicting statuses', () => {
+  assert.equal(summarizeApplicabilityStatus([
+    { applicability: { status: 'affected' } },
+    { applicability: { status: 'unaffected' } }
+  ]), 'needs_review');
+});
+
+test('summary does not promote a partial result over missing evidence', () => {
+  assert.equal(summarizeApplicabilityStatus([
+    { applicability: { status: 'patched_candidate' } },
+    { applicability: { status: 'needs_review' } }
+  ]), 'needs_review');
 });
