@@ -12,9 +12,9 @@ export const inventoryCommands = {
     commands: [
       'cat /etc/os-release',
       'uname -r',
-      "dpkg-query -W -f='${Package}\\t${Version}\\n'"
+      "dpkg-query -W -f='${binary:Package}\\t${Version}\\t${Architecture}\\t${source:Package}\\t${source:Version}\\n'"
     ],
-    note: 'Package versions may include Ubuntu revisions/backported security fixes; upstream version alone is not enough.'
+    note: 'Collects binary package, full version, architecture, source package and source version. Package versions may include Ubuntu revisions/backported security fixes; upstream version alone is not enough.'
   },
   php: {
     label: 'PHP',
