@@ -41,7 +41,8 @@ test('source version and binary build at fixed boundaries remain a candidate, no
 test('a fixed binary build conflicts with an affected source version', () => {
   const result = classifyUbuntuOsvComponent(record, component({ version: '3.0.13-0ubuntu3.2' }));
   assert.equal(result.status, 'needs_review');
-  assert.deepEqual(result.ubuntuBinaryEvidence, []);
+  assert.equal(result.ubuntuBinaryEvidence.length, 1);
+  assert.match(result.reason, /evidence conflicts/i);
 });
 
 test('does not call an older source version affected when the installed binary is already at the fixed build', () => {
