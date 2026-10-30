@@ -651,7 +651,7 @@ La documentación de Canonical establece que:
   - múltiples binarios locales para un mismo CVE: un solo fetch del documento VEX.
 - La interfaz muestra por componente el estado OpenVEX, motivo de revisión, fecha del documento y enlace al documento Canonical, separado de la aplicabilidad NVD/OSV.
 - CI de PR #33: run `41146888837`, success; CI de main: run `41146976567`, success; **105 tests, 105 pass, 0 fail**, build Vite correcto (`✓ built in 1.99s`).
-- Despliegue Azure de main para commit `c5118f26186c4ec3d754846d99bd7885ffa66d00`: run `41146976584`; comprobar conclusión y log de `Deployment Complete` antes de marcarlo completado.
+- Despliegue Azure de main para commit `c5118f26186c4ec3d754846d99bd7885ffa66d00`: run `41146976584`, success; log confirma `Deployment Complete` y publica https://orange-meadow-04bd1081e.4.azurestaticapps.net.
 - No se han modificado DNS, secretos ni infraestructura; las pruebas usan fixtures locales y no transmiten inventario.
 
 ### Próximos pasos
