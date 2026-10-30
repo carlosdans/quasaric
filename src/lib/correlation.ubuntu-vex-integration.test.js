@@ -102,7 +102,7 @@ test('missing local architecture skips remote VEX lookup and stays needs_review'
   const finding = result.findings.find(item => item.id === 'CVE-2026-12345');
   assert.equal(vexFetches, 0);
   assert.equal(finding.components[0].ubuntuVex.status, 'needs_review');
-  assert.match(finding.components[0].ubuntuVex.reason, /architecture/i);
+  assert.match(finding.components[0].ubuntuVex.reason, /arquitectura/i);
   assert.equal(finding.components[0].applicability.status, 'possible');
 });
 
