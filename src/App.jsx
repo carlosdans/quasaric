@@ -2,6 +2,7 @@ import React from 'react';
 import { useMemo, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
 import { toCsv } from './lib/csv.js';
+import { suggestedComponentType, normalizeComponentType } from './lib/componentTypes.js';
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, Bell, BookOpen,
   Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Cloud,
@@ -101,7 +102,8 @@ function App() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
   const [analysisProgress, setAnalysisProgress] = useState({ completed: 0, total: 0 });
-  const [form, setForm] = useState({ name: '', type: 'web', version: '', vendor: '' });
+  const [form, setForm] = useState({ name: '', type: 'other', version: '', vendor: '' });
+  const suggestedType = suggestedComponentType(form.name);
   const t = copy[lang];
 
   const persist = (next) => {
@@ -135,8 +137,8 @@ function App() {
   const addItem = (event) => {
     event.preventDefault();
     if (!form.name.trim() || items.length >= 10) return;
-    persist([...items, { ...form, id: crypto.randomUUID(), createdAt: new Date().toISOString() }]);
-    setForm({ name: '', type: 'web', version: '', vendor: '' });
+    persist([...items, { ...normalizeComponentType(form), id: crypto.randomUUID(), createdAt: new Date().toISOString() }]);
+    setForm({ name: '', type: 'other', version: '', vendor: '' });
     setShowAdd(false);
   };
 
@@ -235,7 +237,7 @@ function App() {
         </div>
       </main>
 
-      {showAdd && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setShowAdd(false); }}><form className="modal" onSubmit={addItem}><div className="modal-head"><div><div className="eyebrow">QUASARIC</div><h2>{t.addComponent}</h2></div><button type="button" className="icon-btn" onClick={() => setShowAdd(false)} aria-label="Close"><X size={18}/></button></div><label>{t.componentName}<input required autoFocus value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. NGINX"/></label><label>{t.chooseType}<select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>{types.map(type => <option key={type} value={type}>{t[type]}</option>)}</select></label><label>{t.versionLabel}<input value={form.version} onChange={e => setForm({ ...form, version: e.target.value })} placeholder="e.g. 1.24.0"/></label><label>{t.vendor}<input value={form.vendor} onChange={e => setForm({ ...form, vendor: e.target.value })} placeholder={form.name.trim().toLowerCase() === 'ubuntu' ? 'Ubuntu:24.04:LTS' : 'e.g. Ubuntu:24.04:LTS'}/></label><div className="modal-note"><LockKeyhole size={15}/>{t.privacyNote}</div><div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setShowAdd(false)}>{t.cancel}</button><button type="submit" className="primary-btn" disabled={!form.name.trim() || items.length >= 10}><Plus size={16}/>{t.add}</button></div></form></div>}
+      {showAdd && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setShowAdd(false); }}><form className="modal" onSubmit={addItem}><div className="modal-head"><div><div className="eyebrow">QUASARIC</div><h2>{t.addComponent}</h2></div><button type="button" className="icon-btn" onClick={() => setShowAdd(false)} aria-label="Close"><X size={18}/></button></div><label>{t.componentName}<input required autoFocus value={form.name} onChange={e => { const name = e.target.value; setForm(current => ({ ...current, name, type: suggestedComponentType(name) || current.type })); }} placeholder="e.g. PHP, NGINX"/></label><label>{t.chooseType}<select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>{types.map(type => <option key={type} value={type}>{t[type]}</option>)}</select></label>{suggestedType && suggestedType !== form.type && <div className="modal-note"><AlertTriangle size={15}/>{lang === 'es' ? `Tipo recomendado para ${form.name}: ${t[suggestedType]}. Se corregirá automáticamente al añadir.` : `Recommended type for ${form.name}: ${t[suggestedType]}. It will be corrected automatically when added.`}</div>}<label>{t.versionLabel}<input value={form.version} onChange={e => setForm({ ...form, version: e.target.value })} placeholder="e.g. 1.24.0"/></label><label>{t.vendor}<input value={form.vendor} onChange={e => setForm({ ...form, vendor: e.target.value })} placeholder={form.name.trim().toLowerCase() === 'ubuntu' ? 'Ubuntu:24.04:LTS' : 'e.g. Ubuntu:24.04:LTS'}/></label><div className="modal-note"><LockKeyhole size={15}/>{t.privacyNote}</div><div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setShowAdd(false)}>{t.cancel}</button><button type="submit" className="primary-btn" disabled={!form.name.trim() || items.length >= 10}><Plus size={16}/>{t.add}</button></div></form></div>}
     </div>
   );
 }

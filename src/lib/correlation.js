@@ -1,3 +1,4 @@
+import { normalizeComponentType } from './componentTypes.js';
 import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForPackage, extractCveSummary } from './vulnerabilitySources.js';
 
 const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+_-]/g, ' ').trim();
@@ -5,17 +6,10 @@ const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+
 const unique = values => [...new Set(values)];
 
 function componentQueries(component) {
-  const aliases = {
-    nginx: ['nginx'], 'apache http server': ['apache http server', 'http server apache'],
-    apache: ['apache http server'], php: ['php'], wordpress: ['wordpress'],
-    joomla: ['joomla'], drupal: ['drupal'], mysql: ['mysql'], mariadb: ['mariadb'],
-    'windows server': ['windows server'], ubuntu: ['ubuntu'], node: ['node.js'],
-    'node.js': ['node.js']
-  };
+  const aliases = { apache: 'apache http server', 'apache http server': 'apache http server', node: 'node.js', nodejs: 'node.js' };
   const name = normalize(component.name);
-  return unique([...(aliases[name] || []), name].filter(Boolean));
+  return [aliases[name] || name].filter(Boolean);
 }
-
 function cpeProduct(criteria) {
   const parts = String(criteria || '').split(':');
   return { vendor: (parts[3] || '').replaceAll('_', ' '), product: (parts[4] || '').replaceAll('_', ' '), version: parts[5] || '*' };
@@ -63,10 +57,8 @@ function cpeMatchesComponent(criteria, component) {
 }
 
 function matchesProductText(cve, component) {
-  const configurations = JSON.stringify(cve.configurations || []).toLowerCase();
-  const description = (cve.descriptions || []).map(x => x.value).join(' ').toLowerCase();
-  const name = normalize(component.name);
-  return Boolean(name && (configurations.includes(name.replaceAll(' ', '_')) || description.includes(name)));
+  const cpes = (cve.configurations || []).flatMap(config => collectCpeMatches(config.nodes || []));
+  return cpes.some(item => cpeMatchesComponent(item.criteria, component));
 }
 
 export function classifyCpeApplicability(cpeItems, component) {
@@ -104,6 +96,7 @@ function applicability(cve, component) {
 export async function analyzeInventory(components, { signal, onProgress } = {}) {
   if (!Array.isArray(components) || components.length === 0) throw new Error('Add at least one component before analysis.');
   if (components.length > 10) throw new Error('An analysis supports up to 10 components.');
+  components = components.map(normalizeComponentType);
 
   const errors = [];
   const ubuntuOsv = new Map();
@@ -129,7 +122,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     const queries = componentQueries(component);
     for (const query of queries) {
       try {
-        const records = await fetchNvdByKeyword(query, { signal });
+        const records = await fetchNvdByKeyword(query, { signal, maxResults: 400 });
         for (const cve of records) {
           if (!matchesProductText(cve, component)) continue;
           const current = allCandidates.get(cve.id) || { cve, components: [] };
