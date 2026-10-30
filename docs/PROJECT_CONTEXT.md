@@ -493,6 +493,18 @@ La documentación de Canonical establece que:
 
 ---
 
+
+## Estado actualizado — 30 de octubre de 2026 (fixtures Ubuntu Pro FIPS, PR #24 integrada)
+
+- PR #24 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/24.
+- Commit de `main`: `75dc393f34c0d9fff21f2046d1216bca8704d0f3`.
+- Añadidos extractos del registro oficial Canonical `UBUNTU-CVE-2025-9230` para `Ubuntu:Pro:FIPS-preview:22.04:LTS` y `Ubuntu:Pro:FIPS-updates:22.04:LTS`.
+- Se prueba que `ecosystem_specific.binaries[].binary_version` no es automáticamente un límite corregido cuando el entry no contiene un evento fuente `fixed` (FIPS-preview).
+- Se prueba que, cuando sí hay evento `fixed` (FIPS-updates), se comparan por separado la versión fuente y la versión binaria instalada frente a sus límites publicados.
+- CI de PR #24: success, 79/79 tests y build (run `41130132126`). CI de `main`: success, 79/79 tests y build (run `41130219096`).
+- Azure Static Web Apps para el commit `75dc393f34c0d9fff21f2046d1216bca8704d0f3`: run `41130219146`; verificar conclusión final antes de afirmar el despliegue.
+- Este cambio añade solo fixtures y pruebas; no modifica lógica de producción, inventario, DNS, secretos ni infraestructura.
+
 ## Estado actualizado — 30 de octubre de 2026 (corrección de semántica de binarios Ubuntu OSV, PR #22 integrada)
 
 ### Hallazgo corregido
