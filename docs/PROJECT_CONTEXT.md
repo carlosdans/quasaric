@@ -243,3 +243,32 @@ Pega este mensaje:
 3. Diferenciar claramente ausencia de evidencia, binario coincidente y paquete corregido; nunca convertir la ausencia en 'no vulnerable'.
 4. Actualizar la interfaz para solicitar release/codename y versión completa del paquete cuando falten; documentar qué representa la versión que introduce el usuario.
 5. Revisar CI/build y actualizar este documento tras cada PR. Resolver token Azure por separado.
+
+---
+
+## Estado actualizado — 30 de octubre de 2026 (PR #6 integrada)
+
+**Estado de la integración; distinguir CI de despliegue Azure.**
+
+- PR #6 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/6.
+- Commit de merge en `main`: `57ef0834c4011fd5fdf7cac7fe53ab173f0eb7b8`.
+- Rama: `feat/ubuntu-binary-osv-integration`; último head antes de merge: `0b852a9bd5257a83419ae52f899767f7b71cab32`.
+- CI de la PR para el head final satisfactorio: https://github.com/carlosdans/quasaric/actions/runs/41064731280. Tests de correlación y build estático completados correctamente.
+- La integración consulta OSV con paquete fuente y release Ubuntu explícitos, pagina con `next_page_token`, recupera advisories y filtra entradas afectadas por nombre de paquete fuente y ecosistema.
+- La correlación con el inventario exige coincidencia exacta de nombre binario, versión binaria completa y release en `affected[].ecosystem_specific.binaries[]`. Los hallazgos permanecen `needs_review`; no se confirman ni se infiere parche aplicado.
+- El campo opcional `sourcePackage` se añade al formulario y se conserva porque el inventario local serializa el objeto completo en `localStorage`. No se infiere la relación binario→fuente.
+- Se limitó a cinco el número de peticiones simultáneas de detalle OSV para evitar un `Promise.all` sin límite ante paquetes con muchos avisos históricos.
+- Tests añadidos para consulta package-only, validación de release, paginación y exclusión de advisories retirados.
+- Limitación: solo se correlacionan advisories con CVE upstream reconocible. Los avisos OSV sin CVE upstream no se incorporan a los hallazgos CVE; no interpretar esto como cobertura completa de Ubuntu.
+- Limitación: la validación de CI usa fixtures/mocks; no acredita una prueba de integración live contra OSV ni la exhaustividad de sus datos.
+- El workflow CI de `main` tras merge está en cola al redactar esta actualización: https://github.com/carlosdans/quasaric/actions/runs/41064875167.
+- El workflow Azure Static Web Apps de `main` también está en cola: https://github.com/carlosdans/quasaric/actions/runs/41064875145. No afirmar despliegue de producción hasta verificar que termina satisfactoriamente.
+- El problema anterior de Azure token no se ha resuelto ni modificado en esta PR. Si vuelve a fallar con `No matching Static Web App was found or the api key was invalid`, actualizar el secreto existente desde Azure Portal > Static Web App > Manage deployment token; no compartir el token ni crear recursos nuevos.
+- No se añadieron backend, base de datos, agentes, recursos Azure nuevos ni servicios de pago. Se mantiene el objetivo de 0 € de infraestructura/servicios bajo nuestro control.
+
+### Próximos pasos
+
+1. Verificar CI de `main` y workflow Azure de `main` por separado.
+2. Mejorar la ayuda de inventario para obtener `sourcePackage` mediante consulta local de solo lectura, por ejemplo: `dpkg-query -W -f='${binary:Package}\\t${Version}\\t${source:Package}\\t${source:Version}\\n'`. No ejecutar remotamente ni enviar inventarios completos.
+3. Añadir fixtures oficiales/sintéticos adicionales para advisories con varios binarios, múltiples releases y estados de parche; documentar que no se cubren avisos sin CVE upstream.
+4. Mantener los resultados como candidatos que requieren verificación con avisos oficiales de Canonical.
