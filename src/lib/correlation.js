@@ -151,7 +151,8 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     const component = components.find(item =>
       ubuntuComponents.includes(item) &&
       String(item.sourcePackage || item.name).trim() === record.package &&
-      String(item.version || '').trim() === record.packageVersion
+      String(item.version || '').trim() === record.packageVersion &&
+      String(item.ecosystem || item.vendor || '').trim() === record.ecosystem
     );
     if (!component) continue;
     const existing = allCandidates.get(cveId);
