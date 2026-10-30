@@ -16,35 +16,71 @@ function componentQueries(component) {
   return unique([...(aliases[name] || []), name].filter(Boolean));
 }
 
+function cpeProduct(criteria) {
+  const parts = String(criteria || '').split(':');
+  return { vendor: (parts[3] || '').replaceAll('_', ' '), product: (parts[4] || '').replaceAll('_', ' '), version: parts[5] || '*' };
+}
+
+function compareVersions(a, b) {
+  const left = String(a).match(/\\d+|[a-z]+/gi) || [];
+  const right = String(b).match(/\\d+|[a-z]+/gi) || [];
+  const length = Math.max(left.length, right.length);
+  for (let i = 0; i < length; i++) {
+    const x = left[i] ?? '0', y = right[i] ?? '0';
+    if (x === y) continue;
+    if (/^\\d+$/.test(x) && /^\\d+$/.test(y)) return Number(x) < Number(y) ? -1 : 1;
+    return x.localeCompare(y, undefined, { numeric: true, sensitivity: 'base' });
+  }
+  return 0;
+}
+
+function cpeMatchesComponent(criteria, component) {
+  const cpe = cpeProduct(criteria);
+  const name = normalize(component.name).replaceAll('_', ' ');
+  const aliases = {
+    apache: ['apache', 'http server'],
+    'apache http server': ['apache', 'http server'],
+    nginx: ['nginx'],
+    'node.js': ['node', 'node.js'],
+    node: ['node', 'node.js'],
+    wordpress: ['wordpress'], joomla: ['joomla'], drupal: ['drupal'],
+    php: ['php'], mysql: ['mysql'], mariadb: ['mariadb'], ubuntu: ['ubuntu']
+  };
+  const accepted = aliases[name] || [name];
+  return accepted.some(alias => cpe.product === alias || cpe.vendor === alias || cpe.product.includes(alias));
+}
+
 function matchesProductText(cve, component) {
-  const haystack = normalize([
-    ...(cve.descriptions || []).map(x => x.value),
-    ...(cve.configurations || []).flatMap(c => JSON.stringify(c))
-  ].join(' '));
-  const product = normalize(component.name);
-  if (!product || !haystack.includes(product)) return false;
-  const version = normalize(component.version);
-  // This is only a candidate filter, never proof that a release is affected.
-  return !version || haystack.includes(version) || haystack.includes(product);
+  const configurations = JSON.stringify(cve.configurations || []).toLowerCase();
+  const description = (cve.descriptions || []).map(x => x.value).join(' ').toLowerCase();
+  const name = normalize(component.name);
+  return Boolean(name && (configurations.includes(name.replaceAll(' ', '_')) || description.includes(name)));
 }
 
 function applicability(cve, component) {
   const version = String(component.version || '').trim();
   if (!version) return { status: 'version_missing', confidence: 'low', reason: 'No exact version was supplied.' };
-  const configurations = cve.configurations || [];
-  const cpes = configurations.flatMap(c => c.nodes || []).flatMap(n => n.cpeMatch || []);
-  const relevant = cpes.filter(item => {
-    const criteria = normalize(item.criteria);
-    return criteria.includes(normalize(component.name).replaceAll(' ', '_'))
-      || criteria.includes(normalize(component.name));
+  const cpes = (cve.configurations || []).flatMap(config =>
+    (config.nodes || []).flatMap(node => [
+      ...(node.cpeMatch || []),
+      ...(node.children || []).flatMap(child => child.cpeMatch || [])
+    ])
+  );
+  const relevant = cpes.filter(item => cpeMatchesComponent(item.criteria, component));
+  if (!relevant.length) return { status: 'needs_review', confidence: 'low', reason: 'No matching product CPE was found; product-text matches remain unverified candidates.' };
+
+  const affected = relevant.some(item => {
+    if (item.vulnerable === false) return false;
+    const cpe = cpeProduct(item.criteria);
+    if (cpe.version !== '*' && cpe.version !== '-' && cpe.version !== version) return false;
+    if (item.versionStartIncluding && compareVersions(version, item.versionStartIncluding) < 0) return false;
+    if (item.versionStartExcluding && compareVersions(version, item.versionStartExcluding) <= 0) return false;
+    if (item.versionEndIncluding && compareVersions(version, item.versionEndIncluding) > 0) return false;
+    if (item.versionEndExcluding && compareVersions(version, item.versionEndExcluding) >= 0) return false;
+    return true;
   });
-  if (!relevant.length) return { status: 'needs_review', confidence: 'low', reason: 'Product text matched, but no reliable CPE/version range was matched.' };
-  const exact = relevant.some(item => {
-    const cpeVersion = item.versionStartIncluding || item.versionStartExcluding || item.versionEndIncluding || item.versionEndExcluding;
-    return cpeVersion && (version === cpeVersion || item.versionStartIncluding === version || item.versionEndIncluding === version);
-  });
-  if (exact) return { status: 'possible', confidence: 'medium', reason: 'Version boundary appears in the NVD CPE range; vendor advisory verification is still required.' };
-  return { status: 'needs_review', confidence: 'low', reason: 'NVD CPE data exists, but the supplied version could not be safely classified.' };
+  if (affected) return { status: 'possible', confidence: 'medium', reason: 'The supplied version falls within an NVD CPE match/range. Confirm against the vendor advisory and distribution build before treating as affected.' };
+  return { status: 'needs_review', confidence: 'low', reason: 'A product CPE exists, but the supplied version was not proven to fall in its affected range.' };
 }
 
 export async function analyzeInventory(components, { signal, onProgress } = {}) {
