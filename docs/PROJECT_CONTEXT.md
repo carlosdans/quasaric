@@ -432,7 +432,7 @@ La documentación de Canonical establece que:
 - Añade una prueba en `src/lib/correlation.ubuntu-osv.test.js` con un advisory que contiene dos paquetes fuente para la misma release. Comprueba que el binario `curl`, aunque figure en el advisory, no valida un componente cuyo `sourcePackage` declarado es `openssl`; el resultado permanece `needs_review` y no se adjunta evidencia binaria.
 - CI de PR #17 (tests y build): https://github.com/carlosdans/quasaric/actions/runs/41126005275 (success).
 - CI de `main` tras merge: https://github.com/carlosdans/quasaric/actions/runs/41126093289 (success; tests y build).
-- Azure Static Web Apps de `main` tras merge: https://github.com/carlosdans/quasaric/actions/runs/41126093274 (pendiente de comprobación).
+- Azure Static Web Apps de `main` tras merge: https://github.com/carlosdans/quasaric/actions/runs/41126093274 (success). El log confirma `Deployment Complete` y `https://orange-meadow-04bd1081e.4.azurestaticapps.net`.
 
 ### Estado y próximos pasos
 - `main` apunta a `369cae516cdb66fa116e459ba6a02828b2759b95`.
