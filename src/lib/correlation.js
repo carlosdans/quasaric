@@ -301,7 +301,22 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
   // without changing the OSV/NVD applicability classification.
   const vexDocuments = new Map();
   const vexErrors = [];
-  const vexQueue = [...ubuntuOsv.keys()];
+  const eligibleVexIds = [...ubuntuOsv.entries()]
+    .filter(([, records]) => records.some(record => ubuntuComponents.some(component =>
+      String(component.sourcePackage || '').trim() === record.package &&
+      String(component.ecosystem || component.vendor || '').trim() === record.ecosystem &&
+      Boolean(String(component.architecture || '').trim()) &&
+      (record.affected || []).some(entry =>
+        entry.package?.name === record.package &&
+        entry.package?.ecosystem === record.ecosystem &&
+        Boolean(entry.package?.purl)
+      )
+    )))
+    .map(([cveId]) => cveId);
+  const vexQueue = eligibleVexIds.slice(0, 100);
+  for (const cveId of eligibleVexIds.slice(100)) {
+    vexErrors.push({ cveId, message: 'Se alcanzó el límite de 100 documentos OpenVEX por análisis; este CVE queda sin evidencia VEX.' });
+  }
   const vexWorker = async () => {
     while (vexQueue.length) {
       const cveId = vexQueue.shift();
@@ -326,11 +341,18 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
         const current = allCandidates.get(cveId);
         const item = current?.components.find(entry => entry.component.id === component.id);
         if (!item) continue;
-        if (!component.architecture) {
+        const hasSourcePurl = (record.affected || []).some(entry =>
+          entry.package?.name === record.package &&
+          entry.package?.ecosystem === record.ecosystem &&
+          Boolean(entry.package?.purl)
+        );
+        if (!component.architecture || !hasSourcePurl) {
           item.ubuntuVex = {
             status: 'needs_review',
             source: 'Canonical OpenVEX',
-            reason: 'La arquitectura del paquete binario no está disponible; no se puede comparar el producto exacto.'
+            reason: !component.architecture
+              ? 'La arquitectura del paquete binario no está disponible; no se puede comparar el producto exacto.'
+              : 'Ubuntu OSV no proporciona un PURL de paquete fuente para esta entrada; no se puede anclar la comparación OpenVEX.'
           };
         } else if (!vexRecord) {
           item.ubuntuVex = {
@@ -375,7 +397,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
       epss: errors.some(x => x.source === 'FIRST EPSS') ? 'unavailable' : 'queried',
       kev: errors.some(x => x.source === 'CISA KEV') ? 'unavailable' : 'queried',
       ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured',
-      ubuntuVex: ubuntuOsv.size ? (vexErrors.length ? (vexDocuments.size ? 'partial_or_unavailable' : 'unavailable') : 'queried') : 'not_configured'
+      ubuntuVex: ubuntuOsv.size ? (vexErrors.length ? (vexDocuments.size ? 'partial_or_unavailable' : 'unavailable') : (vexDocuments.size ? 'queried' : 'needs_review')) : 'not_configured'
     },
     errors: [...errors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
     limits,
