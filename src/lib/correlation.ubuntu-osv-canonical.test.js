@@ -45,7 +45,7 @@ test('Canonical OpenSSL fixed boundary is evaluated separately for Ubuntu 24.04'
   });
   assert.equal(result.status, 'patched_candidate');
   assert.equal(result.ubuntuSourceEvidence.ecosystem, 'Ubuntu:24.04:LTS');
-  assert.equal(result.ubuntuBinaryEvidence[0].fixedBinaryVersion, '3.0.13-0ubuntu3.6');
+  assert.equal(result.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '3.0.13-0ubuntu3.6');
 });
 
 test('Canonical OpenSSL fixed boundary is evaluated separately for Ubuntu 22.04', () => {
@@ -55,7 +55,7 @@ test('Canonical OpenSSL fixed boundary is evaluated separately for Ubuntu 22.04'
   });
   assert.equal(result.status, 'patched_candidate');
   assert.equal(result.ubuntuSourceEvidence.ecosystem, 'Ubuntu:22.04:LTS');
-  assert.equal(result.ubuntuBinaryEvidence[0].fixedBinaryVersion, '3.0.2-0ubuntu1.20');
+  assert.equal(result.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '3.0.2-0ubuntu1.20');
 });
 
 test('Canonical Ubuntu Pro entry with no fixed event remains affected when explicitly listed', () => {
@@ -78,7 +78,7 @@ test('Canonical listed vulnerable source and binary builds below the fixed build
     sourcePackage: 'openssl', sourceVersion: '3.0.13-0ubuntu3.5', ecosystem: 'Ubuntu:24.04:LTS'
   });
   assert.equal(result.status, 'affected');
-  assert.equal(result.ubuntuBinaryEvidence[0].fixedBinaryVersion, '3.0.13-0ubuntu3.6');
+  assert.equal(result.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '3.0.13-0ubuntu3.6');
   assert.equal(result.ubuntuBinaryEvidence[0].installedBinaryVersion, '3.0.13-0ubuntu3.5');
 });
 
