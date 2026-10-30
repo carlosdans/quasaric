@@ -455,7 +455,7 @@ La documentación de Canonical establece que:
 - Cubre los límites `fixed` independientes de Ubuntu 22.04 y 24.04, una entrada Ubuntu Pro 16.04 para `nodejs` sin evento `fixed`, aislamiento por release y la ausencia de promoción cuando falta evidencia binaria exacta.
 - CI de PR #19: https://github.com/carlosdans/quasaric/actions/runs/41126959239 (success; 71 pruebas y build de Vite correctos).
 - CI de `main` tras integración: https://github.com/carlosdans/quasaric/actions/runs/41127058860 (success; 71 pruebas y build correctos).
-- Azure Static Web Apps tras integración: https://github.com/carlosdans/quasaric/actions/runs/41127059025 (comprobar conclusión final antes de declarar el despliegue).
+- Azure Static Web Apps tras integración: https://github.com/carlosdans/quasaric/actions/runs/41127059025 (success). El log confirma `Deployment Complete` y `https://orange-meadow-04bd1081e.4.azurestaticapps.net`.
 
 ### Hallazgo y limitación importante
 - El registro oficial CVE-2025-9230 lista versiones fuente vulnerables de OpenSSL para Ubuntu 24.04 hasta `3.0.13-0ubuntu3.5`, con versión fija `3.0.13-0ubuntu3.6`; la lista `ecosystem_specific.binaries` del registro contiene los builds binarios fijos `3.0.13-0ubuntu3.6`.
@@ -468,5 +468,5 @@ La documentación de Canonical establece que:
 1. Diseñar y probar por separado la relación binario→fuente a partir de los datos explícitos de inventario y del significado real de `ecosystem_specific.binaries`; distinguir build vulnerable, build fijo y falta de evidencia.
 2. Añadir casos reales de Ubuntu OSV con varios paquetes fuente, releases, entradas sin `fixed`, versiones enumeradas y versiones fijas con sufijos Debian/ESM.
 3. Mantener `needs_review` ante cualquier ambigüedad; no convertir ausencia de binary mapping en `unaffected`.
-4. Verificar el despliegue Azure del commit `5d39a861da7f1d78be5a7425ed1610a22a7cc974` y registrar su conclusión.
+4. Mantener seguimiento del despliegue Azure en cada integración; para el commit `5d39a861da7f1d78be5a7425ed1610a22a7cc974` quedó confirmado `Deployment Complete`.
 5. No alterar DNS, secretos ni recursos Azure. Mantener inventario local y no enviar el inventario completo a terceros.
