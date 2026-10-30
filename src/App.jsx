@@ -1,6 +1,7 @@
 import React from 'react';
 import { useMemo, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
+import { toCsv } from './lib/csv.js';
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, Bell, BookOpen,
   Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Cloud,
@@ -139,11 +140,19 @@ function App() {
     setShowAdd(false);
   };
 
+  const downloadCsv = (rows, filename) => {
+    const blob = new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const exportCsv = () => {
     const rows = [['name','type','version','vendor'], ...items.map(x => [x.name, x.type, x.version, x.vendor])];
-    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"', '""') + '"').join(',')).join('\n');
-    const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
-    const a = document.createElement('a'); a.href = url; a.download = 'quasaric-inventory.csv'; a.click(); URL.revokeObjectURL(url);
+    downloadCsv(rows, 'quasaric-inventory.csv');
   };
 
   const exportFindingsCsv = () => {
@@ -157,9 +166,7 @@ function App() {
         f.vector ?? '', 'https://nvd.nist.gov/vuln/detail/' + f.id
       ])
     ];
-    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"','""') + '"').join(',')).join('\\n');
-    const url = URL.createObjectURL(new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
-    const a = document.createElement('a'); a.href = url; a.download = 'quasaric-findings.csv'; a.click(); URL.revokeObjectURL(url);
+    downloadCsv(rows, 'quasaric-findings.csv');
   };
 
   const nav = [
