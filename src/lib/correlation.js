@@ -77,7 +77,7 @@ export function classifyCpeApplicability(cpeItems, component) {
   return { status: 'needs_review', confidence: 'low', reason: 'A product CPE exists, but the supplied version was not proven to fall in its affected range.' };
 }
 
-function collectCpeMatches(nodes = []) {
+export function collectCpeMatches(nodes = []) {
   return nodes.flatMap(node => [
     ...(node.cpeMatch || []),
     ...collectCpeMatches(node.children || [])
