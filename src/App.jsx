@@ -24,7 +24,7 @@ const copy = {
     version: 'Versión', findings: 'Hallazgos', status: 'Estado', action: 'Acción',
     demo: 'Datos de demostración', demoText: 'Estos datos son ilustrativos; todavía no son resultados de consultas a fuentes de vulnerabilidades.',
     addComponent: 'Añadir componente', componentName: 'Nombre del componente',
-    chooseType: 'Tipo', versionLabel: 'Versión exacta', vendor: 'Fabricante / distribución', sourcePackageLabel: 'Paquete fuente Ubuntu (opcional)', sourcePackageHelp: 'En Ubuntu, el nombre del paquete binario instalado no siempre coincide con el paquete fuente. Ejecuta este comando localmente para consultar los datos dpkg; copia únicamente el nombre de paquete fuente correspondiente. No envíes el inventario completo.',
+    chooseType: 'Tipo', versionLabel: 'Versión exacta', vendor: 'Fabricante / distribución', sourcePackageLabel: 'Paquete fuente Ubuntu (opcional)', sourceVersionLabel: 'Versión del paquete fuente Ubuntu (opcional)', sourcePackageHelp: 'En Ubuntu, el nombre y la versión del paquete binario no siempre coinciden con los del paquete fuente. Ejecuta este comando localmente y copia los campos correspondientes. No envíes el inventario completo.',
     add: 'Añadir', cancel: 'Cancelar', empty: 'Aún no hay componentes en tu inventario.',
     emptyHint: 'Añade tecnologías y versiones para preparar tu primer análisis.',
     maxReached: 'El inventario admite un máximo de 10 componentes por análisis.',
@@ -56,7 +56,7 @@ const copy = {
     version: 'Version', findings: 'Findings', status: 'Status', action: 'Action',
     demo: 'Demonstration data', demoText: 'These figures are illustrative; they are not results from live vulnerability-source queries.',
     addComponent: 'Add component', componentName: 'Component name',
-    chooseType: 'Type', versionLabel: 'Exact version', vendor: 'Vendor / distribution', sourcePackageLabel: 'Ubuntu source package (optional)', sourcePackageHelp: 'On Ubuntu, an installed binary package name does not always match its source package. Run this command locally to inspect dpkg data; copy only the corresponding source package name. Do not send the full inventory.',
+    chooseType: 'Type', versionLabel: 'Exact version', vendor: 'Vendor / distribution', sourcePackageLabel: 'Ubuntu source package (optional)', sourceVersionLabel: 'Ubuntu source package version (optional)', sourcePackageHelp: 'On Ubuntu, the installed binary package name and version do not always match the source package name and version. Run this command locally and copy the corresponding fields. Do not send the full inventory.',
     add: 'Add', cancel: 'Cancel', empty: 'There are no components in your inventory yet.',
     emptyHint: 'Add technologies and versions to prepare your first analysis.',
     maxReached: 'An analysis supports up to 10 components.',
@@ -102,7 +102,7 @@ function App() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
   const [analysisProgress, setAnalysisProgress] = useState({ completed: 0, total: 0 });
-  const [form, setForm] = useState({ name: '', type: 'other', version: '', vendor: '', sourcePackage: '' });
+  const [form, setForm] = useState({ name: '', type: 'other', version: '', vendor: '', sourcePackage: '', sourceVersion: '' });
   const suggestedType = suggestedComponentType(form.name);
   const t = copy[lang];
 
@@ -138,7 +138,7 @@ function App() {
     event.preventDefault();
     if (!form.name.trim() || items.length >= 10) return;
     persist([...items, { ...normalizeComponentType(form), id: crypto.randomUUID(), createdAt: new Date().toISOString() }]);
-    setForm({ name: '', type: 'other', version: '', vendor: '', sourcePackage: '' });
+    setForm({ name: '', type: 'other', version: '', vendor: '', sourcePackage: '', sourceVersion: '' });
     setShowAdd(false);
   };
 
@@ -153,7 +153,7 @@ function App() {
   };
 
   const exportCsv = () => {
-    const rows = [['name','type','version','vendor'], ...items.map(x => [x.name, x.type, x.version, x.vendor])];
+    const rows = [['name','type','version','vendor','sourcePackage','sourceVersion'], ...items.map(x => [x.name, x.type, x.version, x.vendor, x.sourcePackage || '', x.sourceVersion || ''])];
     downloadCsv(rows, 'quasaric-inventory.csv');
   };
 
@@ -237,7 +237,7 @@ function App() {
         </div>
       </main>
 
-      {showAdd && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setShowAdd(false); }}><form className="modal" onSubmit={addItem}><div className="modal-head"><div><div className="eyebrow">QUASARIC</div><h2>{t.addComponent}</h2></div><button type="button" className="icon-btn" onClick={() => setShowAdd(false)} aria-label="Close"><X size={18}/></button></div><label>{t.componentName}<input required autoFocus value={form.name} onChange={e => { const name = e.target.value; setForm(current => ({ ...current, name, type: suggestedComponentType(name) || current.type })); }} placeholder="e.g. PHP, NGINX"/></label><label>{t.chooseType}<select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>{types.map(type => <option key={type} value={type}>{t[type]}</option>)}</select></label>{suggestedType && suggestedType !== form.type && <div className="modal-note"><AlertTriangle size={15}/>{lang === 'es' ? `Tipo recomendado para ${form.name}: ${t[suggestedType]}. Se corregirá automáticamente al añadir.` : `Recommended type for ${form.name}: ${t[suggestedType]}. It will be corrected automatically when added.`}</div>}<label>{t.versionLabel}<input value={form.version} onChange={e => setForm({ ...form, version: e.target.value })} placeholder="e.g. 1.24.0"/></label><label>{t.vendor}<input value={form.vendor} onChange={e => setForm({ ...form, vendor: e.target.value })} placeholder={form.name.trim().toLowerCase() === 'ubuntu' ? 'Ubuntu:24.04:LTS' : 'e.g. Ubuntu:24.04:LTS'}/></label><label>{t.sourcePackageLabel}<input value={form.sourcePackage || ''} onChange={e => setForm({ ...form, sourcePackage: e.target.value })} placeholder="e.g. openssl (source package)"/></label><div className="modal-note"><BookOpen size={15}/><span>{t.sourcePackageHelp}<br/><code>{"dpkg-query -W -f='${binary:Package}\\t${Version}\\t${source:Package}\\t${source:Version}\\n'"}</code></span></div><div className="modal-note"><LockKeyhole size={15}/>{t.privacyNote}</div><div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setShowAdd(false)}>{t.cancel}</button><button type="submit" className="primary-btn" disabled={!form.name.trim() || items.length >= 10}><Plus size={16}/>{t.add}</button></div></form></div>}
+      {showAdd && <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setShowAdd(false); }}><form className="modal" onSubmit={addItem}><div className="modal-head"><div><div className="eyebrow">QUASARIC</div><h2>{t.addComponent}</h2></div><button type="button" className="icon-btn" onClick={() => setShowAdd(false)} aria-label="Close"><X size={18}/></button></div><label>{t.componentName}<input required autoFocus value={form.name} onChange={e => { const name = e.target.value; setForm(current => ({ ...current, name, type: suggestedComponentType(name) || current.type })); }} placeholder="e.g. PHP, NGINX"/></label><label>{t.chooseType}<select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>{types.map(type => <option key={type} value={type}>{t[type]}</option>)}</select></label>{suggestedType && suggestedType !== form.type && <div className="modal-note"><AlertTriangle size={15}/>{lang === 'es' ? `Tipo recomendado para ${form.name}: ${t[suggestedType]}. Se corregirá automáticamente al añadir.` : `Recommended type for ${form.name}: ${t[suggestedType]}. It will be corrected automatically when added.`}</div>}<label>{t.versionLabel}<input value={form.version} onChange={e => setForm({ ...form, version: e.target.value })} placeholder="e.g. 1.24.0"/></label><label>{t.vendor}<input value={form.vendor} onChange={e => setForm({ ...form, vendor: e.target.value })} placeholder={form.name.trim().toLowerCase() === 'ubuntu' ? 'Ubuntu:24.04:LTS' : 'e.g. Ubuntu:24.04:LTS'}/></label><label>{t.sourcePackageLabel}<input value={form.sourcePackage || ''} onChange={e => setForm({ ...form, sourcePackage: e.target.value })} placeholder="e.g. openssl (source package)"/></label><label>{t.sourceVersionLabel}<input value={form.sourceVersion || ''} onChange={e => setForm({ ...form, sourceVersion: e.target.value })} placeholder="e.g. 3.0.2-0ubuntu1.18"/></label><div className="modal-note"><BookOpen size={15}/><span>{t.sourcePackageHelp}<br/><code>{"dpkg-query -W -f='${binary:Package}\\t${Version}\\t${source:Package}\\t${source:Version}\\n'"}</code></span></div><div className="modal-note"><LockKeyhole size={15}/>{t.privacyNote}</div><div className="modal-actions"><button type="button" className="secondary-btn" onClick={() => setShowAdd(false)}>{t.cancel}</button><button type="submit" className="primary-btn" disabled={!form.name.trim() || items.length >= 10}><Plus size={16}/>{t.add}</button></div></form></div>}
     </div>
   );
 }
