@@ -1,5 +1,5 @@
 
-const normalizeName = value => String(value || '').trim().toLowerCase().replace(/\\s+/g, ' ');
+const normalizeName = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 const componentTypes = {
   php: 'runtime', 'php-fpm': 'runtime', node: 'runtime', 'node.js': 'runtime', nodejs: 'runtime',
   python: 'runtime', java: 'runtime',
