@@ -27,6 +27,24 @@ const record = {
       ] }
     },
     {
+      package: { name: 'openssl', ecosystem: 'Ubuntu:Pro:FIPS-preview:22.04:LTS' },
+      versions: ['3.0.2-0ubuntu1.10+Fips1', '3.0.2-0ubuntu1.12+Fips1'],
+      ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }] }],
+      ecosystem_specific: { binaries: [
+        { binary_name: 'libssl3', binary_version: '3.0.2-0ubuntu1.12+Fips1' },
+        { binary_name: 'openssl', binary_version: '3.0.2-0ubuntu1.12+Fips1' }
+      ] }
+    },
+    {
+      package: { name: 'openssl', ecosystem: 'Ubuntu:Pro:FIPS-updates:22.04:LTS' },
+      versions: ['3.0.2-0ubuntu1.10+Fips1', '3.0.2-0ubuntu1.12+Fips1', '3.0.2-0ubuntu1.14+Fips1', '3.0.2-0ubuntu1.15+Fips1', '3.0.2-0ubuntu1.16+Fips1', '3.0.2-0ubuntu1.17+Fips1', '3.0.2-0ubuntu1.18+Fips1', '3.0.2-0ubuntu1.19+Fips1'],
+      ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '3.0.2-0ubuntu1.20+Fips1' }] }],
+      ecosystem_specific: { binaries: [
+        { binary_name: 'libssl3', binary_version: '3.0.2-0ubuntu1.20+Fips1' },
+        { binary_name: 'openssl', binary_version: '3.0.2-0ubuntu1.20+Fips1' }
+      ] }
+    },
+    {
       package: { name: 'nodejs', ecosystem: 'Ubuntu:Pro:16.04:LTS' },
       versions: ['4.2.6~dfsg-1ubuntu4.2', '4.2.6~dfsg-1ubuntu4.2+esm1', '4.2.6~dfsg-1ubuntu4.2+esm2', '4.2.6~dfsg-1ubuntu4.2+esm3'],
       ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }] }],
@@ -80,6 +98,34 @@ test('Canonical listed vulnerable source and binary builds below the fixed build
   assert.equal(result.status, 'affected');
   assert.equal(result.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '3.0.13-0ubuntu3.6');
   assert.equal(result.ubuntuBinaryEvidence[0].installedBinaryVersion, '3.0.13-0ubuntu3.5');
+});
+
+
+test('Canonical FIPS-preview binaries without a fixed event are not treated as fixed boundaries', () => {
+  const result = classifyUbuntuOsvComponent(record, {
+    id: 'openssl-fips-preview', name: 'libssl3', version: '3.0.2-0ubuntu1.10+Fips1',
+    sourcePackage: 'openssl', sourceVersion: '3.0.2-0ubuntu1.10+Fips1',
+    ecosystem: 'Ubuntu:Pro:FIPS-preview:22.04:LTS'
+  });
+  assert.equal(result.status, 'affected');
+  assert.equal(result.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '3.0.2-0ubuntu1.12+Fips1');
+  assert.match(result.reason, /exact source version is listed as affected/i);
+});
+
+test('Canonical FIPS-updates source and binary fixed boundaries are compared independently', () => {
+  const affected = classifyUbuntuOsvComponent(record, {
+    id: 'openssl-fips-updates-old', name: 'libssl3', version: '3.0.2-0ubuntu1.19+Fips1',
+    sourcePackage: 'openssl', sourceVersion: '3.0.2-0ubuntu1.19+Fips1',
+    ecosystem: 'Ubuntu:Pro:FIPS-updates:22.04:LTS'
+  });
+  const fixed = classifyUbuntuOsvComponent(record, {
+    id: 'openssl-fips-updates-fixed', name: 'libssl3', version: '3.0.2-0ubuntu1.20+Fips1',
+    sourcePackage: 'openssl', sourceVersion: '3.0.2-0ubuntu1.20+Fips1',
+    ecosystem: 'Ubuntu:Pro:FIPS-updates:22.04:LTS'
+  });
+  assert.equal(affected.status, 'affected');
+  assert.equal(fixed.status, 'patched_candidate');
+  assert.equal(fixed.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '3.0.2-0ubuntu1.20+Fips1');
 });
 
 test('an exact binary from Ubuntu 24.04 cannot cross-match the Ubuntu 22.04 entry', () => {
