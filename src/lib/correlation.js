@@ -230,7 +230,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
       kevRequiredAction: kevEntry?.requiredAction || null,
       ubuntu: ubuntuOsv.get(cve.id) || [],
       components: matched,
-      applicabilityStatus: matched.some(x => x.applicability.status === 'possible') ? 'possible' : 'needs_review'
+      applicabilityStatus: ['possible', 'affected', 'patched_candidate', 'unaffected'].find(status => matched.some(x => x.applicability.status === status)) || 'needs_review'
     };
   }).sort((a, b) => Number(b.kev) - Number(a.kev) || (b.epss ?? -1) - (a.epss ?? -1) || (b.cvss ?? -1) - (a.cvss ?? -1));
 
