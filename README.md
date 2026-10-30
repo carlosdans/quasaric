@@ -49,13 +49,13 @@ El archivo `staticwebapp.config.json` define fallback SPA y cabeceras iniciales.
 
 Para Ubuntu no se debe interpretar el número de versión upstream como prueba suficiente: Canonical puede publicar correcciones retroportadas manteniendo una versión upstream aparentemente antigua. La verificación de paquetes requiere cruzar el nombre del paquete, la versión completa de Ubuntu (incluida la revisión), la release/codename y el estado del CVE en esa release.
 
-Fuentes oficiales para la siguiente fase de integración:
+Fuentes oficiales de referencia:
 - [Ubuntu Security Tracker y estados por release/paquete](https://ubuntu.com/security/cves/about)
 - [Ubuntu Security Notices (USN)](https://ubuntu.com/security/notices)
 - [Ubuntu OVAL](https://documentation.ubuntu.com/security/security-updates/oval/)
 - [Ubuntu OSV](https://documentation.ubuntu.com/security/security-updates/osv/)
 
-La Ubuntu Security API está documentada por Canonical como un trabajo en curso y no recomendada para producción/automatizaciones. Por eso Quasaric no debe tratar una respuesta experimental de esa API como veredicto definitivo. La integración fiable debe priorizar feeds OVAL/OSV versionados y el estado oficial del paquete para la release concreta. Véase también la [documentación de estados CVE de Ubuntu](https://ubuntu.com/security/cves/about).
+La Ubuntu Security API está documentada por Canonical como un trabajo en curso y no recomendada para producción/automatizaciones. Quasaric incorpora una primera consulta al endpoint OSV central para paquetes fuente, usando el nombre del paquete fuente, la versión completa del paquete y el ecosistema exacto (por ejemplo, `Ubuntu:24.04:LTS` o `Ubuntu:Pro:22.04:LTS`). Los resultados se adjuntan como candidatos Ubuntu y se relacionan mediante el campo `upstream` con el CVE público; no constituyen por sí solos una confirmación de aplicabilidad.\n\n**Limitación actual:** el inventario de `dpkg-query` contiene normalmente nombres de paquetes binarios, mientras que Ubuntu OSV organiza el seguimiento por paquetes fuente y publica el mapeo de binarios en `ecosystem_specific.binaries`. Hasta implementar y probar ese mapeo, la consulta OSV solo es válida si se introduce el nombre del paquete fuente. Un resultado vacío no demuestra que el paquete binario esté libre de vulnerabilidades. La siguiente fase debe integrar ese mapeo y probar las versiones completas con los datos oficiales de cada release.
 
 ## Fuentes conectadas en el prototipo
 
