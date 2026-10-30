@@ -440,3 +440,33 @@ La documentación de Canonical establece que:
 - Próximo bloque: ampliar fixtures de correlación con advisories Ubuntu OSV que incluyan varios paquetes fuente, varias releases y diferentes estados de parche, usando registros oficiales como referencia. Mantener la distinción entre ausencia de evidencia, coincidencia binaria y clasificación de versión fuente; no inferir `unaffected` por ausencia de entrada ni declarar cobertura Ubuntu completa.
 - Tras completar CI/Azure de este commit, registrar sus conclusiones aquí. No alterar DNS, secretos ni recursos Azure.
 - Se mantiene inventario local, sin envío del inventario completo, sin backend y sin infraestructura o servicios de pago.
+
+
+---
+
+## Estado actualizado — 30 de octubre de 2026 (PR #19: fixtures Canonical Ubuntu OSV)
+
+**Esta sección prevalece sobre las fotografías históricas anteriores.**
+
+### PR #19 — regresiones con un advisory oficial
+- Integrada mediante squash: https://github.com/carlosdans/quasaric/pull/19.
+- Commit de integración en `main`: `5d39a861da7f1d78be5a7425ed1610a22a7cc974`.
+- Añade `src/lib/correlation.ubuntu-osv-canonical.test.js`, con extractos mínimos del registro oficial de Canonical `UBUNTU-CVE-2025-9230`: https://github.com/canonical/ubuntu-security-notices/blob/main/osv/cve/2025/UBUNTU-CVE-2025-9230.json.
+- Cubre los límites `fixed` independientes de Ubuntu 22.04 y 24.04, una entrada Ubuntu Pro 16.04 para `nodejs` sin evento `fixed`, aislamiento por release y la ausencia de promoción cuando falta evidencia binaria exacta.
+- CI de PR #19: https://github.com/carlosdans/quasaric/actions/runs/41126959239 (success; 71 pruebas y build de Vite correctos).
+- CI de `main` tras integración: https://github.com/carlosdans/quasaric/actions/runs/41127058860 (success; 71 pruebas y build correctos).
+- Azure Static Web Apps tras integración: https://github.com/carlosdans/quasaric/actions/runs/41127059025 (success). El log confirma `Deployment Complete` y `https://orange-meadow-04bd1081e.4.azurestaticapps.net`.
+
+### Hallazgo y limitación importante
+- El registro oficial CVE-2025-9230 lista versiones fuente vulnerables de OpenSSL para Ubuntu 24.04 hasta `3.0.13-0ubuntu3.5`, con versión fija `3.0.13-0ubuntu3.6`; la lista `ecosystem_specific.binaries` del registro contiene los builds binarios fijos `3.0.13-0ubuntu3.6`.
+- La clasificación de versión fuente reconoce `3.0.13-0ubuntu3.5` como afectada, pero la correlación completa se queda deliberadamente en `needs_review` si el build binario instalado no coincide con la evidencia binaria exacta publicada.
+- Este comportamiento evita una afirmación positiva sin prueba binaria, pero puede reducir cobertura y producir falsos negativos conservadores. No relajar la comparación ni afirmar que el inventario está afectado sin definir antes una regla segura para mapear el nombre binario al paquete fuente y usar correctamente la versión binaria publicada (que puede representar el build corregido).
+- Canonical documenta que `affected[].package` identifica el paquete fuente y la release, que las versiones `fixed` se expresan en el rango de versión fuente, y que `ecosystem_specific.binaries` lista binarios y versiones asociadas. Consultar https://documentation.ubuntu.com/security/security-updates/osv/ antes de modificar esta semántica.
+- Los ecosistemas Ubuntu Pro FIPS y variantes adicionales deben seguir considerándose cobertura no verificada; no inferir soporte solo por la prueba de `Ubuntu:Pro:16.04:LTS`.
+
+### Próximos pasos
+1. Diseñar y probar por separado la relación binario→fuente a partir de los datos explícitos de inventario y del significado real de `ecosystem_specific.binaries`; distinguir build vulnerable, build fijo y falta de evidencia.
+2. Añadir casos reales de Ubuntu OSV con varios paquetes fuente, releases, entradas sin `fixed`, versiones enumeradas y versiones fijas con sufijos Debian/ESM.
+3. Mantener `needs_review` ante cualquier ambigüedad; no convertir ausencia de binary mapping en `unaffected`.
+4. Mantener seguimiento del despliegue Azure en cada integración; para el commit `5d39a861da7f1d78be5a7425ed1610a22a7cc974` quedó confirmado `Deployment Complete`.
+5. No alterar DNS, secretos ni recursos Azure. Mantener inventario local y no enviar el inventario completo a terceros.
