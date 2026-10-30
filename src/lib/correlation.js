@@ -212,7 +212,14 @@ function applicability(cve, component) {
   return classifyCpeApplicability(cpes, component);
 }
 
-export async function analyzeInventory(components, { signal, onProgress } = {}) {
+export async function analyzeInventory(components, { signal, onProgress, sources: sourceOverrides = {} } = {}) {
+  // Dependency overrides keep integration tests deterministic without changing
+  // the production source defaults or sending local inventory to test services.
+  const sourceApi = {
+    fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog,
+    fetchUbuntuOsvForSourcePackage, fetchCanonicalUbuntuVex,
+    ...sourceOverrides
+  };
   if (!Array.isArray(components) || components.length === 0) throw new Error('Add at least one component before analysis.');
   if (components.length > 10) throw new Error('An analysis supports up to 10 components.');
   components = components.map(normalizeComponentType);
@@ -236,7 +243,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
   }
   for (const group of ubuntuGroups.values()) {
     try {
-      const records = await fetchUbuntuOsvForSourcePackage(group.sourcePackage, group.ecosystem, { signal });
+      const records = await sourceApi.fetchUbuntuOsvForSourcePackage(group.sourcePackage, group.ecosystem, { signal });
       for (const record of records) {
         const existing = ubuntuOsv.get(record.id) || [];
         existing.push(record);
@@ -254,7 +261,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     const queries = componentQueries(component);
     for (const query of queries) {
       try {
-        const records = await fetchNvdByKeyword(query, { signal, maxResults: 400 });
+        const records = await sourceApi.fetchNvdByKeyword(query, { signal, maxResults: 400 });
         if (records.truncated) limits.push({ source: 'NVD', component: component.name, maxResults: 400, totalResults: records.totalResults });
         for (const cve of records) {
           if (!matchesProductText(cve, component)) continue;
@@ -321,7 +328,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     while (vexQueue.length) {
       const cveId = vexQueue.shift();
       try {
-        vexDocuments.set(cveId, await fetchCanonicalUbuntuVex(cveId, { signal }));
+        vexDocuments.set(cveId, await sourceApi.fetchCanonicalUbuntuVex(cveId, { signal }));
       } catch (error) {
         if (error.name === 'AbortError') throw error;
         vexErrors.push({ cveId, message: error.message });
@@ -370,9 +377,9 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
   const ids = [...allCandidates.keys()];
   let epss = new Map();
   let kev = new Map();
-  try { epss = await fetchEpssScores(ids, { signal }); }
+  try { epss = await sourceApi.fetchEpssScores(ids, { signal }); }
   catch (error) { if (error.name === 'AbortError') throw error; errors.push({ source: 'FIRST EPSS', message: error.message }); }
-  try { kev = await fetchKevCatalog({ signal }); }
+  try { kev = await sourceApi.fetchKevCatalog({ signal }); }
   catch (error) { if (error.name === 'AbortError') throw error; errors.push({ source: 'CISA KEV', message: error.message }); }
 
   const findings = [...allCandidates.values()].map(({ cve, components: matched }) => {
