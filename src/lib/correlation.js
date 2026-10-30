@@ -1,7 +1,7 @@
 import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, extractCveSummary } from './vulnerabilitySources.js';
 
 const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+_-]/g, ' ').trim();
-const tokens = value => normalize(value).split(/[\s_-]+/).filter(x => x.length > 2);
+
 const unique = values => [...new Set(values)];
 
 function componentQueries(component) {
@@ -22,13 +22,13 @@ function cpeProduct(criteria) {
 }
 
 function compareVersions(a, b) {
-  const left = String(a).match(/\\d+|[a-z]+/gi) || [];
-  const right = String(b).match(/\\d+|[a-z]+/gi) || [];
+  const left = String(a).match(/\d+|[a-z]+/gi) || [];
+  const right = String(b).match(/\d+|[a-z]+/gi) || [];
   const length = Math.max(left.length, right.length);
   for (let i = 0; i < length; i++) {
     const x = left[i] ?? '0', y = right[i] ?? '0';
     if (x === y) continue;
-    if (/^\\d+$/.test(x) && /^\\d+$/.test(y)) return Number(x) < Number(y) ? -1 : 1;
+    if (/^\d+$/.test(x) && /^\d+$/.test(y)) return Number(x) < Number(y) ? -1 : 1;
     return x.localeCompare(y, undefined, { numeric: true, sensitivity: 'base' });
   }
   return 0;
