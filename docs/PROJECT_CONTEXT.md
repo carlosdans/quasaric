@@ -525,3 +525,33 @@ La documentación de Canonical establece que:
 - Pruebas añadidas/actualizadas: fixtures Canonical OpenSSL Ubuntu 22.04/24.04, binario vulnerable anterior al build fijo, límites de build fijo, contradicciones fuente/binario, aislamiento por release y paquete fuente.
 - El cambio no altera el inventario local, la privacidad, DNS, secretos ni infraestructura.
 
+
+
+---
+
+## Estado actualizado — 31 de octubre de 2026 (PR #25: fixtures Ubuntu OSV)
+
+**Esta sección prevalece sobre las fotografías históricas anteriores.**
+
+- PR #25 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/25.
+- Commit de `main`: `fccd1ce9dd20687e9a8b485bf7298cb33a48a88b`.
+- Se amplía `src/lib/correlation.ubuntu-osv-canonical.test.js` con extractos de los registros Canonical `UBUNTU-CVE-2026-14164` (libarchive) y `UBUNTU-CVE-2026-54371` (attr).
+- Casos añadidos: varios binarios para un paquete fuente; Ubuntu Pro 20.04 con sufijo `+esm`; versiones Debian con epoch `1:`; entrada sin evento `fixed` donde una versión no listada permanece en `needs_review`.
+- La primera ejecución de CI falló porque el fixture ESM identificaba el ecosistema como Ubuntu 20.04 estándar; se corrigió al identificador oficial `Ubuntu:Pro:20.04:LTS`. La CI final de PR #25 fue satisfactoria: run `41130731361`.
+- CI de `main` tras merge: run `41143961674`, success; 83 tests, 83 pass, 0 fail y build Vite correcto.
+- Azure Static Web Apps tras merge: run `41143961689`, success; el log confirma `Deployment Complete` y publica `https://orange-meadow-04bd1081e.4.azurestaticapps.net`.
+- Cambios solo en tests/fixtures. No se modificó lógica de producción, inventario, DNS, secretos ni infraestructura.
+
+### Hallazgo de interpretación de estados Ubuntu OSV
+
+- La documentación oficial de Canonical confirma que el feed OSV lista en `affected` los estados `needs-triage`, `needed`, `ignored`, `pending`, `deferred` e `in-progress` sin evento `fixed`; `released` sí se representa con `fixed`. Por tanto, un registro OSV sin `fixed` no permite distinguir por sí solo si Canonical aún no ha evaluado, si el paquete necesita parche, si el fix está pendiente de publicación, si se ha diferido o si se ha decidido no corregir.
+- La ausencia de una entrada en `affected` tampoco es un estado negativo inferible por sí solo desde un extracto incompleto: Canonical excluye `DNE` y `not-affected` de esa lista, pero también se debe tener en cuenta la cobertura y completitud del feed consultado.
+- Canonical documenta OpenVEX como formato complementario con estados más expresivos: `needs-triage` y `deferred` se representan como `under_investigation`; `needed` e `ignored` como `affected`; `released` como `fixed`. Considerar VEX para una futura mejora de estado, pero no mezclarla todavía con la lógica de correlación OSV.
+- Referencias oficiales: https://documentation.ubuntu.com/security/security-updates/osv/ y https://documentation.ubuntu.com/security/security-updates/vex/.
+- Mantener la política conservadora: si no hay evento `fixed`, no inferir un límite de corrección a partir de `binaries[].binary_version`; si faltan datos o el estado no puede distinguirse, conservar `needs_review` o una clasificación de afectación provisional sustentada por las versiones fuente explícitas. No presentar `patched_candidate` como remediación confirmada.
+
+### Próximo trabajo
+
+1. Despliegue de `main` verificado para el commit `fccd1ce9`: Azure run `41143961689` completó con `Deployment Complete`.
+2. Evaluar una integración separada y acotada de OpenVEX para enriquecer el estado del tracker, con fixtures oficiales y sin debilitar la correlación OSV existente.
+3. Mantener las pruebas sobre versiones Debian, ecosistemas Ubuntu Pro y casos sin evento `fixed`; no modificar lógica de producción hasta definir una semántica de estados y evidencias verificable.
