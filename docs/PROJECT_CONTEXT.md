@@ -303,3 +303,34 @@ Pega este mensaje:
 2. Reejecutar únicamente el workflow de despliegue de `main` cuando la asociación esté verificada; comprobar que finaliza con éxito.
 3. Añadir fixtures Ubuntu para advisories con múltiples binarios, releases y estados de parche, conservando resultados como `needs_review` cuando no exista evidencia suficiente.
 4. Mantener inventario local, límite de 10 componentes y ausencia de escaneo remoto/backend facturable.
+
+
+---
+
+## Estado actualizado — 30 de octubre de 2026 (PR #8, nueva Azure SWA y PR #9)
+
+**Esta sección prevalece sobre los estados históricos anteriores.**
+
+### Azure Static Web Apps
+- El usuario recreó la Static Web App y confirmó que el nuevo secreto de GitHub se llama `AZURE_STATIC_WEB_APPS_API_TOKEN_ORANGE_MEADOW_04BD1081E`.
+- PR #8 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/8.
+- Commit de `main`: `cc5d88266b4b16c53a829ffe74f3207d1fc0b73b`.
+- Workflow actualizado para usar el nuevo secreto, compilar con `npm run build` y publicar `dist`; se retiró el workflow antiguo de Green Cliff para evitar despliegues duplicados.
+- CI de `main` satisfactorio: https://github.com/carlosdans/quasaric/actions/runs/41093771388.
+- Despliegue de producción Azure satisfactorio: https://github.com/carlosdans/quasaric/actions/runs/41093771593. El log confirma `Deployment Complete` y URL `https://orange-meadow-04bd1081e.4.azurestaticapps.net`.
+- El usuario indicó que ya ha vuelto a configurar el DNS del dominio. No se ha verificado DNS/HTTPS desde aquí; no alterar DNS ni recursos Azure.
+
+### PR #9 — regresiones Ubuntu OSV multi-binario
+- PR #9 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/9.
+- Commit de `main`: `dfd9477c01031409e5f1041962852db7fa87518d`.
+- Añade `src/lib/vulnerabilitySources.ubuntu-multi-binary.test.js` con cuatro casos: múltiples binarios en una release, aislamiento entre releases Ubuntu, revisión distinta de versión binaria y separación de paquetes fuente dentro de una release.
+- CI de la PR satisfactorio: https://github.com/carlosdans/quasaric/actions/runs/41094510113.
+- El diff fue revisado; no cambia lógica de producción ni altera estados de aplicabilidad.
+- CI de `main` tras merge: https://github.com/carlosdans/quasaric/actions/runs/41094665542 (pendiente de comprobación al registrar esta nota).
+- Azure de `main` tras merge: https://github.com/carlosdans/quasaric/actions/runs/41094665512 (pendiente de comprobación al registrar esta nota).
+
+### Próximo bloque
+1. Verificar CI y despliegue Azure del commit `dfd9477c01031409e5f1041962852db7fa87518d`.
+2. Investigar con datos/documentación oficial cómo representar estados Ubuntu `affected`, `fixed` y `unaffected` sin comparar versiones binarias con rangos de fuente; añadir pruebas antes de cambiar el estado visible.
+3. Mejorar la entrada Ubuntu para importar de forma local (sin transmitir el inventario) los campos binario, versión completa, paquete fuente y release extraídos con `dpkg-query`. Mantener la revisión manual si faltan campos.
+4. Mantener el límite de 10 componentes, la consulta bajo demanda y la infraestructura Azure Free; no añadir backend ni servicios de pago.
