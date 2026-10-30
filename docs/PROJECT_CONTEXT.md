@@ -634,3 +634,29 @@ La documentación de Canonical establece que:
 3. Revisar el límite de 100 documentos y la estrategia de caché durante un análisis con inventarios de mayor cobertura; no persistir el inventario en servicios remotos.
 4. Mantener `patched_candidate` como candidato sujeto a verificación; nunca afirmar remediación confirmada solo por un estado VEX `fixed`.
 
+
+
+---
+
+## Estado actualizado — 31 de octubre de 2026 (PR #33: pruebas de integración OpenVEX y UI)
+
+- PR #33 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/33.
+- Commit de main: `c5118f26186c4ec3d754846d99bd7885ffa66d00`.
+- `analyzeInventory` admite inyección opcional de fuentes para pruebas deterministas. En producción conserva las mismas funciones NVD, Ubuntu OSV, Canonical OpenVEX, EPSS y KEV por defecto.
+- Nuevo test de integración `src/lib/correlation.ubuntu-vex-integration.test.js` cubre:
+  - mismo CVE devuelto por NVD y Ubuntu OSV: OpenVEX se añade al componente sin sobrescribir `applicability`;
+  - fallo de descarga VEX: se conserva la evaluación NVD/OSV y se marca VEX como no disponible;
+  - arquitectura ausente: no se hace petición OpenVEX y el estado queda en `needs_review`;
+  - CVE que llega solo por Ubuntu OSV: se crea el finding y se adjunta evidencia VEX;
+  - múltiples binarios locales para un mismo CVE: un solo fetch del documento VEX.
+- La interfaz muestra por componente el estado OpenVEX, motivo de revisión, fecha del documento y enlace al documento Canonical, separado de la aplicabilidad NVD/OSV.
+- CI de PR #33: run `41146888837`, success; CI de main: run `41146976567`, success; **105 tests, 105 pass, 0 fail**, build Vite correcto (`✓ built in 1.99s`).
+- Despliegue Azure de main para commit `c5118f26186c4ec3d754846d99bd7885ffa66d00`: run `41146976584`, success; log confirma `Deployment Complete` y publica https://orange-meadow-04bd1081e.4.azurestaticapps.net.
+- No se han modificado DNS, secretos ni infraestructura; las pruebas usan fixtures locales y no transmiten inventario.
+
+### Próximos pasos
+
+1. Comprobar el despliegue de Azure del commit `c5118f2`.
+2. Evaluar caché efímera por CVE durante un único análisis para evitar repetir consultas VEX si la lógica evoluciona a más de una ruta de evaluación; no persistir inventario ni versiones instaladas.
+3. Añadir tests de límite y concurrencia para el máximo de 100 documentos y cuatro fetches simultáneos.
+4. Mantener la evidencia OpenVEX independiente y no convertir `fixed` o `not_affected` en conclusiones globales del CVE.
