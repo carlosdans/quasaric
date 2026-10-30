@@ -16,6 +16,38 @@ function cpeProduct(criteria) {
   return { vendor: (parts[3] || '').replaceAll('_', ' '), product: (parts[4] || '').replaceAll('_', ' '), version: parts[5] || '*' };
 }
 
+export function classifyUbuntuOsvComponent(record, component) {
+  const sourcePackage = String(component?.sourcePackage || '').trim();
+  const ecosystem = String(component?.ecosystem || component?.vendor || '').trim();
+  const binaryMatch = matchUbuntuOsvBinary(record, component?.name, component?.version, ecosystem);
+  const affectedEntry = (record?.affected || []).find(entry =>
+    entry.package?.name === sourcePackage && entry.package?.ecosystem === ecosystem
+  );
+  const sourceClassification = classifyUbuntuOsvSourceVersion(
+    affectedEntry && affectedEntry.package?.name === record.package ? affectedEntry : null,
+    component?.sourceVersion
+  );
+  let status = 'needs_review';
+  let reason = sourceClassification.reason;
+  if (binaryMatch.status !== 'matched') {
+    reason = `No exact Ubuntu binary build confirmation: ${binaryMatch.reason} Source-version assessment: ${sourceClassification.reason}`;
+  } else if (sourceClassification.status === 'affected') status = 'affected';
+  else if (sourceClassification.status === 'patched_candidate') status = 'patched_candidate';
+  else if (sourceClassification.status === 'unaffected') status = 'unaffected';
+  return {
+    status,
+    confidence: status === 'affected' ? 'high' : 'medium',
+    reason,
+    ubuntuSourceEvidence: {
+      sourcePackage: sourcePackage || null,
+      sourceVersion: component?.sourceVersion || null,
+      ecosystem: ecosystem || null,
+      classification: sourceClassification.status
+    },
+    ubuntuBinaryEvidence: binaryMatch.status === 'matched' ? binaryMatch.evidence : []
+  };
+}
+
 function compareVersions(a, b) {
   const left = String(a).match(/\d+|[a-z]+/gi) || [];
   const right = String(b).match(/\d+|[a-z]+/gi) || [];
@@ -169,24 +201,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
         String(component.ecosystem || component.vendor || '').trim() === record.ecosystem
       );
       for (const component of related) {
-        const binaryMatch = matchUbuntuOsvBinary(record, component.name, component.version, record.ecosystem);
-        const affectedEntry = (record.affected || []).find(entry =>
-          entry.package?.name === record.package &&
-          entry.package?.ecosystem === record.ecosystem
-        );
-        const sourceClassification = classifyUbuntuOsvSourceVersion(affectedEntry, component.sourceVersion);
-        let status = 'needs_review';
-        let reason = sourceClassification.reason;
-        if (binaryMatch.status !== 'matched') {
-          status = 'needs_review';
-          reason = `No exact Ubuntu binary build confirmation: ${binaryMatch.reason} Source-version assessment: ${sourceClassification.reason}`;
-        } else if (sourceClassification.status === 'affected') {
-          status = 'affected';
-        } else if (sourceClassification.status === 'patched_candidate') {
-          status = 'patched_candidate';
-        } else if (sourceClassification.status === 'unaffected') {
-          status = 'unaffected';
-        }
+        const applicability = classifyUbuntuOsvComponent(record, component);
 
         const current = allCandidates.get(cveId) || {
           cve: { id: cveId, descriptions: [{ lang: 'en', value: record.summary || 'Ubuntu OSV advisory; consult the upstream record for technical details.' }],
@@ -194,17 +209,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
           components: []
         };
         if (!current.components.some(item => item.component.id === component.id)) {
-          current.components.push({ component, applicability: {
-            status, confidence: status === 'affected' && binaryMatch.status === 'matched' ? 'high' : 'medium',
-            reason,
-            ubuntuSourceEvidence: {
-              sourcePackage: record.package,
-              sourceVersion: component.sourceVersion || null,
-              ecosystem: record.ecosystem,
-              classification: sourceClassification.status
-            },
-            ubuntuBinaryEvidence: binaryMatch.status === 'matched' ? binaryMatch.evidence : []
-          }});
+          current.components.push({ component, applicability });
         }
         allCandidates.set(cveId, current);
       }
