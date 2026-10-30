@@ -130,3 +130,57 @@ test('one public VEX document is fetched per CVE even when multiple local binari
   assert.equal(finding.components.length, 2);
   assert.ok(finding.components.every(item => item.ubuntuVex.status === 'fixed'));
 });
+
+
+test('limits OpenVEX document fetches to 100 per inventory analysis', async () => {
+  const records = Array.from({ length: 101 }, (_, index) => {
+    const id = `CVE-2026-${10000 + index}`;
+    return {
+      ...osvRecord,
+      id,
+      affected: [{
+        ...osvRecord.affected[0],
+        package: { ...osvRecord.affected[0].package, purl: sourcePurl }
+      }]
+    };
+  });
+  let vexFetches = 0;
+  const result = await analyzeInventory([component()], {
+    sources: sources({
+      fetchNvdByKeyword: async () => [],
+      fetchUbuntuOsvForSourcePackage: async () => records,
+      fetchCanonicalUbuntuVex: async () => { vexFetches++; return vexRecord; }
+    })
+  });
+  assert.equal(vexFetches, 100);
+  assert.equal(result.findings.length, 101);
+  assert.equal(result.sources.ubuntuVex, 'partial_or_unavailable');
+  assert.equal(result.errors.some(error => /límite de 100 documentos/i.test(error.message)), true);
+  const capped = result.findings.find(finding => finding.id === 'CVE-2026-10100');
+  assert.equal(capped.components[0].ubuntuVex.status, 'unavailable');
+});
+
+test('keeps Canonical OpenVEX document fetch concurrency at or below four', async () => {
+  const records = Array.from({ length: 8 }, (_, index) => ({
+    ...osvRecord,
+    id: `CVE-2026-${20000 + index}`
+  }));
+  let active = 0;
+  let maximumActive = 0;
+  const result = await analyzeInventory([component()], {
+    sources: sources({
+      fetchNvdByKeyword: async () => [],
+      fetchUbuntuOsvForSourcePackage: async () => records,
+      fetchCanonicalUbuntuVex: async () => {
+        active++;
+        maximumActive = Math.max(maximumActive, active);
+        await new Promise(resolve => setTimeout(resolve, 5));
+        active--;
+        return vexRecord;
+      }
+    })
+  });
+  assert.equal(result.findings.length, 8);
+  assert.ok(maximumActive > 1);
+  assert.ok(maximumActive <= 4);
+});
