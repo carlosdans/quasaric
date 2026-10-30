@@ -1,5 +1,5 @@
 import { normalizeComponentType } from './componentTypes.js';
-import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForPackage, extractCveSummary } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForPackage, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, extractCveSummary } from './vulnerabilitySources.js';
 
 const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+_-]/g, ' ').trim();
 
@@ -106,20 +106,32 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
 
   const errors = [];
   const ubuntuOsv = new Map();
-  const ubuntuComponents = components.filter(component => /^Ubuntu:(?:Pro:)?\d{2}\.\d{2}(?::LTS)?$/.test(String(component.ecosystem || component.vendor || '').trim()));
+  const ubuntuComponents = components.filter(component =>
+    /^Ubuntu:(?:Pro:)?\\d{2}\\.\\d{2}(?::LTS)?$/.test(String(component.ecosystem || component.vendor || '').trim())
+  );
+  const ubuntuGroups = new Map();
   for (const component of ubuntuComponents) {
+    const sourcePackage = String(component.sourcePackage || '').trim();
+    const ecosystem = String(component.ecosystem || component.vendor || '').trim();
+    if (!sourcePackage) {
+      errors.push({ source: 'Ubuntu OSV', component: component.name,
+        message: 'Falta el paquete fuente. Añádelo desde el inventario local; no se inferirá a partir del nombre binario.' });
+      continue;
+    }
+    const key = ecosystem + '::' + sourcePackage;
+    if (!ubuntuGroups.has(key)) ubuntuGroups.set(key, { ecosystem, sourcePackage });
+  }
+  for (const group of ubuntuGroups.values()) {
     try {
-      const ecosystem = String(component.ecosystem || component.vendor || '').trim();
-      const records = await fetchUbuntuOsvForPackage(component.sourcePackage || component.name, component.version, ecosystem, { signal });
+      const records = await fetchUbuntuOsvForSourcePackage(group.sourcePackage, group.ecosystem, { signal });
       for (const record of records) {
-        if (!/^CVE-\d{4}-\d+$/.test(record.id)) continue;
         const existing = ubuntuOsv.get(record.id) || [];
         existing.push(record);
         ubuntuOsv.set(record.id, existing);
       }
     } catch (error) {
       if (error.name === 'AbortError') throw error;
-      errors.push({ source: 'Ubuntu OSV', component: component.name, message: error.message });
+      errors.push({ source: 'Ubuntu OSV', component: group.sourcePackage, message: error.message });
     }
   }
   const allCandidates = new Map();
@@ -146,48 +158,31 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     onProgress?.({ completed: done, total: components.length });
   }
 
-  // Preserve Ubuntu-only advisories even when NVD keyword search has no matching record.
+  // Match Ubuntu OSV records only through the exact binary evidence published
+  // by Canonical. Never compare source-package ranges to binary package versions.
   for (const [cveId, records] of ubuntuOsv) {
-    const record = records[0];
-    const component = components.find(item =>
-      ubuntuComponents.includes(item) &&
-      String(item.sourcePackage || item.name).trim() === record.package &&
-      String(item.version || '').trim() === record.packageVersion &&
-      String(item.ecosystem || item.vendor || '').trim() === record.ecosystem
-    );
-    if (!component) continue;
-    const existing = allCandidates.get(cveId);
-    if (existing) {
-      if (!existing.components.some(match => match.component.name === component.name && match.component.version === component.version)) {
-        existing.components.push({
-          component,
-          applicability: {
-            status: 'needs_review',
-            confidence: 'medium',
-            reason: 'Ubuntu OSV returned a package/release match. Verify the complete Ubuntu package revision and release status before treating this as confirmed.'
-          }
-        });
+    for (const record of records) {
+      const related = ubuntuComponents.filter(component =>
+        String(component.sourcePackage || '').trim() === record.package &&
+        String(component.ecosystem || component.vendor || '').trim() === record.ecosystem
+      );
+      for (const component of related) {
+        const match = matchUbuntuOsvBinary(record, component.name, component.version, record.ecosystem);
+        if (match.status !== 'matched') continue;
+        const current = allCandidates.get(cveId) || {
+          cve: { id: cveId, descriptions: [{ lang: 'en', value: record.summary || 'Ubuntu OSV advisory; consult the upstream record for technical details.' }],
+            published: record.published, lastModified: record.modified, references: record.references || [], metrics: {}, weaknesses: [] },
+          components: []
+        };
+        if (!current.components.some(item => item.component.id === component.id)) {
+          current.components.push({ component, applicability: {
+            status: 'needs_review', confidence: 'high',
+            reason: 'Coincidencia exacta de nombre, versión binaria completa y release en Ubuntu OSV. Verifica el estado de parche y el aviso oficial antes de confirmar afectación.',
+            ubuntuBinaryEvidence: match.evidence
+          }});
+        }
+        allCandidates.set(cveId, current);
       }
-    } else {
-      allCandidates.set(cveId, {
-        cve: {
-          id: cveId,
-          descriptions: [{ lang: 'en', value: record.summary || 'Ubuntu OSV advisory; consult the upstream record for technical details.' }],
-          published: record.published,
-          lastModified: record.modified,
-          references: record.references || [],
-          metrics: {},
-          weaknesses: []
-        },
-        components: [{
-          component,
-          applicability: {
-            status: 'needs_review',
-            confidence: 'medium',
-            reason: 'Ubuntu OSV returned a package/release match. Verify the complete Ubuntu package revision and release status before treating this as confirmed.'
-          }
-        }]
-      });
     }
   }
 
@@ -220,7 +215,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
       nvd: errors.some(x => x.source === 'NVD') ? 'partial_or_unavailable' : (limits.length ? 'limited' : 'queried'),
       epss: errors.some(x => x.source === 'FIRST EPSS') ? 'unavailable' : 'queried',
       kev: errors.some(x => x.source === 'CISA KEV') ? 'unavailable' : 'queried',
-      ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : 'queried') : 'not_configured'
+      ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured'
     },
     errors,
     limits,
