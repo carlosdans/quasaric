@@ -660,3 +660,24 @@ La documentación de Canonical establece que:
 2. Evaluar caché efímera por CVE durante un único análisis para evitar repetir consultas VEX si la lógica evoluciona a más de una ruta de evaluación; no persistir inventario ni versiones instaladas.
 3. Añadir tests de límite y concurrencia para el máximo de 100 documentos y cuatro fetches simultáneos.
 4. Mantener la evidencia OpenVEX independiente y no convertir `fixed` o `not_affected` en conclusiones globales del CVE.
+
+
+---
+
+## Estado actualizado — 31 de octubre de 2026 (PR #35: límites de recuperación OpenVEX)
+
+- PR #35 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/35.
+- Commit de main: `01ab819504702be11daa2f267adac11d45c67a9c`.
+- Añadidas pruebas de integración que verifican el máximo de 100 documentos OpenVEX por análisis y un máximo de cuatro fetches concurrentes.
+- Se verifica que el análisis continúa con los CVEs restantes: los documentos fuera del límite quedan sin evidencia VEX y se registra el motivo; no se convierten en `not_affected`.
+- CI de PR #35: run `41147290551`, success; **107 tests, 107 pass, 0 fail**, build Vite correcto (`✓ built in 2.72s`).
+- El cache de documentos ya existe en memoria por análisis mediante el mapa `vexDocuments`, indexado por CVE; no se persiste entre análisis ni se envía inventario.
+- El límite y la concurrencia están cubiertos por pruebas deterministas usando fuentes simuladas locales.
+- No se modificaron DNS, secretos ni infraestructura; los tests no transmiten inventario.
+
+### Próximos pasos
+
+1. Confirmar CI de main y despliegue Azure del commit `01ab819`.
+2. Revisar si el fetch de Ubuntu OSV y el de Canonical OpenVEX podrían compartir una caché efímera por ejecución cuando se añadan nuevas fuentes, sin almacenar inventario.
+3. Mantener el límite explícito de 100 documentos y la concurrencia máxima de cuatro salvo evidencia medida que justifique cambiarlo.
+4. Continuar tratando OpenVEX como evidencia por producto exacto, no como veredicto CVE global.
