@@ -13,7 +13,7 @@ import {
 
 const copy = {
   es: {
-    platform: 'PLATAFORMA DE INTELIGENCIA DE SEGURIDAD', overview: 'Resumen', inventory: 'Inventario',
+    platform: 'Plataforma de inteligencia de seguridad', overview: 'Resumen', inventory: 'Inventario',
     vulnerabilities: 'Vulnerabilidades', reports: 'Informes', settings: 'Configuración',
     workspace: 'ESPACIO DE TRABAJO', overviewTitle: 'Resumen de seguridad',
     subtitle: 'Visibilidad de vulnerabilidades en los componentes de tu tecnología.',
@@ -182,8 +182,8 @@ function App() {
     <div className="app-shell">
       <aside className={'sidebar ' + (mobileNav ? 'sidebar-open' : '')}>
         <div className="brand">
-          <div className="brand-mark"><Shield size={21} strokeWidth={2.2} /></div>
-          <div><div className="brand-name">quasaric<span>.</span></div><div className="brand-sub">{t.platform}</div></div>
+          <img className="brand-mark" src="/favicon.svg" alt="" />
+          <div><div className="brand-name">Quasaric<span>.com</span></div><div className="brand-sub">{t.platform}</div></div>
           <button className="icon-btn mobile-close" onClick={() => setMobileNav(false)} aria-label="Close menu"><X size={18}/></button>
         </div>
         <div className="nav-caption">{t.workspace}</div>
