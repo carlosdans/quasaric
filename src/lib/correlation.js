@@ -1,7 +1,7 @@
 import { normalizeComponentType } from './componentTypes.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
-import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
 const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+_-]/g, ' ').trim();
 
@@ -24,6 +24,32 @@ export function summarizeApplicabilityStatus(matchedComponents) {
   // A single CVE can map to several installed components. Never let the
   // first match hide contradictory or incomplete per-component assessments.
   return statuses.length === 1 ? statuses[0] : 'needs_review';
+}
+
+/**
+ * Keep Canonical OpenVEX as independent, exact-product evidence. The OSV
+ * affected entry supplies the source PURL (arch=source); OpenVEX is matched
+ * against the installed binary's exact name/version/architecture/distro.
+ */
+export function classifyCanonicalUbuntuVexComponent(vexRecord, record, component) {
+  const sourcePackage = String(component?.sourcePackage || '').trim();
+  const ecosystem = String(component?.ecosystem || component?.vendor || '').trim();
+  const affectedEntry = (record?.affected || []).find(entry =>
+    entry.package?.name === sourcePackage &&
+    entry.package?.ecosystem === ecosystem
+  );
+  const result = matchCanonicalUbuntuVexProduct(
+    vexRecord,
+    component,
+    affectedEntry?.package?.purl
+  );
+  return {
+    ...result,
+    source: 'Canonical OpenVEX',
+    documentTimestamp: vexRecord?.timestamp || null,
+    documentVersion: vexRecord?.version ?? null,
+    documentUrl: vexRecord?.sourceUrl || vexRecord?.['@id'] || null
+  };
 }
 
 export function classifyUbuntuOsvComponent(record, component) {
@@ -270,6 +296,77 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
     }
   }
 
+  // Canonical OpenVEX is a second, independent signal. Fetch one public
+  // document per CVE (bounded concurrency) and attach exact-product results
+  // without changing the OSV/NVD applicability classification.
+  const vexDocuments = new Map();
+  const vexErrors = [];
+  const eligibleVexIds = [...ubuntuOsv.entries()]
+    .filter(([, records]) => records.some(record => ubuntuComponents.some(component =>
+      String(component.sourcePackage || '').trim() === record.package &&
+      String(component.ecosystem || component.vendor || '').trim() === record.ecosystem &&
+      Boolean(String(component.architecture || '').trim()) &&
+      (record.affected || []).some(entry =>
+        entry.package?.name === record.package &&
+        entry.package?.ecosystem === record.ecosystem &&
+        Boolean(entry.package?.purl)
+      )
+    )))
+    .map(([cveId]) => cveId);
+  const vexQueue = eligibleVexIds.slice(0, 100);
+  for (const cveId of eligibleVexIds.slice(100)) {
+    vexErrors.push({ cveId, message: 'Se alcanzó el límite de 100 documentos OpenVEX por análisis; este CVE queda sin evidencia VEX.' });
+  }
+  const vexWorker = async () => {
+    while (vexQueue.length) {
+      const cveId = vexQueue.shift();
+      try {
+        vexDocuments.set(cveId, await fetchCanonicalUbuntuVex(cveId, { signal }));
+      } catch (error) {
+        if (error.name === 'AbortError') throw error;
+        vexErrors.push({ cveId, message: error.message });
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(4, vexQueue.length) }, () => vexWorker()));
+
+  for (const [cveId, records] of ubuntuOsv) {
+    const vexRecord = vexDocuments.get(cveId);
+    for (const record of records) {
+      const related = ubuntuComponents.filter(component =>
+        String(component.sourcePackage || '').trim() === record.package &&
+        String(component.ecosystem || component.vendor || '').trim() === record.ecosystem
+      );
+      for (const component of related) {
+        const current = allCandidates.get(cveId);
+        const item = current?.components.find(entry => entry.component.id === component.id);
+        if (!item) continue;
+        const hasSourcePurl = (record.affected || []).some(entry =>
+          entry.package?.name === record.package &&
+          entry.package?.ecosystem === record.ecosystem &&
+          Boolean(entry.package?.purl)
+        );
+        if (!component.architecture || !hasSourcePurl) {
+          item.ubuntuVex = {
+            status: 'needs_review',
+            source: 'Canonical OpenVEX',
+            reason: !component.architecture
+              ? 'La arquitectura del paquete binario no está disponible; no se puede comparar el producto exacto.'
+              : 'Ubuntu OSV no proporciona un PURL de paquete fuente para esta entrada; no se puede anclar la comparación OpenVEX.'
+          };
+        } else if (!vexRecord) {
+          item.ubuntuVex = {
+            status: 'unavailable',
+            source: 'Canonical OpenVEX',
+            reason: 'No se pudo recuperar el documento público de Canonical; la clasificación OSV/NVD se conserva sin cambios.'
+          };
+        } else {
+          item.ubuntuVex = classifyCanonicalUbuntuVexComponent(vexRecord, record, component);
+        }
+      }
+    }
+  }
+
   const ids = [...allCandidates.keys()];
   let epss = new Map();
   let kev = new Map();
@@ -299,9 +396,10 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
       nvd: errors.some(x => x.source === 'NVD') ? 'partial_or_unavailable' : (limits.length ? 'limited' : 'queried'),
       epss: errors.some(x => x.source === 'FIRST EPSS') ? 'unavailable' : 'queried',
       kev: errors.some(x => x.source === 'CISA KEV') ? 'unavailable' : 'queried',
-      ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured'
+      ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured',
+      ubuntuVex: ubuntuOsv.size ? (vexErrors.length ? (vexDocuments.size ? 'partial_or_unavailable' : 'unavailable') : (vexDocuments.size ? 'queried' : 'needs_review')) : 'not_configured'
     },
-    errors,
+    errors: [...errors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
     limits,
     analyzedAt: new Date().toISOString(),
     disclaimer: 'Candidate correlation only. Verify applicability against the exact vendor advisory, distribution package revision, edition, build and installed updates before treating a finding as confirmed.'
