@@ -552,6 +552,6 @@ La documentación de Canonical establece que:
 
 ### Próximo trabajo
 
-1. Verificar el resultado final y los logs de Azure run `41143961689`.
+1. Despliegue de `main` verificado para el commit `fccd1ce9`: Azure run `41143961689` completó con `Deployment Complete`.
 2. Evaluar una integración separada y acotada de OpenVEX para enriquecer el estado del tracker, con fixtures oficiales y sin debilitar la correlación OSV existente.
 3. Mantener las pruebas sobre versiones Debian, ecosistemas Ubuntu Pro y casos sin evento `fixed`; no modificar lógica de producción hasta definir una semántica de estados y evidencias verificable.
