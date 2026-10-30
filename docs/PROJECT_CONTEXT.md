@@ -401,3 +401,42 @@ La documentación de Canonical establece que:
 - Azure Static Web Apps de `main` tras PR #13: run `41123346868`, inicialmente en cola; comprobar conclusión antes de afirmar despliegue.
 - Riesgo pendiente: el clasificador usa la semántica de Ubuntu OSV documentada por Canonical; seguir añadiendo fixtures reales por release/paquete, en particular estados pendientes y entradas no listadas. No declarar cobertura completa del inventario Ubuntu.
 - Siguiente paso: confirmar CI y Azure del commit `f024f37d47d79dff8657eff3797e1eb6ffdba882`; después ampliar fixtures reales de Ubuntu OSV y revisar el resumen cuando un mismo CVE tenga varios componentes con estados distintos.
+
+
+---
+
+## Estado actualizado — 30 de octubre de 2026 (PR #15, #16 y #17)
+
+**Esta sección prevalece sobre las fotografías históricas anteriores.**
+
+### PR #15 — resumen conservador de aplicabilidad
+- Integrada mediante squash: https://github.com/carlosdans/quasaric/pull/15.
+- Commit de `main`: `0721a21eb7c117ec9f7eff1262d770c550316827`.
+- El estado agregado de un CVE conserva el estado común solo si todos los componentes tienen el mismo estado; ante resultados contradictorios, incompletos o ausentes, queda en `needs_review`.
+- CI de `main`: https://github.com/carlosdans/quasaric/actions/runs/41124575890 (success).
+- Azure Static Web Apps: https://github.com/carlosdans/quasaric/actions/runs/41124575980 (success).
+
+### PR #16 — aislamiento por paquete fuente Ubuntu
+- Integrada mediante squash: https://github.com/carlosdans/quasaric/pull/16.
+- Commit de integración: `f5f3dd0c009ee523a00219648e2ad83499c6c25c`.
+- `matchUbuntuOsvBinary` requiere ahora nombre binario, versión binaria completa, release Ubuntu y paquete fuente explícito. Filtra primero por coincidencia exacta de `affected[].package.name` y `affected[].package.ecosystem`, y solo después compara nombre/versión binarios.
+- Esto evita que un binario publicado bajo otro paquete fuente de la misma release valide la versión fuente de un componente distinto. La ausencia o discrepancia de evidencia sigue siendo `needs_review`.
+- Se actualizaron las pruebas que llamaban al matcher con la firma antigua y se aclararon los motivos de discrepancia.
+- CI final de PR #16 (tests de correlación y build): https://github.com/carlosdans/quasaric/actions/runs/41125710573 (success).
+- CI de `main` tras merge: https://github.com/carlosdans/quasaric/actions/runs/41125794811 (success).
+- Azure Static Web Apps tras merge: https://github.com/carlosdans/quasaric/actions/runs/41125794762 (success). El log confirma `Deployment Complete` y `https://orange-meadow-04bd1081e.4.azurestaticapps.net`.
+
+### PR #17 — regresión de integración source-package
+- Integrada mediante squash: https://github.com/carlosdans/quasaric/pull/17.
+- Commit de integración: `369cae516cdb66fa116e459ba6a02828b2759b95`.
+- Añade una prueba en `src/lib/correlation.ubuntu-osv.test.js` con un advisory que contiene dos paquetes fuente para la misma release. Comprueba que el binario `curl`, aunque figure en el advisory, no valida un componente cuyo `sourcePackage` declarado es `openssl`; el resultado permanece `needs_review` y no se adjunta evidencia binaria.
+- CI de PR #17 (tests y build): https://github.com/carlosdans/quasaric/actions/runs/41126005275 (success).
+- CI de `main` tras merge: https://github.com/carlosdans/quasaric/actions/runs/41126093289 (pendiente de comprobación).
+- Azure Static Web Apps de `main` tras merge: https://github.com/carlosdans/quasaric/actions/runs/41126093274 (pendiente de comprobación).
+
+### Estado y próximos pasos
+- `main` apunta a `369cae516cdb66fa116e459ba6a02828b2759b95`.
+- No hay PR abiertas después de integrar #17.
+- Próximo bloque: ampliar fixtures de correlación con advisories Ubuntu OSV que incluyan varios paquetes fuente, varias releases y diferentes estados de parche, usando registros oficiales como referencia. Mantener la distinción entre ausencia de evidencia, coincidencia binaria y clasificación de versión fuente; no inferir `unaffected` por ausencia de entrada ni declarar cobertura Ubuntu completa.
+- Tras completar CI/Azure de este commit, registrar sus conclusiones aquí. No alterar DNS, secretos ni recursos Azure.
+- Se mantiene inventario local, sin envío del inventario completo, sin backend y sin infraestructura o servicios de pago.
