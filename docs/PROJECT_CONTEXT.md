@@ -598,7 +598,7 @@ La documentación de Canonical establece que:
 - Añadido src/lib/inventoryCommands.test.js para comprobar que se recopilan los cinco campos y que el comando permanece local/read-only.
 - CI de PR #29: run 41145016257, success; 92 tests, 92 pass, 0 fail y build Vite correcto.
 - CI de main tras merge: run 41145107235, success; 92 tests, 92 pass, 0 fail y build Vite correcto.
-- Azure Static Web Apps de main para ca1f4c31: run 41145107186; comprobar conclusión y log Deployment Complete antes de afirmar despliegue.
+- Azure Static Web Apps de main para ca1f4c31: run 41145107186, success; el log confirma Deployment Complete y la URL https://orange-meadow-04bd1081e.4.azurestaticapps.net.
 - El campo architecture prepara la integración futura del matcher Canonical OpenVEX, que exige coincidencia exacta de arquitectura. Todavía no se consulta VEX ni se altera la clasificación OSV/NVD.
 - No se envía el inventario a Canonical ni a terceros; no se modificaron DNS, secretos o infraestructura.
 
