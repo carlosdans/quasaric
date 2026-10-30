@@ -2,7 +2,7 @@
 
 > Documento de continuidad para retomar el desarrollo en cualquier conversación. Actualizarlo al cerrar cada bloque de trabajo.
 >
-> **Última actualización:** 30 de octubre de 2026 (tras PR #2)  
+> **Última actualización:** 30 de octubre de 2026 (PR #3 integrada; branding Quasaric.com en preparación)  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama principal:** `main`
 
@@ -37,6 +37,7 @@ No está concebida como un escáner ni como una herramienta de pentesting. La ca
 - Hosting: Azure Static Web Apps, plan Free.
 - URL Azure conocida: https://green-cliff-074e49a0f.2.azurestaticapps.net
 - Dominio: https://quasaric.com
+- Marca visible: **Quasaric.com**; `public/favicon.svg` es el icono único compartido por favicon y cabecera de la aplicación.
 - Contacto: contacto@quasaric.com
 - Build de producción: `npm run build`; salida Vite: `dist`.
 - Desarrollo local: Node.js 20+ y npm; `npm install`, `npm run dev`, `npm run preview`.
@@ -168,3 +169,14 @@ Pega este mensaje:
 - Azure de PR #2 satisfactorio: https://github.com/carlosdans/quasaric/actions/runs/41057242969.
 - CI y Azure disparados para el merge de PR #2 estaban en cola en la última consulta: CI #? run `41057568828`; Azure run `41057569100`.
 - Próximo paso: comprobar ambos workflows de `main`, especialmente Azure, y continuar con fixtures CVE/CPE reales y mapeo Ubuntu binario → fuente.
+
+
+### 2026-10-30 — PR #3 y marca Quasaric.com
+
+- PR #3 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/3.
+- Merge commit: `08cf843b0166b850d68ecc890268902caffa722d`.
+- Añade siete pruebas de regresión para rangos CPE inclusivos/exclusivos, versión concreta, CPE no vulnerable, versión ausente y producto distinto.
+- CI de PR #3 satisfactorio: https://github.com/carlosdans/quasaric/actions/runs/41057961438.
+- Azure de PR #3 satisfactorio para el build de la rama de PR: https://github.com/carlosdans/quasaric/actions/runs/41057961544. Esto no acredita por sí solo el despliegue de `main`.
+- Siguiente PR: identidad visual Quasaric.com, con el mismo SVG como favicon y marca de cabecera; título y descripción SEO actualizados.
+- La prueba de rangos solo caracteriza la semántica CPE básica; no acredita comparadores correctos para versiones Ubuntu/Debian ni esquemas específicos de fabricantes.
