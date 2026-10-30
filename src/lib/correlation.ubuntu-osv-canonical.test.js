@@ -55,7 +55,7 @@ test('Canonical OpenSSL fixed boundary is evaluated separately for Ubuntu 22.04'
   });
   assert.equal(result.status, 'patched_candidate');
   assert.equal(result.ubuntuSourceEvidence.ecosystem, 'Ubuntu:22.04:LTS');
-  assert.equal(result.ubuntuBinaryEvidence[0].binaryVersion, '3.0.2-0ubuntu1.20');
+  assert.equal(result.ubuntuBinaryEvidence[0].fixedBinaryVersion, '3.0.2-0ubuntu1.20');
 });
 
 test('Canonical Ubuntu Pro entry with no fixed event remains affected when explicitly listed', () => {
