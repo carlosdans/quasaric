@@ -555,3 +555,35 @@ La documentación de Canonical establece que:
 1. Despliegue de `main` verificado para el commit `fccd1ce9`: Azure run `41143961689` completó con `Deployment Complete`.
 2. Evaluar una integración separada y acotada de OpenVEX para enriquecer el estado del tracker, con fixtures oficiales y sin debilitar la correlación OSV existente.
 3. Mantener las pruebas sobre versiones Debian, ecosistemas Ubuntu Pro y casos sin evento `fixed`; no modificar lógica de producción hasta definir una semántica de estados y evidencias verificable.
+
+---
+
+## Estado actualizado — 31 de octubre de 2026 (PR #26 y PR #27: OpenVEX)
+
+**Esta sección prevalece sobre las fotografías históricas anteriores.**
+
+### PR #26 — documentación de estados Ubuntu OSV
+- Integrada mediante squash: https://github.com/carlosdans/quasaric/pull/26.
+- Commit de main: 2210e07b1d15f22404528047f0f12c515f292776.
+- docs/PROJECT_CONTEXT.md registra PR #25, la cobertura de 83 tests y la limitación de Ubuntu OSV: needs-triage, needed, ignored, pending, deferred e in-progress se publican sin evento fixed; OSV no permite distinguirlos individualmente.
+- Se documenta Canonical OpenVEX como fuente complementaria para estados más expresivos. PR #26 CI: run 41144131357, success; 83 tests y build. CI de main: run 41144208720, success. Azure de main: run 41144208733, success.
+
+### PR #27 — matcher exacto de productos Canonical OpenVEX
+- Integrada mediante squash: https://github.com/carlosdans/quasaric/pull/27.
+- Commit de main: 995862f31f64b59f92192c3be67c85657522f48d.
+- Añade matchCanonicalUbuntuVexProduct en src/lib/vulnerabilitySources.js y pruebas en src/lib/vulnerabilitySources.ubuntu-vex.test.js.
+- El matcher requiere nombre de binario, versión completa, arquitectura y PURL del paquete fuente Ubuntu con arch=source; además comprueba que el nombre del paquete fuente coincide con el inventario. Compara el producto VEX por nombre, versión, arquitectura y distro exactos.
+- Conserva los estados OpenVEX affected, fixed, not_affected y under_investigation sin convertirlos a una conclusión CVE global. Falta de coincidencia, arquitectura ausente, PURL inválido o estados contradictorios produce needs_review.
+- Fixture basado en extractos oficiales de Canonical CVE-2025-9230: https://github.com/canonical/ubuntu-security-notices/blob/main/vex/cve/2025/CVE-2025-9230.json.
+- CI de PR #27: run 41144510693, success; 90 tests, 90 pass, 0 fail y build correcto.
+- CI de main tras merge: run 41144582967, success; 90 tests, 90 pass, 0 fail y build correcto.
+- Azure Static Web Apps de main para 995862f3: run 41144582958, success; el log confirma Deployment Complete y la URL https://orange-meadow-04bd1081e.4.azurestaticwebapps.net.
+
+### Limitaciones y siguiente integración
+- El matcher es una pieza de base y todavía no se invoca desde analyzeInventory; no hay descarga de VEX ni cambios de interfaz.
+- El inventario actual no recoge arquitectura. Por diseño, el matcher devuelve needs_review si no se proporciona, por lo que no se puede aplicar aún a inventarios existentes.
+- Antes de integrar VEX, añadir captura local opcional de arquitectura (por ejemplo, campo Architecture de dpkg), manteniendo la privacidad y sin transmitir el inventario. Asegurar también que el PURL fuente procede de la entrada OSV exacta de paquete/release.
+- Diseñar la agregación cuando haya varios productos/arquitecturas y estados distintos. Nunca convertir not_affected de un producto en unaffected para todo el CVE ni un estado de un release/arquitectura en otro.
+- Evaluar recuperación de VEX por CVE con control de errores y disponibilidad parcial. No bloquear el resultado OSV/NVD si VEX falla; mostrar la fuente/fecha de VEX y mantener el estado por producto.
+- No modificar la clasificación actual ni afirmar remediación confirmada hasta disponer de fixtures y reglas de agregación verificables.
+- No se modificaron DNS, secretos, inventario existente ni infraestructura. La integración PR #27 no transmite datos de inventario a Canonical.
