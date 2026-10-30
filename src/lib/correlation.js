@@ -1,6 +1,6 @@
 import { normalizeComponentType } from './componentTypes.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
-import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, extractCveSummary } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
 const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+_-]/g, ' ').trim();
 
@@ -149,7 +149,7 @@ export async function analyzeInventory(components, { signal, onProgress } = {}) 
   const errors = [];
   const ubuntuOsv = new Map();
   const ubuntuComponents = components.filter(component =>
-    /^Ubuntu:(?:Pro:)?\d{2}\.\d{2}(?::LTS)?$/.test(String(component.ecosystem || component.vendor || '').trim())
+    isSupportedUbuntuOsvEcosystem(component.ecosystem || component.vendor)
   );
   const ubuntuGroups = new Map();
   for (const component of ubuntuComponents) {
