@@ -136,3 +136,119 @@ test('an exact binary from Ubuntu 24.04 cannot cross-match the Ubuntu 22.04 entr
   assert.equal(result.status, 'needs_review');
   assert.deepEqual(result.ubuntuBinaryEvidence, []);
 });
+
+
+// Minimal excerpts from Canonical's published records:
+// https://github.com/canonical/ubuntu-security-notices/blob/main/osv/cve/2026/UBUNTU-CVE-2026-14164.json
+// https://github.com/canonical/ubuntu-security-notices/blob/main/osv/cve/2026/UBUNTU-CVE-2026-54371.json
+const libarchiveRecord = {
+  id: 'CVE-2026-14164', package: 'libarchive', ecosystem: 'Ubuntu:24.04:LTS',
+  affected: [
+    {
+      package: { name: 'libarchive', ecosystem: 'Ubuntu:Pro:20.04:LTS' },
+      versions: ['3.4.0-2ubuntu1.5', '3.4.0-2ubuntu1.5+esm1', '3.4.0-2ubuntu1.5+esm2'],
+      ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '3.4.0-2ubuntu1.5+esm3' }] }],
+      ecosystem_specific: { binaries: [
+        { binary_name: 'libarchive-tools', binary_version: '3.4.0-2ubuntu1.5+esm3' },
+        { binary_name: 'libarchive13', binary_version: '3.4.0-2ubuntu1.5+esm3' }
+      ] }
+    },
+    {
+      package: { name: 'libarchive', ecosystem: 'Ubuntu:24.04:LTS' },
+      versions: ['3.6.2-1ubuntu1', '3.7.2-1ubuntu1', '3.7.2-1ubuntu2', '3.7.2-1.1ubuntu2', '3.7.2-2', '3.7.2-2ubuntu0.1', '3.7.2-2ubuntu0.2', '3.7.2-2ubuntu0.3', '3.7.2-2ubuntu0.4', '3.7.2-2ubuntu0.5', '3.7.2-2ubuntu0.6', '3.7.2-2ubuntu0.7'],
+      ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '3.7.2-2ubuntu0.8' }] }],
+      ecosystem_specific: { binaries: [
+        { binary_name: 'libarchive-tools', binary_version: '3.7.2-2ubuntu0.8' },
+        { binary_name: 'libarchive13t64', binary_version: '3.7.2-2ubuntu0.8' }
+      ] }
+    },
+    {
+      package: { name: 'libarchive', ecosystem: 'Ubuntu:25.10' },
+      versions: ['3.7.7-0ubuntu2', '3.7.7-0ubuntu2.1', '3.7.7-0ubuntu2.2', '3.7.7-0ubuntu3', '3.7.7-0ubuntu3.1', '3.7.7-0ubuntu3.2'],
+      ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }] }],
+      ecosystem_specific: { binaries: [
+        { binary_name: 'libarchive-tools', binary_version: '3.7.7-0ubuntu3.2' },
+        { binary_name: 'libarchive13t64', binary_version: '3.7.7-0ubuntu3.2' }
+      ] }
+    }
+  ]
+};
+
+const attrRecord = {
+  id: 'CVE-2026-54371', package: 'attr', ecosystem: 'Ubuntu:24.04:LTS',
+  affected: [
+    {
+      package: { name: 'attr', ecosystem: 'Ubuntu:Pro:14.04:LTS' },
+      versions: ['1:2.4.47-1', '1:2.4.47-1ubuntu1'],
+      ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '1:2.4.47-1ubuntu1+esm1' }] }],
+      ecosystem_specific: { binaries: [
+        { binary_name: 'attr', binary_version: '1:2.4.47-1ubuntu1+esm1' },
+        { binary_name: 'libattr1', binary_version: '1:2.4.47-1ubuntu1+esm1' }
+      ] }
+    },
+    {
+      package: { name: 'attr', ecosystem: 'Ubuntu:24.04:LTS' },
+      versions: ['1:2.5.1-4', '1:2.5.1-5', '1:2.5.2-1', '1:2.5.2-1build1', '1:2.5.2-1build1.1'],
+      ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '1:2.5.2-1ubuntu0.1' }] }],
+      ecosystem_specific: { binaries: [
+        { binary_name: 'attr', binary_version: '1:2.5.2-1ubuntu0.1' },
+        { binary_name: 'libattr1', binary_version: '1:2.5.2-1ubuntu0.1' }
+      ] }
+    }
+  ]
+};
+
+test('Canonical multi-binary source entry maps each listed libarchive binary independently', () => {
+  for (const binary of ['libarchive-tools', 'libarchive13t64']) {
+    const result = classifyUbuntuOsvComponent(libarchiveRecord, {
+      id: `libarchive-${binary}`, name: binary, version: '3.7.2-2ubuntu0.7',
+      sourcePackage: 'libarchive', sourceVersion: '3.7.2-2ubuntu0.7',
+      ecosystem: 'Ubuntu:24.04:LTS'
+    });
+    assert.equal(result.status, 'affected', binary);
+    assert.equal(result.ubuntuBinaryEvidence.length, 1, binary);
+    assert.equal(result.ubuntuBinaryEvidence[0].binaryName, binary);
+  }
+});
+
+test('Canonical Ubuntu Pro ESM source and binary fixed versions preserve +esm suffix ordering', () => {
+  const affected = classifyUbuntuOsvComponent(libarchiveRecord, {
+    id: 'libarchive-esm-old', name: 'libarchive13', version: '3.4.0-2ubuntu1.5+esm2',
+    sourcePackage: 'libarchive', sourceVersion: '3.4.0-2ubuntu1.5+esm2',
+    ecosystem: 'Ubuntu:Pro:20.04:LTS'
+  });
+  const fixed = classifyUbuntuOsvComponent(libarchiveRecord, {
+    id: 'libarchive-esm-fixed', name: 'libarchive13', version: '3.4.0-2ubuntu1.5+esm3',
+    sourcePackage: 'libarchive', sourceVersion: '3.4.0-2ubuntu1.5+esm3',
+    ecosystem: 'Ubuntu:Pro:20.04:LTS'
+  });
+  assert.equal(affected.status, 'affected');
+  assert.equal(fixed.status, 'patched_candidate');
+  assert.equal(fixed.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '3.4.0-2ubuntu1.5+esm3');
+});
+
+test('Canonical epoch-bearing Debian versions classify vulnerable and fixed builds correctly', () => {
+  const affected = classifyUbuntuOsvComponent(attrRecord, {
+    id: 'attr-epoch-old', name: 'libattr1', version: '1:2.5.2-1build1.1',
+    sourcePackage: 'attr', sourceVersion: '1:2.5.2-1build1.1',
+    ecosystem: 'Ubuntu:24.04:LTS'
+  });
+  const fixed = classifyUbuntuOsvComponent(attrRecord, {
+    id: 'attr-epoch-fixed', name: 'libattr1', version: '1:2.5.2-1ubuntu0.1',
+    sourcePackage: 'attr', sourceVersion: '1:2.5.2-1ubuntu0.1',
+    ecosystem: 'Ubuntu:24.04:LTS'
+  });
+  assert.equal(affected.status, 'affected');
+  assert.equal(fixed.status, 'patched_candidate');
+  assert.equal(fixed.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '1:2.5.2-1ubuntu0.1');
+});
+
+test('Canonical Ubuntu OSV entry without a fixed event does not imply unaffected for an unlisted version', () => {
+  const result = classifyUbuntuOsvComponent(libarchiveRecord, {
+    id: 'libarchive-no-fixed-evidence', name: 'libarchive-tools', version: '3.7.7-0ubuntu3.3',
+    sourcePackage: 'libarchive', sourceVersion: '3.7.7-0ubuntu3.3',
+    ecosystem: 'Ubuntu:25.10'
+  });
+  assert.equal(result.status, 'needs_review');
+  assert.match(result.reason, /not proven affected or fixed|no usable source-version evidence/i);
+});
