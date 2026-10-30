@@ -77,8 +77,15 @@ export function classifyCpeApplicability(cpeItems, component) {
   return { status: 'needs_review', confidence: 'low', reason: 'A product CPE exists, but the supplied version was not proven to fall in its affected range.' };
 }
 
+function collectCpeMatches(nodes = []) {
+  return nodes.flatMap(node => [
+    ...(node.cpeMatch || []),
+    ...collectCpeMatches(node.children || [])
+  ]);
+}
+
 function applicability(cve, component) {
-  const cpes = (cve.configurations || []).flatMap(config => (config.nodes || []).flatMap(node => [...(node.cpeMatch || []), ...(node.children || []).flatMap(child => child.cpeMatch || [])]));
+  const cpes = (cve.configurations || []).flatMap(config => collectCpeMatches(config.nodes || []));
   return classifyCpeApplicability(cpes, component);
 }
 
