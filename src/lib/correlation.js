@@ -36,18 +36,30 @@ function compareVersions(a, b) {
 
 function cpeMatchesComponent(criteria, component) {
   const cpe = cpeProduct(criteria);
-  const name = normalize(component.name).replaceAll('_', ' ');
-  const aliases = {
-    apache: ['apache', 'http server'],
-    'apache http server': ['apache', 'http server'],
-    nginx: ['nginx'],
-    'node.js': ['node', 'node.js'],
-    node: ['node', 'node.js'],
-    wordpress: ['wordpress'], joomla: ['joomla'], drupal: ['drupal'],
-    php: ['php'], mysql: ['mysql'], mariadb: ['mariadb'], ubuntu: ['ubuntu']
+  const vendor = normalize(cpe.vendor);
+  const product = normalize(cpe.product);
+  const name = normalize(component.name);
+  // Match the vendor/product pair, not a loose product-name fragment.
+  // This avoids confusing Apache HTTP Server with Tomcat or other Apache projects.
+  const productPairs = {
+    nginx: [['nginx', 'nginx']],
+    apache: [['apache', 'http server']],
+    'apache http server': [['apache', 'http server']],
+    php: [['php', 'php']],
+    wordpress: [['wordpress', 'wordpress']],
+    joomla: [['joomla', 'joomla']],
+    drupal: [['drupal', 'drupal']],
+    mysql: [['oracle', 'mysql'], ['mysql', 'mysql']],
+    mariadb: [['mariadb', 'mariadb']],
+    ubuntu: [['canonical', 'ubuntu linux'], ['canonical', 'ubuntu']],
+    'windows server': [['microsoft', 'windows server']],
+    node: [['nodejs', 'node.js'], ['node.js', 'node.js']],
+    'node.js': [['nodejs', 'node.js'], ['node.js', 'node.js']]
   };
-  const accepted = aliases[name] || [name];
-  return accepted.some(alias => cpe.product === alias) || (name.startsWith('apache') && cpe.vendor === 'apache' && cpe.product === 'http server');
+  const accepted = productPairs[name] || [[name, name]];
+  return accepted.some(([expectedVendor, expectedProduct]) =>
+    vendor === expectedVendor && product === expectedProduct
+  );
 }
 
 function matchesProductText(cve, component) {
@@ -66,7 +78,7 @@ export function classifyCpeApplicability(cpeItems, component) {
   const affected = relevant.some(item => {
     if (item.vulnerable === false) return false;
     const cpe = cpeProduct(item.criteria);
-    if (cpe.version !== '*' && cpe.version !== '-' && cpe.version !== version) return false;
+    if (cpe.version !== '*' && cpe.version !== version) return false;
     if (item.versionStartIncluding && compareVersions(version, item.versionStartIncluding) < 0) return false;
     if (item.versionStartExcluding && compareVersions(version, item.versionStartExcluding) <= 0) return false;
     if (item.versionEndIncluding && compareVersions(version, item.versionEndIncluding) > 0) return false;
