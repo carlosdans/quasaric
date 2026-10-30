@@ -45,6 +45,18 @@ npm run preview
 
 El archivo `staticwebapp.config.json` define fallback SPA y cabeceras iniciales. La CSP y las cabeceras deben verificarse en el despliegue real.
 
+## Fuentes específicas de Ubuntu
+
+Para Ubuntu no se debe interpretar el número de versión upstream como prueba suficiente: Canonical puede publicar correcciones retroportadas manteniendo una versión upstream aparentemente antigua. La verificación de paquetes requiere cruzar el nombre del paquete, la versión completa de Ubuntu (incluida la revisión), la release/codename y el estado del CVE en esa release.
+
+Fuentes oficiales para la siguiente fase de integración:
+- [Ubuntu Security Tracker y estados por release/paquete](https://ubuntu.com/security/cves/about)
+- [Ubuntu Security Notices (USN)](https://ubuntu.com/security/notices)
+- [Ubuntu OVAL](https://documentation.ubuntu.com/security/security-updates/oval/)
+- [Ubuntu OSV](https://documentation.ubuntu.com/security/security-updates/osv/)
+
+La Ubuntu Security API está documentada por Canonical como un trabajo en curso y no recomendada para producción/automatizaciones. Por eso Quasaric no debe tratar una respuesta experimental de esa API como veredicto definitivo. La integración fiable debe priorizar feeds OVAL/OSV versionados y el estado oficial del paquete para la release concreta. Véase también la [documentación de estados CVE de Ubuntu](https://ubuntu.com/security/cves/about).
+
 ## Fuentes conectadas en el prototipo
 
 - [NVD](https://nvd.nist.gov/developers/vulnerabilities): búsqueda de CVE y datos CPE.
