@@ -189,3 +189,28 @@ Pega este mensaje:
 - Workflow actualizado en la rama de la PR #4: los despliegues `upload` se ejecutan solo en push a `main`; el evento `pull_request: closed` se conserva para solicitar la limpieza del entorno de esa PR. Las PR mantienen su CI independiente y no consumen plazas de staging nuevas.
 - Se retiró el parámetro `github_id_token` y la preparación OIDC que la acción `Azure/static-web-apps-deploy@v1` advertía como input no reconocido. La autenticación de despliegue sigue usando el secreto Azure existente.
 - Antes de fusionar, validar CI y comprobar que el workflow modificado se comporta como se espera. Tras el merge, confirmar el workflow de push a `main` para acreditar el despliegue de producción.
+
+
+### PR #4 integrada — marca y despliegue económico
+
+- PR #4 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/4.
+- Commit de `main`: `f4e70f7b2454a517fc5070e6343670638ccc2ec5`.
+- Cabecera y favicon usan el mismo `public/favicon.svg`; nombre visible Quasaric.com; metadatos SEO actualizados.
+- Workflow Azure modificado para desplegar `upload` únicamente en push a `main`. Se mantienen los tests CI en PR y el evento de cierre para limpiar el staging correspondiente.
+- El log de la PR #4 mostró build Vite correcto, seguido de rechazo por límite de entornos de staging. No fue un fallo de compilación.
+- CI de `main` para el commit integrado correcto: https://github.com/carlosdans/quasaric/actions/runs/41060073434.
+- Azure de `main` para el mismo commit estaba en ejecución al actualizar este registro: https://github.com/carlosdans/quasaric/actions/runs/41060073320. No afirmar publicación hasta comprobar conclusión satisfactoria.
+
+### Regla de coste permanente
+
+- Requisito explícito del producto: mantener Quasaric como Static Web App estática y operar con coste de infraestructura de 0 €.
+- Mantener Azure Static Web Apps Free; sin backend, bases de datos, funciones serverless de pago, agentes, monitorización, escaneo remoto, servicios premium ni APIs con tarifa.
+- Preferir APIs públicas gratuitas y consultas bajo demanda; controlar frecuencia, límites y errores para no generar costes ni exponer inventarios completos.
+- Evitar despliegues de staging por PR; el despliegue de publicación se hace desde `main`.
+- No prometer coste total de propiedad absolutamente cero si existen conceptos externos ajenos al hosting (por ejemplo, renovación del dominio, impuestos o cambios futuros de tarifas/condiciones del proveedor). No activar ningún recurso que pueda facturar sin autorización explícita.
+
+### Siguiente bloque técnico
+
+- Revisar Ubuntu OSV usando la documentación oficial: Ubuntu OSV identifica paquetes fuente en `affected[].package.name` y publica paquetes binarios y versiones en `affected[].ecosystem_specific.binaries`. No inferir la relación binario→fuente sin datos explícitos.
+- Añadir pruebas con fixtures reales anonimizados/sintéticos basados en el esquema oficial para comprobar nombre de binario, versión binaria completa, release Ubuntu y estado de parche. Hasta entonces, mantener candidatos como `needs_review`.
+- Referencia oficial: https://documentation.ubuntu.com/security/security-updates/osv/.
