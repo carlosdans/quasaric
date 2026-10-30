@@ -608,3 +608,29 @@ La documentación de Canonical establece que:
 2. Diseñar recuperación VEX por CVE y adjuntar el estado por componente solo cuando coincidan PURL fuente, paquete binario, versión completa, arquitectura y distro exactos.
 3. Mantener separadas las evidencias OSV y OpenVEX; resolver explícitamente discrepancias y no elevar not_affected de un producto a un estado global del CVE.
 4. Si VEX no existe, falla o no contiene el PURL exacto, conservar la clasificación OSV existente y señalar la ausencia de evidencia VEX sin inferir un estado negativo.
+
+
+---
+
+## Estado actualizado — 31 de octubre de 2026 (PR #31: integración Canonical OpenVEX)
+
+- PR #31 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/31.
+- Commit de main: `0e86dfd8d37e6f8150740b830bf31ca6bc4bf6fc`.
+- La correlación de inventario consulta el documento público OpenVEX de Canonical por CVE desde `ubuntu-security-notices/vex/cve/<year>/<CVE-ID>.json`. La petición solo contiene el identificador CVE; no se envían nombre de paquete, versión, arquitectura ni inventario.
+- La consulta OpenVEX se limita a CVEs procedentes de las entradas Ubuntu OSV relacionadas con componentes locales que tienen arquitectura y PURL de paquete fuente. Concurrencia máxima: 4; límite de 100 documentos por análisis.
+- El PURL fuente OSV debe corresponder al paquete fuente y ecosistema exactos; el producto OpenVEX se compara por nombre de binario, versión Debian completa, arquitectura y distro exactos.
+- Los estados OpenVEX `affected`, `fixed`, `not_affected` y `under_investigation` se adjuntan como evidencia independiente por componente, con timestamp, versión de documento y URL de origen. No modifican `applicability`, `ubuntuOsv` ni el estado agregado del CVE.
+- Si faltan arquitectura/PURL, no existe coincidencia exacta o falla la descarga, OpenVEX queda en `needs_review` o `unavailable`; se conserva la clasificación OSV/NVD y se informa del error. Un `not_affected` de un producto no se convierte en una conclusión global.
+- La interfaz de resultados muestra OpenVEX por separado de la aplicabilidad OSV/NVD.
+- Tests añadidos para estados exactos, arquitectura/PURL ausentes, discrepancia de distro, origen del fetch, CVE inválido y respuesta malformada.
+- CI de PR #31: run `41145916798`, success; CI de main: run `41145990646`, success; **100 tests, 100 pass, 0 fail** y build Vite correcto (`✓ built in 2.37s`).
+- Azure Static Web Apps para main: run `41145990560`, success; el log confirma `Deployment Complete` y publica https://orange-meadow-04bd1081e.4.azurestaticapps.net.
+- No se modificaron DNS, secretos ni recursos de infraestructura; no se envió inventario a Canonical ni a terceros.
+
+### Próximos pasos
+
+1. Añadir pruebas de integración de `analyzeInventory` con fetches simulados para comprobar que los resultados OpenVEX se adjuntan al componente correcto cuando NVD y Ubuntu OSV devuelven el mismo CVE.
+2. Mejorar la presentación del motivo y enlace del documento VEX por componente, conservando el estado independiente y el timestamp.
+3. Revisar el límite de 100 documentos y la estrategia de caché durante un análisis con inventarios de mayor cobertura; no persistir el inventario en servicios remotos.
+4. Mantener `patched_candidate` como candidato sujeto a verificación; nunca afirmar remediación confirmada solo por un estado VEX `fixed`.
+
