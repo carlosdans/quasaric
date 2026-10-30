@@ -587,3 +587,24 @@ La documentación de Canonical establece que:
 - Evaluar recuperación de VEX por CVE con control de errores y disponibilidad parcial. No bloquear el resultado OSV/NVD si VEX falla; mostrar la fuente/fecha de VEX y mantener el estado por producto.
 - No modificar la clasificación actual ni afirmar remediación confirmada hasta disponer de fixtures y reglas de agregación verificables.
 - No se modificaron DNS, secretos, inventario existente ni infraestructura. La integración PR #27 no transmite datos de inventario a Canonical.
+---
+
+## Estado actualizado — 31 de octubre de 2026 (PR #29: arquitectura en inventario Ubuntu)
+
+- PR #29 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/29.
+- Commit de main: ca1f4c314f69b63e038aeeb9193075babad78003.
+- El formulario de inventario local añade arquitectura Ubuntu opcional y la muestra en la lista de componentes. El CSV de inventario incluye la nueva columna architecture; los inventarios antiguos siguen siendo compatibles porque el campo es opcional.
+- El comando local read-only dpkg-query ahora recopila binary:Package, Version, Architecture, source:Package y source:Version. No requiere sudo ni realiza conexiones de red.
+- Añadido src/lib/inventoryCommands.test.js para comprobar que se recopilan los cinco campos y que el comando permanece local/read-only.
+- CI de PR #29: run 41145016257, success; 92 tests, 92 pass, 0 fail y build Vite correcto.
+- CI de main tras merge: run 41145107235, success; 92 tests, 92 pass, 0 fail y build Vite correcto.
+- Azure Static Web Apps de main para ca1f4c31: run 41145107186; comprobar conclusión y log Deployment Complete antes de afirmar despliegue.
+- El campo architecture prepara la integración futura del matcher Canonical OpenVEX, que exige coincidencia exacta de arquitectura. Todavía no se consulta VEX ni se altera la clasificación OSV/NVD.
+- No se envía el inventario a Canonical ni a terceros; no se modificaron DNS, secretos o infraestructura.
+
+### Próximo trabajo
+
+1. Confirmar el despliegue Azure del commit ca1f4c31.
+2. Diseñar recuperación VEX por CVE y adjuntar el estado por componente solo cuando coincidan PURL fuente, paquete binario, versión completa, arquitectura y distro exactos.
+3. Mantener separadas las evidencias OSV y OpenVEX; resolver explícitamente discrepancias y no elevar not_affected de un producto a un estado global del CVE.
+4. Si VEX no existe, falla o no contiene el PURL exacto, conservar la clasificación OSV existente y señalar la ausencia de evidencia VEX sin inferir un estado negativo.
