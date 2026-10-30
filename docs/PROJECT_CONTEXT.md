@@ -485,5 +485,5 @@ La documentación de Canonical establece que:
 ### Hallazgo adicional — identificadores de ecosistema Ubuntu Pro
 - La documentación oficial de Canonical enumera ecosistemas Ubuntu Pro adicionales: `Ubuntu:Pro:FIPS:YY.MM:LTS`, `Ubuntu:Pro:FIPS-updates:YY.MM:LTS`, `Ubuntu:Pro:FIPS-preview:YY.MM:LTS` y `Ubuntu:Pro:YY.MM:LTS:Realtime:Kernel`.
 - El filtro de inventario y la validación de consulta OSV anteriores solo aceptaban Ubuntu base y `Ubuntu:Pro:YY.MM[:LTS]`; por tanto, los identificadores Pro anteriores quedaban fuera del flujo aunque Canonical documenta datos para ellos.
-- Próximo cambio acotado: aceptar únicamente las formas documentadas, con pruebas positivas/negativas. Esto amplía el reconocimiento del ecosistema, no acredita cobertura completa de advisories ni aplicabilidad de paquetes FIPS/Realtime.
+- PR #21 (abierta): implementa la aceptación de esas formas documentadas mediante un validador compartido por el filtro de inventario y la consulta OSV, con pruebas positivas/negativas. El CI de la PR debe terminar correctamente antes de integrar. Esto amplía el reconocimiento del ecosistema, no acredita cobertura completa de advisories ni aplicabilidad de paquetes FIPS/Realtime.
 
