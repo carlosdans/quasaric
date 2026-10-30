@@ -2,7 +2,7 @@
 
 > Documento de continuidad para retomar el desarrollo en cualquier conversación. Actualizarlo al cerrar cada bloque de trabajo.
 >
-> **Última actualización:** 30 de octubre de 2026 (PR #9 integrada; análisis semántico Ubuntu OSV)  
+> **Última actualización:** 30 de octubre de 2026 (PR #13 integrada; clasificación Ubuntu OSV por versión fuente)  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama principal:** `main`
 
@@ -35,7 +35,7 @@ No está concebida como un escáner ni como una herramienta de pentesting. La ca
 
 - Aplicación estática React + Vite, bilingüe español/inglés.
 - Hosting: Azure Static Web Apps, plan Free.
-- URL Azure conocida: https://green-cliff-074e49a0f.2.azurestaticapps.net
+- URL Azure conocida: https://orange-meadow-04bd1081e.4.azurestaticapps.net
 - Dominio: https://quasaric.com
 - Marca visible: **Quasaric.com**; `public/favicon.svg` es el icono único compartido por favicon y cabecera de la aplicación.
 - Contacto: contacto@quasaric.com
@@ -383,3 +383,21 @@ La documentación de Canonical establece que:
 5. Evaluar OVAL/USN como verificación complementaria; no introducir un escáner remoto ni infraestructura facturable.
 
 **Sin cambios de código de producción en este bloque.** No se modificaron recursos Azure, DNS, secretos ni infraestructura. Se mantiene Azure Static Web Apps Free y el objetivo de 0 € de infraestructura/servicios bajo nuestro control.
+
+
+### 2026-10-30 — PR #12 y PR #13: clasificación Ubuntu OSV
+
+- PR #12 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/12.
+- Commit de merge PR #12: `930564215ecc6f2ec2bbc403ee3735a4e8241aa8`.
+- Añade `classifyUbuntuOsvSourceVersion`: usa exclusivamente la versión del paquete fuente para evaluar `affected[].versions` y rangos `ECOSYSTEM`; una versión en o por encima de `fixed` queda como `patched_candidate`, nunca como parche confirmado.
+- CI del commit final de PR #12 satisfactoria: https://github.com/carlosdans/quasaric/actions/runs/41121343055.
+- PR #13 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/13.
+- Commit de merge PR #13 / main: `f024f37d47d79dff8657eff3797e1eb6ffdba882`.
+- Integra el clasificador en `src/lib/correlation.js`; requiere paquete fuente y release exactos, `sourceVersion` y coincidencia exacta del paquete binario/version en Ubuntu OSV. Falta de evidencia o discrepancia permanece en `needs_review`.
+- La interfaz muestra estados diferenciados: afectado según Ubuntu OSV, candidato a parche (verificar), no afectado según entrada explícita y requiere revisión.
+- Pruebas de integración nuevas en `src/lib/correlation.ubuntu-osv.test.js`: afectado, sourceVersion ausente, límite fixed, binario no coincidente, paquete/release distintos y estado explícito not-affected.
+- CI de PR #13 satisfactoria: https://github.com/carlosdans/quasaric/actions/runs/41122820333.
+- CI de `main` tras PR #13: run `41123347036`, inicialmente en cola; comprobar conclusión antes de dar el bloque por validado.
+- Azure Static Web Apps de `main` tras PR #13: run `41123346868`, inicialmente en cola; comprobar conclusión antes de afirmar despliegue.
+- Riesgo pendiente: el clasificador usa la semántica de Ubuntu OSV documentada por Canonical; seguir añadiendo fixtures reales por release/paquete, en particular estados pendientes y entradas no listadas. No declarar cobertura completa del inventario Ubuntu.
+- Siguiente paso: confirmar CI y Azure del commit `f024f37d47d79dff8657eff3797e1eb6ffdba882`; después ampliar fixtures reales de Ubuntu OSV y revisar el resumen cuando un mismo CVE tenga varios componentes con estados distintos.
