@@ -470,3 +470,20 @@ La documentación de Canonical establece que:
 3. Mantener `needs_review` ante cualquier ambigüedad; no convertir ausencia de binary mapping en `unaffected`.
 4. Mantener seguimiento del despliegue Azure en cada integración; para el commit `5d39a861da7f1d78be5a7425ed1610a22a7cc974` quedó confirmado `Deployment Complete`.
 5. No alterar DNS, secretos ni recursos Azure. Mantener inventario local y no enviar el inventario completo a terceros.
+
+
+---
+
+## Estado actualizado — 30 de octubre de 2026 (PR #20 integrada y cobertura de ecosistemas Ubuntu Pro)
+
+### PR #20 — documentación Canonical OSV
+- Integrada mediante squash: https://github.com/carlosdans/quasaric/pull/20.
+- Commit de integración: `00eff8fece92560ff087e003dea2c0768c25f97d`.
+- El CI de la PR para `775eadb45af35b808195d9cb846ea148e7be72a8` terminó `success`: https://github.com/carlosdans/quasaric/actions/runs/41127289460.
+- CI y Azure de `main` para el commit integrado se dispararon y estaban en ejecución al comenzar el siguiente bloque: CI run `41127556574`, Azure run `41127556572`. Verificar sus conclusiones antes de afirmar despliegue.
+
+### Hallazgo adicional — identificadores de ecosistema Ubuntu Pro
+- La documentación oficial de Canonical enumera ecosistemas Ubuntu Pro adicionales: `Ubuntu:Pro:FIPS:YY.MM:LTS`, `Ubuntu:Pro:FIPS-updates:YY.MM:LTS`, `Ubuntu:Pro:FIPS-preview:YY.MM:LTS` y `Ubuntu:Pro:YY.MM:LTS:Realtime:Kernel`.
+- El filtro de inventario y la validación de consulta OSV anteriores solo aceptaban Ubuntu base y `Ubuntu:Pro:YY.MM[:LTS]`; por tanto, los identificadores Pro anteriores quedaban fuera del flujo aunque Canonical documenta datos para ellos.
+- Próximo cambio acotado: aceptar únicamente las formas documentadas, con pruebas positivas/negativas. Esto amplía el reconocimiento del ecosistema, no acredita cobertura completa de advisories ni aplicabilidad de paquetes FIPS/Realtime.
+
