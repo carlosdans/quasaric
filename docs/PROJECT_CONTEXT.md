@@ -2,7 +2,7 @@
 
 > Documento de continuidad para retomar el desarrollo en cualquier conversación. Actualizarlo al cerrar cada bloque de trabajo.
 >
-> **Última actualización:** 30 de octubre de 2026 (PR #3 integrada; branding Quasaric.com en preparación)  
+> **Última actualización:** 30 de octubre de 2026 (PR #9 integrada; análisis semántico Ubuntu OSV)  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama principal:** `main`
 
@@ -334,3 +334,52 @@ Pega este mensaje:
 2. Investigar con datos/documentación oficial cómo representar estados Ubuntu `affected`, `fixed` y `unaffected` sin comparar versiones binarias con rangos de fuente; añadir pruebas antes de cambiar el estado visible.
 3. Mejorar la entrada Ubuntu para importar de forma local (sin transmitir el inventario) los campos binario, versión completa, paquete fuente y release extraídos con `dpkg-query`. Mantener la revisión manual si faltan campos.
 4. Mantener el límite de 10 componentes, la consulta bajo demanda y la infraestructura Azure Free; no añadir backend ni servicios de pago.
+
+
+---
+
+## Estado actualizado — 30 de octubre de 2026 (verificación y análisis del esquema Ubuntu OSV)
+
+**Estado real verificado antes de este bloque**
+
+- `main` apunta a `ac0470048609049ee9aab773c3bbf07379a4dd5d`.
+- PR #9 está integrada; la consulta de PR recientes no muestra PR abierta.
+- CI de `main` para `ac047004…`: satisfactorio, run https://github.com/carlosdans/quasaric/actions/runs/41094711668.
+- Azure Static Web Apps para el mismo commit: satisfactorio, run https://github.com/carlosdans/quasaric/actions/runs/41094711529.
+- URL de despliegue confirmada previamente: https://orange-meadow-04bd1081e.4.azurestaticapps.net. El éxito del workflow acredita el despliegue a esa Static Web App, no verifica por sí solo DNS/HTTPS de `quasaric.com`.
+
+### Hallazgo importante en la semántica oficial de Ubuntu OSV
+
+Fuentes oficiales revisadas:
+- Ubuntu OSV: https://documentation.ubuntu.com/security/security-updates/osv/
+- Ubuntu OVAL: https://documentation.ubuntu.com/security/security-updates/oval/
+- Ubuntu Security Notices: https://ubuntu.com/security/notices
+
+La documentación de Canonical establece que:
+
+1. `affected[].package.name` es el **paquete fuente**, y `package.ecosystem` identifica la release Ubuntu (incluidas variantes Pro/ESM).
+2. `affected[].versions` enumera versiones **fuente** afectadas.
+3. `affected[].ranges[].events[].fixed` expresa la versión **fuente** que contiene el arreglo. Para Ubuntu, Canonical indica que el evento `introduced` es normalmente `0`; el equipo no registra el inicio de vulnerabilidad de la misma forma que otros ecosistemas.
+4. `affected[].ecosystem_specific.binaries[]` enumera nombres y versiones de paquetes **binarios** asociados a la versión de paquete fuente parcheada. No es una lista de versiones binarias vulnerables.
+5. En el ejemplo oficial `UBUNTU-CVE-2025-6491`, para Ubuntu 22.04 el evento `fixed` es `8.1.2-1ubuntu2.22` y los binarios publicados tienen esa misma versión; las versiones fuente anteriores figuran en `versions`. Esto demuestra que la coincidencia binaria exacta que hoy usa `matchUbuntuOsvBinary` puede identificar la versión corregida, no una versión afectada.
+
+### Consecuencia para la implementación actual
+
+- El matcher actual que trata la igualdad exacta con `binaries[].binary_version` como `matched` no debe usarse para afirmar afectación. La evidencia de binario puede ser evidencia de la versión corregida.
+- No comparar `binaryVersion` con `ranges[].fixed` ni con `versions[]`: esos valores representan versiones fuente.
+- Para determinar el estado de una instalación con rigor se necesita, como mínimo, binario + versión binaria + paquete fuente + versión fuente + release Ubuntu. El comando `dpkg-query` ya documentado proporciona `source:Version`; la UI/modelo actual aún no lo recoge.
+- Un diseño futuro debe correlacionar primero paquete fuente/release y evaluar `sourceVersion` contra las versiones fuente OSV con semántica Debian (`dpkg`), no con el comparador genérico actual. También debe contrastar el binario y su versión contra `ecosystem_specific.binaries` para validar que pertenece a la compilación indicada.
+- Si existe evento `fixed` y la versión fuente instalada es igual o posterior según orden Debian, puede considerarse corregida para ese advisory solo si la entrada fuente/release corresponde exactamente y el dato oficial es completo. Si es anterior y consta en `versions[]` (o está dentro de un rango interpretado correctamente), puede clasificarse como afectada/candidata. Cualquier hueco, contradicción o falta de versión fuente debe quedar en `needs_review`.
+- Una combinación fuente/release ausente de `affected` no demuestra automáticamente `unaffected`: puede significar que Canonical no publica esa entrada, que el paquete no existe en esa release o que el feed no cubre el caso. No generar un estado negativo por ausencia.
+- Ubuntu Security Tracker mapea `released` a OSV con `fixed`; `needed`, `pending`, `deferred`, `ignored` y `needs-triage` permanecen sin `fixed`. No son equivalentes entre sí y no deben resumirse todos como “afectado confirmado”.
+- Ubuntu OVAL y USN OVAL son alternativas oficiales para validar aplicabilidad y parches; Canonical describe OVAL como datos machine-readable para CVEs y fixes, y USN como anuncio de una actualización ya publicada.
+
+### Próximo trabajo (no implementado todavía)
+
+1. Añadir fixtures basados en el ejemplo oficial OSV para probar: versión fuente listada como vulnerable; versión fuente igual a `fixed`; versión fuente posterior; binario exacto de la versión corregida; binario/versión no coincidentes; releases aisladas; ausencia de versión fuente.
+2. Incorporar un comparador Debian fiable y cubierto por pruebas antes de usar `sourceVersion` para ordenar versiones. No reutilizar `compareVersions` de `correlation.js`.
+3. Cambiar el modelo local/UI para recoger y conservar `sourceVersion` junto a `sourcePackage`, release, binario y versión binaria. El inventario seguirá en el navegador; no se transmitirá el inventario completo.
+4. Revisar la lógica de producción del matcher y la correlación OSV: hasta corregirla y probarla, mantener resultados Ubuntu en revisión manual y no presentar la coincidencia binaria exacta como evidencia de afectación.
+5. Evaluar OVAL/USN como verificación complementaria; no introducir un escáner remoto ni infraestructura facturable.
+
+**Sin cambios de código de producción en este bloque.** No se modificaron recursos Azure, DNS, secretos ni infraestructura. Se mantiene Azure Static Web Apps Free y el objetivo de 0 € de infraestructura/servicios bajo nuestro control.
