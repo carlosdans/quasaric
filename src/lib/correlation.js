@@ -44,16 +44,19 @@ export function classifyUbuntuOsvComponent(record, component) {
   const fixedBinaryVersions = [...new Set(
     (binaryMatch.evidence || []).map(item => item.fixedBinaryVersion).filter(Boolean)
   )];
+  const hasFixedSourceBoundary = (affectedEntry?.ranges || []).some(range =>
+    range.type === 'ECOSYSTEM' && (range.events || []).some(event => event.fixed !== undefined)
+  );
 
   if (binaryMatch.status !== 'matched') {
     reason = `Ubuntu binary-to-source mapping is unconfirmed: ${binaryMatch.reason} Source-version assessment: ${sourceClassification.reason}`;
-  } else if (fixedBinaryVersions.length > 1) {
+  } else if (hasFixedSourceBoundary && fixedBinaryVersions.length > 1) {
     reason = 'The advisory lists multiple fixed binary versions for this binary package; manual review is required.';
   } else if (sourceClassification.status === 'affected') {
-    if (!fixedBinaryVersions.length) {
-      // Some Ubuntu records (for example, still-needed Pro advisories) have
-      // no fixed event. The exact source version is explicitly listed as
-      // affected and the binary name maps to this source package.
+    if (!hasFixedSourceBoundary || !fixedBinaryVersions.length) {
+      // A binary list can exist even when Ubuntu has not published a fixed
+      // source boundary. In that case its version is not a fixed boundary.
+      // The exact source version must be explicitly listed as affected.
       status = 'affected';
       reason = 'The exact source version is listed as affected and the binary package is listed under the matching Ubuntu source package.';
     } else {
@@ -66,7 +69,7 @@ export function classifyUbuntuOsvComponent(record, component) {
       }
     }
   } else if (sourceClassification.status === 'patched_candidate') {
-    if (fixedBinaryVersions.length === 1) {
+    if (hasFixedSourceBoundary && fixedBinaryVersions.length === 1) {
       const binaryOrder = compareDebianVersions(binaryVersion, fixedBinaryVersions[0]);
       if (binaryOrder !== null && binaryOrder >= 0) {
         status = 'patched_candidate';
