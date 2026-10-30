@@ -46,3 +46,25 @@ test('collects CPE matches recursively from nested NVD configuration nodes', () 
   ];
   assert.deepEqual(collectCpeMatches(nested).map(x => x.criteria), ['root', 'child', 'grandchild']);
 });
+
+
+test('does not treat the CPE logical version - as a wildcard', () => {
+  const result = classifyCpeApplicability(
+    [cpe('cpe:2.3:a:nginx:nginx:-:*:*:*:*:*:*:*')],
+    { name: 'nginx', version: '1.24.0' }
+  );
+  assert.equal(result.status, 'needs_review');
+});
+
+test('requires the exact Apache vendor and product pair', () => {
+  const unrelated = classifyCpeApplicability(
+    [cpe('cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*')],
+    { name: 'Apache', version: '9.0' }
+  );
+  const correct = classifyCpeApplicability(
+    [cpe('cpe:2.3:a:apache:http_server:2.4.58:*:*:*:*:*:*:*')],
+    { name: 'Apache', version: '2.4.58' }
+  );
+  assert.equal(unrelated.status, 'needs_review');
+  assert.equal(correct.status, 'possible');
+});
