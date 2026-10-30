@@ -272,3 +272,34 @@ Pega este mensaje:
 2. Mejorar la ayuda de inventario para obtener `sourcePackage` mediante consulta local de solo lectura, por ejemplo: `dpkg-query -W -f='${binary:Package}\\t${Version}\\t${source:Package}\\t${source:Version}\\n'`. No ejecutar remotamente ni enviar inventarios completos.
 3. Añadir fixtures oficiales/sintéticos adicionales para advisories con varios binarios, múltiples releases y estados de parche; documentar que no se cubren avisos sin CVE upstream.
 4. Mantener los resultados como candidatos que requieren verificación con avisos oficiales de Canonical.
+
+
+---
+
+## Estado actualizado — 30 de octubre de 2026 (PR #7 y diagnóstico Azure)
+
+**Estado verificado tras integrar PR #7. Esta sección prevalece sobre las fotografías históricas anteriores.**
+
+- PR #7 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/7.
+- Commit actual de `main`: `b7cb6c437216592176c8102fefb1646d058d1ce6`.
+- La PR añade ayuda bilingüe para distinguir paquete binario instalado y paquete fuente Ubuntu, e incluye el comando local read-only `dpkg-query -W -f='${binary:Package}\\t${Version}\\t${source:Package}\\t${source:Version}\\n'`. La interfaz indica copiar solo el nombre del paquete fuente y no enviar el inventario completo.
+- CI de PR #7 satisfactorio: https://github.com/carlosdans/quasaric/actions/runs/41065484533.
+- CI de `main` para el commit integrado satisfactorio (tests y build): https://github.com/carlosdans/quasaric/actions/runs/41066132085.
+- Se revisó el diff: `BookOpen` está importado desde lucide-react y el comando se representa con escapes dobles para que el usuario pueda copiar los literales \\t y \\n.
+
+### Estado Azure — token renovado pero rechazado
+
+- El usuario confirmó que regeneró el deployment token desde Azure y actualizó el GitHub Actions secret existente. No se ha mostrado ni compartido el valor del secreto.
+- A pesar de ello, el despliegue de `main` para `b7cb6c437216592176c8102fefb1646d058d1ce6` falló: https://github.com/carlosdans/quasaric/actions/runs/41066131962.
+- El log confirma que la acción recibió un valor en `azure_static_web_apps_api_token`, pero el servidor de contenido respondió `BadRequest`: `No matching Static Web App was found or the api key was invalid.` Falló en el paso de publicación; el CI y build estático independiente sí fueron correctos.
+- El workflow Azure asociado al cierre de la PR también terminó fallando: https://github.com/carlosdans/quasaric/actions/runs/41066134496. No confundirlo con el despliegue de producción.
+- Diagnóstico pendiente: comprobar en Azure Portal que la Static Web App existente corresponde al recurso y suscripción correctos, y que el token copiado pertenece exactamente a ese recurso. Revisar también que el secreto actualizado sea el mismo nombre que consume el workflow: `AZURE_STATIC_WEB_APPS_API_TOKEN_GREEN_CLIFF_074E49A0F`. No regenerar repetidamente el token sin confirmar primero recurso, suscripción y asociación.
+- No crear una Static Web App nueva ni cambiar de plan. Mantener Azure Static Web Apps Free y el objetivo de coste 0 € en servicios bajo nuestro control.
+- No afirmar que los cambios de PR #7 estén publicados en `quasaric.com` ni en la URL Azure hasta que un workflow de push a `main` termine correctamente.
+
+### Próximos pasos
+
+1. Resolver la asociación recurso/token en Azure Portal, sin exponer el secreto en chat.
+2. Reejecutar únicamente el workflow de despliegue de `main` cuando la asociación esté verificada; comprobar que finaliza con éxito.
+3. Añadir fixtures Ubuntu para advisories con múltiples binarios, releases y estados de parche, conservando resultados como `needs_review` cuando no exista evidencia suficiente.
+4. Mantener inventario local, límite de 10 componentes y ausencia de escaneo remoto/backend facturable.
