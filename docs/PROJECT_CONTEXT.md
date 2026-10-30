@@ -480,10 +480,33 @@ La documentación de Canonical establece que:
 - Integrada mediante squash: https://github.com/carlosdans/quasaric/pull/20.
 - Commit de integración: `00eff8fece92560ff087e003dea2c0768c25f97d`.
 - El CI de la PR para `775eadb45af35b808195d9cb846ea148e7be72a8` terminó `success`: https://github.com/carlosdans/quasaric/actions/runs/41127289460.
-- CI y Azure de `main` para el commit integrado se dispararon y estaban en ejecución al comenzar el siguiente bloque: CI run `41127556574`, Azure run `41127556572`. Verificar sus conclusiones antes de afirmar despliegue.
+- CI y Azure de `main` para el commit `00eff8fece92560ff087e003dea2c0768c25f97d`: success (CI run `41127556574`; Azure run `41127556572`).
 
 ### Hallazgo adicional — identificadores de ecosistema Ubuntu Pro
 - La documentación oficial de Canonical enumera ecosistemas Ubuntu Pro adicionales: `Ubuntu:Pro:FIPS:YY.MM:LTS`, `Ubuntu:Pro:FIPS-updates:YY.MM:LTS`, `Ubuntu:Pro:FIPS-preview:YY.MM:LTS` y `Ubuntu:Pro:YY.MM:LTS:Realtime:Kernel`.
 - El filtro de inventario y la validación de consulta OSV anteriores solo aceptaban Ubuntu base y `Ubuntu:Pro:YY.MM[:LTS]`; por tanto, los identificadores Pro anteriores quedaban fuera del flujo aunque Canonical documenta datos para ellos.
-- PR #21 (abierta): implementa la aceptación de esas formas documentadas mediante un validador compartido por el filtro de inventario y la consulta OSV, con pruebas positivas/negativas. El CI de la PR debe terminar correctamente antes de integrar. Esto amplía el reconocimiento del ecosistema, no acredita cobertura completa de advisories ni aplicabilidad de paquetes FIPS/Realtime.
+- PR #21 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/21. Commit `65ca36c70930661e0ee340308b1db11b02f9339a`.
+- CI de PR #21: success (run `41127791973`). CI de `main`: success (run `41128543499`). Azure Static Web Apps de `main`: success (run `41128543384`).
+- La implementación reconoce las formas documentadas mediante un validador compartido por el filtro de inventario y la consulta OSV, con pruebas positivas/negativas. Esto amplía el reconocimiento del ecosistema, no acredita cobertura completa de advisories ni aplicabilidad de paquetes FIPS/Realtime.
+
+
+
+---
+
+## Estado actualizado — 30 de octubre de 2026 (corrección de semántica de binarios Ubuntu OSV, PR #22)
+
+### Hallazgo corregido
+- El matcher anterior exigía que la versión binaria instalada coincidiera exactamente con `ecosystem_specific.binaries[].binary_version`.
+- La documentación de Canonical describe esos binarios como paquetes y versiones asociados al build fuente corregido. Por tanto, una comparación exacta podía confundir el build corregido con el build vulnerable y dejar en `needs_review` instalaciones cuya versión fuente sí figura en `affected[].versions` o en el rango fuente.
+- La versión del paquete fuente (`source:Version`) y la versión binaria instalada (`Version`) son evidencias distintas y se comparan solo con sus respectivos límites.
+
+### PR #22 — cambio acotado en revisión
+- Rama: `fix/ubuntu-binary-build-semantics`.
+- El matcher ahora usa el nombre binario, paquete fuente y release exactos para validar la relación publicada por Canonical; conserva la versión binaria instalada y la versión binaria fija publicada como datos separados.
+- La clasificación de vulnerabilidad sigue usando exclusivamente `sourceVersion` frente a versiones/rangos fuente Ubuntu OSV, con comparación Debian.
+- Para una fuente afectada con límite binario fijo, el binario instalado debe quedar por debajo del build fijo; si está en/por encima, la evidencia entra en conflicto y se conserva `needs_review`.
+- Para una fuente en/por encima del límite fijo, solo se emite `patched_candidate` si la versión binaria instalada también está en/por encima del build binario fijo. No se confirma remediación.
+- Si no hay build binario fijo (por ejemplo, avisos Pro sin evento `fixed`), la clasificación afectada solo se permite cuando la versión fuente está explícitamente listada y el nombre binario aparece en el mismo paquete fuente/release. Cualquier falta o contradicción permanece en `needs_review`.
+- Pruebas añadidas/actualizadas: fixtures Canonical OpenSSL Ubuntu 22.04/24.04, binario vulnerable anterior al build fijo, límites de build fijo, contradicciones fuente/binario, aislamiento por release y paquete fuente.
+- La PR no debe integrarse hasta revisar el diff completo y confirmar CI verde. El cambio no altera el inventario local, la privacidad, DNS, secretos ni infraestructura.
 

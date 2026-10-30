@@ -10,7 +10,7 @@ const record = {
     versions: ['3.0.13-0ubuntu3'],
     ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '3.0.13-0ubuntu3.2' }] }],
     ecosystem_specific: { binaries: [
-      { binary_name: 'libssl3t64', binary_version: '3.0.13-0ubuntu3.1' }
+      { binary_name: 'libssl3t64', binary_version: '3.0.13-0ubuntu3.2' }
     ] }
   }]
 };
@@ -20,7 +20,7 @@ const component = (overrides = {}) => ({
   ecosystem: 'Ubuntu:24.04:LTS', ...overrides
 });
 
-test('requires source-version and exact binary evidence to classify affected', () => {
+test('requires source-version and binary-to-source mapping to classify affected', () => {
   const result = classifyUbuntuOsvComponent(record, component());
   assert.equal(result.status, 'affected');
   assert.equal(result.ubuntuSourceEvidence.classification, 'affected');
@@ -33,15 +33,34 @@ test('binary match does not replace missing source version', () => {
   assert.equal(result.ubuntuSourceEvidence.classification, 'needs_review');
 });
 
-test('source version at fixed boundary remains a candidate, not confirmed remediation', () => {
-  const result = classifyUbuntuOsvComponent(record, component({ sourceVersion: '3.0.13-0ubuntu3.2' }));
+test('source version and binary build at fixed boundaries remain a candidate, not confirmed remediation', () => {
+  const result = classifyUbuntuOsvComponent(record, component({ version: '3.0.13-0ubuntu3.2', sourceVersion: '3.0.13-0ubuntu3.2' }));
   assert.equal(result.status, 'patched_candidate');
 });
 
-test('a binary version mismatch prevents a positive source classification', () => {
+test('a fixed binary build conflicts with an affected source version', () => {
   const result = classifyUbuntuOsvComponent(record, component({ version: '3.0.13-0ubuntu3.2' }));
   assert.equal(result.status, 'needs_review');
-  assert.deepEqual(result.ubuntuBinaryEvidence, []);
+  assert.equal(result.ubuntuBinaryEvidence.length, 1);
+  assert.match(result.reason, /evidence conflicts/i);
+});
+
+test('does not call an older source version affected when the installed binary is already at the fixed build', () => {
+  const result = classifyUbuntuOsvComponent(record, component({
+    version: '3.0.13-0ubuntu3.2',
+    sourceVersion: '3.0.13-0ubuntu3'
+  }));
+  assert.equal(result.status, 'needs_review');
+  assert.match(result.reason, /evidence conflicts/i);
+});
+
+test('keeps a patched source version under review when its binary is below the fixed build', () => {
+  const result = classifyUbuntuOsvComponent(record, component({
+    version: '3.0.13-0ubuntu3.1',
+    sourceVersion: '3.0.13-0ubuntu3.2'
+  }));
+  assert.equal(result.status, 'needs_review');
+  assert.match(result.reason, /below the published fixed build/i);
 });
 
 test('source package and Ubuntu release must match the exact affected entry', () => {
@@ -104,5 +123,5 @@ test('binary evidence from another source package cannot validate this component
   );
   assert.equal(result.status, 'needs_review');
   assert.deepEqual(result.ubuntuBinaryEvidence, []);
-  assert.match(result.reason, /No exact binary-package name and version match/);
+  assert.match(result.reason, /binary package name is not listed/i);
 });

@@ -45,7 +45,7 @@ test('Canonical OpenSSL fixed boundary is evaluated separately for Ubuntu 24.04'
   });
   assert.equal(result.status, 'patched_candidate');
   assert.equal(result.ubuntuSourceEvidence.ecosystem, 'Ubuntu:24.04:LTS');
-  assert.equal(result.ubuntuBinaryEvidence[0].binaryVersion, '3.0.13-0ubuntu3.6');
+  assert.equal(result.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '3.0.13-0ubuntu3.6');
 });
 
 test('Canonical OpenSSL fixed boundary is evaluated separately for Ubuntu 22.04', () => {
@@ -55,7 +55,7 @@ test('Canonical OpenSSL fixed boundary is evaluated separately for Ubuntu 22.04'
   });
   assert.equal(result.status, 'patched_candidate');
   assert.equal(result.ubuntuSourceEvidence.ecosystem, 'Ubuntu:22.04:LTS');
-  assert.equal(result.ubuntuBinaryEvidence[0].binaryVersion, '3.0.2-0ubuntu1.20');
+  assert.equal(result.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '3.0.2-0ubuntu1.20');
 });
 
 test('Canonical Ubuntu Pro entry with no fixed event remains affected when explicitly listed', () => {
@@ -70,15 +70,16 @@ test('Canonical Ubuntu Pro entry with no fixed event remains affected when expli
   assert.equal(result.ubuntuBinaryEvidence[0].binaryName, 'nodejs');
 });
 
-test('Canonical listed vulnerable source version is affected, but missing old binary evidence stays under review', () => {
+test('Canonical listed vulnerable source and binary builds below the fixed build are classified as affected', () => {
   const entry = record.affected.find(item => item.package.name === 'openssl' && item.package.ecosystem === 'Ubuntu:24.04:LTS');
   assert.equal(classifyUbuntuOsvSourceVersion(entry, '3.0.13-0ubuntu3.5').status, 'affected');
   const result = classifyUbuntuOsvComponent(record, {
     id: 'openssl-old', name: 'libssl3t64', version: '3.0.13-0ubuntu3.5',
     sourcePackage: 'openssl', sourceVersion: '3.0.13-0ubuntu3.5', ecosystem: 'Ubuntu:24.04:LTS'
   });
-  assert.equal(result.status, 'needs_review');
-  assert.deepEqual(result.ubuntuBinaryEvidence, []);
+  assert.equal(result.status, 'affected');
+  assert.equal(result.ubuntuBinaryEvidence[0].advisoryBinaryVersion, '3.0.13-0ubuntu3.6');
+  assert.equal(result.ubuntuBinaryEvidence[0].installedBinaryVersion, '3.0.13-0ubuntu3.5');
 });
 
 test('an exact binary from Ubuntu 24.04 cannot cross-match the Ubuntu 22.04 entry', () => {
