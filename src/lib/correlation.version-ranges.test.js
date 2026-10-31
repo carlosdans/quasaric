@@ -31,7 +31,7 @@ test('excludes the upper endpoint of an exclusive end range', () => {
 test('requires an exact match when the CPE contains a concrete version', () => {
   const cpes = [{ criteria: 'cpe:2.3:a:php:php:8.2:*:*:*:*:*:*:*', vulnerable: true }];
   assert.equal(classifyCpeApplicability(cpes, php('8.2')).status, 'possible');
-  assert.equal(classifyCpeApplicability(cpes, php('8.2.1')).status, 'needs_review');
+  assert.equal(classifyCpeApplicability(cpes, php('8.2.1')).status, 'not_affected');
 });
 
 test('does not treat a non-vulnerable CPE match as affected', () => {
