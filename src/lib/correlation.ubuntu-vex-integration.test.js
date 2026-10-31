@@ -250,7 +250,7 @@ test('flags an OpenVEX affected statement that contradicts an Ubuntu OSV patched
       fetchNvdByKeyword: async () => [],
       fetchCanonicalUbuntuVex: async () => ({
         ...vexRecord,
-        statements: [{ status: 'affected', products: [{ '@id': binaryPurl }] }]
+        statements: [{ status: 'affected', products: [{ '@id': 'pkg:deb/ubuntu/openssl@1.0.0-2?arch=amd64&distro=ubuntu/noble' }] }]
       })
     })
   });
