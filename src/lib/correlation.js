@@ -386,7 +386,8 @@ export async function analyzeInventory(components, { signal, onProgress, sources
           let nvdApplicability = applicability(cve, component);
           // Descriptions are a fallback only: never let prose override a
           // structured CPE range that already includes or excludes this version.
-          const descriptionApplicability = nvdApplicability.status === 'needs_review'
+          const descriptionApplicability = nvdApplicability.status === 'needs_review' &&
+            !hasUnsupportedCpeLogic(cve.configurations || [])
             ? classifyPhpDescriptionApplicability(cve, component)
             : null;
           if (descriptionApplicability) nvdApplicability = descriptionApplicability;
