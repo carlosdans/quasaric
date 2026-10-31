@@ -14,9 +14,35 @@ function componentQueries(component) {
   const name = normalize(component.name);
   return [aliases[name] || name].filter(Boolean);
 }
+function splitCpe23(criteria) {
+  const fields = [];
+  let field = '';
+  let escaped = false;
+  for (const character of String(criteria || '')) {
+    if (escaped) {
+      field += character;
+      escaped = false;
+    } else if (character === '\\\\') {
+      escaped = true;
+    } else if (character === ':') {
+      fields.push(field);
+      field = '';
+    } else {
+      field += character;
+    }
+  }
+  if (escaped) field += '\\\\';
+  fields.push(field);
+  return fields;
+}
+
 function cpeProduct(criteria) {
-  const parts = String(criteria || '').split(':');
-  return { vendor: (parts[3] || '').replaceAll('_', ' '), product: (parts[4] || '').replaceAll('_', ' '), version: parts[5] || '*' };
+  const parts = splitCpe23(criteria);
+  return {
+    vendor: (parts[3] || '').replaceAll('_', ' '),
+    product: (parts[4] || '').replaceAll('_', ' '),
+    version: parts[5] || '*'
+  };
 }
 
 export function summarizeApplicabilityStatus(matchedComponents) {
