@@ -2,6 +2,7 @@ import React from 'react';
 import { useMemo, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
 import { toCsv } from './lib/csv.js';
+import { createAnalysisSnapshot, compareAnalysisSnapshots, loadAnalysisHistory, saveAnalysisHistory } from './lib/analysisHistory.js';
 import { suggestedComponentType, normalizeComponentType } from './lib/componentTypes.js';
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, Bell, BookOpen,
@@ -55,7 +56,17 @@ const copy = {
     reportType: 'Tipo', reportVersion: 'Versión', reportVendor: 'Fabricante / distribución',
     reportCve: 'CVE', reportDescription: 'Descripción', reportSeverity: 'Severidad',
     reportScore: 'CVSS', reportEpss: 'EPSS', reportKev: 'CISA KEV',
-    reportApplicability: 'Aplicabilidad', reportComponents: 'Componentes', reportSources: 'Fuentes'
+    reportApplicability: 'Aplicabilidad', reportComponents: 'Componentes', reportSources: 'Fuentes',
+    compareTitle: 'Cambios desde el análisis anterior',
+    compareFirst: 'Este es el primer análisis guardado. El siguiente permitirá comparar la evolución.',
+    compareAdded: 'Exposiciones nuevas', compareResolved: 'Ya no detectadas',
+    compareRetained: 'Sin cambios de presencia', compareChanged: 'Datos modificados',
+    compareNone: 'No hay diferencias de exposición entre los dos últimos análisis.',
+    compareAddedLabel: 'Nueva', compareResolvedLabel: 'Ya no detectada',
+    compareChangedLabel: 'Datos modificados', comparePrevious: 'Anterior',
+    compareCurrent: 'Actual', compareComponent: 'Componente afectado',
+    compareChange: 'Cambio', compareBefore: 'Antes', compareAfter: 'Ahora',
+    comparePrint: 'Resumen comparativo'
   },
   en: {
     platform: 'SECURITY INTELLIGENCE PLATFORM', overview: 'Overview', inventory: 'Inventory',
@@ -100,7 +111,17 @@ const copy = {
     reportType: 'Type', reportVersion: 'Version', reportVendor: 'Vendor / distribution',
     reportCve: 'CVE', reportDescription: 'Description', reportSeverity: 'Severity',
     reportScore: 'CVSS', reportEpss: 'EPSS', reportKev: 'CISA KEV',
-    reportApplicability: 'Applicability', reportComponents: 'Components', reportSources: 'Sources'
+    reportApplicability: 'Applicability', reportComponents: 'Components', reportSources: 'Sources',
+    compareTitle: 'Changes since the previous analysis',
+    compareFirst: 'This is the first saved analysis. The next run will enable comparison.',
+    compareAdded: 'New exposures', compareResolved: 'No longer detected',
+    compareRetained: 'Presence unchanged', compareChanged: 'Data changed',
+    compareNone: 'There are no exposure differences between the latest two analyses.',
+    compareAddedLabel: 'New', compareResolvedLabel: 'No longer detected',
+    compareChangedLabel: 'Data changed', comparePrevious: 'Previous',
+    compareCurrent: 'Current', compareComponent: 'Affected component',
+    compareChange: 'Change', compareBefore: 'Before', compareAfter: 'Now',
+    comparePrint: 'Comparison summary'
   }
 };
 
@@ -125,6 +146,7 @@ function App() {
   const [mobileNav, setMobileNav] = useState(false);
   const [query, setQuery] = useState('');
   const [analysis, setAnalysis] = useState(null);
+  const [analysisHistory, setAnalysisHistory] = useState(() => loadAnalysisHistory());
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
   const [analysisProgress, setAnalysisProgress] = useState({ completed: 0, total: 0 });
@@ -136,6 +158,10 @@ function App() {
     setItems(next);
     try { localStorage.setItem('quasaric-inventory', JSON.stringify(next)); } catch { /* storage may be unavailable */ }
   };
+  const latestComparison = useMemo(() => analysisHistory.length >= 2
+    ? compareAnalysisSnapshots(analysisHistory[1], analysisHistory[0])
+    : null, [analysisHistory]);
+
   const filtered = useMemo(() => {
     const live = analysis?.findings?.map(f => ({
       id: f.id,
@@ -156,6 +182,10 @@ function App() {
     try {
       const result = await analyzeInventory(items, { onProgress: setAnalysisProgress });
       setAnalysis(result);
+      const snapshot = createAnalysisSnapshot(result, items);
+      const nextHistory = [snapshot, ...analysisHistory.filter(entry => entry.id !== snapshot.id)].slice(0, 10);
+      setAnalysisHistory(nextHistory);
+      saveAnalysisHistory(nextHistory);
     } catch (error) { setAnalysisError(error.message || 'Analysis failed'); }
     finally { setAnalyzing(false); }
   };
@@ -262,6 +292,23 @@ function App() {
               <div><div className="eyebrow">{t.workspace}</div><h1>{t.reports}</h1><p>{t.reportSubtitle}</p></div>
               <div className="heading-actions"><button className="primary-btn" onClick={() => window.print()} disabled={!items.length && !analysis?.findings?.length}><FileDown size={16}/>{t.printReport}</button></div>
             </div>
+
+            <section className="panel comparison-panel">
+              <div className="comparison-heading"><div><h3>{t.compareTitle}</h3><p>{analysisHistory.length >= 2 ? t.comparePrevious + ': ' + new Date(analysisHistory[1].analyzedAt).toLocaleString() + ' · ' + t.compareCurrent + ': ' + new Date(analysisHistory[0].analyzedAt).toLocaleString() : t.compareFirst}</p></div></div>
+              {latestComparison && <>
+                <div className="comparison-stats">
+                  <div><strong>{latestComparison.counts.added}</strong><span>{t.compareAdded}</span></div>
+                  <div><strong>{latestComparison.counts.resolved}</strong><span>{t.compareResolved}</span></div>
+                  <div><strong>{latestComparison.counts.retained}</strong><span>{t.compareRetained}</span></div>
+                  <div><strong>{latestComparison.counts.changed}</strong><span>{t.compareChanged}</span></div>
+                </div>
+                {(latestComparison.added.length + latestComparison.resolved.length + latestComparison.changed.length) > 0
+                  ? <div className="print-report-table-wrap"><table className="print-report-table"><thead><tr><th>{t.reportCve}</th><th>{t.compareComponent}</th><th>{t.compareChange}</th><th>{t.compareBefore}</th><th>{t.compareAfter}</th></tr></thead><tbody>
+                    {[...latestComparison.added.map(x => ({...x, kind:'added'})), ...latestComparison.resolved.map(x => ({...x, kind:'resolved'})), ...latestComparison.changed.map(x => ({...x, kind:'changed'}))].map(item => <tr key={item.key + item.kind}><td>{item.cve}</td><td>{item.component.name} {item.component.version || ''}</td><td>{item.kind === 'added' ? t.compareAddedLabel : item.kind === 'resolved' ? t.compareResolvedLabel : t.compareChangedLabel}</td><td>{item.kind === 'added' ? '—' : item.kind === 'resolved' ? item.severity : item.differences.map(x => x.field + ': ' + (x.before ?? '—')).join('; ')}</td><td>{item.kind === 'resolved' ? '—' : item.kind === 'added' ? item.severity : item.differences.map(x => x.field + ': ' + (x.after ?? '—')).join('; ')}</td></tr>)}
+                  </tbody></table></div>
+                  : <p className="print-report-empty">{t.compareNone}</p>}
+              </>}
+            </section>
             <section className="print-report">
               <header className="print-report-header">
                 <div><div className="print-report-brand">QUASARIC.COM</div><h2>{t.reportTitle}</h2><p>{t.reportGenerated}: {new Date().toLocaleString(lang === 'es' ? 'es-ES' : 'en-US')}</p></div>
@@ -279,6 +326,7 @@ function App() {
                   return <tr key={finding.id}><td className="print-report-cve">{finding.id}</td><td>{finding.description || '—'}</td><td>{finding.severity || '—'}</td><td>{finding.cvss ?? '—'}</td><td>{finding.epss ?? '—'}</td><td>{finding.kev ? 'Yes' : 'No'}</td><td>{finding.applicabilityStatus || '—'}</td><td>{finding.components.map(component => component.component.name + ' ' + (component.component.version || '')).join('; ')}</td><td>{sources.join(', ') || '—'}</td></tr>;
                 })}</tbody></table></div> : <p className="print-report-empty">{t.reportNoAnalysis}</p>}
               </section>
+              {latestComparison && <section className="print-report-section"><h3>{t.comparePrint}</h3><p className="print-report-empty">{t.compareAdded}: {latestComparison.counts.added} · {t.compareResolved}: {latestComparison.counts.resolved} · {t.compareRetained}: {latestComparison.counts.retained} · {t.compareChanged}: {latestComparison.counts.changed}</p></section>}
               <footer className="print-report-footer">Quasaric · {window.location.origin}</footer>
             </section>
             <section className="panel report-card"><div className="report-icon"><FileDown size={23}/></div><div><h3>{lang === 'es' ? 'Exportar inventario' : 'Export inventory'}</h3><p>{lang === 'es' ? 'Descarga los componentes que has añadido en formato CSV.' : 'Download your declared components as CSV.'}</p></div><button className="secondary-btn" onClick={exportCsv} disabled={!items.length}><Download size={16}/>{lang === 'es' ? 'Inventario CSV' : 'Inventory CSV'}</button></section>
