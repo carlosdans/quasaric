@@ -94,7 +94,9 @@ export function compareAnalysisSnapshots(previous, current) {
 export function loadAnalysisHistory(storage = globalThis.localStorage) {
   try {
     const parsed = JSON.parse(storage?.getItem(HISTORY_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed.slice(0, HISTORY_LIMIT) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter(snapshot => snapshot && typeof snapshot === 'object' && Array.isArray(snapshot.findings)).slice(0, HISTORY_LIMIT)
+      : [];
   } catch { return []; }
 }
 
