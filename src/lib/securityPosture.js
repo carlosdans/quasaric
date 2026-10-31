@@ -90,7 +90,7 @@ export function buildSecurityPosture(history = []) {
     windowEnd: latest?.analyzedAt || null,
     timeline,
     latest,
-    change: first && latest ? {
+    change: chronological.length >= 2 && first && latest ? {
       uniqueCves: latest.uniqueCves - first.uniqueCves,
       kevCves: latest.kevCves - first.kevCves,
       exposures: latest.exposures - first.exposures,
