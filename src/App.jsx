@@ -282,6 +282,7 @@ function App() {
           <div className="sidebar-user"><div className="avatar">Q</div><div className="user-copy"><strong>Quasaric</strong><span>Personal workspace</span></div><ChevronDown size={15}/></div>
         </div>
       </aside>
+      {mobileNav && <button className="mobile-nav-backdrop" aria-label={lang === 'es' ? 'Cerrar menú' : 'Close menu'} onClick={() => setMobileNav(false)} />}
 
       <main className="main-area">
         <header className="topbar">
