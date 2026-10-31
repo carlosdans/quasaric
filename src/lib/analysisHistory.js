@@ -1,6 +1,10 @@
 const HISTORY_KEY = 'quasaric-analysis-history';
 const HISTORY_LIMIT = 10;
 
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 function componentKey(component) {
   return String(component?.id || [
     component?.name, component?.version, component?.vendor,
@@ -102,12 +106,11 @@ export function loadAnalysisHistory(storage) {
     const parsed = JSON.parse(target?.getItem(HISTORY_KEY) || '[]');
     return Array.isArray(parsed)
       ? parsed.filter(snapshot =>
-        snapshot && typeof snapshot === 'object' && Array.isArray(snapshot.findings) &&
+        isRecord(snapshot) && Array.isArray(snapshot.findings) &&
         snapshot.findings.every(finding =>
-          finding && typeof finding === 'object' && Array.isArray(finding.components) &&
+          isRecord(finding) && Array.isArray(finding.components) &&
           finding.components.every(match =>
-            match && typeof match === 'object' &&
-            match.component && typeof match.component === 'object'
+            isRecord(match) && isRecord(match.component)
           )
         )
       ).slice(0, HISTORY_LIMIT)

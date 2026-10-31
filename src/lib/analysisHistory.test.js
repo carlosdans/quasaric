@@ -94,7 +94,10 @@ test('ignores malformed snapshots and nested findings in stored history', () => 
     { id: 'missing-components', findings: [{ id: 'CVE-1' }] },
     { id: 'null-match', findings: [{ id: 'CVE-2', components: [null] }] },
     { id: 'missing-component', findings: [{ id: 'CVE-3', components: [{}] }] },
-    'bad'
+    'bad',
+    { id: 'array-finding', findings: [[]] },
+    { id: 'array-match', findings: [{ id: 'CVE-4', components: [[]] }] },
+    { id: 'array-component', findings: [{ id: 'CVE-5', components: [{ component: [] }] }] }
   ])]]);
   const storage = { getItem: key => data.get(key) || null };
   assert.deepEqual(loadAnalysisHistory(storage), [valid]);
