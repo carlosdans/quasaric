@@ -44,7 +44,7 @@ test('returns an explicit insufficient-history state for zero or one snapshot', 
 });
 
 test('caps dashboard input to the ten snapshots retained by the app', () => {
-  const history = Array.from({ length: 12 }, (_, i) => snap(String(i), []));
+  const history = Array.from({ length: 12 }, (_, i) => snap(String(11 - i), []));
   const result = buildSecurityPosture(history);
   assert.equal(result.snapshotCount, 10);
   assert.equal(result.windowStart, '2');
