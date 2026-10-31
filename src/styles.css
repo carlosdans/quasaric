@@ -300,3 +300,19 @@ button{touch-action:manipulation}
   .severity-filter{width:100%;min-height:44px;font-size:16px}
   .findings-panel .table-wrap{margin-top:14px}
 }
+
+/* Keyboard and touch affordances for horizontally scrollable data */
+.table-wrap[role="region"]:focus-visible,
+.print-report-table-wrap[role="region"]:focus-visible{outline:2px solid #7ca2ff;outline-offset:3px;border-radius:7px}
+.table-wrap[role="region"],
+.print-report-table-wrap[role="region"]{scrollbar-width:thin;scrollbar-color:#526783 #182538}
+@media(max-width:760px){
+  .table-wrap[role="region"],
+  .print-report-table-wrap[role="region"]{scroll-snap-type:x proximity;touch-action:pan-x pan-y}
+  .table-wrap table{min-width:680px}
+  .print-report-table{min-width:680px}
+  .modal-backdrop{padding-bottom:0}
+  .modal{max-height:92vh;max-height:92dvh;overscroll-behavior:contain}
+  .modal-head{position:sticky;top:-20px;z-index:2;background:#111b2a;padding:2px 0 12px}
+  .modal-actions{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+}
