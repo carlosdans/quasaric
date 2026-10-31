@@ -51,6 +51,15 @@ test('compares CVE exposure per component and reports added, resolved and retain
   assert.equal(result.counts.resolvedCves, 2);
 });
 
+test('rejects malformed snapshots before comparing exposure records', () => {
+  const valid = snapshot('valid', [finding('CVE-1', [match('a')])]);
+  assert.throws(() => compareAnalysisSnapshots(null, valid), TypeError);
+  assert.throws(() => compareAnalysisSnapshots(valid, { findings: [null] }), TypeError);
+  assert.throws(() => compareAnalysisSnapshots(valid, {
+    findings: [{ id: 'CVE-2', components: [{ component: [] }] }]
+  }), TypeError);
+});
+
 test('detects changes in severity, scores, KEV and applicability', () => {
   const before = snapshot('before', [finding('CVE-2026-0001', [match('a')])]);
   const after = snapshot('after', [finding('CVE-2026-0001', [match('a')], {

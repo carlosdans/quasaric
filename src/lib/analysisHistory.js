@@ -49,7 +49,12 @@ export function createAnalysisSnapshot(analysis, inventory = []) {
 }
 
 export function compareAnalysisSnapshots(previous, current) {
-  if (!previous || !current) throw new TypeError('Two analysis snapshots are required.');
+  const isValidSnapshot = snapshot => isRecord(snapshot) && Array.isArray(snapshot.findings) &&
+    snapshot.findings.every(finding => isRecord(finding) && Array.isArray(finding.components) &&
+      finding.components.every(match => isRecord(match) && isRecord(match.component)));
+  if (!isValidSnapshot(previous) || !isValidSnapshot(current)) {
+    throw new TypeError('Two valid analysis snapshots with complete component matches are required.');
+  }
   const flatten = snapshot => {
     const map = new Map();
     for (const finding of snapshot.findings || []) {
