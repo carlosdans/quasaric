@@ -20,7 +20,7 @@ function splitCpe23(criteria) {
   let escaped = false;
   for (const character of String(criteria || '')) {
     if (escaped) {
-      field += character === '*' ? '\uE000' : character === '-' ? '\uE001' : character === '?' ? '\uE002' : character;
+      field += character === '*' ? '\uE000' : character === '-' ? '\uE001' : character === '?' ? '\uE002' : character === '_' ? '\uE003' : character;
       escaped = false;
     } else if (character === '\\') {
       escaped = true;
@@ -39,7 +39,7 @@ function cpeProduct(criteria) {
   const parts = splitCpe23(criteria);
   return {
     part: parts[2] || '*',
-    vendor: (parts[3] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('_', ' '),
+    vendor: (parts[3] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('\uE003', '\uE004').replaceAll('_', ' ').replaceAll('\uE004', '_'),
     product: (parts[4] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('_', ' '),
     version: (parts[5] || '*').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('\uE002', '?'),
     versionWildcard: (parts[5] || '*') === '*',

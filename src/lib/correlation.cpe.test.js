@@ -22,6 +22,13 @@ test('does not confuse Apache HTTP Server with other Apache projects', () => {
   assert.equal(cpeMatchesComponent('cpe:2.3:a:apache:http_server:2.4:*:*:*:*:*:*:*', component('Apache HTTP Server')), true);
 });
 
+test('preserves escaped underscores in CPE vendor and product fields', () => {
+  const cpe = 'cpe:2.3:a:acme\\_labs:widget\\_pro:1.0:*:*:*:*:*:*:*';
+  assert.equal(cpeMatchesComponent(cpe, component('acme_labs_widget_pro')), false);
+  assert.equal(cpeMatchesComponent(cpe, component('widget_pro')), false);
+  assert.equal(cpeMatchesComponent(cpe, { name: 'widget_pro', type: 'other' }), false);
+});
+
 test('does not accept a matching product under an unexpected vendor', () => {
   assert.equal(cpeMatchesComponent('cpe:2.3:a:attacker:php:8.2:*:*:*:*:*:*:*', component('PHP')), false);
 });
