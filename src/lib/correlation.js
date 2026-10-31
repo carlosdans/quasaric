@@ -220,14 +220,17 @@ export function classifyCpeApplicability(cpeItems, component) {
   // installed version outside that list is not an applicable candidate. Do
   // not turn historical product-name matches into findings for newer releases.
   const vulnerableCpes = relevant.filter(item => item.vulnerable !== false);
-  const explicitlyVersioned = vulnerableCpes.length > 0 && vulnerableCpes.every(item => {
+  const explicitlyScoped = vulnerableCpes.length > 0 && vulnerableCpes.every(item => {
     const cpe = cpeProduct(item.criteria);
-    return cpe.version !== '*' && cpe.version !== '-' &&
-      !item.versionStartIncluding && !item.versionStartExcluding &&
-      !item.versionEndIncluding && !item.versionEndExcluding;
+    const hasConcreteVersion = cpe.version !== '*' && cpe.version !== '-';
+    const hasVersionBoundary = Boolean(
+      item.versionStartIncluding || item.versionStartExcluding ||
+      item.versionEndIncluding || item.versionEndExcluding
+    );
+    return hasConcreteVersion || hasVersionBoundary;
   });
-  if (explicitlyVersioned) {
-    return { status: 'not_affected', confidence: 'high', reason: 'The installed version is not among the concrete affected product versions enumerated by NVD.' };
+  if (explicitlyScoped) {
+    return { status: 'not_affected', confidence: 'high', reason: 'The installed version is outside the concrete versions and explicit affected ranges enumerated by NVD.' };
   }
   return { status: 'needs_review', confidence: 'low', reason: 'A product CPE exists, but the supplied version was not proven to fall in its affected range.' };
 }
