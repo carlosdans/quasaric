@@ -22,7 +22,7 @@ function splitCpe23(criteria) {
     if (escaped) {
       field += character;
       escaped = false;
-    } else if (character === '\\\\') {
+    } else if (character === '\\') {
       escaped = true;
     } else if (character === ':') {
       fields.push(field);
@@ -31,11 +31,10 @@ function splitCpe23(criteria) {
       field += character;
     }
   }
-  if (escaped) field += '\\\\';
+  if (escaped) field += '\\';
   fields.push(field);
   return fields;
 }
-
 function cpeProduct(criteria) {
   const parts = splitCpe23(criteria);
   return {
