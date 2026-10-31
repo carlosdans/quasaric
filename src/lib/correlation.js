@@ -489,8 +489,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
           source: 'Canonical OpenVEX',
           status: item.ubuntuVex.status,
           reason: item.ubuntuVex.reason,
-          publishedAt: item.ubuntuVex.documentTimestamp || null,
-          updatedAt: item.ubuntuVex.documentTimestamp || null,
+          documentTimestamp: item.ubuntuVex.documentTimestamp || null,
           documentVersion: item.ubuntuVex.documentVersion ?? null,
           url: item.ubuntuVex.documentUrl || null,
           product
