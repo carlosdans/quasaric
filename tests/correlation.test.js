@@ -339,3 +339,11 @@ test('compares very large numeric version segments without precision loss', () =
     version: '1000000000000000000000000.0'
   }).status, 'possible');
 });
+
+test('treats omitted trailing numeric version segments as zero', () => {
+  const ranged = [cpe('cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*', {
+    versionStartIncluding: '1.2.0',
+    versionEndIncluding: '1.2.0'
+  })];
+  assert.equal(classifyCpeApplicability(ranged, { name: 'nginx', version: '1.2' }).status, 'possible');
+});
