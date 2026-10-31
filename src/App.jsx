@@ -42,7 +42,20 @@ const copy = {
     priority: 'Prioridad', exposure: 'Exposición', noScan: 'Sin escaneos activos',
     noScanText: 'Quasaric analiza los datos que proporcionas; no realiza conexiones de reconocimiento ni pruebas sobre tus sistemas.',
     footer: 'Inteligencia de vulnerabilidades, con transparencia sobre los datos y sus límites.',
-    help: 'Ayuda', product: 'Producto'
+    help: 'Ayuda', product: 'Producto',
+    reportSubtitle: 'Genera un informe local del inventario y del último análisis disponible.',
+    printReport: 'Imprimir / Guardar PDF',
+    reportTitle: 'Informe de seguridad',
+    reportGenerated: 'Generado',
+    reportInventory: 'Inventario analizado',
+    reportFindings: 'Hallazgos del último análisis',
+    reportNoComponents: 'No hay componentes en el inventario.',
+    reportNoAnalysis: 'Todavía no hay resultados. Ejecuta un análisis para incluir hallazgos.',
+    reportPrivacy: 'Informe generado en este navegador. El inventario y los resultados no se envían a un servidor.',
+    reportType: 'Tipo', reportVersion: 'Versión', reportVendor: 'Fabricante / distribución',
+    reportCve: 'CVE', reportDescription: 'Descripción', reportSeverity: 'Severidad',
+    reportScore: 'CVSS', reportEpss: 'EPSS', reportKev: 'CISA KEV',
+    reportApplicability: 'Aplicabilidad', reportComponents: 'Componentes', reportSources: 'Fuentes'
   },
   en: {
     platform: 'SECURITY INTELLIGENCE PLATFORM', overview: 'Overview', inventory: 'Inventory',
@@ -74,7 +87,20 @@ const copy = {
     priority: 'Priority', exposure: 'Exposure', noScan: 'No active scanning',
     noScanText: 'Quasaric analyses the data you provide; it does not perform reconnaissance connections or tests against your systems.',
     footer: 'Vulnerability intelligence, with transparency about data and limitations.',
-    help: 'Help', product: 'Product'
+    help: 'Help', product: 'Product',
+    reportSubtitle: 'Create a local report from your inventory and the latest available analysis.',
+    printReport: 'Print / Save PDF',
+    reportTitle: 'Security report',
+    reportGenerated: 'Generated',
+    reportInventory: 'Assessed inventory',
+    reportFindings: 'Findings from the latest analysis',
+    reportNoComponents: 'There are no components in the inventory.',
+    reportNoAnalysis: 'No results yet. Run an analysis to include findings.',
+    reportPrivacy: 'Report generated in this browser. Inventory and results are not sent to a server.',
+    reportType: 'Type', reportVersion: 'Version', reportVendor: 'Vendor / distribution',
+    reportCve: 'CVE', reportDescription: 'Description', reportSeverity: 'Severity',
+    reportScore: 'CVSS', reportEpss: 'EPSS', reportKev: 'CISA KEV',
+    reportApplicability: 'Applicability', reportComponents: 'Components', reportSources: 'Sources'
   }
 };
 
@@ -231,7 +257,33 @@ function App() {
 
           {active === 'vulnerabilities' && <><div className="page-heading"><div><div className="eyebrow">{t.workspace}</div><h1>{t.vulnerabilities}</h1><p>{t.sourceNotice}</p></div></div>{!analysis && <div className="demo-banner"><Sparkles size={16}/><div><strong>{t.demo}</strong><span>{t.demoText}</span></div></div>}{analysis && <div className="result-disclaimer">{lang === 'es' ? 'Resultados del último análisis en este navegador. Son candidatos que requieren verificación, no confirmaciones.' : 'Results from the latest analysis in this browser. These are candidates requiring verification, not confirmations.'}</div>}<section className="panel findings-panel"><div className="findings-toolbar"><div className="search-field"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder={t.search}/></div><button className="secondary-btn"><Filter size={15}/>{t.all}<ChevronDown size={14}/></button></div><div className="table-wrap"><table><thead><tr><th>CVЕ ID / {t.component}</th><th>{t.severity}</th><th>CVSS</th><th>{t.status}</th></tr></thead><tbody>{filtered.map(f => <tr key={f.id}><td><strong className="cve-id">{f.live ? <a href={`https://nvd.nist.gov/vuln/detail/${f.id}`} target="_blank" rel="noreferrer">{f.id}</a> : f.id}</strong><span className="finding-title">{f.title}</span><span className="finding-title">{f.component}</span></td><td><span className={'severity-text ' + f.severity.toLowerCase()}>{f.severity}</span></td><td className="score">{f.score}</td><td><span className={'tag ' + (f.state === 'KEV' ? 'tag-red' : 'tag-amber')}>{f.state}</span></td></tr>)}</tbody></table>{!filtered.length && <div className="empty-state">{t.noResults}</div>}</div></section></>}
 
-          {active === 'reports' && <><div className="page-heading"><div><div className="eyebrow">{t.workspace}</div><h1>{t.reports}</h1><p>{lang === 'es' ? 'Exporta tu inventario local para conservarlo o analizarlo.' : 'Export your local inventory for safekeeping or analysis.'}</p></div></div><section className="panel report-card"><div className="report-icon"><FileDown size={23}/></div><div><h3>{lang === 'es' ? 'Exportar inventario' : 'Export inventory'}</h3><p>{lang === 'es' ? 'Descarga los componentes que has añadido en formato CSV.' : 'Download your declared components as CSV.'}</p></div><button className="primary-btn" onClick={exportCsv} disabled={!items.length}><Download size={16}/>{lang === 'es' ? 'Inventario CSV' : 'Inventory CSV'}</button></section><section className="panel report-card"><div className="report-icon"><ShieldAlert size={23}/></div><div><h3>{lang === 'es' ? 'Exportar hallazgos' : 'Export findings'}</h3><p>{lang === 'es' ? 'Descarga los candidatos CVE del último análisis con CVSS, EPSS, KEV y componentes.' : 'Download candidate CVEs from the latest analysis with CVSS, EPSS, KEV and components.'}</p></div><button className="primary-btn" onClick={exportFindingsCsv} disabled={!analysis?.findings?.length}><Download size={16}/>{lang === 'es' ? 'Hallazgos CSV' : 'Findings CSV'}</button></section></>}
+          {active === 'reports' && <>
+            <div className="page-heading">
+              <div><div className="eyebrow">{t.workspace}</div><h1>{t.reports}</h1><p>{t.reportSubtitle}</p></div>
+              <div className="heading-actions"><button className="primary-btn" onClick={() => window.print()} disabled={!items.length && !analysis?.findings?.length}><FileDown size={16}/>{t.printReport}</button></div>
+            </div>
+            <section className="print-report">
+              <header className="print-report-header">
+                <div><div className="print-report-brand">QUASARIC.COM</div><h2>{t.reportTitle}</h2><p>{t.reportGenerated}: {new Date().toLocaleString(lang === 'es' ? 'es-ES' : 'en-US')}</p></div>
+                <span className="print-report-mark">Q</span>
+              </header>
+              <p className="print-report-notice">{t.reportPrivacy}</p>
+              <section className="print-report-section">
+                <h3>{t.reportInventory} ({items.length})</h3>
+                {items.length ? <div className="print-report-table-wrap"><table className="print-report-table"><thead><tr><th>{t.component}</th><th>{t.reportType}</th><th>{t.reportVersion}</th><th>{t.reportVendor}</th></tr></thead><tbody>{items.map(item => <tr key={item.id}><td>{item.name}</td><td>{item.type}</td><td>{item.version || '—'}</td><td>{item.vendor || '—'}</td></tr>)}</tbody></table></div> : <p className="print-report-empty">{t.reportNoComponents}</p>}
+              </section>
+              <section className="print-report-section">
+                <h3>{t.reportFindings} ({analysis?.findings?.length || 0})</h3>
+                {analysis?.findings?.length ? <div className="print-report-table-wrap"><table className="print-report-table"><thead><tr><th>{t.reportCve}</th><th>{t.reportDescription}</th><th>{t.reportSeverity}</th><th>{t.reportScore}</th><th>{t.reportEpss}</th><th>{t.reportKev}</th><th>{t.reportApplicability}</th><th>{t.reportComponents}</th><th>{t.reportSources}</th></tr></thead><tbody>{analysis.findings.map(finding => {
+                  const sources = [...new Set(finding.components.flatMap(component => (component.evidence || []).map(evidence => evidence.source).filter(Boolean)))];
+                  return <tr key={finding.id}><td className="print-report-cve">{finding.id}</td><td>{finding.description || '—'}</td><td>{finding.severity || '—'}</td><td>{finding.cvss ?? '—'}</td><td>{finding.epss ?? '—'}</td><td>{finding.kev ? 'Yes' : 'No'}</td><td>{finding.applicabilityStatus || '—'}</td><td>{finding.components.map(component => component.component.name + ' ' + (component.component.version || '')).join('; ')}</td><td>{sources.join(', ') || '—'}</td></tr>;
+                })}</tbody></table></div> : <p className="print-report-empty">{t.reportNoAnalysis}</p>}
+              </section>
+              <footer className="print-report-footer">Quasaric · {window.location.origin}</footer>
+            </section>
+            <section className="panel report-card"><div className="report-icon"><FileDown size={23}/></div><div><h3>{lang === 'es' ? 'Exportar inventario' : 'Export inventory'}</h3><p>{lang === 'es' ? 'Descarga los componentes que has añadido en formato CSV.' : 'Download your declared components as CSV.'}</p></div><button className="secondary-btn" onClick={exportCsv} disabled={!items.length}><Download size={16}/>{lang === 'es' ? 'Inventario CSV' : 'Inventory CSV'}</button></section>
+            <section className="panel report-card"><div className="report-icon"><ShieldAlert size={23}/></div><div><h3>{lang === 'es' ? 'Exportar hallazgos' : 'Export findings'}</h3><p>{lang === 'es' ? 'Descarga los candidatos CVE del último análisis con CVSS, EPSS, KEV y evidencias por fuente.' : 'Download candidate CVEs from the latest analysis with CVSS, EPSS, KEV and source evidence.'}</p></div><button className="secondary-btn" onClick={exportFindingsCsv} disabled={!analysis?.findings?.length}><Download size={16}/>{lang === 'es' ? 'Hallazgos CSV' : 'Findings CSV'}</button></section>
+          </>}
 
           {active === 'settings' && <><div className="page-heading"><div><div className="eyebrow">{t.workspace}</div><h1>{t.settings}</h1><p>{lang === 'es' ? 'Preferencias de idioma y datos locales.' : 'Language and local data preferences.'}</p></div></div><section className="panel settings-panel"><h3>{t.language}</h3><p>{lang === 'es' ? 'Selecciona el idioma de la interfaz.' : 'Choose the interface language.'}</p><div className="setting-options"><button className={lang === 'es' ? 'selected' : ''} onClick={() => setLang('es')}>Español {lang === 'es' && <Check size={16}/>}</button><button className={lang === 'en' ? 'selected' : ''} onClick={() => setLang('en')}>English {lang === 'en' && <Check size={16}/>}</button></div><div className="settings-divider"/><h3>{lang === 'es' ? 'Datos del navegador' : 'Browser data'}</h3><p>{lang === 'es' ? 'El inventario se almacena localmente en este navegador.' : 'Your inventory is stored locally in this browser.'}</p><button className="danger-btn" onClick={() => { if (confirm(lang === 'es' ? '¿Eliminar todo el inventario local?' : 'Delete the entire local inventory?')) persist([]); }}><Trash2 size={15}/>{lang === 'es' ? 'Borrar inventario local' : 'Clear local inventory'}</button></section></>}
           <footer className="footer"><span>© {new Date().getFullYear()} Quasaric · {t.footer}</span><a href="mailto:contacto@quasaric.com">contacto@quasaric.com</a></footer>
