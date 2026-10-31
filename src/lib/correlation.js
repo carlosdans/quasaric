@@ -287,7 +287,7 @@ export function classifyCpeApplicability(cpeItems, component) {
   const relevant = cpeItems.filter(item => cpeMatchesComponent(item.criteria, component));
   if (!relevant.length) return { status: 'needs_review', confidence: 'low', reason: 'No matching product CPE was found; product-text matches remain unverified candidates.' };
 
-  const affected = relevant.some(item => {
+  const affected = relevant.map(item => {
     if (item.vulnerable === false) return false;
     const cpe = cpeProduct(item.criteria);
     const bounded = Boolean(item.versionStartIncluding || item.versionStartExcluding || item.versionEndIncluding || item.versionEndExcluding);
