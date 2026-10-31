@@ -145,8 +145,10 @@ function App() {
   const [lang, setLang] = useState('es');
   const [active, setActive] = useState('overview');
   const [items, setItems] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('quasaric-inventory') || '[]'); }
-    catch { return []; }
+    try {
+      const stored = JSON.parse(localStorage.getItem('quasaric-inventory') || '[]');
+      return Array.isArray(stored) ? stored : [];
+    } catch { return []; }
   });
   const [showAdd, setShowAdd] = useState(false);
   const addDialogRef = useRef(null);
