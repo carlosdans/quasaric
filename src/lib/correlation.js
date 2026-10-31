@@ -236,9 +236,13 @@ function classifyPhpDescriptionApplicability(cve, component) {
       : order <= 0;
   });
 
-  return applies
-    ? { status: 'possible', confidence: 'medium', reason: 'The NVD description explicitly places this PHP version within an affected release range; confirm extensions and vendor build details.' }
-    : { status: 'not_affected', confidence: 'medium', reason: 'The explicit PHP release ranges in the NVD description do not include the installed version.' };
+  if (!applies) {
+    return { status: 'not_affected', confidence: 'medium', reason: 'The explicit PHP release ranges in the NVD description do not include the installed version.' };
+  }
+  if (descriptions.includes('GD Graphics Library') || /\\bGD\\b/i.test(descriptions)) {
+    return { status: 'needs_review', confidence: 'medium', reason: 'This PHP issue depends on the GD graphics library/extension being present and affected; verify the installed GD build.' };
+  }
+  return { status: 'possible', confidence: 'medium', reason: 'The NVD description explicitly places this PHP version within an affected release range; confirm extensions, runtime mode and vendor build details.' };
 }
 
 export function classifyCpeApplicability(cpeItems, component) {
@@ -350,9 +354,8 @@ export async function analyzeInventory(components, { signal, onProgress, sources
           // descriptions retain explicit PHP release ranges. Use that text
           // only when CPE evidence is inconclusive, never to override a
           // directly matching or explicitly excluding CPE range.
-          if (nvdApplicability.status === 'needs_review') {
-            nvdApplicability = classifyPhpDescriptionApplicability(cve, component) || nvdApplicability;
-          }
+          const descriptionApplicability = classifyPhpDescriptionApplicability(cve, component);
+          if (descriptionApplicability) nvdApplicability = descriptionApplicability;
           // Exclude a keyword/product match when the installed version is
           // outside explicit CPE or PHP-description affected ranges.
           if (nvdApplicability.status === 'not_affected') continue;

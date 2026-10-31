@@ -81,3 +81,10 @@ test('uses explicit PHP version ranges in NVD descriptions when wildcard CPEs ar
   assert.equal(statuses.get('CVE-2017-8923'), undefined);
   assert.equal(statuses.get('CVE-2015-9253'), 'possible');
 });
+
+test('PHP 7.2 excludes an explicit PHP-through-7.1.5 issue despite a broad CPE', async () => {
+  const { analyzeInventory } = await import('./correlation.js');
+  const record = { id: 'CVE-2017-8923', descriptions: [{ lang: 'en', value: 'PHP through 7.1.5 has an issue.' }], configurations: [{ nodes: [{ cpeMatch: [range()] }] }] };
+  const result = await analyzeInventory([{ id: 'php', name: 'php', type: 'runtime', version: '7.2.0' }], { sources: { fetchNvdByKeyword: async () => [record], fetchEpssScores: async () => new Map(), fetchKevCatalog: async () => new Map() } });
+  assert.equal(result.findings.some(item => item.id === 'CVE-2017-8923'), false);
+});
