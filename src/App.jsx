@@ -359,7 +359,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <aside ref={mobileNavRef} id="primary-navigation" className={'sidebar ' + (mobileNav ? 'sidebar-open' : '')} aria-label={lang === 'es' ? 'Navegación principal' : 'Primary navigation'}>
+      <aside ref={mobileNavRef} id="primary-navigation" className={'sidebar ' + (mobileNav ? 'sidebar-open' : '')} role={mobileNav ? 'dialog' : undefined} aria-modal={mobileNav ? 'true' : undefined} aria-label={lang === 'es' ? 'Navegación principal' : 'Primary navigation'}>
         <div className="brand">
           <img className="brand-mark" src="/favicon.svg" alt="" />
           <div><div className="brand-name">Quasaric<span>.com</span></div><div className="brand-sub">{t.platform}</div></div>
