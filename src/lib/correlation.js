@@ -199,7 +199,7 @@ export function cpeMatchesComponent(criteria, component) {
   const vendor = normalize(cpe.vendor);
   const product = normalize(cpe.product);
   const name = normalize(component.name);
-  const expectedPart = ['ubuntu', 'windows server'].includes(name) ? 'o' : 'a';
+  const expectedPart = component.type === 'os' || ['ubuntu', 'debian', 'windows server'].includes(name) ? 'o' : 'a';
   if (cpe.part !== '*' && cpe.part !== expectedPart) return false;
   // Match the vendor/product pair, not a loose product-name fragment.
   // This avoids confusing Apache HTTP Server with Tomcat or other Apache projects.
@@ -220,6 +220,7 @@ export function cpeMatchesComponent(criteria, component) {
     mysql: [['oracle', 'mysql'], ['mysql', 'mysql']],
     mariadb: [['mariadb', 'mariadb']],
     ubuntu: [['canonical', 'ubuntu linux'], ['canonical', 'ubuntu']],
+    debian: [['debian', 'debian linux'], ['debian', 'debian']],
     'windows server': [['microsoft', 'windows server']],
     node: [['nodejs', 'node.js'], ['node.js', 'node.js']],
     'node.js': [['nodejs', 'node.js'], ['node.js', 'node.js']]

@@ -413,3 +413,22 @@ test('matches Ubuntu only against its operating-system CPE part', () => {
     { name: 'ubuntu', version: '22.04' }
   ), true);
 });
+
+
+test('matches Debian only against its operating-system CPE part', () => {
+  assert.equal(cpeMatchesComponent(
+    'cpe:2.3:o:debian:debian_linux:12:*:*:*:*:*:*:*',
+    { name: 'debian', version: '12', type: 'os' }
+  ), true);
+  assert.equal(cpeMatchesComponent(
+    'cpe:2.3:a:debian:debian_linux:12:*:*:*:*:*:*:*',
+    { name: 'debian', version: '12', type: 'os' }
+  ), false);
+});
+
+test('uses the normalized OS component type for operating-system CPE matching', () => {
+  assert.equal(cpeMatchesComponent(
+    'cpe:2.3:o:acme:custom_linux:1.0:*:*:*:*:*:*:*',
+    { name: 'custom linux', version: '1.0', type: 'os' }
+  ), true);
+});
