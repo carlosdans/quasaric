@@ -179,8 +179,8 @@ function compareVersions(a, b) {
   // Do not guess ordering for prereleases, distro revisions, epochs or other
   // vendor-specific suffixes. Callers must treat null as insufficient evidence.
   if (!/^\d+(?:\.\d+)*$/.test(leftValue) || !/^\d+(?:\.\d+)*$/.test(rightValue)) return null;
-  const left = leftValue.split('.').map(Number);
-  const right = rightValue.split('.').map(Number);
+  const left = leftValue.split('.').map(BigInt);
+  const right = rightValue.split('.').map(BigInt);
   const length = Math.max(left.length, right.length);
   for (let i = 0; i < length; i++) {
     const x = left[i] ?? 0;
