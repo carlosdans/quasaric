@@ -747,3 +747,20 @@ La documentación de Canonical establece que:
 - CI: run [41200318548](https://github.com/carlosdans/quasaric/actions/runs/41200318548), success.
 - Despliegue Azure: run [41200318556](https://github.com/carlosdans/quasaric/actions/runs/41200318556), success.
 - No se modificaron DNS, secretos ni recursos de infraestructura.
+
+
+---
+
+## Estado actualizado — 31 de octubre de 2026 (CPE de distribuciones y escapes)
+
+- HEAD verificado de `main`: `c6217354272d3bad6bb23ffbb72e48966ea36d77` (`Preserve escaped underscores in CPE product names`).
+- Se amplió la clasificación de sistemas operativos para AlmaLinux, Rocky Linux, SUSE Linux Enterprise Server/SLES y Windows Server 2019/2025, manteniendo los pares CPE vendor/product explícitos.
+- El parser CPE preserva los guiones bajos escapados en los campos vendor y product. Los guiones bajos no escapados continúan normalizándose como separadores; se añadieron regresiones para distinguir ambos casos.
+- CI de `main`: [run 41238216338](https://github.com/carlosdans/quasaric/actions/runs/41238216338), `success`.
+- Despliegue Azure de `main`: [run 41238216322](https://github.com/carlosdans/quasaric/actions/runs/41238216322), `success`.
+- Ambos workflows completaron correctamente para el HEAD indicado. No se modificaron DNS, secretos ni recursos de infraestructura.
+
+### Próxima revisión técnica
+
+- Ampliar fixtures con registros CPE/NVD reales para contrastar los nombres vendor/product y los rangos por distribución, sin introducir alias genéricos que puedan generar falsos positivos.
+- Mantener la regla de coincidencia exacta por producto y parte CPE; los nombres/versiones sin evidencia suficiente deben seguir en revisión.
