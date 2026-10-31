@@ -132,3 +132,13 @@
   .print-report-table { font-size: 8px !important; }
   .print-report-table tr { break-inside: avoid; }
 }
+
+/* Local analysis comparison */
+.comparison-panel { margin: 18px 0 22px; padding: 20px; }
+.comparison-heading h3 { margin: 0 0 5px; }
+.comparison-heading p { color: var(--muted, #718096); font-size: 12px; margin: 0; }
+.comparison-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+.comparison-stats > div { display: flex; flex-direction: column; gap: 4px; padding: 13px; border: 1px solid var(--border, #e1e7ee); border-radius: 10px; }
+.comparison-stats strong { font-size: 23px; color: var(--text, #17263b); }
+.comparison-stats span { font-size: 11px; color: var(--muted, #718096); }
+@media (max-width: 680px) { .comparison-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
