@@ -289,3 +289,14 @@ button{touch-action:manipulation}
   html{scroll-behavior:auto}
   *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
 }
+
+/* Findings filters: usable controls on narrow screens */
+.severity-filter-label{display:flex;align-items:center;gap:8px;color:#8291a7;font-size:10px;white-space:nowrap}
+.severity-filter{min-width:132px;height:40px;padding:0 30px 0 11px;border:1px solid #29374d;border-radius:7px;background:#0d1522;color:#e5ecf7;font:inherit;font-size:11px}
+.severity-filter:focus-visible{outline:2px solid #7ca2ff;outline-offset:2px}
+@media(max-width:760px){
+  .findings-toolbar{display:grid;grid-template-columns:minmax(0,1fr)}
+  .severity-filter-label{display:grid;gap:5px;font-size:11px}
+  .severity-filter{width:100%;min-height:44px;font-size:16px}
+  .findings-panel .table-wrap{margin-top:14px}
+}
