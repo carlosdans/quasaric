@@ -97,7 +97,7 @@ Los hallazgos del análisis se ordenan también mediante una puntuación de tria
 - **CVSS: hasta 20 puntos.** Se escala linealmente desde CVSS 0–10 hasta 20 puntos.
 - **Aplicabilidad: hasta 10 puntos.** `affected` añade 10; `possible`, 6; `needs_review`, 3; estados sin evidencia de afectación (`version_missing`, `conflicting`, `patched_candidate`, `unaffected`) no añaden puntos.
 
-Los tramos son: urgente (80–100), alta (60–79), moderada (35–59) y baja (0–34). Los datos ausentes aportan cero puntos y se señalan como señales faltantes. La puntuación es una heurística de priorización transparente, no una probabilidad de explotación, un veredicto de vulnerabilidad confirmada ni una recomendación automática de actualización. Debe leerse junto con las evidencias originales y la aplicabilidad específica del componente.
+Los tramos son: urgente (80–100), alta (60–79), moderada (35–59) y baja (0–34). EPSS y CVSS ausentes aportan cero puntos y se señalan como señales faltantes; si falta el estado de aplicabilidad, se usa `needs_review` (+3) y se marca como pendiente de confirmación. Los estados explícitos `version_missing`, `conflicting`, `patched_candidate` y `unaffected` aportan cero puntos de aplicabilidad. La puntuación es una heurística de priorización transparente, no una probabilidad de explotación, un veredicto de vulnerabilidad confirmada ni una recomendación automática de actualización. Debe leerse junto con las evidencias originales y la aplicabilidad específica del componente.
 
 ## Orientación de remediación
 
