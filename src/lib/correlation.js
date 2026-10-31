@@ -284,7 +284,17 @@ export async function analyzeInventory(components, { signal, onProgress, sources
         for (const cve of records) {
           if (!matchesProductText(cve, component)) continue;
           const current = allCandidates.get(cve.id) || { cve, components: [] };
-          current.components.push({ component, applicability: applicability(cve, component) });
+          const existingComponent = current.components.find(item => item.component.id === component.id);
+          if (existingComponent) {
+            existingComponent.nvdMatched = true;
+            existingComponent.nvdApplicability = applicability(cve, component);
+          } else {
+            current.components.push({
+              component,
+              applicability: applicability(cve, component),
+              nvdMatched: true
+            });
+          }
           allCandidates.set(cve.id, current);
         }
       } catch (error) {
@@ -318,8 +328,33 @@ export async function analyzeInventory(components, { signal, onProgress, sources
           // Keep NVD applicability intact, but retain the independent Ubuntu
           // OSV assessment so it can be compared with exact-product OpenVEX.
           existingComponent.ubuntuOsv = applicability;
+          existingComponent.ubuntuOsvEvidence = [
+            ...(existingComponent.ubuntuOsvEvidence || []),
+            {
+              advisoryId: record.osvId || null,
+              status: applicability.status,
+              reason: applicability.reason,
+              publishedAt: record.published || null,
+              updatedAt: record.modified || null,
+              url: record.osvId ? `https://osv.dev/vulnerability/${encodeURIComponent(record.osvId)}` : null,
+              references: (record.references || []).map(reference => reference.url).filter(Boolean)
+            }
+          ];
         } else {
-          current.components.push({ component, applicability, ubuntuOsv: applicability });
+          current.components.push({
+            component,
+            applicability,
+            ubuntuOsv: applicability,
+            ubuntuOsvEvidence: [{
+              advisoryId: record.osvId || null,
+              status: applicability.status,
+              reason: applicability.reason,
+              publishedAt: record.published || null,
+              updatedAt: record.modified || null,
+              url: record.osvId ? `https://osv.dev/vulnerability/${encodeURIComponent(record.osvId)}` : null,
+              references: (record.references || []).map(reference => reference.url).filter(Boolean)
+            }]
+          });
         }
         allCandidates.set(cveId, current);
       }
@@ -418,6 +453,50 @@ export async function analyzeInventory(components, { signal, onProgress, sources
 
   const findings = [...allCandidates.values()].map(({ cve, components: matched }) => {
     const summary = extractCveSummary(cve);
+    for (const item of matched) {
+      const product = {
+        name: item.component.name || null,
+        version: item.component.version || null,
+        sourcePackage: item.component.sourcePackage || null,
+        sourceVersion: item.component.sourceVersion || null,
+        architecture: item.component.architecture || null,
+        ecosystem: item.component.ecosystem || item.component.vendor || null
+      };
+      const evidence = [];
+      if (item.nvdMatched) {
+        const nvdApplicability = item.nvdApplicability || item.applicability;
+        evidence.push({
+          source: 'NVD',
+          status: nvdApplicability.status,
+          reason: nvdApplicability.reason,
+          publishedAt: cve.published || null,
+          updatedAt: cve.lastModified || null,
+          advisoryId: cve.id,
+          url: `https://nvd.nist.gov/vuln/detail/${encodeURIComponent(cve.id)}`,
+          product,
+          references: (cve.references || []).map(reference => reference.url).filter(Boolean)
+        });
+      }
+      for (const osv of item.ubuntuOsvEvidence || []) {
+        evidence.push({
+          source: 'Ubuntu OSV',
+          ...osv,
+          product
+        });
+      }
+      if (item.ubuntuVex) {
+        evidence.push({
+          source: 'Canonical OpenVEX',
+          status: item.ubuntuVex.status,
+          reason: item.ubuntuVex.reason,
+          documentTimestamp: item.ubuntuVex.documentTimestamp || null,
+          documentVersion: item.ubuntuVex.documentVersion ?? null,
+          url: item.ubuntuVex.documentUrl || null,
+          product
+        });
+      }
+      item.evidence = evidence;
+    }
     const kevEntry = kev.get(cve.id) || null;
     return {
       ...summary,
