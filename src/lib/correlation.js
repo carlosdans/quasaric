@@ -200,7 +200,7 @@ function matchesProductText(cve, component) {
   return cpes.some(item => cpeMatchesComponent(item.criteria, component));
 }
 
-function classifyPhpDescriptionApplicability(cve, component) {
+export function classifyPhpDescriptionApplicability(cve, component) {
   if (normalize(component.name) !== 'php') return null;
   const descriptions = (cve.descriptions || [])
     .filter(item => !item.lang || item.lang === 'en')
@@ -241,7 +241,7 @@ function classifyPhpDescriptionApplicability(cve, component) {
   if (!applies) {
     return { status: 'not_affected', confidence: 'medium', reason: 'The explicit PHP release ranges in the NVD description do not include the installed version.' };
   }
-  if (descriptions.includes('GD Graphics Library') || /\\bGD\\b/i.test(descriptions)) {
+  if (descriptions.includes('GD Graphics Library') || /\bGD\b/i.test(descriptions)) {
     return { status: 'needs_review', confidence: 'medium', reason: 'This PHP issue depends on the GD graphics library/extension being present and affected; verify the installed GD build.' };
   }
   return { status: 'possible', confidence: 'medium', reason: 'The NVD description explicitly places this PHP version within an affected release range; confirm extensions, runtime mode and vendor build details.' };
