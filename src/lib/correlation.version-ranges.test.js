@@ -39,8 +39,8 @@ test('excludes versions outside an explicitly bounded wildcard CPE range', () =>
   assert.equal(classifyCpeApplicability(cpes, php('8.1.0')).status, 'not_affected');
 });
 
-test('does not exclude a version when a wildcard CPE has no explicit version boundaries', () => {
-  assert.equal(classifyCpeApplicability([range()], php('8.1.0')).status, 'possible');
+test('does not treat an unbounded wildcard CPE as proof of applicability', () => {
+  assert.equal(classifyCpeApplicability([range()], php('8.1.0')).status, 'needs_review');
 });
 
 test('requires an exact match when the CPE contains a concrete version', () => {

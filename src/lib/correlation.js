@@ -206,13 +206,13 @@ function classifyPhpDescriptionApplicability(cve, component) {
     .filter(item => !item.lang || item.lang === 'en')
     .map(item => String(item.value || ''))
     .join(' ');
-  if (!/\\bPHP\\b/i.test(descriptions)) return null;
+  if (!/\bPHP\b/i.test(descriptions)) return null;
 
   // NVD descriptions frequently retain explicit PHP release branches even
   // when the CPE entry is an unbounded wildcard. Only interpret well-formed,
   // explicit "before"/"through" clauses; otherwise leave the result for review.
   const clauses = [];
-  const pattern = /(?:(\\d+)\\.(\\d+|x)\\.x\\s+)?(before|prior to|through|up to and including|earlier than)\\s+(?:version\\s+)?(\\d+\\.\\d+(?:\\.\\d+)?)/gi;
+  const pattern = /(?:(\d+)\.(\d+|x)\.x\s+)?(before|prior to|through|up to and including|earlier than)\s+(?:version\s+)?(\d+\.\d+(?:\.\d+)?)/gi;
   for (const match of descriptions.matchAll(pattern)) {
     const [, familyMajor, familyMinor, operator, boundary] = match;
     const family = familyMajor
@@ -224,7 +224,7 @@ function classifyPhpDescriptionApplicability(cve, component) {
 
   const installed = String(component.version || '').trim();
   const applies = clauses.some(({ family, operator, boundary }) => {
-    const parts = installed.match(/^\\d+(?:\\.\\d+){0,2}/)?.[0];
+    const parts = installed.match(/^\d+(?:\.\d+){0,2}/)?.[0];
     if (!parts) return false;
     if (family) {
       const [major, minor] = parts.split('.').map(Number);
@@ -250,6 +250,8 @@ export function classifyCpeApplicability(cpeItems, component) {
   const affected = relevant.some(item => {
     if (item.vulnerable === false) return false;
     const cpe = cpeProduct(item.criteria);
+    const bounded = Boolean(item.versionStartIncluding || item.versionStartExcluding || item.versionEndIncluding || item.versionEndExcluding);
+    if (cpe.version === '*' && !bounded) return false;
     if (cpe.version !== '*' && cpe.version !== version) return false;
     if (item.versionStartIncluding && compareVersions(version, item.versionStartIncluding) < 0) return false;
     if (item.versionStartExcluding && compareVersions(version, item.versionStartExcluding) <= 0) return false;
