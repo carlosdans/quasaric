@@ -6,7 +6,7 @@ const componentTypes = {
   apache: 'web', 'apache http server': 'web', httpd: 'web', nginx: 'web', 'microsoft iis': 'web', iis: 'web',
   wordpress: 'cms', joomla: 'cms', drupal: 'cms',
   mysql: 'database', mariadb: 'database', postgresql: 'database', mongodb: 'database',
-  ubuntu: 'os', debian: 'os', 'windows server': 'os'
+  ubuntu: 'os', debian: 'os', 'windows server': 'os', 'windows server 2019': 'os', 'windows server 2022': 'os', 'windows server 2025': 'os', 'red hat enterprise linux': 'os', rhel: 'os', fedora: 'os', 'alpine linux': 'os'
 };
 export function suggestedComponentType(name) { return componentTypes[normalizeName(name)] || null; }
 export function normalizeComponentType(component) {

@@ -13,6 +13,11 @@ test('known technologies receive their expected component type', () => {
   assert.equal(suggestedComponentType('Ubuntu'), 'os');
   assert.equal(suggestedComponentType('Debian'), 'os');
   assert.equal(suggestedComponentType('Windows Server'), 'os');
+  assert.equal(suggestedComponentType('Windows Server 2022'), 'os');
+  assert.equal(suggestedComponentType('Red Hat Enterprise Linux'), 'os');
+  assert.equal(suggestedComponentType('RHEL'), 'os');
+  assert.equal(suggestedComponentType('Fedora'), 'os');
+  assert.equal(suggestedComponentType('Alpine Linux'), 'os');
 });
 
 test('legacy misclassified inventory entries are corrected without mutating input', () => {

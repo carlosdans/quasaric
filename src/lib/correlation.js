@@ -199,7 +199,7 @@ export function cpeMatchesComponent(criteria, component) {
   const vendor = normalize(cpe.vendor);
   const product = normalize(cpe.product);
   const name = normalize(component.name);
-  const expectedPart = component.type === 'os' || ['ubuntu', 'debian', 'windows server'].includes(name) ? 'o' : 'a';
+  const expectedPart = component.type === 'os' || ['ubuntu', 'debian', 'windows server', 'windows server 2019', 'windows server 2022', 'windows server 2025', 'red hat enterprise linux', 'rhel', 'fedora', 'alpine linux'].includes(name) ? 'o' : 'a';
   if (cpe.part !== '*' && cpe.part !== expectedPart) return false;
   // Match the vendor/product pair, not a loose product-name fragment.
   // This avoids confusing Apache HTTP Server with Tomcat or other Apache projects.
@@ -221,7 +221,14 @@ export function cpeMatchesComponent(criteria, component) {
     mariadb: [['mariadb', 'mariadb']],
     ubuntu: [['canonical', 'ubuntu linux'], ['canonical', 'ubuntu']],
     debian: [['debian', 'debian linux'], ['debian', 'debian']],
+    'red hat enterprise linux': [['redhat', 'enterprise linux']],
+    rhel: [['redhat', 'enterprise linux']],
+    fedora: [['fedoraproject', 'fedora']],
+    'alpine linux': [['alpinelinux', 'alpine linux']],
     'windows server': [['microsoft', 'windows server']],
+    'windows server 2019': [['microsoft', 'windows server 2019']],
+    'windows server 2022': [['microsoft', 'windows server 2022']],
+    'windows server 2025': [['microsoft', 'windows server 2025']],
     node: [['nodejs', 'node.js'], ['node.js', 'node.js']],
     'node.js': [['nodejs', 'node.js'], ['node.js', 'node.js']]
   };
