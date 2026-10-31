@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyCpeApplicability, collectCpeMatches, classifyPhpDescriptionApplicability, hasUnsupportedCpeLogic } from '../src/lib/correlation.js';
+import { classifyCpeApplicability, collectCpeMatches, classifyPhpDescriptionApplicability, hasUnsupportedCpeLogic, evaluateCpeConfigurations } from '../src/lib/correlation.js';
 
 const cpe = (criteria, extra = {}) => ({ criteria, vulnerable: true, ...extra });
 
@@ -162,4 +162,64 @@ test('supports the PHP through operator as an inclusive boundary', () => {
   const cve = { descriptions: [{ lang: 'en', value: 'PHP 8.2.x through 8.2.15 is affected.' }] };
   assert.equal(classifyPhpDescriptionApplicability(cve, { name: 'PHP', version: '8.2.15' }).status, 'possible');
   assert.equal(classifyPhpDescriptionApplicability(cve, { name: 'PHP', version: '8.2.16' }).status, 'not_affected');
+});
+
+test('evaluates NVD AND conditions across installed application and operating system', () => {
+  const configurations = [{
+    nodes: [{
+      operator: 'AND',
+      cpeMatch: [
+        cpe('cpe:2.3:a:nginx:nginx:1.24.0:*:*:*:*:*:*:*'),
+        cpe('cpe:2.3:o:canonical:ubuntu_linux:22.04:*:*:*:*:*:*:*', { vulnerable: false })
+      ]
+    }]
+  }];
+  const inventory = [
+    { name: 'nginx', version: '1.24.0' },
+    { name: 'ubuntu', version: '22.04' }
+  ];
+  assert.equal(evaluateCpeConfigurations(configurations, inventory), true);
+});
+
+test('does not satisfy NVD AND when a required platform is absent from inventory', () => {
+  const configurations = [{
+    nodes: [{
+      operator: 'AND',
+      cpeMatch: [
+        cpe('cpe:2.3:a:nginx:nginx:1.24.0:*:*:*:*:*:*:*'),
+        cpe('cpe:2.3:o:canonical:ubuntu_linux:22.04:*:*:*:*:*:*:*', { vulnerable: false })
+      ]
+    }]
+  }];
+  assert.equal(evaluateCpeConfigurations(configurations, [{ name: 'nginx', version: '1.24.0' }]), null);
+});
+
+test('rejects NVD AND when a required installed platform has a different version', () => {
+  const configurations = [{
+    nodes: [{
+      operator: 'AND',
+      cpeMatch: [
+        cpe('cpe:2.3:a:nginx:nginx:1.24.0:*:*:*:*:*:*:*'),
+        cpe('cpe:2.3:o:canonical:ubuntu_linux:22.04:*:*:*:*:*:*:*', { vulnerable: false })
+      ]
+    }]
+  }];
+  const inventory = [
+    { name: 'nginx', version: '1.24.0' },
+    { name: 'ubuntu', version: '20.04' }
+  ];
+  assert.equal(evaluateCpeConfigurations(configurations, inventory), false);
+});
+
+test('evaluates NVD OR alternatives when one installed product matches', () => {
+  const configurations = [{
+    nodes: [{
+      operator: 'OR',
+      cpeMatch: [
+        cpe('cpe:2.3:a:nginx:nginx:1.24.0:*:*:*:*:*:*:*'),
+        cpe('cpe:2.3:a:apache:http_server:2.4.58:*:*:*:*:*:*:*')
+      ]
+    }]
+  }];
+  assert.equal(evaluateCpeConfigurations(configurations, [{ name: 'nginx', version: '1.24.0' }]), true);
 });
