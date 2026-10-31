@@ -5,13 +5,20 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: quasaric-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
+    name: Tests and production build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,8 +27,8 @@ jobs:
         with:
           node-version: 20
       - name: Install dependencies
-        run: npm install
-      - name: Run correlation tests
+        run: npm install --no-audit --no-fund
+      - name: Run automated tests
         run: npm test
       - name: Build static application
         run: npm run build
