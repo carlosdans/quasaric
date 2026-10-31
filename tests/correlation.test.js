@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { classifyCpeApplicability, cpeMatchesComponent, collectCpeMatches, classifyPhpDescriptionApplicability, hasUnsupportedCpeLogic, evaluateCpeConfigurations } from '../src/lib/correlation.js';
 
 test('parses escaped delimiters in CPE 2.3 vendor and product fields', () => {
-  assert.equal(cpeMatchesComponent('cpe:2.3:a:vendor\\:group:foo\\:bar:1.2.3:*:*:*:*:*:*:*', { name: 'foo bar', version: '1.2.3' }), true);
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:foo\\:bar:foo\\:bar:1.2.3:*:*:*:*:*:*:*', { name: 'foo bar', version: '1.2.3' }), true);
 });
 
 const cpe = (criteria, extra = {}) => ({ criteria, vulnerable: true, ...extra });
@@ -255,4 +255,34 @@ test('applies NVD node negation to the complete logical expression', () => {
   }];
   assert.equal(evaluateCpeConfigurations(configurations, [{ name: 'nginx', version: '1.24.0' }]), false);
   assert.equal(evaluateCpeConfigurations(configurations, [{ name: 'nginx', version: '1.25.0' }]), true);
+});
+
+test('applies configuration negation after evaluating its complete expression', () => {
+  const configurations = [{
+    negate: true,
+    operator: 'OR',
+    nodes: [{
+      operator: 'OR',
+      cpeMatch: [cpe('cpe:2.3:a:nginx:nginx:1.24.0:*:*:*:*:*:*:*')]
+    }]
+  }];
+  assert.equal(evaluateCpeConfigurations(configurations, [{ name: 'nginx', version: '1.24.0' }]), false);
+  assert.equal(evaluateCpeConfigurations(configurations, [{ name: 'nginx', version: '1.25.0' }]), true);
+});
+
+test('keeps compound nested CPE logic tri-state when a required version is missing', () => {
+  const configurations = [{
+    nodes: [{
+      operator: 'AND',
+      cpeMatch: [cpe('cpe:2.3:a:nginx:nginx:1.24.0:*:*:*:*:*:*:*')],
+      children: [{
+        operator: 'OR',
+        cpeMatch: [cpe('cpe:2.3:o:canonical:ubuntu_linux:22.04:*:*:*:*:*:*:*', { vulnerable: false })]
+      }]
+    }]
+  }];
+  assert.equal(evaluateCpeConfigurations(configurations, [
+    { name: 'nginx', version: '1.24.0' },
+    { name: 'ubuntu', version: '' }
+  ]), null);
 });
