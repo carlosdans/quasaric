@@ -106,7 +106,7 @@ test('attaches source identifiers, dates, URLs and exact product details to each
 
   const vex = evidence.find(item => item.source === 'Canonical OpenVEX');
   assert.equal(vex.status, 'fixed');
-  assert.equal(vex.publishedAt, vexRecord.timestamp);
+  assert.equal(vex.documentTimestamp, vexRecord.timestamp);
   assert.equal(vex.documentVersion, vexRecord.version);
   assert.equal(vex.url, vexRecord.sourceUrl);
 
