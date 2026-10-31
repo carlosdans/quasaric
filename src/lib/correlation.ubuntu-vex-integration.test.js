@@ -188,7 +188,7 @@ test('keeps Canonical OpenVEX document fetch concurrency at or below four', asyn
 
 test('retains Ubuntu OSV assessment beside NVD applicability and flags OSV/OpenVEX contradiction', async () => {
   const result = await analyzeInventory([component()], { sources: sources() });
-  const finding = result.find(item => item.id === 'CVE-2026-12345');
+  const finding = result.findings.find(item => item.id === 'CVE-2026-12345');
   const matched = finding.components[0];
   assert.equal(matched.applicability.status, 'possible');
   assert.equal(matched.ubuntuOsv.status, 'affected');
@@ -229,7 +229,7 @@ test('compares OpenVEX independently for two binaries from the same Ubuntu sourc
       fetchCanonicalUbuntuVex: async () => document
     })
   });
-  const finding = result.find(item => item.id === 'CVE-2026-12345');
+  const finding = result.findings.find(item => item.id === 'CVE-2026-12345');
   assert.equal(finding.components.length, 2);
   const openssl = finding.components.find(item => item.component.name === 'openssl');
   const libssl3 = finding.components.find(item => item.component.name === 'libssl3');
@@ -254,7 +254,7 @@ test('flags an OpenVEX affected statement that contradicts an Ubuntu OSV patched
       })
     })
   });
-  const finding = result.find(item => item.id === 'CVE-2026-12345');
+  const finding = result.findings.find(item => item.id === 'CVE-2026-12345');
   const matched = finding.components[0];
   assert.equal(matched.ubuntuOsv.status, 'patched_candidate');
   assert.equal(matched.ubuntuVex.status, 'affected');
