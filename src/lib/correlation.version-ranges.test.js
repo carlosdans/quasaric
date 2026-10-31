@@ -61,3 +61,23 @@ test('does not infer applicability when the version is missing', () => {
 test('does not apply a PHP CPE range to another product', () => {
   assert.equal(classifyCpeApplicability([range()], { name: 'Python', version: '8.2' }).status, 'needs_review');
 });
+
+test('uses explicit PHP version ranges in NVD descriptions when wildcard CPEs are inconclusive', async () => {
+  const { analyzeInventory } = await import('./correlation.js');
+  const records = [
+    { id: 'CVE-2018-7584', descriptions: [{ lang: 'en', value: 'In PHP through 5.6.33, 7.0.x before 7.0.28, 7.1.x through 7.1.14, and 7.2.x through 7.2.2.' }], configurations: [{ nodes: [{ cpeMatch: [range()] }] }] },
+    { id: 'CVE-2017-8923', descriptions: [{ lang: 'en', value: 'The function in PHP through 7.1.5 has an issue.' }], configurations: [{ nodes: [{ cpeMatch: [range()] }] }] },
+    { id: 'CVE-2015-9253', descriptions: [{ lang: 'en', value: 'An issue was discovered in PHP 7.2.x before 7.2.8.' }], configurations: [{ nodes: [{ cpeMatch: [range()] }] }] }
+  ];
+  const result = await analyzeInventory([{ id: 'php', name: 'php', type: 'runtime', version: '7.2.0' }], {
+    sources: {
+      fetchNvdByKeyword: async () => records,
+      fetchEpssScores: async () => new Map(),
+      fetchKevCatalog: async () => new Map()
+    }
+  });
+  const statuses = new Map(result.findings.map(item => [item.id, item.applicabilityStatus]));
+  assert.equal(statuses.get('CVE-2018-7584'), 'possible');
+  assert.equal(statuses.get('CVE-2017-8923'), undefined);
+  assert.equal(statuses.get('CVE-2015-9253'), 'possible');
+});
