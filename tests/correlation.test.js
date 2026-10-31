@@ -240,3 +240,15 @@ test('wildcard vulnerable CPEs prove product presence in compound configuration 
   ];
   assert.equal(evaluateCpeConfigurations(configurations, inventory), true);
 });
+
+test('applies NVD node negation to the complete logical expression', () => {
+  const configurations = [{
+    nodes: [{
+      operator: 'OR',
+      negate: true,
+      cpeMatch: [cpe('cpe:2.3:a:nginx:nginx:1.24.0:*:*:*:*:*:*:*')]
+    }]
+  }];
+  assert.equal(evaluateCpeConfigurations(configurations, [{ name: 'nginx', version: '1.24.0' }]), false);
+  assert.equal(evaluateCpeConfigurations(configurations, [{ name: 'nginx', version: '1.25.0' }]), true);
+});
