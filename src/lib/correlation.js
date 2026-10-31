@@ -197,7 +197,7 @@ export function cpeMatchesComponent(criteria, component) {
 
 function matchesProductText(cve, component) {
   const cpes = (cve.configurations || []).flatMap(config => collectCpeMatches(config.nodes || []));
-  return cpes.some(item => cpeMatchesComponent(item.criteria, component));
+  return cpes.some(item => item.vulnerable !== false && cpeMatchesComponent(item.criteria, component));
 }
 
 export function classifyPhpDescriptionApplicability(cve, component) {
@@ -322,7 +322,9 @@ function cpeConditionInInventory(item, inventory) {
     if (item.versionStartExcluding && compareVersions(version, item.versionStartExcluding) <= 0) return false;
     if (item.versionEndIncluding && compareVersions(version, item.versionEndIncluding) > 0) return false;
     if (item.versionEndExcluding && compareVersions(version, item.versionEndExcluding) >= 0) return false;
-    return cpe.version !== '-' && (cpe.version !== '*' || bounded || !item.vulnerable);
+    // A wildcard CPE still proves product presence for configuration logic;
+    // vulnerability range classification is performed separately per product.
+    return cpe.version !== '-';
   });
 }
 
