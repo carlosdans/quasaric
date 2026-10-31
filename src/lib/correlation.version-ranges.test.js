@@ -18,13 +18,13 @@ test('includes both endpoints of an inclusive affected version range', () => {
 
 test('excludes the lower endpoint of an exclusive start range', () => {
   const cpes = [range({ versionStartExcluding: '8.1', versionEndIncluding: '8.3' })];
-  assert.equal(classifyCpeApplicability(cpes, php('8.1')).status, 'needs_review');
+  assert.equal(classifyCpeApplicability(cpes, php('8.1')).status, 'not_affected');
   assert.equal(classifyCpeApplicability(cpes, php('8.1.1')).status, 'possible');
 });
 
 test('excludes the upper endpoint of an exclusive end range', () => {
   const cpes = [range({ versionStartIncluding: '8.1', versionEndExcluding: '8.3' })];
-  assert.equal(classifyCpeApplicability(cpes, php('8.3')).status, 'needs_review');
+  assert.equal(classifyCpeApplicability(cpes, php('8.3')).status, 'not_affected');
   assert.equal(classifyCpeApplicability(cpes, php('8.2.9')).status, 'possible');
 });
 
