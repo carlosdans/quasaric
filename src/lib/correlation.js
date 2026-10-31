@@ -208,16 +208,20 @@ function classifyPhpDescriptionApplicability(cve, component) {
     .join(' ');
   if (!/\bPHP\b/i.test(descriptions)) return null;
 
-  // NVD descriptions frequently retain explicit PHP release branches even
-  // when the CPE entry is an unbounded wildcard. Only interpret well-formed,
-  // explicit "before"/"through" clauses; otherwise leave the result for review.
+  // NVD descriptions often contain branch-specific ranges while the CPE
+  // entry is an unbounded wildcard. Parse only explicit bounds and scope an
+  // unqualified boundary to its own major.minor branch (e.g. "before 8.1.29"
+  // means the 8.1 branch, never every PHP release below 8.1.29).
   const clauses = [];
-  const pattern = /(?:(\d+)\.(\d+|x)\.x\s+)?(before|prior to|through|up to and including|earlier than)\s+(?:version\s+)?(\d+\.\d+(?:\.\d+)?)/gi;
+  const pattern = /(?:(\d+)\.(\d+|x)\.(?:x|\*)\s+)?(before|prior to|below|less than|through|up to and including|earlier than)\s+(?:version\s+)?(\d+\.\d+(?:\.\d+)?)/gi;
   for (const match of descriptions.matchAll(pattern)) {
     const [, familyMajor, familyMinor, operator, boundary] = match;
-    const family = familyMajor
-      ? { major: Number(familyMajor), minor: familyMinor.toLowerCase() === 'x' ? null : Number(familyMinor) }
-      : null;
+    const boundaryParts = boundary.split('.').map(Number);
+    const family = {
+      major: familyMajor ? Number(familyMajor) : boundaryParts[0],
+      minor: familyMajor && familyMinor.toLowerCase() === 'x' ? null
+        : familyMajor ? Number(familyMinor) : boundaryParts[1]
+    };
     clauses.push({ family, operator: operator.toLowerCase(), boundary });
   }
   if (!clauses.length) return null;
@@ -226,12 +230,10 @@ function classifyPhpDescriptionApplicability(cve, component) {
   const applies = clauses.some(({ family, operator, boundary }) => {
     const parts = installed.match(/^\d+(?:\.\d+){0,2}/)?.[0];
     if (!parts) return false;
-    if (family) {
-      const [major, minor] = parts.split('.').map(Number);
-      if (major !== family.major || (family.minor !== null && minor !== family.minor)) return false;
-    }
+    const [major, minor] = parts.split('.').map(Number);
+    if (major !== family.major || (family.minor !== null && minor !== family.minor)) return false;
     const order = compareVersions(installed, boundary);
-    return ['before', 'prior to', 'earlier than'].includes(operator)
+    return ['before', 'prior to', 'below', 'less than', 'earlier than'].includes(operator)
       ? order < 0
       : order <= 0;
   });
@@ -356,11 +358,11 @@ export async function analyzeInventory(components, { signal, onProgress, sources
         for (const cve of records) {
           if (!matchesProductText(cve, component)) continue;
           let nvdApplicability = applicability(cve, component);
-          // Some NVD records have unbounded wildcard CPEs while their
-          // descriptions retain explicit PHP release ranges. Use that text
-          // only when CPE evidence is inconclusive, never to override a
-          // directly matching or explicitly excluding CPE range.
-          const descriptionApplicability = classifyPhpDescriptionApplicability(cve, component);
+          // Descriptions are a fallback only: never let prose override a
+          // structured CPE range that already includes or excludes this version.
+          const descriptionApplicability = nvdApplicability.status === 'needs_review'
+            ? classifyPhpDescriptionApplicability(cve, component)
+            : null;
           if (descriptionApplicability) nvdApplicability = descriptionApplicability;
           // Exclude a keyword/product match when the installed version is
           // outside explicit CPE or PHP-description affected ranges.
