@@ -12,7 +12,7 @@ const directives = Object.fromEntries(
     .map((part) => part.trim())
     .filter(Boolean)
     .map((part) => {
-      const [name, ...values] = part.split(/\\s+/);
+      const [name, ...values] = part.split(/\s+/);
       return [name, values];
     })
 );
@@ -28,7 +28,7 @@ test('security headers remain enabled', () => {
   assert.equal(headers['Permissions-Policy'], 'camera=(), microphone=(), geolocation=()');
 });
 
-test('CSP allows only the external vulnerability sources the app uses', () => {
+test('CSP allows the external vulnerability sources the app uses', () => {
   const connectSources = directives['connect-src'] ?? [];
   for (const source of [
     "'self'",
