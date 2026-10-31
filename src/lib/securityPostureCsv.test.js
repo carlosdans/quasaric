@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildSecurityPostureCsv } from './securityPostureCsv.js';
 
+const linesOf = csv => csv.slice(1).split(String.fromCharCode(13, 10));
+
 test('exports timeline metrics and observation rows with CSV escaping', () => {
   const csv = buildSecurityPostureCsv({
     timeline: [{
@@ -13,7 +15,8 @@ test('exports timeline metrics and observation rows with CSV escaping', () => {
       lastObservedAt: '2026-10-01', snapshotsSeen: 1, presentInLatest: true
     }]
   });
-  const lines = csv.replace(/^\\uFEFF/, '').split('\\r\\n');
+  assert.equal(csv.charCodeAt(0), 0xfeff);
+  const lines = linesOf(csv);
   assert.equal(lines.length, 3);
   assert.match(lines[1], /^"snapshot","snapshot-1","2026-10-01","2","1"/);
   assert.match(lines[2], /"CVE-1","lib, ""core""","2026-10-01","2026-10-01","1","true"$/);
@@ -21,21 +24,25 @@ test('exports timeline metrics and observation rows with CSV escaping', () => {
 
 test('exports an empty but valid header when no history is available', () => {
   const csv = buildSecurityPostureCsv({ timeline: [], dwell: [] });
-  assert.equal(csv.replace(/^\\uFEFF/, '').split('\\r\\n').length, 1);
-  assert.match(csv, /^\\uFEFF"record_type"/);
+  assert.equal(csv.charCodeAt(0), 0xfeff);
+  assert.equal(linesOf(csv).length, 1);
+  assert.match(csv.slice(1), /^"record_type"/);
 });
 
 test('neutralizes spreadsheet formulas in untrusted text fields', () => {
   const csv = buildSecurityPostureCsv({
     timeline: [{ id: '=HYPERLINK("https://example.invalid","open")' }],
-    dwell: [{ cve: '+SUM(1,1)', componentName: '@cmd', firstObservedAt: '-1', lastObservedAt: '\\t2' }]
+    dwell: [{
+      cve: '+SUM(1,1)', componentName: '@cmd', firstObservedAt: '-1',
+      lastObservedAt: String.fromCharCode(9) + '2'
+    }]
   });
-  assert.match(csv, /"'=HYPERLINK\(""https:\/\/example\.invalid"",""open""\)"/);
-  assert.match(csv, /"'+SUM\(1,1\)","'@cmd","'-1","'\\t2"/);
+  assert.ok(csv.includes('"\'=HYPERLINK(""https://example.invalid"",""open"")"'));
+  assert.ok(csv.includes('"\'+SUM(1,1)","\'@cmd","\'-1","\'' + String.fromCharCode(9) + '2"'));
 });
 
 test('handles absent, malformed and null history collections safely', () => {
-  assert.equal(buildSecurityPostureCsv().split('\\r\\n').length, 1);
-  assert.equal(buildSecurityPostureCsv({ timeline: {}, dwell: null }).split('\\r\\n').length, 1);
-  assert.equal(buildSecurityPostureCsv({ timeline: [null, 3], dwell: [null, false] }).split('\\r\\n').length, 1);
+  assert.equal(linesOf(buildSecurityPostureCsv()).length, 1);
+  assert.equal(linesOf(buildSecurityPostureCsv({ timeline: {}, dwell: null })).length, 1);
+  assert.equal(linesOf(buildSecurityPostureCsv({ timeline: [null, 3], dwell: [null, false] })).length, 1);
 });
