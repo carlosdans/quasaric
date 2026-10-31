@@ -3,6 +3,8 @@ import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
 import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
+const NVD_MAX_RESULTS = 6000;
+
 const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+_-]/g, ' ').trim();
 
 const unique = values => [...new Set(values)];
@@ -296,8 +298,8 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     const queries = componentQueries(component);
     for (const query of queries) {
       try {
-        const records = await sourceApi.fetchNvdByKeyword(query, { signal, maxResults: 400 });
-        if (records.truncated) limits.push({ source: 'NVD', component: component.name, maxResults: 400, totalResults: records.totalResults });
+        const records = await sourceApi.fetchNvdByKeyword(query, { signal, maxResults: NVD_MAX_RESULTS });
+        if (records.truncated) limits.push({ source: 'NVD', component: component.name, maxResults: NVD_MAX_RESULTS, totalResults: records.totalResults });
         for (const cve of records) {
           if (!matchesProductText(cve, component)) continue;
           const nvdApplicability = applicability(cve, component);
