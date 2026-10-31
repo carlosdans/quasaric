@@ -23,14 +23,14 @@ test('excludes a newer installed version when NVD enumerates only older concrete
   ];
   const result = classifyCpeApplicability(historicalPhpVersions, { name: 'PHP', version: '8.1.0' });
   assert.equal(result.status, 'not_affected');
-  assert.match(result.reason, /not among the concrete affected product versions/i);
+  assert.match(result.reason, /outside the concrete versions and explicit affected ranges/i);
 });
 
 test('respects inclusive and exclusive version boundaries', () => {
   const range = [cpe('cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*', { versionStartIncluding: '1.20.0', versionEndExcluding: '1.25.0' })];
   assert.equal(classifyCpeApplicability(range, { name: 'nginx', version: '1.24.9' }).status, 'possible');
-  assert.equal(classifyCpeApplicability(range, { name: 'nginx', version: '1.25.0' }).status, 'needs_review');
-  assert.equal(classifyCpeApplicability(range, { name: 'nginx', version: '1.19.9' }).status, 'needs_review');
+  assert.equal(classifyCpeApplicability(range, { name: 'nginx', version: '1.25.0' }).status, 'not_affected');
+  assert.equal(classifyCpeApplicability(range, { name: 'nginx', version: '1.19.9' }).status, 'not_affected');
 });
 
 test('requires an exact supplied version', () => {
