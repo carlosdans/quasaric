@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyCpeApplicability, collectCpeMatches } from '../src/lib/correlation.js';
+import { classifyCpeApplicability, collectCpeMatches, classifyPhpDescriptionApplicability, hasUnsupportedCpeLogic } from '../src/lib/correlation.js';
 
 const cpe = (criteria, extra = {}) => ({ criteria, vulnerable: true, ...extra });
 
@@ -94,4 +94,53 @@ test('Ubuntu ecosystem requires an explicit release, not a generic Ubuntu label'
   assert.equal(valid.test('Ubuntu:Pro:22.04:LTS'), true);
   assert.equal(valid.test('Ubuntu'), false);
   assert.equal(valid.test('Ubuntu:latest'), false);
+});
+
+
+test('does not flatten NVD AND conditions into a false single-product match', () => {
+  const configurations = [{
+    nodes: [{
+      operator: 'AND',
+      negate: false,
+      cpeMatch: [
+        cpe('cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*'),
+        cpe('cpe:2.3:o:vendor:required_platform:1.0:*:*:*:*:*:*:*', { vulnerable: false })
+      ]
+    }]
+  }];
+  assert.equal(hasUnsupportedCpeLogic(configurations), true);
+});
+
+test('accepts ordinary OR-only NVD CPE trees for per-product matching', () => {
+  const configurations = [{
+    nodes: [{
+      operator: 'OR',
+      cpeMatch: [cpe('cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*')],
+      children: [{
+        operator: 'OR',
+        cpeMatch: [cpe('cpe:2.3:a:vendor:product:2.0:*:*:*:*:*:*:*')]
+      }]
+    }]
+  }];
+  assert.equal(hasUnsupportedCpeLogic(configurations), false);
+});
+
+test('keeps negated NVD CPE conditions in manual review', () => {
+  assert.equal(hasUnsupportedCpeLogic([{
+    nodes: [{ operator: 'OR', negate: true, cpeMatch: [cpe('cpe:2.3:a:vendor:product:*:*:*:*:*:*:*:*')] }]
+  }]), true);
+});
+
+test('scopes unqualified PHP description boundaries to the stated branch', () => {
+  const result = classifyPhpDescriptionApplicability({
+    descriptions: [{ lang: 'en', value: 'PHP versions before 8.1.29 are affected.' }]
+  }, { name: 'PHP', version: '7.2.0' });
+  assert.equal(result.status, 'not_affected');
+});
+
+test('recognizes GD as a PHP extension-specific condition', () => {
+  const result = classifyPhpDescriptionApplicability({
+    descriptions: [{ lang: 'en', value: 'PHP 7.2.x before 7.2.24 is affected when GD is enabled.' }]
+  }, { name: 'PHP', version: '7.2.23' });
+  assert.equal(result.status, 'needs_review');
 });
