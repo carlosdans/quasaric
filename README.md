@@ -88,6 +88,12 @@ La Ubuntu Security API está documentada por Canonical como un trabajo en curso 
 
 EPSS es una estimación, KEV indica inclusión en el catálogo de CISA y una referencia pública de PoC no demuestra explotación activa. Son señales diferentes y no deben confundirse.
 
+## Historial y comparación de análisis
+
+La aplicación conserva localmente hasta 10 resultados de análisis para permitir comparaciones sucesivas en el navegador. Cada comparación se realiza por CVE y componente del inventario, y clasifica exposiciones nuevas, ya no detectadas, presentes sin cambios y hallazgos cuyos datos han cambiado (severidad, CVSS, EPSS, KEV, aplicabilidad o versión del componente).
+
+El historial no se sincroniza con ningún servidor ni se comparte con las fuentes externas. Borrar los datos locales del navegador elimina también el historial. La ausencia de un hallazgo en un análisis posterior significa "ya no detectado por las fuentes y reglas consultadas", no una prueba independiente de remediación.
+
 ## Próximos hitos
 
 1. Ampliar fixtures de regresión con CVE y avisos reales representativos de varias releases y arquitecturas Ubuntu.
