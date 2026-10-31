@@ -99,6 +99,10 @@ Los hallazgos del análisis se ordenan también mediante una puntuación de tria
 
 Los tramos son: urgente (80–100), alta (60–79), moderada (35–59) y baja (0–34). Los datos ausentes aportan cero puntos y se señalan como señales faltantes. La puntuación es una heurística de priorización transparente, no una probabilidad de explotación, un veredicto de vulnerabilidad confirmada ni una recomendación automática de actualización. Debe leerse junto con las evidencias originales y la aplicabilidad específica del componente.
 
+## Orientación de remediación
+
+Quasaric genera orientación por componente y conserva los enlaces de las fuentes originales. Solo propone una versión binaria concreta cuando Ubuntu OSV clasifica el paquete fuente exacto como afectado, mapea el paquete binario instalado (nombre, versión, paquete fuente y release) y proporciona una única versión binaria corregida. Si falta cualquiera de esas condiciones, existen varias versiones candidatas o las fuentes no concuerdan, el resultado exige revisión manual y enlaza los avisos disponibles. Un estado `patched_candidate` se presenta como candidato que debe verificarse, nunca como remediación confirmada. Las recomendaciones no ejecutan cambios ni comandos en los sistemas.
+
 ## Historial y comparación de análisis
 
 La aplicación conserva localmente hasta 10 resultados de análisis para permitir comparaciones sucesivas en el navegador. Cada comparación se realiza por CVE y componente del inventario, y clasifica exposiciones nuevas, ya no detectadas, presentes sin cambios y hallazgos cuyos datos han cambiado (severidad, CVSS, EPSS, KEV, aplicabilidad o versión del componente).
@@ -111,7 +115,7 @@ El historial no se sincroniza con ningún servidor ni se comparte con las fuente
 2. Validar el build, las cabeceras CSP y el despliegue real de Azure en cada cambio relevante.
 3. Mejorar la correlación de productos y versiones para otras distribuciones, ediciones/builds de Windows, plugins y dependencias transitivas.
 4. Incorporar fichas técnicas con vector, impacto, precondiciones, remediación y referencias verificadas.
-5. Ampliar las recomendaciones de remediación por producto, versión, distribución y build, con referencias oficiales verificables.
+5. Ampliar la cobertura de remediación verificable para otras distribuciones, productos y builds, manteniendo requisitos de evidencia exacta.
 6. Revisar textos legales, privacidad y límites de uso bilingües antes del lanzamiento público.
 
 Contacto: contacto@quasaric.com
