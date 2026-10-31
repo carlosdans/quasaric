@@ -325,3 +325,17 @@ test('keeps compound CPE version checks unknown when a suffix cannot be ordered'
     { name: 'ubuntu', version: '22.04' }
   ]), null);
 });
+
+test('compares very large numeric version segments without precision loss', () => {
+  const ranged = [cpe('cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*', {
+    versionStartIncluding: '1000000000000000000000000.0'
+  })];
+  assert.equal(classifyCpeApplicability(ranged, {
+    name: 'nginx',
+    version: '999999999999999999999999.0'
+  }).status, 'not_affected');
+  assert.equal(classifyCpeApplicability(ranged, {
+    name: 'nginx',
+    version: '1000000000000000000000000.0'
+  }).status, 'possible');
+});
