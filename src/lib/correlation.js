@@ -174,14 +174,18 @@ export function classifyUbuntuOsvComponent(record, component) {
 }
 
 function compareVersions(a, b) {
-  const left = String(a).match(/\d+|[a-z]+/gi) || [];
-  const right = String(b).match(/\d+|[a-z]+/gi) || [];
+  const leftValue = String(a ?? '').trim();
+  const rightValue = String(b ?? '').trim();
+  // Do not guess ordering for prereleases, distro revisions, epochs or other
+  // vendor-specific suffixes. Callers must treat null as insufficient evidence.
+  if (!/^\d+(?:\.\d+)*$/.test(leftValue) || !/^\d+(?:\.\d+)*$/.test(rightValue)) return null;
+  const left = leftValue.split('.').map(Number);
+  const right = rightValue.split('.').map(Number);
   const length = Math.max(left.length, right.length);
   for (let i = 0; i < length; i++) {
-    const x = left[i] ?? '0', y = right[i] ?? '0';
-    if (x === y) continue;
-    if (/^\d+$/.test(x) && /^\d+$/.test(y)) return Number(x) < Number(y) ? -1 : 1;
-    return x.localeCompare(y, undefined, { numeric: true, sensitivity: 'base' });
+    const x = left[i] ?? 0;
+    const y = right[i] ?? 0;
+    if (x !== y) return x < y ? -1 : 1;
   }
   return 0;
 }
@@ -252,17 +256,22 @@ export function classifyPhpDescriptionApplicability(cve, component) {
   if (!clauses.length) return null;
 
   const installed = String(component.version || '').trim();
+  let uncertainRange = false;
   const applies = clauses.some(({ family, operator, boundary }) => {
     const parts = installed.match(/^\d+(?:\.\d+){0,2}/)?.[0];
-    if (!parts) return false;
+    if (!parts) { uncertainRange = true; return false; }
     const [major, minor] = parts.split('.').map(Number);
     if (major !== family.major || (family.minor !== null && minor !== family.minor)) return false;
     const order = compareVersions(installed, boundary);
+    if (order === null) { uncertainRange = true; return false; }
     return ['before', 'prior to', 'below', 'less than', 'earlier than'].includes(operator)
       ? order < 0
       : order <= 0;
   });
 
+  if (!applies && uncertainRange) {
+    return { status: 'needs_review', confidence: 'low', reason: 'The installed PHP version contains a suffix or format that cannot be safely ordered against the NVD release boundary.' };
+  }
   if (!applies) {
     return { status: 'not_affected', confidence: 'medium', reason: 'The explicit PHP release ranges in the NVD description do not include the installed version.' };
   }
@@ -284,13 +293,23 @@ export function classifyCpeApplicability(cpeItems, component) {
     const bounded = Boolean(item.versionStartIncluding || item.versionStartExcluding || item.versionEndIncluding || item.versionEndExcluding);
     if (cpe.version === '*' && !bounded) return false;
     if (cpe.version !== '*' && cpe.version !== version) return false;
-    if (item.versionStartIncluding && compareVersions(version, item.versionStartIncluding) < 0) return false;
-    if (item.versionStartExcluding && compareVersions(version, item.versionStartExcluding) <= 0) return false;
-    if (item.versionEndIncluding && compareVersions(version, item.versionEndIncluding) > 0) return false;
-    if (item.versionEndExcluding && compareVersions(version, item.versionEndExcluding) >= 0) return false;
-    return true;
+    let uncertain = false;
+    const checks = [
+      [item.versionStartIncluding, order => order >= 0],
+      [item.versionStartExcluding, order => order > 0],
+      [item.versionEndIncluding, order => order <= 0],
+      [item.versionEndExcluding, order => order < 0]
+    ];
+    for (const [boundary, accepts] of checks) {
+      if (!boundary) continue;
+      const order = compareVersions(version, boundary);
+      if (order === null) { uncertain = true; continue; }
+      if (!accepts(order)) return false;
+    }
+    return uncertain ? null : true;
   });
-  if (affected) return { status: 'possible', confidence: 'medium', reason: 'The supplied version falls within an NVD CPE match/range. Confirm against the vendor advisory and distribution build before treating as affected.' };
+  if (affected.includes(true)) return { status: 'possible', confidence: 'medium', reason: 'The supplied version falls within an NVD CPE match/range. Confirm against the vendor advisory and distribution build before treating as affected.' };
+  if (affected.includes(null)) return { status: 'needs_review', confidence: 'low', reason: 'The NVD CPE range uses a version format or suffix that cannot be safely ordered against the installed version.' };
 
   // When NVD enumerates only concrete versions for this exact product, an
   // installed version outside that list is not an applicable candidate. Do
@@ -342,10 +361,18 @@ function cpeConditionInInventory(item, inventory) {
     const version = String(component.version || '').trim();
     if (!version) return null;
     if (cpe.version !== '*' && cpe.version !== '-' && cpe.version !== version) return false;
-    if (item.versionStartIncluding && compareVersions(version, item.versionStartIncluding) < 0) return false;
-    if (item.versionStartExcluding && compareVersions(version, item.versionStartExcluding) <= 0) return false;
-    if (item.versionEndIncluding && compareVersions(version, item.versionEndIncluding) > 0) return false;
-    if (item.versionEndExcluding && compareVersions(version, item.versionEndExcluding) >= 0) return false;
+    const checks = [
+      [item.versionStartIncluding, order => order >= 0],
+      [item.versionStartExcluding, order => order > 0],
+      [item.versionEndIncluding, order => order <= 0],
+      [item.versionEndExcluding, order => order < 0]
+    ];
+    for (const [boundary, accepts] of checks) {
+      if (!boundary) continue;
+      const order = compareVersions(version, boundary);
+      if (order === null) return null;
+      if (!accepts(order)) return false;
+    }
     // A wildcard CPE still proves product presence for configuration logic;
     // vulnerability range classification is performed separately per product.
     return cpe.version !== '-';
