@@ -294,3 +294,34 @@ test('keeps escaped colons inside the CPE version field', () => {
   );
   assert.equal(result.status, 'possible');
 });
+
+test('does not guess CPE range ordering for distro or prerelease suffixes', () => {
+  const ranged = [cpe('cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*', {
+    versionStartIncluding: '1.24.0',
+    versionEndExcluding: '1.26.0'
+  })];
+  assert.equal(classifyCpeApplicability(ranged, { name: 'nginx', version: '1.25.0-ubuntu1' }).status, 'needs_review');
+  assert.equal(classifyCpeApplicability(ranged, { name: 'nginx', version: '1.25.0-rc1' }).status, 'needs_review');
+});
+
+test('keeps PHP versions with vendor suffixes in manual review against numeric bounds', () => {
+  const cve = { descriptions: [{ lang: 'en', value: 'PHP 8.1.x before 8.1.29 is affected.' }] };
+  const result = classifyPhpDescriptionApplicability(cve, { name: 'PHP', version: '8.1.28-ubuntu1' });
+  assert.equal(result.status, 'needs_review');
+});
+
+test('keeps compound CPE version checks unknown when a suffix cannot be ordered', () => {
+  const configurations = [{
+    nodes: [{
+      operator: 'AND',
+      cpeMatch: [
+        cpe('cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*', { versionStartIncluding: '1.24.0' }),
+        cpe('cpe:2.3:o:canonical:ubuntu_linux:22.04:*:*:*:*:*:*:*', { vulnerable: false })
+      ]
+    }]
+  }];
+  assert.equal(evaluateCpeConfigurations(configurations, [
+    { name: 'nginx', version: '1.25.0-ubuntu1' },
+    { name: 'ubuntu', version: '22.04' }
+  ]), null);
+});
