@@ -2,7 +2,8 @@ function csvCell(value) {
   let text = value == null ? '' : String(value);
   // Prevent spreadsheet formula execution when untrusted labels are opened in Excel/Sheets.
   const first = text.charCodeAt(0);
-  if (['=', '+', '@', '-'].includes(text[0]) || first === 9 || first === 13) {
+  const formulaPrefix = /^[\\s]*[=+@-]/.test(text);
+  if (formulaPrefix || first === 9 || first === 10 || first === 13) {
     text = "'" + text;
   }
   return '"' + text.replace(/"/g, '""') + '"';
