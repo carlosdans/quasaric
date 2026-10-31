@@ -184,3 +184,81 @@ test('keeps Canonical OpenVEX document fetch concurrency at or below four', asyn
   assert.ok(maximumActive > 1);
   assert.ok(maximumActive <= 4);
 });
+
+
+test('retains Ubuntu OSV assessment beside NVD applicability and flags OSV/OpenVEX contradiction', async () => {
+  const result = await analyzeInventory([component()], { sources: sources() });
+  const finding = result.find(item => item.id === 'CVE-2026-12345');
+  const matched = finding.components[0];
+  assert.equal(matched.applicability.status, 'possible');
+  assert.equal(matched.ubuntuOsv.status, 'affected');
+  assert.equal(matched.ubuntuVex.status, 'fixed');
+  assert.equal(matched.ubuntuVex.consistency.status, 'conflicting');
+  assert.match(matched.ubuntuVex.consistency.reason, /Ubuntu OSV reports affected.*OpenVEX reports fixed/i);
+  assert.equal(finding.applicabilityStatus, 'possible');
+});
+
+test('compares OpenVEX independently for two binaries from the same Ubuntu source package', async () => {
+  const libsslPurl = 'pkg:deb/ubuntu/libssl3@1.0.0-1?arch=amd64&distro=ubuntu/noble';
+  const record = {
+    ...osvRecord,
+    affected: [{
+      ...osvRecord.affected[0],
+      ecosystem_specific: {
+        binaries: [
+          { binary_name: 'openssl', binary_version: '1.0.0-2' },
+          { binary_name: 'libssl3', binary_version: '1.0.0-2' }
+        ]
+      }
+    }]
+  };
+  const document = {
+    ...vexRecord,
+    statements: [
+      { status: 'not_affected', products: [{ '@id': binaryPurl }] },
+      { status: 'affected', products: [{ '@id': libsslPurl }] }
+    ]
+  };
+  const result = await analyzeInventory([
+    component({ id: 'openssl-amd64' }),
+    component({ id: 'libssl3-amd64', name: 'libssl3' })
+  ], {
+    sources: sources({
+      fetchNvdByKeyword: async () => [],
+      fetchUbuntuOsvForSourcePackage: async () => [record],
+      fetchCanonicalUbuntuVex: async () => document
+    })
+  });
+  const finding = result.find(item => item.id === 'CVE-2026-12345');
+  assert.equal(finding.components.length, 2);
+  const openssl = finding.components.find(item => item.component.name === 'openssl');
+  const libssl3 = finding.components.find(item => item.component.name === 'libssl3');
+  assert.equal(openssl.ubuntuOsv.status, 'affected');
+  assert.equal(openssl.ubuntuVex.status, 'not_affected');
+  assert.equal(openssl.ubuntuVex.consistency.status, 'conflicting');
+  assert.equal(libssl3.ubuntuOsv.status, 'affected');
+  assert.equal(libssl3.ubuntuVex.status, 'affected');
+  assert.equal(libssl3.ubuntuVex.consistency.status, 'aligned');
+  assert.equal(finding.applicabilityStatus, 'affected');
+});
+
+test('flags an OpenVEX affected statement that contradicts an Ubuntu OSV patched candidate', async () => {
+  const result = await analyzeInventory([
+    component({ version: '1.0.0-2', sourceVersion: '1.0.0-2' })
+  ], {
+    sources: sources({
+      fetchNvdByKeyword: async () => [],
+      fetchCanonicalUbuntuVex: async () => ({
+        ...vexRecord,
+        statements: [{ status: 'affected', products: [{ '@id': binaryPurl }] }]
+      })
+    })
+  });
+  const finding = result.find(item => item.id === 'CVE-2026-12345');
+  const matched = finding.components[0];
+  assert.equal(matched.ubuntuOsv.status, 'patched_candidate');
+  assert.equal(matched.ubuntuVex.status, 'affected');
+  assert.equal(matched.ubuntuVex.consistency.status, 'conflicting');
+  assert.equal(matched.applicability.status, 'patched_candidate');
+  assert.equal(finding.applicabilityStatus, 'patched_candidate');
+});
