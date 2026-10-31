@@ -7,6 +7,7 @@ import { suggestedComponentType, normalizeComponentType } from './lib/componentT
 import { rankFindingsByRisk } from './lib/riskPriority.js';
 import { buildFindingRemediation } from './lib/remediation.js';
 import { buildSecurityPosture } from './lib/securityPosture.js';
+import { buildSecurityPostureCsv } from './lib/securityPostureCsv.js';
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, Bell, BookOpen,
   Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Cloud,
@@ -70,7 +71,7 @@ const copy = {
     compareCurrent: 'Actual', compareComponent: 'Componente afectado',
     compareChange: 'Cambio', compareBefore: 'Antes', compareAfter: 'Ahora',
     comparePrint: 'Resumen comparativo', priorityLabel: 'Prioridad calculada', riskScore: 'Puntuación de triage', riskMethod: 'KEV 40 + EPSS 30 + CVSS 20 + aplicabilidad 10. No es una probabilidad de explotación ni una confirmación.', riskCritical: 'Urgente', riskHigh: 'Alta', riskModerate: 'Moderada', riskLow: 'Baja', remediation: 'Remediación', updateTo: 'Actualizar a', reviewVendor: 'Revisar aviso oficial', fixCandidate: 'Posible corrección; verificar',
-    posture: 'Postura', postureTitle: 'Postura de seguridad', postureDesc: 'Evolución de la exposición observada en tus análisis guardados.', postureHistory: 'Historial disponible', postureWindow: 'Ventana observada', postureNoHistory: 'Aún no hay análisis históricos.', postureNeedTwo: 'Guarda al menos dos análisis para comparar tendencias.', postureExposures: 'Exposiciones por componente', postureCves: 'CVE únicas', postureKev: 'CVE en KEV', postureRisk: 'Prioridad agregada (suma)', postureTrend: 'Tendencia histórica', postureDwell: 'Periodo de observación', postureDwellHelp: 'Primera y última observación en el historial local; el número de análisis indica recurrencia, no duración real de exposición ni fecha de remediación.', posturePresent: 'Presente en el último análisis', postureAbsent: 'No detectada en el último análisis', postureFirst: 'Primera observación', postureLast: 'Última observación', postureSnapshots: 'Análisis observados', postureNoDwell: 'No hay exposiciones registradas en el historial.', postureIncrease: 'Aumento', postureDecrease: 'Descenso', postureStable: 'Sin cambio', postureLimits: 'Se muestran como máximo 10 análisis guardados en este navegador. Una ausencia posterior no confirma remediación.'
+    posture: 'Postura', postureTitle: 'Postura de seguridad', postureDesc: 'Evolución de la exposición observada en tus análisis guardados.', postureHistory: 'Historial disponible', postureWindow: 'Ventana observada', postureNoHistory: 'Aún no hay análisis históricos.', postureNeedTwo: 'Guarda al menos dos análisis para comparar tendencias.', postureExposures: 'Exposiciones por componente', postureCves: 'CVE únicas', postureKev: 'CVE en KEV', postureRisk: 'Prioridad agregada (suma)', postureTrend: 'Tendencia histórica', postureDwell: 'Periodo de observación', postureDwellHelp: 'Primera y última observación en el historial local; el número de análisis indica recurrencia, no duración real de exposición ni fecha de remediación.', posturePresent: 'Presente en el último análisis', postureAbsent: 'No detectada en el último análisis', postureFirst: 'Primera observación', postureLast: 'Última observación', postureSnapshots: 'Análisis observados', postureNoDwell: 'No hay exposiciones registradas en el historial.', postureIncrease: 'Aumento', postureDecrease: 'Descenso', postureStable: 'Sin cambio', postureLimits: 'Se muestran como máximo 10 análisis guardados en este navegador. Una ausencia posterior no confirma remediación.', postureExport: 'Exportar historial CSV'
   },
   en: {
     platform: 'SECURITY INTELLIGENCE PLATFORM', overview: 'Overview', inventory: 'Inventory',
@@ -126,7 +127,7 @@ const copy = {
     compareCurrent: 'Current', compareComponent: 'Affected component',
     compareChange: 'Change', compareBefore: 'Before', compareAfter: 'Now',
     comparePrint: 'Comparison summary', priorityLabel: 'Calculated priority', riskScore: 'Triage score', riskMethod: 'KEV 40 + EPSS 30 + CVSS 20 + applicability 10. Not an exploitation probability or a confirmation.', riskCritical: 'Urgent', riskHigh: 'High', riskModerate: 'Moderate', riskLow: 'Low', remediation: 'Remediation', updateTo: 'Update to', reviewVendor: 'Review vendor advisory', fixCandidate: 'Fix candidate; verify',
-    posture: 'Posture', postureTitle: 'Security posture', postureDesc: 'Exposure trends across your saved analyses.', postureHistory: 'Available history', postureWindow: 'Observed window', postureNoHistory: 'There are no historical analyses yet.', postureNeedTwo: 'Save at least two analyses to compare trends.', postureExposures: 'Component exposures', postureCves: 'Unique CVEs', postureKev: 'KEV CVEs', postureRisk: 'Aggregated priority (sum)', postureTrend: 'Historical trend', postureDwell: 'Observation window', postureDwellHelp: 'First and last observations in local history; snapshot count indicates recurrence, not real exposure duration or a remediation date.', posturePresent: 'Present in latest analysis', postureAbsent: 'Not detected in latest analysis', postureFirst: 'First observed', postureLast: 'Last observed', postureSnapshots: 'Analyses observed', postureNoDwell: 'No exposures are recorded in history.', postureIncrease: 'Increase', postureDecrease: 'Decrease', postureStable: 'No change', postureLimits: 'Up to 10 analyses saved in this browser are shown. A later absence does not confirm remediation.'
+    posture: 'Posture', postureTitle: 'Security posture', postureDesc: 'Exposure trends across your saved analyses.', postureHistory: 'Available history', postureWindow: 'Observed window', postureNoHistory: 'There are no historical analyses yet.', postureNeedTwo: 'Save at least two analyses to compare trends.', postureExposures: 'Component exposures', postureCves: 'Unique CVEs', postureKev: 'KEV CVEs', postureRisk: 'Aggregated priority (sum)', postureTrend: 'Historical trend', postureDwell: 'Observation window', postureDwellHelp: 'First and last observations in local history; snapshot count indicates recurrence, not real exposure duration or a remediation date.', posturePresent: 'Present in latest analysis', postureAbsent: 'Not detected in latest analysis', postureFirst: 'First observed', postureLast: 'Last observed', postureSnapshots: 'Analyses observed', postureNoDwell: 'No exposures are recorded in history.', postureIncrease: 'Increase', postureDecrease: 'Decrease', postureStable: 'No change', postureLimits: 'Up to 10 analyses saved in this browser are shown. A later absence does not confirm remediation.', postureExport: 'Export history CSV'
   }
 };
 
@@ -158,6 +159,19 @@ function App() {
   const [form, setForm] = useState({ name: '', type: 'other', version: '', vendor: '', sourcePackage: '', sourceVersion: '', architecture: '' });
   const suggestedType = suggestedComponentType(form.name);
   const t = copy[lang];
+
+  const exportPostureCsv = () => {
+    const csv = buildSecurityPostureCsv(posture);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'quasaric-security-posture.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
 
   const persist = (next) => {
     setItems(next);
@@ -299,7 +313,7 @@ function App() {
           </>}
 
           {active === 'posture' && <>
-            <div className="page-heading"><div><div className="eyebrow">{t.workspace}</div><h1>{t.postureTitle}</h1><p>{t.postureDesc}</p></div><span className="status-pill"><span className="status-dot"/>{posture.snapshotCount} / 10 {t.postureHistory}</span></div>
+            <div className="page-heading"><div><div className="eyebrow">{t.workspace}</div><h1>{t.postureTitle}</h1><p>{t.postureDesc}</p></div><div className="heading-actions"><span className="status-pill"><span className="status-dot"/>{posture.snapshotCount} / 10 {t.postureHistory}</span><button className="secondary-btn" onClick={exportPostureCsv} disabled={!posture.snapshotCount}><Download size={15}/>{t.postureExport}</button></div></div>
             <div className="notice"><ShieldCheck size={17}/><span>{t.postureLimits}</span></div>
             {!posture.snapshotCount ? <section className="panel empty-state large"><div className="empty-icon"><Activity size={22}/></div><strong>{t.postureNoHistory}</strong><span>{t.emptyHint}</span><button className="primary-btn" onClick={() => setActive('inventory')}>{t.newAnalysis}</button></section> : <>
               <section className="metric-grid">
