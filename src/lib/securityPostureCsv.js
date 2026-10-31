@@ -1,7 +1,10 @@
 function csvCell(value) {
   let text = value == null ? '' : String(value);
   // Prevent spreadsheet formula execution when untrusted labels are opened in Excel/Sheets.
-  if (/^[=+@\\-\\t\\r]/.test(text)) text = "'" + text;
+  const first = text.charCodeAt(0);
+  if (['=', '+', '@', '-'].includes(text[0]) || first === 9 || first === 13) {
+    text = "'" + text;
+  }
   return '"' + text.replace(/"/g, '""') + '"';
 }
 
@@ -35,5 +38,6 @@ export function buildSecurityPostureCsv(posture = {}) {
       item.snapshotsSeen, item.presentInLatest
     ]);
   }
-  return '\\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\\r\\n');
+  return String.fromCharCode(0xfeff) +
+    rows.map(row => row.map(csvCell).join(',')).join(String.fromCharCode(13, 10));
 }
