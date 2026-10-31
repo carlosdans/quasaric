@@ -116,6 +116,7 @@ El panel de postura resume la evolución de los análisis guardados localmente (
 - Serie temporal de CVE únicas, exposiciones CVE/componente, CVE incluidas en CISA KEV y suma de puntuaciones de prioridad por CVE.
 - Variación entre el análisis más antiguo y el más reciente disponible en la ventana local.
 - Primera y última observación, número de análisis en los que aparece cada exposición y presencia en el último análisis.
+- Exportación CSV local del periodo histórico: una fila por snapshot con métricas agregadas y una fila por observación CVE/componente, con escapado CSV para hojas de cálculo. No incluye datos de inventario ajenos a las observaciones ni transmite el fichero.
 - La puntuación agregada suma, para cada CVE, su mayor puntuación de triage entre los componentes observados en ese snapshot. Es un indicador interno para comparar snapshots, no una probabilidad ni una métrica normalizada entre inventarios distintos.
 - El historial es local al navegador y está limitado a 10 análisis. Con menos de dos snapshots no se calcula una variación temporal.
 - Las fechas de primera/última observación solo describen lo registrado por Quasaric. No representan el inicio o fin real de una vulnerabilidad, y que deje de aparecer no demuestra remediación.
