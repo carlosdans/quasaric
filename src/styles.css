@@ -23,3 +23,112 @@
 .source-evidence-item:first-of-type{margin-top:7px}
 .source-evidence-item strong{color:#e0e9f8;font-size:10px}
 .source-evidence-item a{color:#8eafff;text-decoration:underline}
+
+
+/* Printable security report: preview on screen, clean A4 output when printing. */
+.print-report {
+  background: #fff;
+  color: #182230;
+  border: 1px solid #dfe5ec;
+  border-radius: 14px;
+  padding: 28px;
+  margin: 22px 0;
+}
+.print-report-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #dfe5ec;
+}
+.print-report-brand {
+  color: #53657a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+.print-report-header h2 {
+  color: #142033;
+  font-size: 25px;
+  margin: 8px 0 4px;
+}
+.print-report-header p,
+.print-report-empty {
+  color: #64748b;
+  font-size: 12px;
+  margin: 0;
+}
+.print-report-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #142b4a;
+  color: #fff;
+  font-size: 21px;
+  font-weight: 800;
+}
+.print-report-notice {
+  margin: 18px 0;
+  padding: 11px 13px;
+  border-left: 3px solid #6689b5;
+  background: #f3f7fb;
+  color: #40536b;
+  font-size: 12px;
+}
+.print-report-section { margin-top: 24px; }
+.print-report-section h3 {
+  color: #1d2d42;
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+.print-report-table-wrap { overflow-x: auto; }
+.print-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.print-report-table th {
+  background: #f1f4f8;
+  color: #34465d;
+  font-weight: 700;
+  text-align: left;
+}
+.print-report-table th,
+.print-report-table td {
+  border: 1px solid #dfe5ec;
+  padding: 7px 8px;
+  vertical-align: top;
+}
+.print-report-cve { white-space: nowrap; font-weight: 700; }
+.print-report-footer {
+  border-top: 1px solid #dfe5ec;
+  color: #718096;
+  font-size: 10px;
+  margin-top: 28px;
+  padding-top: 12px;
+}
+@media print {
+  @page { size: A4 landscape; margin: 12mm; }
+  html, body { background: #fff !important; }
+  body * { visibility: hidden !important; }
+  .print-report, .print-report * { visibility: visible !important; }
+  .print-report {
+    position: fixed !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: #182230 !important;
+    background: #fff !important;
+  }
+  .print-report-table-wrap { overflow: visible !important; }
+  .print-report-table { font-size: 8px !important; }
+  .print-report-table tr { break-inside: avoid; }
+}
