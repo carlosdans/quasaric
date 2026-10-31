@@ -236,7 +236,10 @@ export function cpeMatchesComponent(criteria, component) {
     node: [['nodejs', 'node.js'], ['node.js', 'node.js']],
     'node.js': [['nodejs', 'node.js'], ['node.js', 'node.js']]
   };
-  const accepted = productPairs[name] || [[name, name]];
+  // Unknown inventory labels do not establish a trustworthy CPE vendor/product identity.
+  // Fail closed instead of assuming that the component name is both fields.
+  const accepted = productPairs[name];
+  if (!accepted) return false;
   return accepted.some(([expectedVendor, expectedProduct]) =>
     vendor === expectedVendor && product === expectedProduct
   );
