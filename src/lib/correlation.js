@@ -215,6 +215,20 @@ export function classifyCpeApplicability(cpeItems, component) {
     return true;
   });
   if (affected) return { status: 'possible', confidence: 'medium', reason: 'The supplied version falls within an NVD CPE match/range. Confirm against the vendor advisory and distribution build before treating as affected.' };
+
+  // When NVD enumerates only concrete versions for this exact product, an
+  // installed version outside that list is not an applicable candidate. Do
+  // not turn historical product-name matches into findings for newer releases.
+  const vulnerableCpes = relevant.filter(item => item.vulnerable !== false);
+  const explicitlyVersioned = vulnerableCpes.length > 0 && vulnerableCpes.every(item => {
+    const cpe = cpeProduct(item.criteria);
+    return cpe.version !== '*' && cpe.version !== '-' &&
+      !item.versionStartIncluding && !item.versionStartExcluding &&
+      !item.versionEndIncluding && !item.versionEndExcluding;
+  });
+  if (explicitlyVersioned) {
+    return { status: 'not_affected', confidence: 'high', reason: 'The installed version is not among the concrete affected product versions enumerated by NVD.' };
+  }
   return { status: 'needs_review', confidence: 'low', reason: 'A product CPE exists, but the supplied version was not proven to fall in its affected range.' };
 }
 
@@ -283,15 +297,19 @@ export async function analyzeInventory(components, { signal, onProgress, sources
         if (records.truncated) limits.push({ source: 'NVD', component: component.name, maxResults: 400, totalResults: records.totalResults });
         for (const cve of records) {
           if (!matchesProductText(cve, component)) continue;
+          const nvdApplicability = applicability(cve, component);
+          // Exclude a keyword/product match when NVD enumerates concrete
+          // affected versions and the installed version is outside that list.
+          if (nvdApplicability.status === 'not_affected') continue;
           const current = allCandidates.get(cve.id) || { cve, components: [] };
           const existingComponent = current.components.find(item => item.component.id === component.id);
           if (existingComponent) {
             existingComponent.nvdMatched = true;
-            existingComponent.nvdApplicability = applicability(cve, component);
+            existingComponent.nvdApplicability = nvdApplicability;
           } else {
             current.components.push({
               component,
-              applicability: applicability(cve, component),
+              applicability: nvdApplicability,
               nvdMatched: true
             });
           }
