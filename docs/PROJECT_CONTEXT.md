@@ -702,3 +702,24 @@ La documentación de Canonical establece que:
 - El cambio no convierte una señal de un binario en un veredicto global del CVE y no confirma remediación.
 - No se modificaron DNS, secretos, recursos Azure ni el flujo de privacidad. El inventario no se transmite a Canonical; solo se consulta el documento público por CVE.
 - Pendiente de confirmar en CI/Azure el despliegue del commit de integración `5124475`.
+
+
+---
+
+## Estado actualizado — 31 de octubre de 2026 (PR #39: trazabilidad de evidencias por fuente)
+
+- PR #39 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/39.
+- Commit de integración en `main`: `a997ef2684d3a5b13f8c988a8426fb1e16e5538c`.
+- Cada componente asociado a un CVE incluye ahora `evidence[]`, con registros separados por fuente:
+  - NVD: estado de aplicabilidad NVD, motivo, fecha de publicación/última modificación, identificador CVE, URL NVD y referencias disponibles.
+  - Ubuntu OSV: estado y motivo de la clasificación por componente, identificador OSV Ubuntu cuando está disponible, fechas `published`/`modified`, URL del registro OSV y referencias del aviso.
+  - Canonical OpenVEX: estado exacto del producto, timestamp del documento, versión documental y URL de origen.
+- Cada registro conserva los detalles del producto local al que se refiere: nombre y versión binaria, paquete y versión fuente, arquitectura y ecosistema/distribución. Estos datos se mantienen en el navegador; no se transmiten a las fuentes.
+- Se distingue explícitamente si un componente fue realmente emparejado con NVD. Los hallazgos procedentes únicamente de Ubuntu OSV no reciben una entrada NVD ficticia.
+- La interfaz de resultados incorpora un panel desplegable de trazabilidad por componente. La exportación CSV de hallazgos añade una columna JSON con el conjunto completo de evidencias por fuente.
+- El timestamp OpenVEX se etiqueta como fecha del documento; no se presenta como fecha de publicación o modificación del aviso.
+- Las pruebas de integración comprueban identificadores, estados, URLs, referencias, fechas, versión documental y producto exacto, además de verificar que los hallazgos OSV-only no reclaman procedencia NVD.
+- CI de PR #39: run `41150868942`, success; **112 tests, 112 pass, 0 fail**, build Vite correcto (`✓ built in 2.93s`).
+- La trazabilidad es descriptiva: no cambia las clasificaciones NVD/OSV/VEX, el cálculo de conflictos ni las conclusiones de aplicabilidad o remediación.
+- No se modificaron DNS, secretos ni infraestructura. El inventario permanece local; solo se consultan y enlazan avisos y documentos públicos.
+- Pendiente de confirmar CI y despliegue Azure del commit de integración `a997ef2`.
