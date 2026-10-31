@@ -337,3 +337,14 @@ button{touch-action:manipulation}
   .getting-started-footer > span { max-width: none; }
   .getting-started-footer .primary-btn { width: 100%; justify-content: center; }
 }
+
+
+/* Trust center: readable long-form guidance inside settings. */
+.trust-center{max-width:850px;margin-top:18px}
+.trust-center h2{font:700 19px system-ui;color:#e6edf8;margin:7px 0 8px}
+.trust-center h3{font:650 12px system-ui;color:#dce6f4;margin:20px 0 7px}
+.trust-center p,.trust-center li{font-size:11px;line-height:1.75;color:#9aaac0}
+.trust-center p{margin:0 0 10px}
+.trust-center ul{display:grid;gap:6px;padding-left:19px;margin:9px 0 15px}
+.trust-center a{color:#9bb9f4;text-decoration:underline;text-underline-offset:3px}
+.trust-center a:hover{color:#c5d7ff}

@@ -733,3 +733,17 @@ La documentación de Canonical establece que:
 - Se incorporó un panel de primeros pasos en el resumen, visible cuando el inventario está vacío, con tres pasos y acceso directo a añadir el primer componente.
 - Se amplió el aviso de privacidad para explicar que el inventario permanece local, pero las consultas a fuentes externas pueden revelar la IP y los identificadores consultados.
 - CI del commit 4f1c63bfd6e492e27913b54a9f0d3969a03030fd satisfactoria. El despliegue Azure de ese commit falló por una colisión temporal entre despliegues concurrentes (No matching Static Web App environment was found). El despliegue del commit anterior b8437721797d6d281ab2717f410ac4fae918613d fue satisfactorio. Reintentar despliegue en un nuevo push y verificar el run antes de afirmar que el último CSS está publicado.
+
+
+## 9. Cambios del 31 de octubre de 2026 — Centro de confianza
+
+- Commit directo a `main`: `393d31acf956fcd34bb62b9869136eaea7748e0a`.
+- Se añadió en Configuración un Centro de confianza bilingüe (español/inglés) con apartados de privacidad y datos, metodología y fuentes, limitaciones/uso responsable y contacto.
+- La sección explica el almacenamiento local del inventario y de hasta 10 snapshots, la exposición potencial de IP y términos de consulta a servicios públicos, y recomienda no introducir datos personales, nombres de clientes, credenciales, tokens ni secretos.
+- Se documentan las funciones diferenciadas de NVD, FIRST EPSS, CISA KEV, Ubuntu OSV y Canonical OpenVEX. La puntuación de triage se describe como heurística, no como probabilidad ni veredicto.
+- Se explicita que la aplicación no escanea redes o equipos ni aplica parches; una coincidencia requiere validación y la ausencia de resultados no demuestra seguridad.
+- README actualizado para enlazar conceptualmente la explicación visible en la aplicación y precisar que no sustituye una política legal ni una auditoría de los servicios de alojamiento/analítica.
+- Estilos específicos para mejorar legibilidad de textos extensos y enlaces de fuentes en el Centro de confianza.
+- CI: run [41200318548](https://github.com/carlosdans/quasaric/actions/runs/41200318548), success.
+- Despliegue Azure: run [41200318556](https://github.com/carlosdans/quasaric/actions/runs/41200318556), success.
+- No se modificaron DNS, secretos ni recursos de infraestructura.

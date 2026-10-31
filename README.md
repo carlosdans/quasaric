@@ -32,6 +32,12 @@ Capacidades implementadas:
 - La consulta Canonical OpenVEX solicita el documento público usando el identificador CVE; el inventario local se usa para comparar el contenido recibido, no se transmite.
 - Las fuentes pueden tener límites, errores, datos incompletos o cambios de disponibilidad.
 
+## Centro de confianza en la aplicación
+
+La sección **Configuración → Centro de confianza** resume en español e inglés el tratamiento local del inventario, la información que puede quedar expuesta en consultas a fuentes públicas, la metodología de correlación, el significado de las señales y las limitaciones de uso. Incluye enlaces a la documentación oficial de NVD, FIRST EPSS, CISA KEV, Ubuntu OSV y Canonical.
+
+La explicación de privacidad no sustituye una política legal ni una auditoría de todos los servicios de alojamiento y analítica que pudieran intervenir en la publicación del sitio. Consulta también las condiciones de cada fuente externa antes de utilizarla.
+
 ## Desarrollo local
 
 Requisitos: Node.js 20 o superior y npm.
