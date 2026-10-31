@@ -20,7 +20,7 @@ function splitCpe23(criteria) {
   let escaped = false;
   for (const character of String(criteria || '')) {
     if (escaped) {
-      field += character;
+      field += character === '*' ? '\uE000' : character === '-' ? '\uE001' : character;
       escaped = false;
     } else if (character === '\\') {
       escaped = true;
@@ -40,7 +40,9 @@ function cpeProduct(criteria) {
   return {
     vendor: (parts[3] || '').replaceAll('_', ' '),
     product: (parts[4] || '').replaceAll('_', ' '),
-    version: parts[5] || '*'
+    version: (parts[5] || '*').replaceAll('\uE000', '*').replaceAll('\uE001', '-'),
+    versionWildcard: (parts[5] || '*') === '*',
+    versionNotApplicable: (parts[5] || '*') === '-'
   };
 }
 
@@ -291,8 +293,8 @@ export function classifyCpeApplicability(cpeItems, component) {
     if (item.vulnerable === false) return false;
     const cpe = cpeProduct(item.criteria);
     const bounded = Boolean(item.versionStartIncluding || item.versionStartExcluding || item.versionEndIncluding || item.versionEndExcluding);
-    if (cpe.version === '*' && !bounded) return false;
-    if (cpe.version !== '*' && cpe.version !== version) return false;
+    if (cpe.versionWildcard && !bounded) return false;
+    if (!cpe.versionWildcard && cpe.version !== version) return false;
     let uncertain = false;
     const checks = [
       [item.versionStartIncluding, order => order >= 0],
@@ -319,7 +321,7 @@ export function classifyCpeApplicability(cpeItems, component) {
   const vulnerableCpes = relevant.filter(item => item.vulnerable !== false);
   const explicitlyScoped = vulnerableCpes.length > 0 && vulnerableCpes.every(item => {
     const cpe = cpeProduct(item.criteria);
-    const hasConcreteVersion = cpe.version !== '*' && cpe.version !== '-';
+    const hasConcreteVersion = !cpe.versionWildcard && !cpe.versionNotApplicable;
     const hasVersionBoundary = Boolean(
       item.versionStartIncluding || item.versionStartExcluding ||
       item.versionEndIncluding || item.versionEndExcluding
@@ -362,7 +364,8 @@ function cpeConditionInInventory(item, inventory) {
   const results = matching.map(component => {
     const version = String(component.version || '').trim();
     if (!version) return null;
-    if (cpe.version !== '*' && cpe.version !== '-' && cpe.version !== version) return false;
+    if (cpe.versionNotApplicable) return false;
+    if (!cpe.versionWildcard && cpe.version !== version) return false;
     const checks = [
       [item.versionStartIncluding, order => order >= 0],
       [item.versionStartExcluding, order => order > 0],
@@ -379,7 +382,7 @@ function cpeConditionInInventory(item, inventory) {
     }
     // A wildcard CPE still proves product presence for configuration logic;
     // vulnerability range classification is performed separately per product.
-    return cpe.version !== '-';
+    return !cpe.versionNotApplicable;
   });
   if (results.includes(true)) return true;
   return results.includes(null) ? null : false;

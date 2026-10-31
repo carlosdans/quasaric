@@ -360,3 +360,18 @@ test('treats the NVD zero inclusive lower bound as an open version range', () =>
     nodes: [{ operator: 'OR', cpeMatch: ranged }]
   }], [{ name: 'openssl', version: '1.0.0-1' }]), true);
 });
+
+test('distinguishes escaped literal CPE version wildcards from wildcard versions', () => {
+  const literal = [cpe('cpe:2.3:a:nginx:nginx:\\*:*:*:*:*:*:*:*')];
+  assert.equal(classifyCpeApplicability(literal, { name: 'nginx', version: '*' }).status, 'possible');
+  assert.equal(classifyCpeApplicability(literal, { name: 'nginx', version: '1.24.0' }).status, 'not_affected');
+
+  const wildcard = [cpe('cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*')];
+  assert.equal(classifyCpeApplicability(wildcard, { name: 'nginx', version: '1.24.0' }).status, 'needs_review');
+});
+
+test('does not treat an escaped CPE not-applicable marker as the unescaped marker', () => {
+  const literal = [cpe('cpe:2.3:a:nginx:nginx:\\-:*:*:*:*:*:*:*')];
+  assert.equal(classifyCpeApplicability(literal, { name: 'nginx', version: '-' }).status, 'possible');
+  assert.equal(classifyCpeApplicability(literal, { name: 'nginx', version: '1.24.0' }).status, 'not_affected');
+});
