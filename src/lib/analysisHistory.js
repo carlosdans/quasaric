@@ -101,7 +101,16 @@ export function loadAnalysisHistory(storage) {
     const target = storage === undefined ? globalThis.localStorage : storage;
     const parsed = JSON.parse(target?.getItem(HISTORY_KEY) || '[]');
     return Array.isArray(parsed)
-      ? parsed.filter(snapshot => snapshot && typeof snapshot === 'object' && Array.isArray(snapshot.findings)).slice(0, HISTORY_LIMIT)
+      ? parsed.filter(snapshot =>
+        snapshot && typeof snapshot === 'object' && Array.isArray(snapshot.findings) &&
+        snapshot.findings.every(finding =>
+          finding && typeof finding === 'object' && Array.isArray(finding.components) &&
+          finding.components.every(match =>
+            match && typeof match === 'object' &&
+            match.component && typeof match.component === 'object'
+          )
+        )
+      ).slice(0, HISTORY_LIMIT)
       : [];
   } catch { return []; }
 }
