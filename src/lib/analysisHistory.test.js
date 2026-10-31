@@ -23,6 +23,12 @@ test('creates a serializable snapshot from a completed analysis', () => {
   assert.equal(result.id, result.analyzedAt);
   assert.equal(result.inventory.length, 1);
   assert.equal(result.findings[0].components[0].component.id, 'component-1');
+  const evidence = [{ source: 'Canonical OpenVEX', status: 'fixed', url: 'https://example.test/vex', product: { name: 'openssl', version: '3.0.2' }, references: ['https://example.test/advisory'] }];
+  const withEvidence = createAnalysisSnapshot({ findings: [finding('CVE-2026-0002', [{ ...match('component-1'), evidence }])] });
+  assert.deepEqual(withEvidence.findings[0].components[0].evidence, evidence);
+  assert.notEqual(withEvidence.findings[0].components[0].evidence, evidence);
+  assert.notEqual(withEvidence.findings[0].components[0].evidence[0].product, evidence[0].product);
+  assert.notEqual(withEvidence.findings[0].components[0].evidence[0].references, evidence[0].references);
   assert.doesNotThrow(() => JSON.stringify(result));
 });
 

@@ -33,7 +33,12 @@ export function createAnalysisSnapshot(analysis, inventory = []) {
         component: { ...match.component },
         applicability: match.applicability ? { ...match.applicability } : null,
         ubuntuOsv: match.ubuntuOsv ? { ...match.ubuntuOsv } : null,
-        ubuntuVex: match.ubuntuVex ? { ...match.ubuntuVex } : null
+        ubuntuVex: match.ubuntuVex ? { ...match.ubuntuVex } : null,
+        evidence: (match.evidence || []).map(item => ({
+          ...item,
+          ...(item.product ? { product: { ...item.product } } : {}),
+          ...(Array.isArray(item.references) ? { references: [...item.references] } : {})
+        }))
       }))
     }))
   };
