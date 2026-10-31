@@ -109,6 +109,17 @@ La aplicación conserva localmente hasta 10 resultados de análisis para permiti
 
 El historial no se sincroniza con ningún servidor ni se comparte con las fuentes externas. Borrar los datos locales del navegador elimina también el historial. La ausencia de un hallazgo en un análisis posterior significa "ya no detectado por las fuentes y reglas consultadas", no una prueba independiente de remediación.
 
+## Panel de postura de seguridad
+
+El panel de postura resume la evolución de los análisis guardados localmente (hasta 10 snapshots):
+
+- Serie temporal de CVE únicas, exposiciones CVE/componente, CVE incluidas en CISA KEV y suma de puntuaciones de prioridad por CVE.
+- Variación entre el análisis más antiguo y el más reciente disponible en la ventana local.
+- Primera y última observación, número de análisis en los que aparece cada exposición y presencia en el último análisis.
+- La puntuación agregada suma, para cada CVE, su mayor puntuación de triage entre los componentes observados en ese snapshot. Es un indicador interno para comparar snapshots, no una probabilidad ni una métrica normalizada entre inventarios distintos.
+- El historial es local al navegador y está limitado a 10 análisis. Con menos de dos snapshots no se calcula una variación temporal.
+- Las fechas de primera/última observación solo describen lo registrado por Quasaric. No representan el inicio o fin real de una vulnerabilidad, y que deje de aparecer no demuestra remediación.
+
 ## Próximos hitos
 
 1. Ampliar fixtures de regresión con CVE y avisos reales representativos de varias releases y arquitecturas Ubuntu.
