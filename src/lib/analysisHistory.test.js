@@ -78,6 +78,14 @@ test('persists history locally and caps it at ten snapshots', () => {
   assert.equal(loadAnalysisHistory(storage)[0].id, '0');
 });
 
+test('ignores malformed entries in an otherwise valid stored history array', () => {
+  const data = new Map([['quasaric-analysis-history', JSON.stringify([
+    { id: 'valid', findings: [] }, null, { id: 'invalid', findings: 'not-an-array' }, 'bad'
+  ])]]);
+  const storage = { getItem: key => data.get(key) || null };
+  assert.deepEqual(loadAnalysisHistory(storage), [{ id: 'valid', findings: [] }]);
+});
+
 test('handles unavailable or malformed browser storage safely', () => {
   const malformed = { getItem: () => '{invalid', setItem: () => { throw new Error('quota'); } };
   assert.deepEqual(loadAnalysisHistory(malformed), []);
