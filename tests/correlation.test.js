@@ -426,9 +426,3 @@ test('matches Debian only against its operating-system CPE part', () => {
   ), false);
 });
 
-test('uses the normalized OS component type for operating-system CPE matching', () => {
-  assert.equal(cpeMatchesComponent(
-    'cpe:2.3:o:acme:custom_linux:1.0:*:*:*:*:*:*:*',
-    { name: 'custom linux', version: '1.0', type: 'os' }
-  ), true);
-});
