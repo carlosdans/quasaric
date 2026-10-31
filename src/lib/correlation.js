@@ -38,8 +38,8 @@ function splitCpe23(criteria) {
 function cpeProduct(criteria) {
   const parts = splitCpe23(criteria);
   return {
-    vendor: (parts[3] || '').replaceAll('_', ' '),
-    product: (parts[4] || '').replaceAll('_', ' '),
+    vendor: (parts[3] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('_', ' '),
+    product: (parts[4] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('_', ' '),
     version: (parts[5] || '*').replaceAll('\uE000', '*').replaceAll('\uE001', '-'),
     versionWildcard: (parts[5] || '*') === '*',
     versionNotApplicable: (parts[5] || '*') === '-'
@@ -293,6 +293,7 @@ export function classifyCpeApplicability(cpeItems, component) {
     if (item.vulnerable === false) return false;
     const cpe = cpeProduct(item.criteria);
     const bounded = Boolean(item.versionStartIncluding || item.versionStartExcluding || item.versionEndIncluding || item.versionEndExcluding);
+    if (cpe.versionNotApplicable) return false;
     if (cpe.versionWildcard && !bounded) return false;
     if (!cpe.versionWildcard && cpe.version !== version) return false;
     let uncertain = false;
