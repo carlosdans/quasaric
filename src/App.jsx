@@ -194,15 +194,51 @@ function App() {
     };
   }, [showAdd]);
   const [mobileNav, setMobileNav] = useState(false);
+  const mobileNavRef = useRef(null);
+  const mobileNavTriggerRef = useRef(null);
+  const openMobileNav = () => {
+    mobileNavTriggerRef.current = document.activeElement;
+    setMobileNav(true);
+  };
   useEffect(() => {
     if (!mobileNav) return undefined;
     const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = event => { if (event.key === 'Escape') setMobileNav(false); };
+    const sidebar = mobileNavRef.current;
+    const focusableElements = () => sidebar
+      ? [...sidebar.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+        .filter(element => element.getAttribute('aria-hidden') !== 'true')
+      : [];
+    const closeOnEscapeAndTrapFocus = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMobileNav(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = focusableElements();
+      if (!focusable.length) {
+        event.preventDefault();
+        sidebar?.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !sidebar?.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !sidebar?.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
     document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', closeOnEscape);
+    document.addEventListener('keydown', closeOnEscapeAndTrapFocus);
+    sidebar?.querySelector('.mobile-close')?.focus();
     return () => {
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', closeOnEscape);
+      document.removeEventListener('keydown', closeOnEscapeAndTrapFocus);
+      if (mobileNavTriggerRef.current?.isConnected) mobileNavTriggerRef.current.focus();
+      mobileNavTriggerRef.current = null;
     };
   }, [mobileNav]);
   const [query, setQuery] = useState('');
@@ -323,7 +359,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <aside id="primary-navigation" className={'sidebar ' + (mobileNav ? 'sidebar-open' : '')} aria-label={lang === 'es' ? 'Navegación principal' : 'Primary navigation'}>
+      <aside ref={mobileNavRef} id="primary-navigation" className={'sidebar ' + (mobileNav ? 'sidebar-open' : '')} aria-label={lang === 'es' ? 'Navegación principal' : 'Primary navigation'}>
         <div className="brand">
           <img className="brand-mark" src="/favicon.svg" alt="" />
           <div><div className="brand-name">Quasaric<span>.com</span></div><div className="brand-sub">{t.platform}</div></div>
@@ -343,7 +379,7 @@ function App() {
 
       <main className="main-area">
         <header className="topbar">
-          <button className="icon-btn mobile-menu" onClick={() => setMobileNav(true)} aria-label={lang === 'es' ? 'Abrir menú' : 'Open menu'} aria-expanded={mobileNav} aria-controls="primary-navigation"><Menu size={19}/></button>
+          <button className="icon-btn mobile-menu" onClick={openMobileNav} aria-label={lang === 'es' ? 'Abrir menú' : 'Open menu'} aria-expanded={mobileNav} aria-controls="primary-navigation"><Menu size={19}/></button>
           <div className="breadcrumb"><span>Quasaric</span><ChevronRight size={14}/><strong>{active === 'overview' ? t.overview : active === 'inventory' ? t.inventory : active === 'vulnerabilities' ? t.vulnerabilities : active === 'posture' ? t.posture : active === 'reports' ? t.reports : t.settings}</strong></div>
           <div className="top-actions">
             <span className="status-pill"><span className="status-dot"/> {t.localSaved}</span>
