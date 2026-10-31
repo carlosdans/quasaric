@@ -1,5 +1,9 @@
 import { calculateRiskPriority } from './riskPriority.js';
 
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 function exposureEntries(snapshot = {}) {
   const entries = [];
   for (const finding of snapshot.findings || []) {
@@ -30,7 +34,10 @@ function exposureEntries(snapshot = {}) {
  */
 export function buildSecurityPosture(history = []) {
   const chronological = (Array.isArray(history) ? history : [])
-    .slice(0, 10).filter(Boolean).reverse();
+    .filter(snapshot => isRecord(snapshot) && Array.isArray(snapshot.findings) &&
+      snapshot.findings.every(finding => isRecord(finding) && Array.isArray(finding.components) &&
+        finding.components.every(match => isRecord(match) && isRecord(match.component))))
+    .slice(0, 10).reverse();
   const timeline = chronological.map(snapshot => {
     const entries = exposureEntries(snapshot);
     const cves = new Map();

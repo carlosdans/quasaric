@@ -43,6 +43,21 @@ test('returns an explicit insufficient-history state for zero or one snapshot', 
   assert.equal(single.change, null);
 });
 
+test('ignores malformed snapshots and nested records when called directly', () => {
+  const valid = snap('valid', [finding('CVE-1', [match('a')])]);
+  const result = buildSecurityPosture([
+    { id: 'bad-finding', findings: [null] },
+    { id: 'bad-components', findings: [{ id: 'CVE-2' }] },
+    { id: 'bad-match', findings: [{ id: 'CVE-3', components: [null] }] },
+    { id: 'bad-component', findings: [{ id: 'CVE-4', components: [{ component: [] }] }] },
+    [],
+    valid
+  ]);
+  assert.equal(result.snapshotCount, 1);
+  assert.equal(result.latest.uniqueCves, 1);
+  assert.equal(result.timeline[0].analyzedAt, 'valid');
+});
+
 test('caps dashboard input to the ten snapshots retained by the app', () => {
   const history = Array.from({ length: 12 }, (_, i) => snap(String(11 - i), []));
   const result = buildSecurityPosture(history);
