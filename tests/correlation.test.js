@@ -286,3 +286,11 @@ test('keeps compound nested CPE logic tri-state when a required version is missi
     { name: 'ubuntu', version: '' }
   ]), null);
 });
+
+test('keeps escaped colons inside the CPE version field', () => {
+  const result = classifyCpeApplicability(
+    [cpe('cpe:2.3:a:nginx:nginx:1\\:2:*:*:*:*:*:*:*')],
+    { name: 'nginx', version: '1:2' }
+  );
+  assert.equal(result.status, 'possible');
+});
