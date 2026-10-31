@@ -1,5 +1,5 @@
 import React from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
 import { toCsv } from './lib/csv.js';
 import { createAnalysisSnapshot, compareAnalysisSnapshots, loadAnalysisHistory, saveAnalysisHistory } from './lib/analysisHistory.js';
@@ -150,6 +150,17 @@ function App() {
   });
   const [showAdd, setShowAdd] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
+  useEffect(() => {
+    if (!mobileNav) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = event => { if (event.key === 'Escape') setMobileNav(false); };
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [mobileNav]);
   const [query, setQuery] = useState('');
   const [analysis, setAnalysis] = useState(null);
   const [analysisHistory, setAnalysisHistory] = useState(() => loadAnalysisHistory());
@@ -266,11 +277,11 @@ function App() {
 
   return (
     <div className="app-shell">
-      <aside className={'sidebar ' + (mobileNav ? 'sidebar-open' : '')}>
+      <aside id="primary-navigation" className={'sidebar ' + (mobileNav ? 'sidebar-open' : '')} aria-label={lang === 'es' ? 'Navegación principal' : 'Primary navigation'}>
         <div className="brand">
           <img className="brand-mark" src="/favicon.svg" alt="" />
           <div><div className="brand-name">Quasaric<span>.com</span></div><div className="brand-sub">{t.platform}</div></div>
-          <button className="icon-btn mobile-close" onClick={() => setMobileNav(false)} aria-label="Close menu"><X size={18}/></button>
+          <button className="icon-btn mobile-close" onClick={() => setMobileNav(false)} aria-label={lang === 'es' ? 'Cerrar menú' : 'Close menu'}><X size={18}/></button>
         </div>
         <div className="nav-caption">{t.workspace}</div>
         <nav className="main-nav">
@@ -278,7 +289,7 @@ function App() {
         </nav>
         <div className="sidebar-bottom">
           <div className="privacy-card"><div className="privacy-icon"><LockKeyhole size={16}/></div><div><strong>{t.noScan}</strong><p>{t.noScanText}</p></div></div>
-          <button className={'nav-link ' + (active === 'settings' ? 'active' : '')} onClick={() => setActive('settings')}><Settings2 size={17}/><span>{t.settings}</span></button>
+          <button className={'nav-link ' + (active === 'settings' ? 'active' : '')} onClick={() => { setActive('settings'); setMobileNav(false); }}><Settings2 size={17}/><span>{t.settings}</span></button>
           <div className="sidebar-user"><div className="avatar">Q</div><div className="user-copy"><strong>Quasaric</strong><span>Personal workspace</span></div><ChevronDown size={15}/></div>
         </div>
       </aside>
@@ -286,7 +297,7 @@ function App() {
 
       <main className="main-area">
         <header className="topbar">
-          <button className="icon-btn mobile-menu" onClick={() => setMobileNav(true)} aria-label="Open menu"><Menu size={19}/></button>
+          <button className="icon-btn mobile-menu" onClick={() => setMobileNav(true)} aria-label={lang === 'es' ? 'Abrir menú' : 'Open menu'} aria-expanded={mobileNav} aria-controls="primary-navigation"><Menu size={19}/></button>
           <div className="breadcrumb"><span>Quasaric</span><ChevronRight size={14}/><strong>{active === 'overview' ? t.overview : active === 'inventory' ? t.inventory : active === 'vulnerabilities' ? t.vulnerabilities : active === 'posture' ? t.posture : active === 'reports' ? t.reports : t.settings}</strong></div>
           <div className="top-actions">
             <span className="status-pill"><span className="status-dot"/> {t.localSaved}</span>
