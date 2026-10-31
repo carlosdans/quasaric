@@ -25,3 +25,15 @@ test('does not confuse Apache HTTP Server with other Apache projects', () => {
 test('does not accept a matching product under an unexpected vendor', () => {
   assert.equal(cpeMatchesComponent('cpe:2.3:a:attacker:php:8.2:*:*:*:*:*:*:*', component('PHP')), false);
 });
+
+test('uses the OS CPE part for components explicitly classified as operating systems', () => {
+  const os = { name: 'custom linux', type: 'os' };
+  assert.equal(cpeMatchesComponent('cpe:2.3:o:custom_linux:custom_linux:1:*:*:*:*:*:*:*', os), true);
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:custom_linux:custom_linux:1:*:*:*:*:*:*:*', os), false);
+});
+
+test('Debian CPE matching is restricted to the operating-system part', () => {
+  const debian = { name: 'Debian' };
+  assert.equal(cpeMatchesComponent('cpe:2.3:o:debian:debian_linux:12:*:*:*:*:*:*:*', debian), true);
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:debian:debian_linux:12:*:*:*:*:*:*:*', debian), false);
+});

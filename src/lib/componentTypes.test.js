@@ -11,6 +11,8 @@ test('known technologies receive their expected component type', () => {
   assert.equal(suggestedComponentType('NGINX'), 'web');
   assert.equal(suggestedComponentType('MySQL'), 'database');
   assert.equal(suggestedComponentType('Ubuntu'), 'os');
+  assert.equal(suggestedComponentType('Debian'), 'os');
+  assert.equal(suggestedComponentType('Windows Server'), 'os');
 });
 
 test('legacy misclassified inventory entries are corrected without mutating input', () => {
