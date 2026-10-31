@@ -20,7 +20,7 @@ const PRIORITY_BANDS = [
 /**
  * Explainable triage score (0–100), not a probability of exploitation.
  * KEV contributes 40 points, EPSS up to 30, CVSS up to 20, and
- * applicability evidence up to 10. Missing signals contribute zero.
+ * applicability evidence up to 10. Missing EPSS/CVSS score zero; unknown applicability defaults to needs_review (+3).
  */
 export function calculateRiskPriority(finding = {}) {
   const reasons = [];
