@@ -22,6 +22,11 @@ const copy = {
     vulnerabilities: 'Vulnerabilidades', reports: 'Informes', settings: 'Configuración',
     workspace: 'ESPACIO DE TRABAJO', overviewTitle: 'Resumen de seguridad',
     subtitle: 'Visibilidad de vulnerabilidades en los componentes de tu tecnología.',
+    guideTitle: 'Empieza en tres pasos', guideIntro: 'Obtén una primera visión de exposición a partir de las versiones que declares.',
+    guideStep1: 'Añade tus tecnologías', guideStep1Text: 'Indica producto, distribución y versión exacta. Puedes empezar con un solo componente.',
+    guideStep2: 'Ejecuta el análisis', guideStep2Text: 'Consultaremos fuentes públicas de vulnerabilidades y relacionaremos sus avisos con tu inventario.',
+    guideStep3: 'Revisa las evidencias', guideStep3Text: 'Comprueba aplicabilidad, fuentes y versiones. Los candidatos necesitan validación antes de actuar.',
+    guideCta: 'Crear mi primer inventario', guidePrivacy: 'El inventario se guarda en este navegador. Las consultas a fuentes externas pueden revelar tu IP y los identificadores consultados.',
     newAnalysis: 'Nuevo análisis', components: 'Componentes', uniqueCves: 'CVE únicas',
     critical: 'Críticas', kev: 'En catálogo KEV', riskOverview: 'Panorama de exposición',
     severity: 'Distribución por severidad', technologyMap: 'Mapa tecnológico',
@@ -40,7 +45,7 @@ const copy = {
     cms: 'CMS', database: 'Base de datos', library: 'Librería / dependencia',
     other: 'Otro', noResults: 'No hay resultados para esta búsqueda.',
     analysisTitle: 'Inventario tecnológico', analysisDesc: 'Declara manualmente los componentes y sus versiones. Quasaric no escanea tus servidores.',
-    privacyNote: 'Tu inventario permanece en este navegador. No introduzcas contraseñas, tokens ni secretos.',
+    privacyNote: 'El inventario permanece en este navegador. Al analizar, las fuentes externas pueden recibir los identificadores consultados y ver tu IP. No introduzcas contraseñas, tokens ni secretos.',
     language: 'Idioma', spanish: 'Español', english: 'English',
     export: 'Exportar inventario CSV', localSaved: 'Guardado localmente',
     sourceNotice: 'Motor de correlación y conectores de fuentes en desarrollo.',
@@ -78,6 +83,11 @@ const copy = {
     vulnerabilities: 'Vulnerabilities', reports: 'Reports', settings: 'Settings',
     workspace: 'WORKSPACE', overviewTitle: 'Security overview',
     subtitle: 'Vulnerability visibility across your technology stack.',
+    guideTitle: 'Get started in three steps', guideIntro: 'Build an initial exposure view from the software versions you provide.',
+    guideStep1: 'Add your technologies', guideStep1Text: 'Enter the product, distribution and exact version. Start with a single component.',
+    guideStep2: 'Run the analysis', guideStep2Text: 'We query public vulnerability sources and correlate their advisories with your inventory.',
+    guideStep3: 'Review the evidence', guideStep3Text: 'Check applicability, sources and versions. Candidate matches need validation before action.',
+    guideCta: 'Create my first inventory', guidePrivacy: 'Your inventory is stored in this browser. External queries may disclose your IP address and the identifiers queried.',
     newAnalysis: 'New analysis', components: 'Components', uniqueCves: 'Unique CVEs',
     critical: 'Critical', kev: 'In KEV catalog', riskOverview: 'Exposure overview',
     severity: 'Severity distribution', technologyMap: 'Technology map',
@@ -96,7 +106,7 @@ const copy = {
     cms: 'CMS', database: 'Database', library: 'Library / dependency',
     other: 'Other', noResults: 'No results for this search.',
     analysisTitle: 'Technology inventory', analysisDesc: 'Enter components and their versions manually. Quasaric does not scan your servers.',
-    privacyNote: 'Your inventory stays in this browser. Do not enter passwords, tokens or secrets.',
+    privacyNote: 'Your inventory stays in this browser. When you analyse it, external sources may receive the identifiers queried and see your IP address. Do not enter passwords, tokens or secrets.',
     language: 'Language', spanish: 'Español', english: 'English',
     export: 'Export inventory CSV', localSaved: 'Saved locally',
     sourceNotice: 'Correlation engine and source connectors are under development.',
@@ -394,6 +404,15 @@ function App() {
           {active === 'overview' && <>
             <div className="page-heading"><div><div className="eyebrow">{t.platform}</div><h1>{t.overviewTitle}</h1><p>{t.subtitle}</p></div><button className="primary-btn" onClick={() => { setActive('inventory'); openAdd(); }}><Plus size={17}/>{t.newAnalysis}</button></div>
             <div className="demo-banner"><Sparkles size={16}/><div><strong>{t.demo}</strong><span>{t.demoText}</span></div></div>
+            {!items.length && <section className="panel getting-started">
+              <div className="getting-started-heading"><div><span className="eyebrow">{lang === 'es' ? 'PRIMEROS PASOS' : 'QUICK START'}</span><h2>{t.guideTitle}</h2><p>{t.guideIntro}</p></div></div>
+              <div className="getting-started-grid">
+                <article><span className="getting-started-number">01</span><div><strong>{t.guideStep1}</strong><p>{t.guideStep1Text}</p></div></article>
+                <article><span className="getting-started-number">02</span><div><strong>{t.guideStep2}</strong><p>{t.guideStep2Text}</p></div></article>
+                <article><span className="getting-started-number">03</span><div><strong>{t.guideStep3}</strong><p>{t.guideStep3Text}</p></div></article>
+              </div>
+              <div className="getting-started-footer"><span><LockKeyhole size={14}/>{t.guidePrivacy}</span><button className="primary-btn" onClick={() => { setActive('inventory'); openAdd(); }}><Plus size={16}/>{t.guideCta}</button></div>
+            </section>}
             <section className="metric-grid">
               <Metric icon={Layers3} label={t.components} value={String(items.length)} hint={lang === 'es' ? 'En tu inventario' : 'In your inventory'} />
               <Metric icon={ShieldAlert} label={t.uniqueCves} value="—" hint={t.sourceNotice} />
