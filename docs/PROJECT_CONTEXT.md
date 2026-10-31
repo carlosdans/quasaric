@@ -723,3 +723,13 @@ La documentación de Canonical establece que:
 - La trazabilidad es descriptiva: no cambia las clasificaciones NVD/OSV/VEX, el cálculo de conflictos ni las conclusiones de aplicabilidad o remediación.
 - No se modificaron DNS, secretos ni infraestructura. El inventario permanece local; solo se consultan y enlazan avisos y documentos públicos.
 - Pendiente de confirmar CI y despliegue Azure del commit de integración `a997ef2`.
+
+
+## 8. Cambios del 31 de octubre de 2026
+
+- PR #42 integrada: CSP permite las fuentes Ubuntu OSV y OpenVEX de Canonical (api.osv.dev y raw.githubusercontent.com). CI y despliegue Azure de main satisfactorios.
+- PR #43 integrada: metadatos SEO, URL canónica, Open Graph/Twitter, robots.txt y sitemap.xml.
+- Se añadieron pruebas automáticas de configuración de Static Web Apps: fallback SPA, cabeceras de seguridad y directivas CSP.
+- Se incorporó un panel de primeros pasos en el resumen, visible cuando el inventario está vacío, con tres pasos y acceso directo a añadir el primer componente.
+- Se amplió el aviso de privacidad para explicar que el inventario permanece local, pero las consultas a fuentes externas pueden revelar la IP y los identificadores consultados.
+- CI del commit 4f1c63bfd6e492e27913b54a9f0d3969a03030fd satisfactoria. El despliegue Azure de ese commit falló por una colisión temporal entre despliegues concurrentes (No matching Static Web App environment was found). El despliegue del commit anterior b8437721797d6d281ab2717f410ac4fae918613d fue satisfactorio. Reintentar despliegue en un nuevo push y verificar el run antes de afirmar que el último CSS está publicado.
