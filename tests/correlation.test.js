@@ -376,5 +376,5 @@ test('does not treat an escaped CPE not-applicable marker as the unescaped marke
   const literal = [cpe('cpe:2.3:a:nginx:nginx:\\-:*:*:*:*:*:*:*')];
   assert.equal(classifyCpeApplicability(literal, { name: 'nginx', version: '-' }).status, 'possible');
   assert.equal(classifyCpeApplicability(literal, { name: 'nginx', version: '1.24.0' }).status, 'not_affected');
-  assert.equal(classifyCpeApplicability([cpe('cpe:2.3:a:nginx:nginx:-:*:*:*:*:*:*:*')], { name: 'nginx', version: '-' }).status, 'not_affected');
+  assert.equal(classifyCpeApplicability([cpe('cpe:2.3:a:nginx:nginx:-:*:*:*:*:*:*:*')], { name: 'nginx', version: '-' }).status, 'needs_review');
 });

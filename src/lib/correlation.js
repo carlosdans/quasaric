@@ -322,7 +322,7 @@ export function classifyCpeApplicability(cpeItems, component) {
   const vulnerableCpes = relevant.filter(item => item.vulnerable !== false);
   const explicitlyScoped = vulnerableCpes.length > 0 && vulnerableCpes.every(item => {
     const cpe = cpeProduct(item.criteria);
-    const hasConcreteVersion = !cpe.versionWildcard;
+    const hasConcreteVersion = !cpe.versionWildcard && !cpe.versionNotApplicable;
     const hasVersionBoundary = Boolean(
       item.versionStartIncluding || item.versionStartExcluding ||
       item.versionEndIncluding || item.versionEndExcluding
