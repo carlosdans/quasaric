@@ -347,3 +347,16 @@ test('treats omitted trailing numeric version segments as zero', () => {
   })];
   assert.equal(classifyCpeApplicability(ranged, { name: 'nginx', version: '1.2' }).status, 'possible');
 });
+
+test('treats the NVD zero inclusive lower bound as an open version range', () => {
+  const ranged = [cpe('cpe:2.3:a:openssl:openssl:*:*:*:*:*:*:*:*', {
+    versionStartIncluding: '0'
+  })];
+  assert.equal(classifyCpeApplicability(ranged, {
+    name: 'openssl',
+    version: '1.0.0-1'
+  }).status, 'possible');
+  assert.equal(evaluateCpeConfigurations([{
+    nodes: [{ operator: 'OR', cpeMatch: ranged }]
+  }], [{ name: 'openssl', version: '1.0.0-1' }]), true);
+});

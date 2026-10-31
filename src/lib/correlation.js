@@ -301,7 +301,9 @@ export function classifyCpeApplicability(cpeItems, component) {
       [item.versionEndExcluding, order => order < 0]
     ];
     for (const [boundary, accepts] of checks) {
-      if (!boundary) continue;
+      // NVD uses an inclusive lower boundary of 0 to mean all released versions.
+      // It is a sentinel, not a version that can be ordered against distro revisions.
+      if (!boundary || (boundary === '0' && item.versionStartIncluding === '0')) continue;
       const order = compareVersions(version, boundary);
       if (order === null) { uncertain = true; continue; }
       if (!accepts(order)) return false;
@@ -368,7 +370,9 @@ function cpeConditionInInventory(item, inventory) {
       [item.versionEndExcluding, order => order < 0]
     ];
     for (const [boundary, accepts] of checks) {
-      if (!boundary) continue;
+      // NVD uses an inclusive lower boundary of 0 to mean all released versions.
+      // It is a sentinel, not a version that can be ordered against distro revisions.
+      if (!boundary || (boundary === '0' && item.versionStartIncluding === '0')) continue;
       const order = compareVersions(version, boundary);
       if (order === null) return null;
       if (!accepts(order)) return false;
