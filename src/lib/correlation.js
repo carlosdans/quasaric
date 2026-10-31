@@ -293,8 +293,34 @@ export function collectCpeMatches(nodes = []) {
   ]);
 }
 
+export function hasUnsupportedCpeLogic(configurations = []) {
+  const hasAndOrNegation = node =>
+    String(node?.operator || '').toUpperCase() === 'AND' ||
+    node?.negate === true ||
+    (node?.children || []).some(hasAndOrNegation);
+
+  return configurations.some(configuration =>
+    String(configuration?.operator || '').toUpperCase() === 'AND' ||
+    configuration?.negate === true ||
+    (configuration?.nodes || []).some(hasAndOrNegation)
+  );
+}
+
 function applicability(cve, component) {
-  const cpes = (cve.configurations || []).flatMap(config => collectCpeMatches(config.nodes || []));
+  const configurations = cve.configurations || [];
+  // The current per-component classifier cannot safely evaluate conjunctions
+  // across multiple products (for example, vulnerable software AND a specific
+  // operating system). Flattening those nodes would create false positives.
+  // Keep such records visible for review until the whole-inventory evaluator
+  // can satisfy every condition across the declared inventory.
+  if (hasUnsupportedCpeLogic(configurations)) {
+    return {
+      status: 'needs_review',
+      confidence: 'low',
+      reason: 'NVD CPE applicability contains AND/negated conditions that require evaluating the complete product configuration; a single-component match is insufficient.'
+    };
+  }
+  const cpes = configurations.flatMap(config => collectCpeMatches(config.nodes || []));
   return classifyCpeApplicability(cpes, component);
 }
 
