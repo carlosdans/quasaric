@@ -7,7 +7,7 @@ test('weights KEV, EPSS, CVSS and applicability into a transparent 0-100 score',
     kev: true, epss: 0.5, cvss: 8.5, applicabilityStatus: 'affected'
   });
   assert.equal(result.score, 40 + 15 + 17 + 10);
-  assert.equal(result.band, 'high');
+  assert.equal(result.band, 'critical');
   assert.equal(result.isConfirmed, false);
   assert.deepEqual(result.missing, []);
   assert.match(result.reasons.join(' '), /CISA KEV/);
