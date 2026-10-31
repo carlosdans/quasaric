@@ -66,6 +66,15 @@ export function compareAnalysisSnapshots(previous, current) {
     const differences = ['severity', 'cvss', 'epss', 'kev', 'applicabilityStatus']
       .filter(field => old[field] !== item[field])
       .map(field => ({ field, before: old[field] ?? null, after: item[field] ?? null }));
+    for (const field of ['name', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'ecosystem']) {
+      if ((old.component?.[field] ?? null) !== (item.component?.[field] ?? null)) {
+        differences.push({
+          field: 'component.' + field,
+          before: old.component?.[field] ?? null,
+          after: item.component?.[field] ?? null
+        });
+      }
+    }
     if (differences.length) changed.push({ ...item, differences });
   }
   for (const [key, item] of before) if (!after.has(key)) resolved.push(item);
