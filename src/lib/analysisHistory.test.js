@@ -72,7 +72,7 @@ test('tracks a component version change as a changed exposure, not a new CVE', (
 test('persists history locally and caps it at ten snapshots', () => {
   const data = new Map();
   const storage = { getItem: key => data.get(key) || null, setItem: (key, value) => data.set(key, value) };
-  const history = Array.from({ length: ANALYSIS_HISTORY_LIMIT + 2 }, (_, i) => ({ id: String(i) }));
+  const history = Array.from({ length: ANALYSIS_HISTORY_LIMIT + 2 }, (_, i) => ({ id: String(i), findings: [] }));
   assert.equal(saveAnalysisHistory(history, storage), true);
   assert.equal(loadAnalysisHistory(storage).length, ANALYSIS_HISTORY_LIMIT);
   assert.equal(loadAnalysisHistory(storage)[0].id, '0');
