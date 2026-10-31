@@ -50,3 +50,27 @@ test('caps dashboard input to the ten snapshots retained by the app', () => {
   assert.equal(result.windowStart, '2');
   assert.equal(result.windowEnd, '11');
 });
+
+test('aggregates duplicate CVE records once using the strongest observed signals', () => {
+  const result = buildSecurityPosture([snap('latest', [
+    finding('CVE-1', [match('a')], { severity: 'High', cvss: 7.0, epss: 0.1 }),
+    finding('CVE-1', [match('b')], { severity: 'Critical', cvss: 9.8, epss: 0.9, kev: true })
+  ])]);
+  assert.equal(result.latest.uniqueCves, 1);
+  assert.equal(result.latest.criticalCves, 1);
+  assert.equal(result.latest.highCves, 0);
+  assert.equal(result.latest.kevCves, 1);
+  assert.equal(result.latest.exposures, 2);
+  assert.equal(result.latest.riskScore, 40 + 27 + 20 + 6);
+});
+
+test('marks a previously observed exposure as not detected when absent from latest snapshot', () => {
+  const result = buildSecurityPosture([
+    snap('latest', []),
+    snap('earlier', [finding('CVE-1', [match('a')])])
+  ]);
+  assert.equal(result.dwell[0].firstObservedAt, 'earlier');
+  assert.equal(result.dwell[0].lastObservedAt, 'earlier');
+  assert.equal(result.dwell[0].presentInLatest, false);
+  assert.equal(result.latest.uniqueCves, 0);
+});
