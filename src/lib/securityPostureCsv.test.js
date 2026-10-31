@@ -39,6 +39,13 @@ test('neutralizes spreadsheet formulas in untrusted text fields', () => {
   });
   assert.ok(csv.includes('"\'=HYPERLINK(""https://example.invalid"",""open"")"'));
   assert.ok(csv.includes('"\'+SUM(1,1)","\'@cmd","\'-1","\'' + String.fromCharCode(9) + '2"'));
+  const newlineCsv = buildSecurityPostureCsv({
+    timeline: [{ id: String.fromCharCode(10) + '=1+1' }],
+    dwell: [{ cve: 'CVE-1', componentName: '  =1+1' }]
+  });
+  assert.ok(newlineCsv.includes('"\'
+=1+1"'));
+  assert.ok(newlineCsv.includes('"\'  =1+1"'));
 });
 
 test('handles absent, malformed and null history collections safely', () => {
