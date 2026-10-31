@@ -18,6 +18,10 @@ test('known technologies receive their expected component type', () => {
   assert.equal(suggestedComponentType('RHEL'), 'os');
   assert.equal(suggestedComponentType('Fedora'), 'os');
   assert.equal(suggestedComponentType('Alpine Linux'), 'os');
+  assert.equal(suggestedComponentType('AlmaLinux'), 'os');
+  assert.equal(suggestedComponentType('Rocky Linux'), 'os');
+  assert.equal(suggestedComponentType('SUSE Linux Enterprise Server'), 'os');
+  assert.equal(suggestedComponentType('SLES'), 'os');
 });
 
 test('legacy misclassified inventory entries are corrected without mutating input', () => {

@@ -199,7 +199,7 @@ export function cpeMatchesComponent(criteria, component) {
   const vendor = normalize(cpe.vendor);
   const product = normalize(cpe.product);
   const name = normalize(component.name);
-  const expectedPart = component.type === 'os' || ['ubuntu', 'debian', 'windows server', 'windows server 2019', 'windows server 2022', 'windows server 2025', 'red hat enterprise linux', 'rhel', 'fedora', 'alpine linux'].includes(name) ? 'o' : 'a';
+  const expectedPart = component.type === 'os' || ['ubuntu', 'debian', 'windows server', 'windows server 2019', 'windows server 2022', 'windows server 2025', 'red hat enterprise linux', 'rhel', 'fedora', 'alpine linux', 'almalinux', 'rocky linux', 'suse linux enterprise server', 'sles'].includes(name) ? 'o' : 'a';
   if (cpe.part !== '*' && cpe.part !== expectedPart) return false;
   // Match the vendor/product pair, not a loose product-name fragment.
   // This avoids confusing Apache HTTP Server with Tomcat or other Apache projects.
@@ -225,6 +225,10 @@ export function cpeMatchesComponent(criteria, component) {
     rhel: [['redhat', 'enterprise linux']],
     fedora: [['fedoraproject', 'fedora']],
     'alpine linux': [['alpinelinux', 'alpine linux']],
+    almalinux: [['almalinux', 'almalinux']],
+    'rocky linux': [['resf', 'rocky linux']],
+    'suse linux enterprise server': [['suse', 'linux enterprise server']],
+    sles: [['suse', 'linux enterprise server']],
     'windows server': [['microsoft', 'windows server']],
     'windows server 2019': [['microsoft', 'windows server 2019']],
     'windows server 2022': [['microsoft', 'windows server 2022']],

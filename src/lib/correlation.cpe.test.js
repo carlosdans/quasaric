@@ -43,7 +43,13 @@ test('matches verified operating-system CPE vendor/product pairs', () => {
     ['cpe:2.3:o:redhat:enterprise_linux:9.0:*:*:*:*:*:*:*', 'Red Hat Enterprise Linux'],
     ['cpe:2.3:o:fedoraproject:fedora:40:*:*:*:*:*:*:*', 'Fedora'],
     ['cpe:2.3:o:alpinelinux:alpine_linux:3.20:*:*:*:*:*:*:*', 'Alpine Linux'],
-    ['cpe:2.3:o:microsoft:windows_server_2022:10.0.20348.4467:*:*:*:datacenter:*:x64:*', 'Windows Server 2022']
+    ['cpe:2.3:o:microsoft:windows_server_2019:10.0.17763.7919:*:*:*:*:*:x64:*', 'Windows Server 2019'],
+    ['cpe:2.3:o:microsoft:windows_server_2022:10.0.20348.4467:*:*:*:datacenter:*:x64:*', 'Windows Server 2022'],
+    ['cpe:2.3:o:microsoft:windows_server_2025:10.0.26100.4946:*:*:*:*:*:x64:*', 'Windows Server 2025'],
+    ['cpe:2.3:o:almalinux:almalinux:9.5:*:*:*:*:*:*:*', 'AlmaLinux'],
+    ['cpe:2.3:o:resf:rocky_linux:8.4:*:*:*:*:*:*:*', 'Rocky Linux'],
+    ['cpe:2.3:o:suse:linux_enterprise_server:15:sp2:*:*:*:*:*:*', 'SUSE Linux Enterprise Server'],
+    ['cpe:2.3:o:suse:linux_enterprise_server:15:*:*:*:*:*:*:*', 'SLES']
   ];
   for (const [cpe, name] of cases) {
     assert.equal(cpeMatchesComponent(cpe, { name, type: 'os' }), true, name);
