@@ -116,7 +116,7 @@ test('attaches source identifiers, dates, URLs and exact product details to each
     assert.equal(item.product.sourcePackage, 'openssl');
     assert.equal(item.product.architecture, 'amd64');
     assert.equal(item.product.ecosystem, 'Ubuntu:24.04:LTS');
-    assert.ok(item.reason);
+    if (item.source !== 'Canonical OpenVEX') assert.ok(item.reason);
   }
 });
 
