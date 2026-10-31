@@ -306,19 +306,74 @@ export function hasUnsupportedCpeLogic(configurations = []) {
   );
 }
 
-function applicability(cve, component) {
+// Tri-state CPE evaluation: true = proven present, false = proven absent,
+// null = inventory does not contain enough information. Environmental CPEs
+// (vulnerable:false) participate in the logic just like vulnerable products.
+function cpeConditionInInventory(item, inventory) {
+  const matching = inventory.filter(component => cpeMatchesComponent(item.criteria, component));
+  if (!matching.length) return null;
+  const cpe = cpeProduct(item.criteria);
+  const bounded = Boolean(item.versionStartIncluding || item.versionStartExcluding || item.versionEndIncluding || item.versionEndExcluding);
+  return matching.some(component => {
+    const version = String(component.version || '').trim();
+    if (!version) return false;
+    if (cpe.version !== '*' && cpe.version !== '-' && cpe.version !== version) return false;
+    if (item.versionStartIncluding && compareVersions(version, item.versionStartIncluding) < 0) return false;
+    if (item.versionStartExcluding && compareVersions(version, item.versionStartExcluding) <= 0) return false;
+    if (item.versionEndIncluding && compareVersions(version, item.versionEndIncluding) > 0) return false;
+    if (item.versionEndExcluding && compareVersions(version, item.versionEndExcluding) >= 0) return false;
+    return cpe.version !== '-' && (cpe.version !== '*' || bounded || !item.vulnerable);
+  });
+}
+
+function combineCpeResults(results, operator) {
+  if (!results.length) return null;
+  if (operator === 'AND') {
+    if (results.includes(false)) return false;
+    return results.every(result => result === true) ? true : null;
+  }
+  if (results.includes(true)) return true;
+  return results.every(result => result === false) ? false : null;
+}
+
+function evaluateCpeNode(node, inventory) {
+  const own = (node.cpeMatch || []).map(item => {
+    const result = cpeConditionInInventory(item, inventory);
+    return node.negate ? (result === null ? null : !result) : result;
+  });
+  const children = (node.children || []).map(child => evaluateCpeNode(child, inventory));
+  return combineCpeResults([...own, ...children], String(node.operator || 'OR').toUpperCase());
+}
+
+export function evaluateCpeConfigurations(configurations = [], inventory = []) {
+  const results = configurations.map(configuration => {
+    const nodes = (configuration.nodes || []).map(node => evaluateCpeNode(node, inventory));
+    const result = combineCpeResults(nodes, String(configuration.operator || 'OR').toUpperCase());
+    return configuration.negate ? (result === null ? null : !result) : result;
+  });
+  return combineCpeResults(results, 'OR');
+}
+
+function applicability(cve, component, inventory = [component]) {
   const configurations = cve.configurations || [];
-  // The current per-component classifier cannot safely evaluate conjunctions
-  // across multiple products (for example, vulnerable software AND a specific
-  // operating system). Flattening those nodes would create false positives.
-  // Keep such records visible for review until the whole-inventory evaluator
-  // can satisfy every condition across the declared inventory.
   if (hasUnsupportedCpeLogic(configurations)) {
-    return {
-      status: 'needs_review',
-      confidence: 'low',
-      reason: 'NVD CPE applicability contains AND/negated conditions that require evaluating the complete product configuration; a single-component match is insufficient.'
-    };
+    const wholeInventory = evaluateCpeConfigurations(configurations, inventory);
+    if (wholeInventory === false) {
+      return {
+        status: 'not_affected',
+        confidence: 'medium',
+        reason: 'The complete installed inventory does not satisfy the NVD AND/negated CPE configuration.'
+      };
+    }
+    if (wholeInventory !== true) {
+      return {
+        status: 'needs_review',
+        confidence: 'low',
+        reason: 'The NVD CPE configuration contains AND/negated conditions and the inventory does not prove that every required product and version is present.'
+      };
+    }
+    const cpes = configurations.flatMap(config => collectCpeMatches(config.nodes || []));
+    return classifyCpeApplicability(cpes, component);
   }
   const cpes = configurations.flatMap(config => collectCpeMatches(config.nodes || []));
   return classifyCpeApplicability(cpes, component);
@@ -383,7 +438,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
         if (records.truncated) limits.push({ source: 'NVD', component: component.name, maxResults: NVD_MAX_RESULTS, totalResults: records.totalResults });
         for (const cve of records) {
           if (!matchesProductText(cve, component)) continue;
-          let nvdApplicability = applicability(cve, component);
+          let nvdApplicability = applicability(cve, component, components);
           // Descriptions are a fallback only: never let prose override a
           // structured CPE range that already includes or excludes this version.
           const descriptionApplicability = nvdApplicability.status === 'needs_review' &&
