@@ -153,7 +153,7 @@ function App() {
   const addTriggerRef = useRef(null);
   const openAdd = () => {
     addTriggerRef.current = document.activeElement;
-    openAdd();
+    setShowAdd(true);
   };
   useEffect(() => {
     if (!showAdd) return undefined;
