@@ -91,18 +91,23 @@ export function compareAnalysisSnapshots(previous, current) {
   };
 }
 
-export function loadAnalysisHistory(storage = globalThis.localStorage) {
+export function loadAnalysisHistory(storage) {
   try {
-    const parsed = JSON.parse(storage?.getItem(HISTORY_KEY) || '[]');
+    const target = storage === undefined ? globalThis.localStorage : storage;
+    const parsed = JSON.parse(target?.getItem(HISTORY_KEY) || '[]');
     return Array.isArray(parsed)
       ? parsed.filter(snapshot => snapshot && typeof snapshot === 'object' && Array.isArray(snapshot.findings)).slice(0, HISTORY_LIMIT)
       : [];
   } catch { return []; }
 }
 
-export function saveAnalysisHistory(history, storage = globalThis.localStorage) {
+export function saveAnalysisHistory(history, storage) {
   const next = (Array.isArray(history) ? history : []).slice(0, HISTORY_LIMIT);
-  try { storage?.setItem(HISTORY_KEY, JSON.stringify(next)); return true; }
+  try {
+    const target = storage === undefined ? globalThis.localStorage : storage;
+    target?.setItem(HISTORY_KEY, JSON.stringify(next));
+    return true;
+  }
   catch { return false; }
 }
 
