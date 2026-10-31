@@ -311,3 +311,30 @@ test('flags an OpenVEX affected statement that contradicts an Ubuntu OSV patched
   assert.equal(matched.applicability.status, 'patched_candidate');
   assert.equal(finding.applicabilityStatus, 'patched_candidate');
 });
+
+test('conflicting Ubuntu OSV advisories for the same CVE stay under review', async () => {
+  const contradictoryRecord = {
+    ...osvRecord,
+    osvId: 'UBUNTU-CVE-2026-12345-SECOND',
+    affected: [{
+      ...osvRecord.affected[0],
+      ecosystem_specific: {
+        ...osvRecord.affected[0].ecosystem_specific,
+        status: 'not-affected'
+      }
+    }]
+  };
+  const result = await analyzeInventory([component()], {
+    sources: sources({
+      fetchNvdByKeyword: async () => [],
+      fetchUbuntuOsvForSourcePackage: async () => [osvRecord, contradictoryRecord],
+      fetchCanonicalUbuntuVex: async () => vexRecord
+    })
+  });
+  const finding = result.findings.find(item => item.id === 'CVE-2026-12345');
+  const matched = finding.components[0];
+  assert.equal(matched.ubuntuOsv.status, 'needs_review');
+  assert.match(matched.ubuntuOsv.reason, /Multiple Ubuntu OSV advisories/);
+  assert.equal(matched.ubuntuOsvEvidence.length, 2);
+  assert.equal(matched.ubuntuVex.consistency.status, 'not_comparable');
+});

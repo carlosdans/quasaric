@@ -327,7 +327,13 @@ export async function analyzeInventory(components, { signal, onProgress, sources
         if (existingComponent) {
           // Keep NVD applicability intact, but retain the independent Ubuntu
           // OSV assessment so it can be compared with exact-product OpenVEX.
-          existingComponent.ubuntuOsv = applicability;
+          const previousOsvStatus = existingComponent.ubuntuOsv?.status;
+          existingComponent.ubuntuOsv = previousOsvStatus && previousOsvStatus !== applicability.status
+            ? {
+                status: 'needs_review',
+                reason: 'Multiple Ubuntu OSV advisories linked to this CVE provide conflicting applicability assessments; review each advisory.'
+              }
+            : applicability;
           existingComponent.ubuntuOsvEvidence = [
             ...(existingComponent.ubuntuOsvEvidence || []),
             {
