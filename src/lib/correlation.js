@@ -40,7 +40,7 @@ function cpeProduct(criteria) {
   return {
     part: parts[2] || '*',
     vendor: (parts[3] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('\uE003', '\uE004').replaceAll('_', ' ').replaceAll('\uE004', '_'),
-    product: (parts[4] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('_', ' '),
+    product: (parts[4] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('\uE003', '\uE004').replaceAll('_', ' ').replaceAll('\uE004', '_'),
     version: (parts[5] || '*').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('\uE002', '?'),
     versionWildcard: (parts[5] || '*') === '*',
     versionPattern: /[*?]/.test(parts[5] || '*'),
