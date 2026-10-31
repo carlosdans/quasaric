@@ -313,9 +313,9 @@ function cpeConditionInInventory(item, inventory) {
   const matching = inventory.filter(component => cpeMatchesComponent(item.criteria, component));
   if (!matching.length) return null;
   const cpe = cpeProduct(item.criteria);
-  return matching.some(component => {
+  const results = matching.map(component => {
     const version = String(component.version || '').trim();
-    if (!version) return false;
+    if (!version) return null;
     if (cpe.version !== '*' && cpe.version !== '-' && cpe.version !== version) return false;
     if (item.versionStartIncluding && compareVersions(version, item.versionStartIncluding) < 0) return false;
     if (item.versionStartExcluding && compareVersions(version, item.versionStartExcluding) <= 0) return false;
@@ -325,6 +325,8 @@ function cpeConditionInInventory(item, inventory) {
     // vulnerability range classification is performed separately per product.
     return cpe.version !== '-';
   });
+  if (results.includes(true)) return true;
+  return results.includes(null) ? null : false;
 }
 
 function combineCpeResults(results, operator) {
