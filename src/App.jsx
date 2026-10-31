@@ -377,7 +377,7 @@ function App() {
       </aside>
       {mobileNav && <button className="mobile-nav-backdrop" aria-label={lang === 'es' ? 'Cerrar menú' : 'Close menu'} onClick={() => setMobileNav(false)} />}
 
-      <main className="main-area">
+      <main className="main-area" inert={mobileNav}>
         <header className="topbar">
           <button className="icon-btn mobile-menu" onClick={openMobileNav} aria-label={lang === 'es' ? 'Abrir menú' : 'Open menu'} aria-expanded={mobileNav} aria-controls="primary-navigation"><Menu size={19}/></button>
           <div className="breadcrumb"><span>Quasaric</span><ChevronRight size={14}/><strong>{active === 'overview' ? t.overview : active === 'inventory' ? t.inventory : active === 'vulnerabilities' ? t.vulnerabilities : active === 'posture' ? t.posture : active === 'reports' ? t.reports : t.settings}</strong></div>
