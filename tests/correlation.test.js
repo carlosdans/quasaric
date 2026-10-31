@@ -392,3 +392,24 @@ test('preserves escaped literal question marks in CPE versions', () => {
   assert.equal(classifyCpeApplicability(literal, { name: 'nginx', version: '?' }).status, 'possible');
   assert.equal(classifyCpeApplicability(literal, { name: 'nginx', version: '1.2.3' }).status, 'not_affected');
 });
+
+test('does not match an operating-system CPE to an application component', () => {
+  assert.equal(cpeMatchesComponent(
+    'cpe:2.3:o:nginx:nginx:1.24.0:*:*:*:*:*:*:*',
+    { name: 'nginx', version: '1.24.0' }
+  ), false);
+});
+
+test('does not match an application CPE to an operating-system component', () => {
+  assert.equal(cpeMatchesComponent(
+    'cpe:2.3:a:canonical:ubuntu_linux:22.04:*:*:*:*:*:*:*',
+    { name: 'ubuntu', version: '22.04' }
+  ), false);
+});
+
+test('matches Ubuntu only against its operating-system CPE part', () => {
+  assert.equal(cpeMatchesComponent(
+    'cpe:2.3:o:canonical:ubuntu_linux:22.04:*:*:*:*:*:*:*',
+    { name: 'ubuntu', version: '22.04' }
+  ), true);
+});

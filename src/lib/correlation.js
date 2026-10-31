@@ -38,6 +38,7 @@ function splitCpe23(criteria) {
 function cpeProduct(criteria) {
   const parts = splitCpe23(criteria);
   return {
+    part: parts[2] || '*',
     vendor: (parts[3] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('_', ' '),
     product: (parts[4] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('_', ' '),
     version: (parts[5] || '*').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('\uE002', '?'),
@@ -198,6 +199,8 @@ export function cpeMatchesComponent(criteria, component) {
   const vendor = normalize(cpe.vendor);
   const product = normalize(cpe.product);
   const name = normalize(component.name);
+  const expectedPart = ['ubuntu', 'windows server'].includes(name) ? 'o' : 'a';
+  if (cpe.part !== '*' && cpe.part !== expectedPart) return false;
   // Match the vendor/product pair, not a loose product-name fragment.
   // This avoids confusing Apache HTTP Server with Tomcat or other Apache projects.
   const productPairs = {
