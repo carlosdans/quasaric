@@ -313,7 +313,6 @@ function cpeConditionInInventory(item, inventory) {
   const matching = inventory.filter(component => cpeMatchesComponent(item.criteria, component));
   if (!matching.length) return null;
   const cpe = cpeProduct(item.criteria);
-  const bounded = Boolean(item.versionStartIncluding || item.versionStartExcluding || item.versionEndIncluding || item.versionEndExcluding);
   return matching.some(component => {
     const version = String(component.version || '').trim();
     if (!version) return false;
