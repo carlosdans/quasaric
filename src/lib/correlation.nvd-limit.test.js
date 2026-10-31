@@ -19,3 +19,21 @@ test('queries NVD beyond the old 400-result ceiling', async () => {
   assert.equal(requestedLimit, 6000);
   assert.deepEqual(result.findings, []);
 });
+
+test('uses the precise PHP CPE query instead of broad keyword search in production mode', async () => {
+  let requestedCpe = null;
+  const result = await analyzeInventory([
+    { id: 'php-runtime', name: 'php', type: 'runtime', version: '7.2.0' }
+  ], {
+    sources: {
+      fetchNvdByVirtualMatchString: async criteria => {
+        requestedCpe = criteria;
+        return [];
+      },
+      fetchEpssScores: async () => new Map(),
+      fetchKevCatalog: async () => new Map()
+    }
+  });
+  assert.equal(requestedCpe, 'cpe:2.3:a:php:php');
+  assert.deepEqual(result.findings, []);
+});

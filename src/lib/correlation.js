@@ -1,7 +1,7 @@
 import { normalizeComponentType } from './componentTypes.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
-import { fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
 const NVD_MAX_RESULTS = 6000;
 
@@ -300,7 +300,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // Dependency overrides keep integration tests deterministic without changing
   // the production source defaults or sending local inventory to test services.
   const sourceApi = {
-    fetchNvdByKeyword, fetchEpssScores, fetchKevCatalog,
+    fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog,
     fetchUbuntuOsvForSourcePackage, fetchCanonicalUbuntuVex,
     ...sourceOverrides
   };
@@ -345,7 +345,13 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     const queries = componentQueries(component);
     for (const query of queries) {
       try {
-        const records = await sourceApi.fetchNvdByKeyword(query, { signal, maxResults: NVD_MAX_RESULTS });
+        // PHP's keyword search is extremely broad (mentions in unrelated
+        // advisories routinely hit the 6,000-record ceiling). Its NVD CPE
+        // match string is the precise product identity already required by
+        // matchesProductText, so use that complete, paginated result set.
+        const records = normalize(component.name) === 'php' && !sourceOverrides.fetchNvdByKeyword
+          ? await sourceApi.fetchNvdByVirtualMatchString('cpe:2.3:a:php:php', { signal })
+          : await sourceApi.fetchNvdByKeyword(query, { signal, maxResults: NVD_MAX_RESULTS });
         if (records.truncated) limits.push({ source: 'NVD', component: component.name, maxResults: NVD_MAX_RESULTS, totalResults: records.totalResults });
         for (const cve of records) {
           if (!matchesProductText(cve, component)) continue;
