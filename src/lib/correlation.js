@@ -20,7 +20,7 @@ function splitCpe23(criteria) {
   let escaped = false;
   for (const character of String(criteria || '')) {
     if (escaped) {
-      field += character === '*' ? '\uE000' : character === '-' ? '\uE001' : character;
+      field += character === '*' ? '\uE000' : character === '-' ? '\uE001' : character === '?' ? '\uE002' : character;
       escaped = false;
     } else if (character === '\\') {
       escaped = true;
@@ -40,8 +40,9 @@ function cpeProduct(criteria) {
   return {
     vendor: (parts[3] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('_', ' '),
     product: (parts[4] || '').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('_', ' '),
-    version: (parts[5] || '*').replaceAll('\uE000', '*').replaceAll('\uE001', '-'),
+    version: (parts[5] || '*').replaceAll('\uE000', '*').replaceAll('\uE001', '-').replaceAll('\uE002', '?'),
     versionWildcard: (parts[5] || '*') === '*',
+    versionPattern: /[*?]/.test(parts[5] || '*'),
     versionNotApplicable: (parts[5] || '*') === '-'
   };
 }
@@ -294,6 +295,7 @@ export function classifyCpeApplicability(cpeItems, component) {
     const cpe = cpeProduct(item.criteria);
     const bounded = Boolean(item.versionStartIncluding || item.versionStartExcluding || item.versionEndIncluding || item.versionEndExcluding);
     if (cpe.versionNotApplicable) return false;
+    if (cpe.versionPattern && !cpe.versionWildcard) return null;
     if (cpe.versionWildcard && !bounded) return false;
     if (!cpe.versionWildcard && cpe.version !== version) return false;
     let uncertain = false;
@@ -322,7 +324,7 @@ export function classifyCpeApplicability(cpeItems, component) {
   const vulnerableCpes = relevant.filter(item => item.vulnerable !== false);
   const explicitlyScoped = vulnerableCpes.length > 0 && vulnerableCpes.every(item => {
     const cpe = cpeProduct(item.criteria);
-    const hasConcreteVersion = !cpe.versionWildcard && !cpe.versionNotApplicable;
+    const hasConcreteVersion = !cpe.versionWildcard && !cpe.versionPattern && !cpe.versionNotApplicable;
     const hasVersionBoundary = Boolean(
       item.versionStartIncluding || item.versionStartExcluding ||
       item.versionEndIncluding || item.versionEndExcluding
@@ -366,6 +368,7 @@ function cpeConditionInInventory(item, inventory) {
     const version = String(component.version || '').trim();
     if (!version) return null;
     if (cpe.versionNotApplicable) return false;
+    if (cpe.versionPattern && !cpe.versionWildcard) return null;
     if (!cpe.versionWildcard && cpe.version !== version) return false;
     const checks = [
       [item.versionStartIncluding, order => order >= 0],
