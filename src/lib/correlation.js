@@ -52,6 +52,24 @@ export function classifyCanonicalUbuntuVexComponent(vexRecord, record, component
   };
 }
 
+function compareUbuntuOsvAndVex(osv, vex) {
+  const osvStatus = osv?.status;
+  const vexStatus = vex?.status;
+  if (!['affected', 'patched_candidate', 'unaffected'].includes(osvStatus) ||
+      !['affected', 'fixed', 'not_affected'].includes(vexStatus)) {
+    return { status: 'not_comparable', reason: 'One or both sources do not provide a directly comparable product status.' };
+  }
+
+  const conflict =
+    (osvStatus === 'affected' && ['fixed', 'not_affected'].includes(vexStatus)) ||
+    (osvStatus === 'patched_candidate' && vexStatus === 'affected') ||
+    (osvStatus === 'unaffected' && vexStatus === 'affected');
+
+  return conflict
+    ? { status: 'conflicting', reason: `Ubuntu OSV reports ${osvStatus}, while exact-product OpenVEX reports ${vexStatus}; review both advisories.` }
+    : { status: 'aligned', reason: 'Ubuntu OSV and exact-product OpenVEX do not show a direct status contradiction.' };
+}
+
 export function classifyUbuntuOsvComponent(record, component) {
   const sourcePackage = String(component?.sourcePackage || '').trim();
   const ecosystem = String(component?.ecosystem || component?.vendor || '').trim();
@@ -295,8 +313,13 @@ export async function analyzeInventory(components, { signal, onProgress, sources
             published: record.published, lastModified: record.modified, references: record.references || [], metrics: {}, weaknesses: [] },
           components: []
         };
-        if (!current.components.some(item => item.component.id === component.id)) {
-          current.components.push({ component, applicability });
+        const existingComponent = current.components.find(item => item.component.id === component.id);
+        if (existingComponent) {
+          // Keep NVD applicability intact, but retain the independent Ubuntu
+          // OSV assessment so it can be compared with exact-product OpenVEX.
+          existingComponent.ubuntuOsv = applicability;
+        } else {
+          current.components.push({ component, applicability, ubuntuOsv: applicability });
         }
         allCandidates.set(cveId, current);
       }
@@ -370,6 +393,17 @@ export async function analyzeInventory(components, { signal, onProgress, sources
         } else {
           item.ubuntuVex = classifyCanonicalUbuntuVexComponent(vexRecord, record, component);
         }
+      }
+    }
+  }
+
+  // Compare source assessments only after exact-product VEX matching.
+  // This is diagnostic metadata: it never overwrites NVD applicability,
+  // Ubuntu OSV evidence, or the CVE-wide applicability summary.
+  for (const { components: matched } of allCandidates.values()) {
+    for (const item of matched) {
+      if (item.ubuntuVex) {
+        item.ubuntuVex.consistency = compareUbuntuOsvAndVex(item.ubuntuOsv, item.ubuntuVex);
       }
     }
   }
