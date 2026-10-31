@@ -59,12 +59,14 @@ test('detects changes in severity, scores, KEV and applicability', () => {
     ['severity', 'cvss', 'epss', 'kev', 'applicabilityStatus']);
 });
 
-test('treats the same CVE on a changed component version as a distinct exposure', () => {
+test('tracks a component version change as a changed exposure, not a new CVE', () => {
   const before = snapshot('before', [finding('CVE-2026-0001', [match('a', 'openssl', { version: '3.0.1' })])]);
   const after = snapshot('after', [finding('CVE-2026-0001', [match('a', 'openssl', { version: '3.0.2' })])]);
   const result = compareAnalysisSnapshots(before, after);
-  assert.equal(result.counts.added, 1);
-  assert.equal(result.counts.resolved, 1);
+  assert.equal(result.counts.added, 0);
+  assert.equal(result.counts.resolved, 0);
+  assert.equal(result.counts.changed, 1);
+  assert.deepEqual(result.changed[0].differences, [{ field: 'component.version', before: '3.0.1', after: '3.0.2' }]);
 });
 
 test('persists history locally and caps it at ten snapshots', () => {
