@@ -167,7 +167,7 @@ function App() {
   const riskBandLabel = band => ({ critical: t.riskCritical, high: t.riskHigh, moderate: t.riskModerate, low: t.riskLow }[band] || t.riskLow);
 
   const filtered = useMemo(() => {
-    const live = prioritizedFindings.map(f => ({
+    const live = analysis ? prioritizedFindings.map(f => ({
       id: f.id,
       title: f.description,
       component: f.components.map(x => x.component.name).join(', '),
@@ -176,7 +176,7 @@ function App() {
       state: f.kev ? 'KEV' : 'Candidate',
       riskPriority: f.riskPriority,
       live: true
-    }));
+    })) : null;
     const rows = live || sampleFindings;
     return rows.filter(x => (x.id + x.title + x.component).toLowerCase().includes(query.toLowerCase()));
   }, [prioritizedFindings, query]);
@@ -328,7 +328,7 @@ function App() {
               </section>
               <section className="print-report-section">
                 <h3>{t.reportFindings} ({analysis?.findings?.length || 0})</h3>
-                {analysis?.findings?.length ? <div className="print-report-table-wrap"><table className="print-report-table"><thead><tr><th>{t.reportCve}</th><th>{t.reportDescription}</th><th>{t.reportSeverity}</th><th>{t.reportScore}</th><th>{t.reportEpss}</th><th>{t.priorityLabel}</th><th>{t.reportKev}</th><th>{t.reportApplicability}</th><th>{t.riskScore}</th><th>{t.reportComponents}</th><th>{t.reportSources}</th></tr></thead><tbody>{prioritizedFindings.map(finding => {
+                {analysis?.findings?.length ? <div className="print-report-table-wrap"><table className="print-report-table"><thead><tr><th>{t.reportCve}</th><th>{t.reportDescription}</th><th>{t.reportSeverity}</th><th>{t.reportScore}</th><th>{t.reportEpss}</th><th>{t.reportKev}</th><th>{t.reportApplicability}</th><th>{t.riskScore}</th><th>{t.reportComponents}</th><th>{t.reportSources}</th></tr></thead><tbody>{prioritizedFindings.map(finding => {
                   const sources = [...new Set(finding.components.flatMap(component => (component.evidence || []).map(evidence => evidence.source).filter(Boolean)))];
                   return <tr key={finding.id}><td className="print-report-cve">{finding.id}</td><td>{finding.description || '—'}</td><td>{finding.severity || '—'}</td><td>{finding.cvss ?? '—'}</td><td>{finding.epss ?? '—'}</td><td>{finding.kev ? 'Yes' : 'No'}</td><td>{finding.applicabilityStatus || '—'}</td><td>{finding.riskPriority.score}/100 · {riskBandLabel(finding.riskPriority.band)}</td><td>{finding.components.map(component => component.component.name + ' ' + (component.component.version || '')).join('; ')}</td><td>{sources.join(', ') || '—'}</td></tr>;
                 })}</tbody></table></div> : <p className="print-report-empty">{t.reportNoAnalysis}</p>}
