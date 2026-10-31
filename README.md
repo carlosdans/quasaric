@@ -88,13 +88,46 @@ La Ubuntu Security API está documentada por Canonical como un trabajo en curso 
 
 EPSS es una estimación, KEV indica inclusión en el catálogo de CISA y una referencia pública de PoC no demuestra explotación activa. Son señales diferentes y no deben confundirse.
 
+## Priorización explicable de riesgo
+
+Los hallazgos del análisis se ordenan también mediante una puntuación de triage de 0 a 100, calculada localmente:
+
+- **CISA KEV: hasta 40 puntos.** La inclusión en el catálogo añade 40 puntos; no estar incluido no demuestra ausencia de explotación.
+- **EPSS: hasta 30 puntos.** Se escala linealmente desde la probabilidad EPSS (0–1) hasta 30 puntos.
+- **CVSS: hasta 20 puntos.** Se escala linealmente desde CVSS 0–10 hasta 20 puntos.
+- **Aplicabilidad: hasta 10 puntos.** `affected` añade 10; `possible`, 6; `needs_review`, 3; estados sin evidencia de afectación (`version_missing`, `conflicting`, `patched_candidate`, `unaffected`) no añaden puntos.
+
+Los tramos son: urgente (80–100), alta (60–79), moderada (35–59) y baja (0–34). EPSS y CVSS ausentes aportan cero puntos y se señalan como señales faltantes; si falta el estado de aplicabilidad, se usa `needs_review` (+3) y se marca como pendiente de confirmación. Los estados explícitos `version_missing`, `conflicting`, `patched_candidate` y `unaffected` aportan cero puntos de aplicabilidad. La puntuación es una heurística de priorización transparente, no una probabilidad de explotación, un veredicto de vulnerabilidad confirmada ni una recomendación automática de actualización. Debe leerse junto con las evidencias originales y la aplicabilidad específica del componente.
+
+## Orientación de remediación
+
+Quasaric genera orientación por componente y conserva los enlaces de las fuentes originales. Solo propone una versión binaria concreta cuando Ubuntu OSV clasifica el paquete fuente exacto como afectado, mapea el paquete binario instalado (nombre, versión, paquete fuente y release) y proporciona una única versión binaria corregida. Si falta cualquiera de esas condiciones, existen varias versiones candidatas o las fuentes no concuerdan, el resultado exige revisión manual y enlaza los avisos disponibles. Un estado `patched_candidate` se presenta como candidato que debe verificarse, nunca como remediación confirmada. Las recomendaciones no ejecutan cambios ni comandos en los sistemas.
+
+## Historial y comparación de análisis
+
+La aplicación conserva localmente hasta 10 resultados de análisis para permitir comparaciones sucesivas en el navegador. Cada comparación se realiza por CVE y componente del inventario, y clasifica exposiciones nuevas, ya no detectadas, presentes sin cambios y hallazgos cuyos datos han cambiado (severidad, CVSS, EPSS, KEV, aplicabilidad o versión del componente).
+
+El historial no se sincroniza con ningún servidor ni se comparte con las fuentes externas. Borrar los datos locales del navegador elimina también el historial. La ausencia de un hallazgo en un análisis posterior significa "ya no detectado por las fuentes y reglas consultadas", no una prueba independiente de remediación.
+
+## Panel de postura de seguridad
+
+El panel de postura resume la evolución de los análisis guardados localmente (hasta 10 snapshots):
+
+- Serie temporal de CVE únicas, exposiciones CVE/componente, CVE incluidas en CISA KEV y suma de puntuaciones de prioridad por CVE.
+- Variación entre el análisis más antiguo y el más reciente disponible en la ventana local.
+- Primera y última observación, número de análisis en los que aparece cada exposición y presencia en el último análisis.
+- Exportación CSV local del periodo histórico: una fila por snapshot con métricas agregadas y una fila por observación CVE/componente, con escapado CSV para hojas de cálculo. No incluye datos de inventario ajenos a las observaciones ni transmite el fichero.
+- La puntuación agregada suma, para cada CVE, su mayor puntuación de triage entre los componentes observados en ese snapshot. Es un indicador interno para comparar snapshots, no una probabilidad ni una métrica normalizada entre inventarios distintos.
+- El historial es local al navegador y está limitado a 10 análisis. Con menos de dos snapshots no se calcula una variación temporal.
+- Las fechas de primera/última observación solo describen lo registrado por Quasaric. No representan el inicio o fin real de una vulnerabilidad, y que deje de aparecer no demuestra remediación.
+
 ## Próximos hitos
 
 1. Ampliar fixtures de regresión con CVE y avisos reales representativos de varias releases y arquitecturas Ubuntu.
 2. Validar el build, las cabeceras CSP y el despliegue real de Azure en cada cambio relevante.
 3. Mejorar la correlación de productos y versiones para otras distribuciones, ediciones/builds de Windows, plugins y dependencias transitivas.
 4. Incorporar fichas técnicas con vector, impacto, precondiciones, remediación y referencias verificadas.
-5. Añadir informes PDF y comparación de análisis, manteniendo el inventario local.
+5. Ampliar la cobertura de remediación verificable para otras distribuciones, productos y builds, manteniendo requisitos de evidencia exacta.
 6. Revisar textos legales, privacidad y límites de uso bilingües antes del lanzamiento público.
 
 Contacto: contacto@quasaric.com
