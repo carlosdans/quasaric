@@ -183,8 +183,8 @@ function compareVersions(a, b) {
   const right = rightValue.split('.').map(BigInt);
   const length = Math.max(left.length, right.length);
   for (let i = 0; i < length; i++) {
-    const x = left[i] ?? 0;
-    const y = right[i] ?? 0;
+    const x = left[i] ?? 0n;
+    const y = right[i] ?? 0n;
     if (x !== y) return x < y ? -1 : 1;
   }
   return 0;
