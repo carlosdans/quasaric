@@ -681,3 +681,24 @@ La documentación de Canonical establece que:
 2. Revisar si el fetch de Ubuntu OSV y el de Canonical OpenVEX podrían compartir una caché efímera por ejecución cuando se añadan nuevas fuentes, sin almacenar inventario.
 3. Mantener el límite explícito de 100 documentos y la concurrencia máxima de cuatro salvo evidencia medida que justifique cambiarlo.
 4. Continuar tratando OpenVEX como evidencia por producto exacto, no como veredicto CVE global.
+
+
+---
+
+## Estado actualizado — 31 de octubre de 2026 (PR #37: discrepancias Ubuntu OSV / Canonical OpenVEX)
+
+- PR #37 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/37.
+- Commit de integración en `main`: `5124475aec4a834307238855aca399ada9da31c0`.
+- La correlación conserva ahora `ubuntuOsv` por componente incluso cuando NVD ya había creado el hallazgo para ese mismo CVE/componente. La evaluación `applicability` de NVD no se sobrescribe.
+- Tras adjuntar la evidencia OpenVEX exacta, se compara con la clasificación OSV del mismo componente. Se etiqueta `ubuntuVex.consistency.status` como `conflicting`, `aligned` o `not_comparable`; esta metadata es diagnóstica y no modifica la clasificación de ninguna fuente ni el resumen CVE.
+- Contradicciones cubiertas: Ubuntu OSV `affected` frente a OpenVEX `fixed`/`not_affected`; OSV `patched_candidate` frente a VEX `affected`; OSV `unaffected` frente a VEX `affected`.
+- `under_investigation`, estados OSV incompletos, evidencia ausente o no comparable permanecen sin conclusión automática.
+- Se añadieron pruebas de integración para:
+  - NVD + OSV + VEX sobre el mismo CVE, verificando que la aplicabilidad NVD se conserva y que la discrepancia se señala.
+  - Dos binarios (`openssl` y `libssl3`) del mismo paquete fuente con estados VEX distintos; cada estado se asocia exclusivamente al PURL exacto.
+  - OSV `patched_candidate` frente a VEX `affected`.
+- La interfaz muestra por separado el estado OSV y el estado VEX por componente, con una advertencia explícita cuando existe conflicto.
+- CI de PR #37: run `41148044569`, success; **110 tests, 110 pass, 0 fail**, build Vite correcto (`✓ built in 2.93s`).
+- El cambio no convierte una señal de un binario en un veredicto global del CVE y no confirma remediación.
+- No se modificaron DNS, secretos, recursos Azure ni el flujo de privacidad. El inventario no se transmite a Canonical; solo se consulta el documento público por CVE.
+- Pendiente de confirmar en CI/Azure el despliegue del commit de integración `5124475`.
