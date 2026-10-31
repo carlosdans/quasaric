@@ -18,6 +18,7 @@ const sourcePurl = 'pkg:deb/ubuntu/openssl@1.0.0-1?arch=source&distro=ubuntu/nob
 const binaryPurl = 'pkg:deb/ubuntu/openssl@1.0.0-1?arch=amd64&distro=ubuntu/noble';
 const osvRecord = {
   id: 'CVE-2026-12345',
+  osvId: 'UBUNTU-CVE-2026-12345',
   package: 'openssl',
   ecosystem: 'Ubuntu:24.04:LTS',
   summary: 'Test Ubuntu OpenSSL advisory',
@@ -80,6 +81,54 @@ test('attaches exact OpenVEX evidence when the same CVE is already present from 
   assert.equal(finding.components[0].ubuntuVex.documentUrl, vexRecord.sourceUrl);
   assert.equal(finding.applicabilityStatus, 'possible');
   assert.equal(result.sources.ubuntuVex, 'queried');
+});
+
+test('attaches source identifiers, dates, URLs and exact product details to each source evidence item', async () => {
+  const result = await analyzeInventory([component()], { sources: sources() });
+  const finding = result.findings.find(item => item.id === 'CVE-2026-12345');
+  const evidence = finding.components[0].evidence;
+  assert.deepEqual(evidence.map(item => item.source), ['NVD', 'Ubuntu OSV', 'Canonical OpenVEX']);
+
+  const nvd = evidence.find(item => item.source === 'NVD');
+  assert.equal(nvd.advisoryId, 'CVE-2026-12345');
+  assert.equal(nvd.status, 'possible');
+  assert.equal(nvd.publishedAt, nvdRecord.published);
+  assert.equal(nvd.updatedAt, nvdRecord.lastModified);
+  assert.equal(nvd.url, 'https://nvd.nist.gov/vuln/detail/CVE-2026-12345');
+
+  const osv = evidence.find(item => item.source === 'Ubuntu OSV');
+  assert.equal(osv.advisoryId, 'UBUNTU-CVE-2026-12345');
+  assert.equal(osv.status, 'affected');
+  assert.equal(osv.publishedAt, osvRecord.published);
+  assert.equal(osv.updatedAt, osvRecord.modified);
+  assert.equal(osv.url, 'https://osv.dev/vulnerability/UBUNTU-CVE-2026-12345');
+  assert.ok(osv.references.includes('https://ubuntu.com/security/CVE-2026-12345'));
+
+  const vex = evidence.find(item => item.source === 'Canonical OpenVEX');
+  assert.equal(vex.status, 'fixed');
+  assert.equal(vex.publishedAt, vexRecord.timestamp);
+  assert.equal(vex.documentVersion, vexRecord.version);
+  assert.equal(vex.url, vexRecord.sourceUrl);
+
+  for (const item of evidence) {
+    assert.equal(item.product.name, 'openssl');
+    assert.equal(item.product.version, '1.0.0-1');
+    assert.equal(item.product.sourcePackage, 'openssl');
+    assert.equal(item.product.architecture, 'amd64');
+    assert.equal(item.product.ecosystem, 'Ubuntu:24.04:LTS');
+    assert.ok(item.reason);
+  }
+});
+
+test('OSV-only findings do not claim NVD provenance', async () => {
+  const result = await analyzeInventory([component()], {
+    sources: sources({ fetchNvdByKeyword: async () => [] })
+  });
+  const finding = result.findings.find(item => item.id === 'CVE-2026-12345');
+  const evidence = finding.components[0].evidence;
+  assert.equal(evidence.some(item => item.source === 'NVD'), false);
+  assert.equal(evidence.some(item => item.source === 'Ubuntu OSV'), true);
+  assert.equal(evidence.some(item => item.source === 'Canonical OpenVEX'), true);
 });
 
 test('OpenVEX download failure leaves NVD and Ubuntu OSV assessment intact', async () => {
