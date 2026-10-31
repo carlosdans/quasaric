@@ -223,3 +223,20 @@ test('evaluates NVD OR alternatives when one installed product matches', () => {
   }];
   assert.equal(evaluateCpeConfigurations(configurations, [{ name: 'nginx', version: '1.24.0' }]), true);
 });
+
+test('wildcard vulnerable CPEs prove product presence in compound configuration logic', () => {
+  const configurations = [{
+    nodes: [{
+      operator: 'AND',
+      cpeMatch: [
+        cpe('cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*'),
+        cpe('cpe:2.3:o:canonical:ubuntu_linux:22.04:*:*:*:*:*:*:*', { vulnerable: false })
+      ]
+    }]
+  }];
+  const inventory = [
+    { name: 'nginx', version: '1.24.0' },
+    { name: 'ubuntu', version: '22.04' }
+  ];
+  assert.equal(evaluateCpeConfigurations(configurations, inventory), true);
+});
