@@ -43,8 +43,7 @@ test('neutralizes spreadsheet formulas in untrusted text fields', () => {
     timeline: [{ id: String.fromCharCode(10) + '=1+1' }],
     dwell: [{ cve: 'CVE-1', componentName: '  =1+1' }]
   });
-  assert.ok(newlineCsv.includes('"\'
-=1+1"'));
+  assert.ok(newlineCsv.includes('"\' + String.fromCharCode(10) + '=1+1"'));
   assert.ok(newlineCsv.includes('"\'  =1+1"'));
 });
 
