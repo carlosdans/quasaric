@@ -144,3 +144,22 @@ test('recognizes GD as a PHP extension-specific condition', () => {
   }, { name: 'PHP', version: '7.2.23' });
   assert.equal(result.status, 'needs_review');
 });
+
+test('supports wildcard PHP branch notation and exclusive upper bounds', () => {
+  const cve = { descriptions: [{ lang: 'en', value: 'PHP 8.1.* less than 8.1.29 is affected.' }] };
+  assert.equal(classifyPhpDescriptionApplicability(cve, { name: 'PHP', version: '8.1.28' }).status, 'possible');
+  assert.equal(classifyPhpDescriptionApplicability(cve, { name: 'PHP', version: '8.1.29' }).status, 'not_affected');
+  assert.equal(classifyPhpDescriptionApplicability(cve, { name: 'PHP', version: '8.2.0' }).status, 'not_affected');
+});
+
+test('supports inclusive PHP wording without including the next patch release', () => {
+  const cve = { descriptions: [{ lang: 'en', value: 'PHP 7.2.x up to and including 7.2.24 is affected.' }] };
+  assert.equal(classifyPhpDescriptionApplicability(cve, { name: 'PHP', version: '7.2.24' }).status, 'possible');
+  assert.equal(classifyPhpDescriptionApplicability(cve, { name: 'PHP', version: '7.2.25' }).status, 'not_affected');
+});
+
+test('supports the PHP through operator as an inclusive boundary', () => {
+  const cve = { descriptions: [{ lang: 'en', value: 'PHP 8.2.x through 8.2.15 is affected.' }] };
+  assert.equal(classifyPhpDescriptionApplicability(cve, { name: 'PHP', version: '8.2.15' }).status, 'possible');
+  assert.equal(classifyPhpDescriptionApplicability(cve, { name: 'PHP', version: '8.2.16' }).status, 'not_affected');
+});
