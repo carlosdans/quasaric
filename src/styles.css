@@ -167,7 +167,7 @@ button{touch-action:manipulation}
 @media(max-width:760px){
   .sidebar{width:min(88vw,320px);padding:20px 15px 14px;z-index:41;visibility:hidden;transition:transform .22s,visibility 0s linear .22s}
   .sidebar.sidebar-open{visibility:visible;transition:transform .22s,visibility 0s}
-  .mobile-nav-backdrop{display:block;position:fixed;inset:0;z-index:40;border:0;border-radius:0;background:rgba(2,7,15,.68);backdrop-filter:blur(2px)}
+  .mobile-nav-backdrop{display:block;position:fixed;inset:0;z-index:40;border:0;border-radius:0;background:rgba(2,7,15,.68);backdrop-filter:blur(2px);cursor:pointer}
   .brand{padding:0 3px 25px}
   .mobile-close{margin-left:auto;min-width:40px;min-height:40px}
   .nav-caption{padding-bottom:9px}
