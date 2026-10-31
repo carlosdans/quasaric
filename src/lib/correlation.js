@@ -338,12 +338,10 @@ function combineCpeResults(results, operator) {
 }
 
 function evaluateCpeNode(node, inventory) {
-  const own = (node.cpeMatch || []).map(item => {
-    const result = cpeConditionInInventory(item, inventory);
-    return node.negate ? (result === null ? null : !result) : result;
-  });
+  const own = (node.cpeMatch || []).map(item => cpeConditionInInventory(item, inventory));
   const children = (node.children || []).map(child => evaluateCpeNode(child, inventory));
-  return combineCpeResults([...own, ...children], String(node.operator || 'OR').toUpperCase());
+  const result = combineCpeResults([...own, ...children], String(node.operator || 'OR').toUpperCase());
+  return node.negate ? (result === null ? null : !result) : result;
 }
 
 export function evaluateCpeConfigurations(configurations = [], inventory = []) {
