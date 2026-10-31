@@ -2,25 +2,34 @@
 
 **Security Intelligence Platform** — plataforma estática de inteligencia de vulnerabilidades para inventarios tecnológicos declarados por el usuario.
 
-## Estado del MVP
+## Estado del proyecto
 
-- Interfaz React + Vite bilingüe (español/inglés).
-- Inventario local de hasta 10 componentes y exportación CSV.
-- Consultas desde el navegador a NVD, FIRST EPSS y CISA KEV.
-- Correlación inicial de candidatos CVE con metadatos CPE y rangos de versión NVD.
-- Indicadores de disponibilidad de fuentes y errores parciales.
-- La aplicabilidad permanece como posible o requiere verificación: no se declara una vulnerabilidad confirmada automáticamente.
+Quasaric es un MVP funcional en evolución. La aplicación usa React + Vite, ofrece interfaz bilingüe (español/inglés), permite mantener un inventario local de hasta 10 componentes y consulta fuentes públicas de vulnerabilidades desde el navegador.
 
-**No está listo para decisiones de producción.** La correlación necesita validación amplia, especialmente para CPE ambiguos, paquetes de distribuciones, backports de Ubuntu, ediciones/builds de Windows, plugins y dependencias transitivas. La falta de coincidencias no demuestra que un sistema sea seguro.
+Capacidades implementadas:
+
+- Correlación de candidatos CVE mediante NVD/CPE y rangos de versión.
+- Señales EPSS de FIRST y presencia en el catálogo CISA KEV.
+- Consulta de Ubuntu OSV por paquete fuente y ecosistema/release explícitos.
+- Mapeo de los paquetes binarios instalados mediante `ecosystem_specific.binaries` del aviso Ubuntu OSV.
+- Evaluación separada de versión fuente y versión binaria Debian/Ubuntu, teniendo en cuenta las revisiones y backports.
+- Recuperación de documentos Canonical OpenVEX por CVE y correlación con el producto binario exacto (paquete, versión completa, arquitectura y distro), vinculada al PURL del paquete fuente OSV.
+- Comparación diagnóstica de estados Ubuntu OSV/OpenVEX por componente. Los conflictos se muestran sin sobrescribir la clasificación de ninguna fuente ni convertir un estado VEX en un veredicto global del CVE.
+- Trazabilidad de evidencias por componente y fuente (NVD, Ubuntu OSV y Canonical OpenVEX), con referencias, fechas y detalles del producto.
+- Exportación CSV del inventario y de hallazgos; el CSV de hallazgos incluye la evidencia por fuente en una columna JSON.
+- Límites de recuperación OpenVEX por análisis (100 documentos y hasta cuatro fetches concurrentes).
+
+**No está listo para decisiones de producción.** Una coincidencia sigue siendo evidencia que requiere validación; no se declara automáticamente una vulnerabilidad confirmada ni una remediación confirmada. La correlación necesita validación amplia para CPE ambiguos, backports y paquetes de distribuciones, ediciones/builds de Windows, plugins y dependencias transitivas. La ausencia de coincidencias no demuestra que un sistema sea seguro.
 
 ## Principios y privacidad
 
 - No realiza escaneos, reconocimiento de red, explotación ni pruebas activas.
-- El usuario declara manualmente productos y versiones.
+- El usuario declara manualmente productos, paquetes y versiones.
 - El inventario se conserva en el almacenamiento local del navegador.
 - No hay cuentas, backend, base de datos ni almacenamiento central.
 - No introduzcas contraseñas, tokens, secretos ni datos personales.
-- Las consultas a proveedores externos pueden revelar la IP del visitante y los identificadores CVE consultados. No se envía el inventario completo.
+- Las consultas a proveedores externos pueden revelar la IP del visitante y los identificadores CVE consultados. No se envía el inventario completo a NVD, FIRST, CISA, OSV ni Canonical.
+- La consulta Canonical OpenVEX solicita el documento público usando el identificador CVE; el inventario local se usa para comparar el contenido recibido, no se transmite.
 - Las fuentes pueden tener límites, errores, datos incompletos o cambios de disponibilidad.
 
 ## Desarrollo local
@@ -30,6 +39,7 @@ Requisitos: Node.js 20 o superior y npm.
 ```bash
 npm install
 npm run dev
+npm test
 npm run build
 npm run preview
 ```
@@ -47,17 +57,30 @@ El archivo `staticwebapp.config.json` define fallback SPA y cabeceras iniciales.
 
 ## Fuentes específicas de Ubuntu
 
-Para Ubuntu no se debe interpretar el número de versión upstream como prueba suficiente: Canonical puede publicar correcciones retroportadas manteniendo una versión upstream aparentemente antigua. La verificación de paquetes requiere cruzar el nombre del paquete, la versión completa de Ubuntu (incluida la revisión), la release/codename y el estado del CVE en esa release.
+No debe interpretarse el número de versión upstream como prueba suficiente: Canonical puede publicar correcciones retroportadas manteniendo una versión upstream aparentemente antigua. La verificación requiere cruzar el paquete fuente, la versión completa (incluida la revisión Ubuntu), el paquete binario instalado, la arquitectura, la release/codename y el estado del CVE.
+
+Flujo implementado:
+
+1. Consultar Ubuntu OSV con el nombre del paquete fuente y el ecosistema exacto, por ejemplo `Ubuntu:24.04:LTS` o `Ubuntu:Pro:22.04:LTS`.
+2. Recuperar las fichas OSV y relacionar el identificador Ubuntu con el CVE público mediante `upstream`.
+3. Comprobar que el paquete binario instalado aparece bajo el paquete fuente y release exactos en `ecosystem_specific.binaries`.
+4. Clasificar por separado la versión fuente y contrastar la versión binaria instalada con la versión binaria corregida publicada, cuando existe evidencia suficiente.
+5. Consultar el documento Canonical OpenVEX del CVE y emparejar únicamente el producto exacto: nombre, versión completa, arquitectura y distro. El PURL de paquete fuente procedente de OSV debe corresponder al paquete fuente local.
+6. Conservar por separado OSV y OpenVEX. Si sus estados comparables discrepan, Quasaric señala el conflicto y requiere revisión manual.
+
+Los estados `patched_candidate`, `fixed` y `not_affected` no constituyen por sí solos una confirmación global de remediación o ausencia de vulnerabilidad. Cuando falta arquitectura, PURL, mapeo binario o evidencia de versión, el resultado permanece en revisión. Un resultado vacío tampoco demuestra que el paquete esté libre de vulnerabilidades.
 
 Fuentes oficiales de referencia:
+
 - [Ubuntu Security Tracker y estados por release/paquete](https://ubuntu.com/security/cves/about)
 - [Ubuntu Security Notices (USN)](https://ubuntu.com/security/notices)
 - [Ubuntu OVAL](https://documentation.ubuntu.com/security/security-updates/oval/)
 - [Ubuntu OSV](https://documentation.ubuntu.com/security/security-updates/osv/)
+- [Canonical Ubuntu Security Notices y OpenVEX](https://github.com/canonical/ubuntu-security-notices)
 
-La Ubuntu Security API está documentada por Canonical como un trabajo en curso y no recomendada para producción/automatizaciones. Quasaric incorpora una primera consulta al endpoint OSV central para paquetes fuente, usando el nombre del paquete fuente, la versión completa del paquete y el ecosistema exacto (por ejemplo, `Ubuntu:24.04:LTS` o `Ubuntu:Pro:22.04:LTS`). El conector resuelve primero los identificadores devueltos por `querybatch` y recupera después cada ficha OSV para relacionar el aviso Ubuntu con el CVE público mediante `upstream`. Los resultados se incorporan incluso cuando NVD no devuelve ese CVE, pero permanecen como candidatos que requieren verificación.\n\n**Limitación actual:** el inventario de `dpkg-query` contiene normalmente nombres de paquetes binarios, mientras que Ubuntu OSV organiza el seguimiento por paquetes fuente y publica el mapeo de binarios en `ecosystem_specific.binaries`. Hasta implementar y probar ese mapeo, la consulta OSV solo es válida si se introduce el nombre del paquete fuente. Un resultado vacío no demuestra que el paquete binario esté libre de vulnerabilidades. La siguiente fase debe integrar ese mapeo y probar las versiones completas con los datos oficiales de cada release.
+La Ubuntu Security API está documentada por Canonical como un trabajo en curso y no recomendada para producción/automatizaciones. Quasaric utiliza el endpoint OSV central para las consultas descritas arriba.
 
-## Fuentes conectadas en el prototipo
+## Otras fuentes conectadas
 
 - [NVD](https://nvd.nist.gov/developers/vulnerabilities): búsqueda de CVE y datos CPE.
 - [FIRST EPSS](https://www.first.org/epss/): probabilidad estimada de explotación en los próximos 30 días.
@@ -67,11 +90,11 @@ EPSS es una estimación, KEV indica inclusión en el catálogo de CISA y una ref
 
 ## Próximos hitos
 
-1. Validar build y despliegue real en Azure.
-2. Mejorar y probar la correlación de producto/versión con fixtures de CVE conocidos.
-3. Añadir avisos de fabricantes y distribución (incluidos Ubuntu USN).
-4. Fichas técnicas con vector, impacto, precondiciones, remediación y referencias verificadas.
-5. Informes PDF/CSV, comparación de análisis e inventario asistido mediante comandos de solo lectura.
-6. Textos legales y privacidad bilingües antes del lanzamiento público.
+1. Ampliar fixtures de regresión con CVE y avisos reales representativos de varias releases y arquitecturas Ubuntu.
+2. Validar el build, las cabeceras CSP y el despliegue real de Azure en cada cambio relevante.
+3. Mejorar la correlación de productos y versiones para otras distribuciones, ediciones/builds de Windows, plugins y dependencias transitivas.
+4. Incorporar fichas técnicas con vector, impacto, precondiciones, remediación y referencias verificadas.
+5. Añadir informes PDF y comparación de análisis, manteniendo el inventario local.
+6. Revisar textos legales, privacidad y límites de uso bilingües antes del lanzamiento público.
 
 Contacto: contacto@quasaric.com
