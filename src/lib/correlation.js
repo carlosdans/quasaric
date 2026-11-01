@@ -10,7 +10,7 @@ const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+
 const unique = values => [...new Set(values)];
 
 function componentQueries(component) {
-  const aliases = { apache: 'apache http server', 'apache http server': 'apache http server', httpd: 'apache http server', node: 'node.js', nodejs: 'node.js', 'php-fpm': 'php', iis: 'internet information services', 'microsoft iis': 'internet information services' };
+  const aliases = { apache: 'apache http server', 'apache http server': 'apache http server', apache2: 'apache http server', httpd: 'apache http server', node: 'node.js', nodejs: 'node.js', 'php-fpm': 'php', iis: 'internet information services', 'microsoft iis': 'internet information services' };
   const name = normalize(component.name);
   return [aliases[name] || name].filter(Boolean);
 }
@@ -209,6 +209,7 @@ export function cpeMatchesComponent(criteria, component) {
     apache: [['apache', 'http server']],
     'apache http server': [['apache', 'http server']],
     httpd: [['apache', 'http server']],
+    apache2: [['apache', 'http server']],
     php: [['php', 'php']],
     'php-fpm': [['php', 'php']],
     python: [['python', 'python']],

@@ -797,3 +797,10 @@ La documentación de Canonical establece que:
 
 - `httpd` se trata como alias de Apache HTTP Server para búsquedas y matching CPE, pero solo acepta la pareja exacta `apache:http server`.
 - Hay pruebas para la identidad correcta, un vendor inesperado y Apache Tomcat; no se acepta cualquier producto del vendor Apache.
+
+
+### Alias `apache2` de inventario
+
+- `apache2`, habitual en inventarios de paquetes Debian/Ubuntu, se normaliza como Apache HTTP Server para búsqueda y matching CPE.
+- La clasificación lo reconoce como componente web y el matching exige la pareja exacta `apache:http_server`; no se amplía a Apache Tomcat ni a otros proyectos Apache.
+- Se añade una prueba de clasificación del alias y pruebas CPE positivas/negativas.

@@ -8,6 +8,8 @@ test('known technologies receive their expected component type', () => {
   assert.equal(suggestedComponentType('  Apache   HTTP Server  '), 'web');
   assert.equal(suggestedComponentType('Node JS'), null);
   assert.equal(suggestedComponentType('Apache HTTP Server'), 'web');
+  assert.equal(suggestedComponentType('apache2'), 'web');
+  assert.equal(suggestedComponentType('httpd'), 'web');
   assert.equal(suggestedComponentType('NGINX'), 'web');
   assert.equal(suggestedComponentType('MySQL'), 'database');
   assert.equal(suggestedComponentType('Ubuntu'), 'os');
