@@ -1,5 +1,20 @@
 const HISTORY_KEY = 'quasaric-analysis-history';
 const HISTORY_LIMIT = 10;
+const MAX_HISTORY_BYTES = 10 * 1024 * 1024;
+const MAX_FINDINGS_PER_SNAPSHOT = 50000;
+const MAX_INVENTORY_COMPONENTS = 50000;
+const HISTORY_RECOVERY_KEY = 'quasaric-analysis-history-recovery';
+
+function withinByteLimit(value) {
+  return new TextEncoder().encode(value).byteLength <= MAX_HISTORY_BYTES;
+}
+
+function isValidSnapshot(snapshot) {
+  return isRecord(snapshot) && Array.isArray(snapshot.findings) &&
+    snapshot.findings.length <= MAX_FINDINGS_PER_SNAPSHOT &&
+    snapshot.findings.every(finding => isRecord(finding) && Array.isArray(finding.components) &&
+      finding.components.every(match => isRecord(match) && isRecord(match.component)));
+}
 
 function isRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -21,7 +36,10 @@ export function createAnalysisSnapshot(analysis, inventory = []) {
   if (!analysis || !Array.isArray(analysis.findings)) {
     throw new TypeError('A completed analysis with findings is required.');
   }
-  return {
+  if (analysis.findings.length > MAX_FINDINGS_PER_SNAPSHOT || inventory.length > MAX_INVENTORY_COMPONENTS) {
+    throw new Error('Analysis snapshot exceeds the 50000 findings or components limit.');
+  }
+  const snapshot = {
     id: analysis.analyzedAt || new Date().toISOString(),
     analyzedAt: analysis.analyzedAt || new Date().toISOString(),
     inventory: inventory.map(item => ({ ...item })),
@@ -46,12 +64,11 @@ export function createAnalysisSnapshot(analysis, inventory = []) {
       }))
     }))
   };
+  if (!withinByteLimit(JSON.stringify(snapshot))) throw new Error('Analysis snapshot exceeds the 10 MB storage limit.');
+  return snapshot;
 }
 
 export function compareAnalysisSnapshots(previous, current) {
-  const isValidSnapshot = snapshot => isRecord(snapshot) && Array.isArray(snapshot.findings) &&
-    snapshot.findings.every(finding => isRecord(finding) && Array.isArray(finding.components) &&
-      finding.components.every(match => isRecord(match) && isRecord(match.component)));
   if (!isValidSnapshot(previous) || !isValidSnapshot(current)) {
     throw new TypeError('Two valid analysis snapshots with complete component matches are required.');
   }
@@ -108,26 +125,30 @@ export function compareAnalysisSnapshots(previous, current) {
 export function loadAnalysisHistory(storage) {
   try {
     const target = storage === undefined ? globalThis.localStorage : storage;
-    const parsed = JSON.parse(target?.getItem(HISTORY_KEY) || '[]');
-    return Array.isArray(parsed)
-      ? parsed.filter(snapshot =>
-        isRecord(snapshot) && Array.isArray(snapshot.findings) &&
-        snapshot.findings.every(finding =>
-          isRecord(finding) && Array.isArray(finding.components) &&
-          finding.components.every(match =>
-            isRecord(match) && isRecord(match.component)
-          )
-        )
-      ).slice(0, HISTORY_LIMIT)
-      : [];
+    const raw = target?.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    if (!withinByteLimit(raw)) {
+      try { target?.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    const valid = Array.isArray(parsed) ? parsed.filter(isValidSnapshot).slice(0, HISTORY_LIMIT) : [];
+    if (!Array.isArray(parsed) || valid.length !== parsed.length) {
+      try { target?.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
+    }
+    return valid;
   } catch { return []; }
 }
 
 export function saveAnalysisHistory(history, storage) {
   const next = (Array.isArray(history) ? history : []).slice(0, HISTORY_LIMIT);
+  if (!next.every(isValidSnapshot)) return false;
   try {
+    const serialized = JSON.stringify(next);
+    if (!withinByteLimit(serialized)) return false;
     const target = storage === undefined ? globalThis.localStorage : storage;
-    target?.setItem(HISTORY_KEY, JSON.stringify(next));
+    if (!target) return false;
+    target.setItem(HISTORY_KEY, serialized);
     return true;
   }
   catch { return false; }
