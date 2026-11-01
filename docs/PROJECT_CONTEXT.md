@@ -865,3 +865,14 @@ La documentación de Canonical establece que:
 2. Añadir pruebas con fixtures OSV reales/sintéticos que cubran alias, upstream, referencias, withdrawn y advisories sin CVE.
 3. Revisar la documentación inicial del proyecto para que los límites históricos (inventario de 10 componentes, CSV de 1 MB y flujo Ubuntu antiguo) no se interpreten como capacidades actuales.
 4. Mantener todos los avisos no CVE como evidencia informativa pendiente de revisión, sin incorporarlos al recuento de CVE confirmadas.
+
+
+## Estado actualizado — 1 de noviembre de 2026 (endurecimiento de consultas OSV PURL)
+
+- La consulta OSV genérica por PURL deduplica los IDs de avisos y limita a 200 los detalles recuperables por consulta. Si la respuesta excede el límite, falla de forma explícita; no devuelve una lista truncada como si fuera completa.
+- La descarga de detalles mantiene concurrencia máxima de cuatro y usa la política común de reintentos para HTTP 429, 503 y 504.
+- Se validan los objetos de la respuesta de consulta: cada aviso debe incluir un identificador. Cada detalle debe ser un objeto OSV y su campo `id` debe coincidir exactamente con el solicitado.
+- Los avisos retirados siguen excluidos de resultados activos. Los errores de fuente no se convierten en ausencia de vulnerabilidades.
+- Pruebas nuevas en `src/lib/vulnerabilitySources.osv-purl.test.js`: deduplicación/orden, límite superior, aviso malformado e identidad de detalle incorrecta.
+- Commits de código: `202f6ddb`, `4fef5300`, `28372673` y `7a356d78`. Los runs CI/Azure de los dos primeros commits finalizaron correctamente; los runs de los commits de validación de esquema deben comprobarse antes de considerar este bloque desplegado.
+- Se mantiene el envío mínimo de PURL/versión explícitos a OSV; no se transmite el inventario completo. No se añaden dependencias, servicios ni costes: Azure Static Web Apps Free y presupuesto 0 €.
