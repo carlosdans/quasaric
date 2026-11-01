@@ -897,3 +897,13 @@ La documentación de Canonical establece que:
 - Presupuesto: 0 €; solo se utiliza la API pública gratuita de OSV.
 - Commits: `8da5ddae` (implementación), `6db057ee` (pruebas).
 - CI y despliegue de estos commits: pendientes de verificación.
+
+
+### 2026-11-01 — validación estricta de Ubuntu OSV querybatch
+
+- La consulta por versión completa valida que OSV devuelva exactamente un resultado para la única consulta enviada; rechaza arrays vacíos, resultados adicionales y elementos con estructura incorrecta.
+- Los IDs de avisos se validan antes de iniciar peticiones de detalle; los detalles pasan por el helper compartido, que verifica identidad, límite de 200 y concurrencia máxima de cuatro.
+- Pruebas nuevas cubren cardinalidad/formato de querybatch, discrepancia entre ID solicitado y detalle, y rechazo de 201 avisos antes de descargar detalles.
+- No se alteran las reglas de aplicabilidad Ubuntu ni se convierten avisos OSV en CVE por inferencia.
+- Commits: `afb7dc7d` (validación), `38e12473` (pruebas). CI y despliegue pendientes de verificación.
+- Coste añadido: 0 €; API pública OSV y Azure Static Web Apps Free.
