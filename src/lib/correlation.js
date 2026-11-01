@@ -201,6 +201,20 @@ export function cpeMatchesComponent(criteria, component) {
   const name = normalize(component.name);
   const expectedPart = component.type === 'os' || ['ubuntu', 'debian', 'windows server', 'windows server 2019', 'windows server 2022', 'windows server 2025', 'red hat enterprise linux', 'rhel', 'fedora', 'alpine linux', 'almalinux', 'rocky linux', 'suse linux enterprise server', 'sles'].includes(name) ? 'o' : 'a';
   if (cpe.part !== '*' && cpe.part !== expectedPart) return false;
+  // A user-supplied CPE is an explicit product identity for otherwise
+  // unsupported labels. It is only an identity hint: NVD version ranges
+  // remain authoritative, and malformed/incomplete CPEs fail closed.
+  const declaredCpe = String(component.cpe || '').trim();
+  if (declaredCpe) {
+    const declaredFields = splitCpe23(declaredCpe);
+    if (declaredFields.length !== 13 || declaredFields[0] !== 'cpe' || declaredFields[1] !== '2.3') return false;
+    const declaredPart = declaredFields[2];
+    const declaredVendor = normalize(declaredFields[3].replaceAll('\\_', '_'));
+    const declaredProduct = normalize(declaredFields[4].replaceAll('\\_', '_'));
+    return (declaredPart === '*' || declaredPart === cpe.part) &&
+      declaredVendor !== '' && declaredProduct !== '' &&
+      declaredVendor === vendor && declaredProduct === product;
+  }
   // Match the vendor/product pair, not a loose product-name fragment.
   // This avoids confusing Apache HTTP Server with Tomcat or other Apache projects.
   const productPairs = {

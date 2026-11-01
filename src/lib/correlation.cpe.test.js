@@ -100,3 +100,15 @@ test('does not match OS CPEs to similarly named application CPEs', () => {
   assert.equal(cpeMatchesComponent('cpe:2.3:a:redhat:enterprise_linux:9.0:*:*:*:*:*:*:*', { name: 'Red Hat Enterprise Linux', type: 'os' }), false);
   assert.equal(cpeMatchesComponent('cpe:2.3:o:microsoft:windows_server_2022:10.0.20348.4467:*:*:*:datacenter:*:x64:*', { name: 'Windows Server', type: 'os' }), false);
 });
+
+test('uses a valid declared CPE identity for otherwise unsupported component labels', () => {
+  const custom = { name: 'Acme Gateway', type: 'web', cpe: 'cpe:2.3:a:acme:gateway:*:*:*:*:*:*:*:*' };
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:acme:gateway:4.2:*:*:*:*:*:*:*', custom), true);
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:attacker:gateway:4.2:*:*:*:*:*:*:*', custom), false);
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:acme:other:4.2:*:*:*:*:*:*:*', custom), false);
+});
+
+test('rejects malformed declared CPE identities instead of falling back to a guessed name', () => {
+  const custom = { name: 'Acme Gateway', type: 'web', cpe: 'cpe:2.3:a:acme:gateway' };
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:acme:gateway:4.2:*:*:*:*:*:*:*', custom), false);
+});
