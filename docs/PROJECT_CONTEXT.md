@@ -2,7 +2,7 @@
 
 > Documento de continuidad para retomar el desarrollo en cualquier conversación. Actualizarlo al cerrar cada bloque de trabajo.
 >
-> **Última actualización:** 30 de octubre de 2026 (PR #13 integrada; clasificación Ubuntu OSV por versión fuente)  
+> **Última actualización:** 1 de noviembre de 2026 (alias de inventario y validación de main)  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama principal:** `main`
 
@@ -826,4 +826,4 @@ La documentación de Canonical establece que:
 - Commit `6a41b50ff03d7f9f3f11375f91b697984e18cd82`: `Node JS` se reconoce como alias de Node.js para clasificación, búsqueda y correlación CPE.
 - El alias `Node JS` solo acepta las parejas explícitas `nodejs:node.js` y `node.js:node.js`; se comprueba también el rechazo de un vendor distinto.
 - CI de `6a41b50`: [run 41285684116](https://github.com/carlosdans/quasaric/actions/runs/41285684116), success. Azure: [run 41285684190](https://github.com/carlosdans/quasaric/actions/runs/41285684190), success.
-- HEAD validado de `main`: `6a41b50ff03d7f9f3f11375f91b697984e18cd82`. Ambos workflows están completados correctamente.
+- HEAD validado de `main` tras la actualización documental: `a1267e46d267145bccd6209288411f0d283016e8`. CI (run [41286522150](https://github.com/carlosdans/quasaric/actions/runs/41286522150)) y Azure (run [41286522157](https://github.com/carlosdans/quasaric/actions/runs/41286522157)) completados correctamente.
