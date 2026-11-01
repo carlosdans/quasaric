@@ -2,19 +2,26 @@ export const INVENTORY_BACKUP_FORMAT = 'quasaric-inventory';
 export const INVENTORY_BACKUP_VERSION = 1;
 const allowedTypes = new Set(['os', 'web', 'runtime', 'cms', 'database', 'library', 'other']);
 const MAX_IDENTIFIER_LENGTH = 2048;
+const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
+const MAX_COMPONENTS = 50000;
 
 export function createInventoryBackup(items, createdAt = new Date().toISOString()) {
   if (!Array.isArray(items)) throw new Error('Inventory must be an array.');
+  if (items.length > MAX_COMPONENTS) throw new Error('Backup exceeds the 50000 component limit.');
   return { format: INVENTORY_BACKUP_FORMAT, version: INVENTORY_BACKUP_VERSION, createdAt, components: items };
 }
 
 export function parseInventoryBackup(input) {
+  if (typeof input === 'string' && new TextEncoder().encode(input).byteLength > MAX_BACKUP_BYTES) {
+    throw new Error('Backup exceeds the 10 MB limit.');
+  }
   let data;
   try { data = typeof input === 'string' ? JSON.parse(input) : input; }
   catch { throw new Error('Invalid JSON backup.'); }
   if (!data || data.format !== INVENTORY_BACKUP_FORMAT || data.version !== INVENTORY_BACKUP_VERSION || !Array.isArray(data.components)) {
     throw new Error('Unsupported or invalid Quasaric backup.');
   }
+  if (data.components.length > MAX_COMPONENTS) throw new Error('Backup exceeds the 50000 component limit.');
   const components = data.components.map((item, index) => {
     const validIdentifier = field => item[field] == null ||
       (typeof item[field] === 'string' && item[field].length <= MAX_IDENTIFIER_LENGTH);
