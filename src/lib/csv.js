@@ -1,7 +1,7 @@
 function csvCell(value) {
   let text = String(value ?? '');
   // Quoting alone does not stop spreadsheet formula execution.
-  const formulaPrefix = /^\\s*[=+@-]/.test(text);
+  const formulaPrefix = /^\s*[=+@-]/.test(text);
   const first = text.charCodeAt(0);
   if (formulaPrefix || first === 9 || first === 10 || first === 13) {
     text = "'" + text;
@@ -11,5 +11,5 @@ function csvCell(value) {
 
 export function toCsv(rows) {
   const lines = rows.map(row => row.map(csvCell).join(','));
-  return '\\uFEFF' + lines.join('\\r\\n');
+  return '\uFEFF' + lines.join('\r\n');
 }
