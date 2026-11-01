@@ -610,7 +610,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
         const records = await sourceApi.fetchOsvForPurl(group.purl, group.version, { signal });
         for (const record of records) {
           if (record.withdrawn) continue;
-          const cveIds = [...new Set((record.upstream || []).filter(id => /^CVE-\\d{4}-\\d+$/.test(id)))];
+          const cveIds = [...new Set([...(record.aliases || []), ...(record.upstream || [])].filter(id => /^CVE-\\d{4}-\\d+$/.test(id)))];
           for (const cveId of cveIds) {
             const current = allCandidates.get(cveId) || {
               cve: { id: cveId, descriptions: [{ lang: 'en', value: record.summary || record.details || 'OSV advisory; review the upstream record.' }],
