@@ -2,7 +2,7 @@
 
 > Documento de continuidad para retomar el desarrollo en cualquier conversación. Actualizarlo al cerrar cada bloque de trabajo.
 >
-> **Última actualización:** 1 de noviembre de 2026 (importación CSV local de inventario)  
+> **Última actualización:** 1 de noviembre de 2026 (endurecimiento de límites JSON y actualización de capacidades de inventario)  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama principal:** `main`
 
@@ -907,3 +907,54 @@ La documentación de Canonical establece que:
 - No se alteran las reglas de aplicabilidad Ubuntu ni se convierten avisos OSV en CVE por inferencia.
 - Commits: `afb7dc7d` (validación), `38e12473` (pruebas). CI y despliegue pendientes de verificación.
 - Coste añadido: 0 €; API pública OSV y Azure Static Web Apps Free.
+
+
+---
+
+## Estado actualizado — 1 de noviembre de 2026 (límites de respuestas y documentación)
+
+**Este bloque prevalece sobre las descripciones de capacidad antiguas de las secciones iniciales.** Los apartados históricos de 2026-10-30 y 2026-10-31 se conservan como registro cronológico; no deben utilizarse como descripción del comportamiento actual si contradicen este bloque o el código de `main`.
+
+### Inventario e importación
+
+- El inventario local no tiene el antiguo límite funcional de 10 componentes; la capacidad efectiva está condicionada por el navegador y por los límites específicos de cada importador.
+- CSV: `src/lib/inventoryCsv.js` acepta hasta 5 MiB de texto, 50.000 filas de datos, 32 columnas y 16.384 caracteres por celda. Valida cabeceras, columnas, duplicados de cabecera, estructura de filas y tipos; conserva las filas válidas y devuelve errores de las filas rechazadas.
+- SBOM: `src/lib/sbom.js` admite CycloneDX JSON 1.4, 1.5 y 1.6 y SPDX JSON 2.3; límite de 50.000 componentes. Extrae PURL/CPE cuando están presentes y no hace consultas de red durante la importación.
+- PURL: `src/lib/packageUrl.js` valida y descompone Package URLs con límite de 2.048 caracteres. No transforma un PURL en CPE ni infiere un producto distinto.
+- Backups: `src/lib/inventoryBackup.js` soporta backup JSON versionado, validación y comparación local de inventarios.
+- Almacenamiento: `src/lib/inventoryStorage.js` preserva una copia recuperable de datos serializados corruptos cuando es posible, en lugar de descartarlos silenciosamente.
+- README corregido para retirar las afirmaciones obsoletas de 10 componentes y CSV de 1 MB, y describir los formatos y límites implementados.
+
+### Consultas OSV y límites de respuesta
+
+- OSV PURL y Ubuntu OSV: hasta 200 detalles por consulta, concurrencia máxima de cuatro y validación de identificadores/respuestas; los avisos retirados no se presentan como activos.
+- El lector común limita las respuestas JSON a 20 MiB; OSV usa un límite más estricto de 5 MiB.
+- Se valida `Content-Length` cuando existe y se aplica el límite real durante la lectura del stream, incluso cuando la longitud no está declarada o es incorrecta. Ante exceso, se cancela la lectura y se devuelve un error explícito; no se procesa una respuesta truncada como completa.
+- Se añadieron pruebas para respuestas OSV que exceden el límite por `Content-Length` y por streaming. Las pruebas OpenVEX utilizan ahora objetos `Response` estándar, compatibles con el lector compartido.
+
+### Commits y validación
+
+- `71c072e`: límites de tamaño para respuestas JSON.
+- `38905ee`: prueba de rechazo de respuestas Ubuntu OSV sobredimensionadas.
+- `e049d5b`: pruebas de límites OSV por streaming y `Content-Length`.
+- `d90512986e41e9d64e569e433c440cc8093a511c`: mocks OpenVEX actualizados a respuestas HTTP estándar.
+- HEAD de `main` verificado antes de esta actualización documental: `d90512986e41e9d64e569e433c440cc8093a511c`.
+- CI para `d905129`: run [41353842546](https://github.com/carlosdans/quasaric/actions/runs/41353842546), success en Node 20 y Node 22; ambos ejecutaron tests y build de producción.
+- Azure Static Web Apps para `d905129`: run [41353842525](https://github.com/carlosdans/quasaric/actions/runs/41353842525), success.
+- Despliegue Azure del commit de pruebas anterior `e049d5b`: run [41353783958](https://github.com/carlosdans/quasaric/actions/runs/41353783958), success.
+- La actualización documental posterior se registra en commit separado; debe comprobarse su CI y despliegue antes de afirmar que el README actualizado está publicado.
+
+### Restricciones que siguen vigentes
+
+- Presupuesto y coste objetivo: **0 €**.
+- Azure Static Web Apps **Free**; no cambiar de plan, no añadir backend, Functions, bases de datos, almacenamiento remoto ni servicios facturables.
+- Inventario, SBOM, backups e historial permanecen en el navegador. Solo se envían a fuentes públicas los identificadores mínimos necesarios para cada consulta.
+- OSV advisories sin CVE asociado se conservan como información pendiente de revisión; no se inventa un CVE ni se les asigna aplicabilidad automáticamente.
+- El producto sigue sin estar validado para decisiones autónomas de producción; revisar manualmente aplicabilidad, backports, builds y conflictos de fuentes.
+
+### Siguiente paso técnico
+
+1. Revisar con fixtures reproducibles la correlación por PURL para ecosistemas no Ubuntu y confirmar que los avisos OSV sin alias/upstream CVE se muestran de forma separada.
+2. Auditar límites y errores de importación SBOM (incluidos documentos JSON grandes) y comprobar que el límite de 50.000 componentes no permite un consumo de memoria excesivo antes de validar el tamaño del archivo.
+3. Añadir pruebas con fixtures oficiales NVD/CPE y paquetes Debian/Ubuntu reales, manteniendo separación entre paquete binario y fuente.
+4. Verificar los runs del commit documental y seguir sin modificar recursos ni facturación de Azure.
