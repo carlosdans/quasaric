@@ -478,7 +478,17 @@ function App() {
                 {group:lang==='es'?'Bases de datos':'Databases',items:[
                   {name:'PostgreSQL',desc:lang==='es'?'Versión del cliente y confirma la del servidor.':'Client version; confirm the server version.',cmd:'psql --version\n-- En psql: SHOW server_version;'},
                   {name:'MySQL / MariaDB',desc:lang==='es'?'Versión del cliente y del servidor SQL.':'SQL client and server versions.',cmd:'mysql --version\n-- En SQL: SELECT VERSION();'}
-                ]}
+                ]},
+                {group:lang==='es'?'Plataformas y contenedores':'Platforms and containers',items:[
+                  {name:'IIS (Windows)',desc:lang==='es'?'Consulta la versión instalada de IIS en el Registro.':'Read the installed IIS version from the registry.',cmd:"Get-ItemProperty 'HKLM:\\\\SOFTWARE\\\\Microsoft\\\\InetStp' | Select-Object VersionString, MajorVersion, MinorVersion"},
+                  {name:'Java',desc:lang==='es'?'Versión del runtime Java activo en el PATH.':'Active Java runtime version in PATH.',cmd:'java -version'},
+                  {name:'Docker',desc:lang==='es'?'Consulta la versión del daemon del servidor, no solo la del cliente.':'Check the server daemon version, not only the client.',cmd:"docker version --format '{{.Server.Version}}'"},
+                  {name:'Kubernetes',desc:lang==='es'?'Muestra versiones de kubectl y del servidor del clúster.':'Shows kubectl and cluster server versions.',cmd:'kubectl version -o yaml'}
+                ]},
+                {group:lang==='es'?'Bases de datos NoSQL':'NoSQL databases',items:[
+                  {name:'Redis',desc:lang==='es'?'Consulta la versión del servidor Redis.':'Query the Redis server version.',cmd:'redis-server --version\nredis-cli INFO server'},
+                  {name:'MongoDB',desc:lang==='es'?'Consulta la versión del servidor desde mongosh.':'Query the server version from mongosh.',cmd:'mongod --version\n// En mongosh: db.runCommand({ buildInfo: 1 }).version'}
+
               ].map(group=><section className="panel version-guide-group" key={group.group}><h2>{group.group}</h2><div className="version-guide-items">{group.items.map(item=><article className="version-guide-item" key={item.name}><div><h3>{item.name}</h3><p>{item.desc}</p></div><pre><code>{item.cmd}</code></pre><button type="button" className="copy-command-btn" onClick={() => navigator.clipboard?.writeText(item.cmd)}><Copy size={13}/>{lang === 'es' ? 'Copiar comando' : 'Copy command'}</button></article>)}</div></section>)}
             </div>
             <section className="panel version-guide-note"><strong>{lang === 'es' ? 'Campos específicos de Ubuntu' : 'Ubuntu-specific fields'}</strong><p>{lang === 'es' ? 'Para correlacionar avisos de paquetes Ubuntu, Quasaric puede necesitar el nombre y la versión del paquete fuente, además del paquete binario y su arquitectura. Son campos opcionales.' : 'To correlate Ubuntu package advisories, Quasaric may need the source package name and version in addition to the binary package and architecture. These fields are optional.'}</p></section>
