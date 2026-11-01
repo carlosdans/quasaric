@@ -842,3 +842,26 @@ La documentación de Canonical establece que:
 - El alias `Node JS` solo acepta las parejas explícitas `nodejs:node.js` y `node.js:node.js`; se comprueba también el rechazo de un vendor distinto.
 - CI de `6a41b50`: [run 41285684116](https://github.com/carlosdans/quasaric/actions/runs/41285684116), success. Azure: [run 41285684190](https://github.com/carlosdans/quasaric/actions/runs/41285684190), success.
 - HEAD validado de `main` tras la actualización documental: `a1267e46d267145bccd6209288411f0d283016e8`. CI (run [41286522150](https://github.com/carlosdans/quasaric/actions/runs/41286522150)) y Azure (run [41286522157](https://github.com/carlosdans/quasaric/actions/runs/41286522157)) completados correctamente.
+
+
+---
+
+## Estado actualizado — 1 de noviembre de 2026 (OSV PURL advisories y regresión CVE)
+
+**Esta sección prevalece sobre los estados históricos anteriores.**
+
+- HEAD validado y desplegado de `main`: `372479c2282e6ef4397c22a822e69cb471d4a5f4` (`fix: recognize CVE aliases in OSV advisories`).
+- La consulta OSV por PURL conserva avisos que no incluyen alias/upstream CVE en `purlAdvisories`, marcados `needs_review`; no se inventa un CVE ni se infiere aplicabilidad.
+- La interfaz presenta esos avisos OSV sin CVE asociado en una sección separada, con identificador, componente/versión, resumen, fechas y referencias seguras.
+- Los avisos retirados no se muestran como activos. Los avisos con alias CVE siguen la ruta de hallazgos CVE.
+- Se corrigió la expresión regular de validación de alias CVE que impedía reconocerlos correctamente. La regresión queda cubierta por `src/lib/correlation.osv-purl.test.js`.
+- CI: [run 41334339918](https://github.com/carlosdans/quasaric/actions/runs/41334339918), success en Node 20 y Node 22 (tests y build de producción).
+- Azure Static Web Apps: [run 41334339912](https://github.com/carlosdans/quasaric/actions/runs/41334339912), success; despliegue de `main` completado.
+- No se añadieron servicios, dependencias facturables, backend ni recursos Azure. Se mantiene Azure Static Web Apps Free y el requisito de coste 0 €.
+
+### Siguiente bloque recomendado
+
+1. Auditar la robustez de los conectores OSV: respuestas parciales, paginación, identificadores duplicados, cancelación y límites de peticiones; conservar límites de concurrencia y no almacenar inventario fuera del navegador.
+2. Añadir pruebas con fixtures OSV reales/sintéticos que cubran alias, upstream, referencias, withdrawn y advisories sin CVE.
+3. Revisar la documentación inicial del proyecto para que los límites históricos (inventario de 10 componentes, CSV de 1 MB y flujo Ubuntu antiguo) no se interpreten como capacidades actuales.
+4. Mantener todos los avisos no CVE como evidencia informativa pendiente de revisión, sin incorporarlos al recuento de CVE confirmadas.
