@@ -592,7 +592,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   const purlGroups = new Map();
   for (const component of components) {
     const purl = String(component.purl || '').trim();
-    if (!purl || !/^pkg:[a-z][a-z0-9.+-]*\\/.{1,2000}$/.test(purl) || purl.length > 2048) continue;
+    if (!purl || !/^pkg:[a-z][a-z0-9.+-]*\/.{1,2000}$/.test(purl) || purl.length > 2048) continue;
     const version = String(component.version || '').trim();
     const key = purl + '\\u0000' + version;
     if (!purlGroups.has(key)) purlGroups.set(key, { purl, version, components: [] });
