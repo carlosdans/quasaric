@@ -205,6 +205,7 @@ export function cpeMatchesComponent(criteria, component) {
   // This avoids confusing Apache HTTP Server with Tomcat or other Apache projects.
   const productPairs = {
     nginx: [['nginx', 'nginx']],
+    openssl: [['openssl', 'openssl']],
     apache: [['apache', 'http server']],
     'apache http server': [['apache', 'http server']],
     php: [['php', 'php']],
