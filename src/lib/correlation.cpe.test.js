@@ -7,6 +7,7 @@ const component = name => ({ name });
 test('matches exact CPE vendor/product pairs for supported technologies', () => {
   const cases = [
     ['cpe:2.3:a:php:php:8.2:*:*:*:*:*:*:*', 'PHP'],
+    ['cpe:2.3:a:openssl:openssl:3.0.20:*:*:*:*:*:*:*', 'OpenSSL'],
     ['cpe:2.3:a:php:php:8.2:*:*:*:*:*:*:*', 'PHP-FPM'],
     ['cpe:2.3:a:python:python:3.12:*:*:*:*:*:*:*', 'Python'],
     ['cpe:2.3:a:postgresql:postgresql:16:*:*:*:*:*:*:*', 'PostgreSQL'],
@@ -28,6 +29,11 @@ test('preserves escaped underscores as literal characters in CPE product fields'
   const rocky = { name: 'Rocky Linux', type: 'os' };
   assert.equal(cpeMatchesComponent(escaped, rocky), false);
   assert.equal(cpeMatchesComponent(unescaped, rocky), true);
+});
+
+test('OpenSSL matches only its explicit NVD vendor/product identity', () => {
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:openssl:openssl:3.0.20:*:*:*:*:*:*:*', component('OpenSSL')), true);
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:attacker:openssl:3.0.20:*:*:*:*:*:*:*', component('OpenSSL')), false);
 });
 
 test('does not accept a matching product under an unexpected vendor', () => {

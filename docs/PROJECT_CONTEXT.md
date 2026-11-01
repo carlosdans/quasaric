@@ -764,3 +764,25 @@ La documentación de Canonical establece que:
 
 - Ampliar fixtures con registros CPE/NVD reales para contrastar los nombres vendor/product y los rangos por distribución, sin introducir alias genéricos que puedan generar falsos positivos.
 - Mantener la regla de coincidencia exacta por producto y parte CPE; los nombres/versiones sin evidencia suficiente deben seguir en revisión.
+
+
+## Estado actualizado — 1 de noviembre de 2026 (correlación CPE estricta)
+
+- HEAD de `main`: `3f12ec264882e63726b8e51e7d7a9eae70b13b64` (`Align CPE parser tests with verified product matching`).
+- La correlación CPE falla de forma cerrada para etiquetas de inventario sin una pareja vendor/product explícitamente conocida; no se infiere que el nombre local sea ambos campos CPE.
+- Se añadió el par explícito OpenSSL `openssl:openssl`, necesario para correlacionar el producto real sin reintroducir coincidencias genéricas.
+- Los campos CPE conservan los guiones bajos escapados como caracteres literales; los guiones bajos sin escapar se normalizan como separadores, conforme a los nombres CPE observados.
+- Los pares Rocky Linux, SLES, Windows Server 2025, OpenSSL, Node.js, Apache HTTP Server, PHP, Python, NGINX y AlmaLinux se contrastaron con entradas del diccionario oficial NVD:
+  - https://nvd.nist.gov/products/cpe/detail/1350429 (Rocky Linux, parte OS).
+  - https://nvd.nist.gov/products/cpe/detail/398663 (SUSE Linux Enterprise Server).
+  - https://nvd.nist.gov/products/cpe/detail/7b6738c8-9c48-49c9-a77d-bad316a73a45 (Windows Server 2025).
+  - https://nvd.nist.gov/products/cpe/detail/6ffb0e8b-96dd-4965-968d-fbacda229444 (OpenSSL).
+  - https://nvd.nist.gov/products/cpe/detail/68c01cb4-fd8c-455f-b561-ef4e6e05c40f (Node.js).
+  - https://nvd.nist.gov/products/cpe/detail/4ed82f91-eee8-4010-bb0e-fabb22d8aef4 (Apache HTTP Server).
+  - https://nvd.nist.gov/products/cpe/detail/1695313 (PHP).
+  - https://nvd.nist.gov/products/cpe/detail/1638503 (Python).
+  - https://nvd.nist.gov/products/cpe/detail/d455ea67-dd38-43e1-a35a-5ac268d759ab (NGINX; entrada histórica/deprecada).
+  - https://nvd.nist.gov/products/cpe/search/results?keyword=cpe%3A2.3%3Ao%3Aalmalinux (AlmaLinux).
+- La entrada NVD de Rocky Linux muestra que algunos registros históricos aparecen inicialmente con parte `a` y se deprecian a parte `o`; el matching de inventario OS exige la parte `o`.
+- CI y despliegue Azure del commit `3f12ec2`: CI run [41262387014](https://github.com/carlosdans/quasaric/actions/runs/41262387014), success; Azure run [41262387123](https://github.com/carlosdans/quasaric/actions/runs/41262387123), success.
+- Siguiente criterio: no añadir nuevas parejas por semejanza textual; exigir una entrada CPE oficial y una prueba positiva y negativa por vendor/product y parte.
