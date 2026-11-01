@@ -818,3 +818,12 @@ La documentación de Canonical establece que:
 - `Node JS` se reconoce como variante ortográfica de Node.js en la clasificación, búsqueda y correlación CPE.
 - El alias conserva exclusivamente las identidades CPE explícitas `nodejs:node.js` y `node.js:node.js`; una pareja con vendor distinto se rechaza.
 - Se añaden pruebas positivas y negativas para evitar ampliar el matching por semejanza textual.
+
+## Estado actualizado — 1 de noviembre de 2026 (clasificación de OpenSSL y alias Node JS)
+
+- Commit `593d077de509b79173ba4a4b462ffa77e0a38013`: OpenSSL se clasifica como `library` en el inventario; su identidad CPE permanece restringida a `openssl:openssl`.
+- CI de `593d077`: [run 41284729532](https://github.com/carlosdans/quasaric/actions/runs/41284729532), success. Azure: [run 41284729534](https://github.com/carlosdans/quasaric/actions/runs/41284729534), success.
+- Commit `6a41b50ff03d7f9f3f11375f91b697984e18cd82`: `Node JS` se reconoce como alias de Node.js para clasificación, búsqueda y correlación CPE.
+- El alias `Node JS` solo acepta las parejas explícitas `nodejs:node.js` y `node.js:node.js`; se comprueba también el rechazo de un vendor distinto.
+- CI de `6a41b50`: [run 41285684116](https://github.com/carlosdans/quasaric/actions/runs/41285684116), success. Azure: [run 41285684190](https://github.com/carlosdans/quasaric/actions/runs/41285684190), success.
+- HEAD validado de `main`: `6a41b50ff03d7f9f3f11375f91b697984e18cd82`. Ambos workflows están completados correctamente.
