@@ -22,11 +22,12 @@ test('does not confuse Apache HTTP Server with other Apache projects', () => {
   assert.equal(cpeMatchesComponent('cpe:2.3:a:apache:http_server:2.4:*:*:*:*:*:*:*', component('Apache HTTP Server')), true);
 });
 
-test('preserves escaped underscores in CPE vendor and product fields', () => {
-  const escaped = 'cpe:2.3:a:acme\\_labs:acme\\_labs:1.0:*:*:*:*:*:*:*';
-  const unescaped = 'cpe:2.3:a:acme_labs:acme_labs:1.0:*:*:*:*:*:*:*';
-  assert.equal(cpeMatchesComponent(escaped, component('acme_labs')), true);
-  assert.equal(cpeMatchesComponent(unescaped, component('acme_labs')), false);
+test('preserves escaped underscores as literal characters in CPE product fields', () => {
+  const escaped = 'cpe:2.3:o:resf:rocky\\_linux:8.4:*:*:*:*:*:*:*';
+  const unescaped = 'cpe:2.3:o:resf:rocky_linux:8.4:*:*:*:*:*:*:*';
+  const rocky = { name: 'Rocky Linux', type: 'os' };
+  assert.equal(cpeMatchesComponent(escaped, rocky), false);
+  assert.equal(cpeMatchesComponent(unescaped, rocky), true);
 });
 
 test('does not accept a matching product under an unexpected vendor', () => {

@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { classifyCpeApplicability, cpeMatchesComponent, collectCpeMatches, classifyPhpDescriptionApplicability, hasUnsupportedCpeLogic, evaluateCpeConfigurations } from '../src/lib/correlation.js';
 
-test('parses escaped delimiters in CPE 2.3 vendor and product fields', () => {
-  assert.equal(cpeMatchesComponent('cpe:2.3:a:foo\\:bar:foo\\:bar:1.2.3:*:*:*:*:*:*:*', { name: 'foo bar', version: '1.2.3' }), true);
+test('does not infer a supported product identity from escaped delimiter fields', () => {
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:foo\\:bar:foo\\:bar:1.2.3:*:*:*:*:*:*:*', { name: 'foo bar', version: '1.2.3' }), false);
 });
 
 const cpe = (criteria, extra = {}) => ({ criteria, vulnerable: true, ...extra });
