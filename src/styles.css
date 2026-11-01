@@ -432,3 +432,164 @@ button{touch-action:manipulation}
  .top-actions{gap:6px}
  .theme-toggle{width:32px}
 }
+
+
+/* Product UI refinement: consistent surfaces, readable data tables and theme-aware states. */
+.app-shell{
+  --surface:#111b2a;
+  --surface-raised:#162235;
+  --surface-soft:#0d1624;
+  --border:rgba(145,166,198,.16);
+  --border-strong:rgba(145,166,198,.27);
+  --text-primary:#edf3ff;
+  --text-secondary:#a0aec2;
+  --text-tertiary:#75859d;
+  --accent-soft:rgba(108,145,255,.12);
+  --shadow-card:0 12px 34px rgba(0,0,0,.12);
+}
+.app-shell[data-theme="light"]{
+  --surface:#fff;
+  --surface-raised:#f8faff;
+  --surface-soft:#f2f6fb;
+  --border:rgba(69,91,125,.13);
+  --border-strong:rgba(69,91,125,.23);
+  --text-primary:#18263b;
+  --text-secondary:#52647d;
+  --text-tertiary:#73839a;
+  --accent-soft:rgba(49,95,206,.08);
+  --shadow-card:0 12px 34px rgba(35,55,85,.055);
+}
+.app-shell,.app-shell *{transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease}
+.app-shell .panel,.app-shell .metric-card{
+  border-color:var(--border);
+  box-shadow:var(--shadow-card);
+}
+.app-shell .panel{border-radius:14px}
+.app-shell .metric-card{border-radius:13px}
+.app-shell .panel-head h2,.app-shell .comparison-heading h3{color:var(--text-primary)}
+.app-shell .panel-head span,.app-shell .comparison-heading p{color:var(--text-tertiary)}
+.app-shell .table-wrap{
+  margin:16px -4px -4px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:var(--surface);
+  scrollbar-width:thin;
+  scrollbar-color:var(--border-strong) transparent;
+}
+.app-shell table{border-collapse:separate;border-spacing:0;white-space:normal;min-width:620px}
+.app-shell th{
+  position:sticky;top:0;z-index:1;
+  padding:13px 14px;
+  background:var(--surface-raised);
+  color:var(--text-tertiary);
+  border-bottom:1px solid var(--border-strong);
+  font-size:9px;letter-spacing:.075em;
+}
+.app-shell td{
+  padding:14px;
+  color:var(--text-secondary);
+  border-bottom:1px solid var(--border);
+  font-size:11px;
+  line-height:1.55;
+  vertical-align:top;
+}
+.app-shell tbody tr:last-child td{border-bottom:0}
+.app-shell tbody tr{background:var(--surface)}
+.app-shell tbody tr:hover{background:var(--accent-soft)}
+.app-shell .cve-id{font-size:11px;letter-spacing:.01em}
+.app-shell .finding-title{
+  display:block;
+  max-width:420px;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  color:var(--text-tertiary);
+  line-height:1.55;
+  margin-top:4px;
+}
+.app-shell td .finding-title:first-of-type{color:var(--text-secondary)}
+.app-shell .score{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text-primary)}
+.app-shell .tag{
+  display:inline-flex;align-items:center;gap:5px;
+  min-height:23px;padding:4px 8px;
+  border-radius:999px;font-size:9px;font-weight:650;
+  border:1px solid var(--border-strong);
+}
+.app-shell .tag-red{background:rgba(224,76,91,.11);border-color:rgba(224,76,91,.24);color:#f28b98}
+.app-shell .tag-amber{background:rgba(220,157,57,.11);border-color:rgba(220,157,57,.25);color:#e7b966}
+.app-shell .tag-neutral{background:var(--surface-soft);color:var(--text-secondary)}
+.app-shell .severity-text{font-weight:650;font-size:10px}
+.app-shell .search-box,.app-shell .severity-filter{border-radius:9px}
+.app-shell .nav-link{border-radius:10px}
+.app-shell .nav-link.active{box-shadow:inset 3px 0 0 var(--blue)}
+.app-shell .primary-btn,.app-shell .secondary-btn,.app-shell .danger-btn{min-height:38px;border-radius:9px}
+.app-shell button:focus-visible,.app-shell a:focus-visible,.app-shell input:focus-visible,.app-shell select:focus-visible{
+  outline:2px solid var(--blue);outline-offset:3px;
+}
+.app-shell .component-chip{
+  background:var(--surface-raised);
+  border-color:var(--border);
+  border-radius:11px;
+  padding:12px;
+}
+.app-shell .component-chip strong{color:var(--text-primary)}
+.app-shell .component-chip span{color:var(--text-tertiary)}
+.app-shell .metric-icon,.app-shell .component-icon,.app-shell .empty-icon{
+  background:var(--accent-soft);
+  color:var(--blue);
+}
+.app-shell .notice{
+  border-radius:11px;
+  line-height:1.65;
+}
+.app-shell .modal-note{
+  display:flex;align-items:flex-start;gap:10px;
+  width:100%;min-width:0;
+  border-radius:10px;
+  line-height:1.65;
+  overflow-wrap:anywhere;
+}
+.app-shell .modal-help-note>div{flex:1;min-width:0}
+.app-shell .command-block{
+  width:100%;max-width:100%;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  overflow-x:auto;
+  border-radius:9px;
+  font-size:11px;
+}
+.app-shell .footer{border-top:1px solid var(--border);padding-top:18px}
+.app-shell[data-theme="light"] .panel-head h2,
+.app-shell[data-theme="light"] .comparison-heading h3,
+.app-shell[data-theme="light"] .metric-value,
+.app-shell[data-theme="light"] .component-chip strong{color:#18263b}
+.app-shell[data-theme="light"] .table-wrap{background:#fff;border-color:#e0e7f0}
+.app-shell[data-theme="light"] th{background:#f5f8fc;color:#65758d}
+.app-shell[data-theme="light"] td{color:#52647d;border-color:#e9eef5}
+.app-shell[data-theme="light"] tbody tr{background:#fff}
+.app-shell[data-theme="light"] tbody tr:hover{background:#f4f7fd}
+.app-shell[data-theme="light"] .finding-title{color:#71819a}
+.app-shell[data-theme="light"] td .finding-title:first-of-type{color:#52647d}
+.app-shell[data-theme="light"] .score{color:#18263b}
+.app-shell[data-theme="light"] .tag-red{background:#fff0f1;border-color:#f6d5d9;color:#a83242}
+.app-shell[data-theme="light"] .tag-amber{background:#fff7e8;border-color:#f3e3bf;color:#8c5b13}
+.app-shell[data-theme="light"] .tag-neutral{background:#f1f4f8;border-color:#e1e7ef;color:#596a80}
+.app-shell[data-theme="light"] .modal-help-note{background:#eff8f4;color:#27674f}
+.app-shell[data-theme="light"] .command-block{background:#f4f7fa;border-color:#dfe7ef;color:#263750}
+@media(max-width:900px){
+  .app-shell .content{padding-left:22px;padding-right:22px}
+  .app-shell .metric-grid{gap:10px}
+  .app-shell .panel{padding:15px}
+}
+@media(max-width:600px){
+  .app-shell .content{padding:22px 14px 18px}
+  .app-shell .page-heading{align-items:flex-start;flex-direction:column}
+  .app-shell .heading-actions{width:100%;flex-wrap:wrap}
+  .app-shell .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app-shell .table-wrap{margin-left:-2px;margin-right:-2px}
+  .app-shell th,.app-shell td{padding:11px 10px}
+  .app-shell .panel{padding:13px;border-radius:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .app-shell,.app-shell *{transition:none!important;scroll-behavior:auto!important}
+}
