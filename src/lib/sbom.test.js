@@ -37,3 +37,11 @@ test('rejects malformed, unknown and unsupported SBOM documents', () => {
   assert.throws(()=>parseSbom(JSON.stringify({bomFormat:'CycloneDX',specVersion:'1.3',components:[]})),/Unsupported CycloneDX/);
   assert.throws(()=>parseSbom(JSON.stringify({spdxVersion:'SPDX-2.2',dataLicense:'CC0-1.0',packages:[]})),/Unsupported SPDX/);
 });
+
+test('reports malformed PURLs instead of deriving a misleading component identity', () => {
+  const result=parseSbom(JSON.stringify({bomFormat:'CycloneDX',specVersion:'1.6',components:[
+    {name:'safe-name',purl:'pkg:npm/%ZZ'}
+  ]}));
+  assert.equal(result.components.length,0);
+  assert.deepEqual(result.errors,[{index:1,message:'Invalid Package URL.'}]);
+});

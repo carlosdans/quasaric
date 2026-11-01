@@ -1,15 +1,11 @@
+import { parsePackageUrl } from './packageUrl.js';
+
 const MAX_COMPONENTS = 50000;
 const str = value => typeof value === 'string' ? value.trim() : '';
 function purlInfo(purl) {
-  if (!str(purl).startsWith('pkg:')) return {};
-  const clean = purl.slice(4).split(/[?#]/)[0];
-  const slash = clean.indexOf('/');
-  const at = clean.indexOf('@', slash + 1);
-  return {
-    name: decodeURIComponent((at < 0 ? clean.slice(slash + 1) : clean.slice(slash + 1, at)).split('/').pop() || ''),
-    version: at < 0 ? '' : decodeURIComponent(clean.slice(at + 1)),
-    ecosystem: clean.slice(0, slash < 0 ? clean.length : slash)
-  };
+  if (!str(purl)) return {};
+  const parsed = parsePackageUrl(purl);
+  return parsed ? { name: parsed.name, version: parsed.version, ecosystem: parsed.type } : null;
 }
 function typeFor(name, ecosystem) {
   const value = (name + ' ' + ecosystem).toLowerCase();
@@ -24,15 +20,17 @@ function cyclone(document) {
   if (document.bomFormat !== 'CycloneDX' || !['1.4','1.5','1.6'].includes(String(document.specVersion))) throw new Error('Unsupported CycloneDX format or version (supported: JSON 1.4–1.6).');
   if (!Array.isArray(document.components)) throw new Error('CycloneDX document has no components array.');
   return document.components.map((item,index) => {
-    const purl = purlInfo(item.purl);
-    const name = str(item.name) || purl.name;
+    const rawPurl = str(item.purl);
+    const purl = purlInfo(rawPurl);
+    if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
+    const name = str(item.name) || purl?.name;
     if (!name) return { error:'Missing component name.', index:index+1 };
     const refs = Array.isArray(item.externalReferences) ? item.externalReferences : [];
     const cpeRef = refs.find(ref => /cpe/i.test(str(ref.type) + ' ' + str(ref.referenceType)));
     return {
-      name, version:str(item.version) || purl.version,
+      name, version:str(item.version) || purl?.version || '',
       vendor:str(item.publisher) || str(item.supplier?.name),
-      type:typeFor(name,purl.ecosystem), purl:str(item.purl),
+      type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl,
       cpe:str(item.cpe) || str(cpeRef?.url) || str(cpeRef?.referenceLocator),
       sourcePackage:'', sourceVersion:'', architecture:''
     };
@@ -45,13 +43,15 @@ function spdx(document) {
     const refs = Array.isArray(item.externalRefs) ? item.externalRefs : [];
     const purlRef = refs.find(ref => /purl/i.test(str(ref.referenceType)));
     const cpeRef = refs.find(ref => /cpe/i.test(str(ref.referenceType)));
-    const purl = purlInfo(purlRef?.referenceLocator);
-    const name = str(item.name) || purl.name;
+    const rawPurl = str(purlRef?.referenceLocator);
+    const purl = purlInfo(rawPurl);
+    if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
+    const name = str(item.name) || purl?.name;
     if (!name) return { error:'Missing package name.', index:index+1 };
     return {
-      name, version:str(item.versionInfo) || purl.version,
+      name, version:str(item.versionInfo) || purl?.version || '',
       vendor:str(item.supplier).replace(/^Organization:[ \t]*/i,'') || str(item.originator).replace(/^(Organization|Person):\\s*/i,''),
-      type:typeFor(name,purl.ecosystem), purl:str(purlRef?.referenceLocator),
+      type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl,
       cpe:str(cpeRef?.referenceLocator), sourcePackage:'', sourceVersion:'', architecture:''
     };
   });
