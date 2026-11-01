@@ -300,6 +300,8 @@ function App() {
   };
 
   const persist = (next) => {
+    // Stop any in-flight analysis before changing its source inventory.
+    analysisAbortRef.current?.abort();
     setItems(next);
     // Findings belong to the exact inventory snapshot that was analysed.
     // Never keep presenting them as current after inventory edits.
