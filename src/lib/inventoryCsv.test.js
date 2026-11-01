@@ -62,3 +62,9 @@ test('rejects excessively long PURL and CPE metadata as row errors', () => {
   assert.equal(result.components.length, 0);
   assert.equal(result.errors[0].row, 2);
 });
+
+
+test('enforces the CSV import limit in UTF-8 bytes, not JavaScript characters', () => {
+  const multibyte = '😀'.repeat(Math.ceil((5 * 1024 * 1024) / 4));
+  assert.throws(() => parseInventoryCsv('name\\n' + multibyte), /5 MB/);
+});
