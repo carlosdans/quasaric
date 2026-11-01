@@ -861,7 +861,8 @@ export async function analyzeInventory(components, { signal, onProgress, sources
       nvd: errors.some(x => x.source === 'NVD') ? 'partial_or_unavailable' : (limits.length ? 'limited' : 'queried'),
       epss: errors.some(x => x.source === 'FIRST EPSS') ? 'unavailable' : 'queried',
       kev: errors.some(x => x.source === 'CISA KEV') ? 'unavailable' : 'queried',
-      osvPurl: purlGroups.size ? (purlErrors.length ? (purlQueue.length ? 'partial_or_unavailable' : 'unavailable') : 'queried') : 'not_configured',\n      ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured',
+      osvPurl: purlGroups.size ? (purlErrors.length ? (purlQueue.length ? 'partial_or_unavailable' : 'unavailable') : 'queried') : 'not_configured',
+      ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured',
       ubuntuVex: ubuntuOsv.size ? (vexErrors.length ? (vexDocuments.size ? 'partial_or_unavailable' : 'unavailable') : (vexDocuments.size ? 'queried' : 'needs_review')) : 'not_configured'
     },
     errors: [...errors, ...purlErrors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
