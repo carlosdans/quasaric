@@ -33,6 +33,20 @@ No está concebida como un escáner ni como una herramienta de pentesting. La ca
 
 ## 3. Arquitectura y despliegue
 
+### Restricción obligatoria de coste cero
+
+**Requisito no negociable del propietario: Quasaric debe mantenerse en Azure Static Web Apps, plan Free, con coste de alojamiento y operación de 0 €.** Ninguna mejora justifica introducir cargos.
+
+- Azure Static Web Apps debe permanecer en **Free**; nunca cambiar a Standard ni activar upgrades o recursos de pago.
+- Mantener el proyecto como SPA estática React + Vite, desplegada desde GitHub: app location /, api location vacía y output location dist.
+- No añadir Azure Functions, APIs/backend propio, bases de datos, almacenamiento remoto, colas, contenedores, CDN de pago ni servicios cloud adicionales facturables.
+- No añadir proveedores SaaS, APIs comerciales ni servicios con facturación por uso. Usar fuentes públicas gratuitas y acceso directo desde el navegador.
+- Antes de incorporar cualquier servicio, SDK, dependencia o integración, comprobar su modelo de precios, límites gratuitos, necesidad de tarjeta/clave y riesgo de cargos. Si no puede garantizarse el uso sin coste, no incorporarlo.
+- Diseñar para las cuotas y límites del nivel Free. Vigilar también cuotas gratuitas de GitHub Actions y de proveedores externos; no asumir que son ilimitadas.
+- Si una funcionalidad futura requiere superar los límites gratuitos, buscar primero optimización, procesamiento local o una alternativa gratuita. Si no existe, mantenerla fuera de alcance y explicarlo; nunca resolverlo mediante un upgrade.
+- No modificar suscripción, facturación, plan, recursos ni configuración del portal Azure sin una instrucción expresa del propietario.
+- Arquitectura preferida: local-first; inventario e historial en el navegador, con peticiones mínimas a fuentes públicas. No transmitir inventarios completos.
+
 - Aplicación estática React + Vite, bilingüe español/inglés.
 - Hosting: Azure Static Web Apps, plan Free.
 - URL Azure conocida: https://orange-meadow-04bd1081e.4.azurestaticapps.net
