@@ -509,6 +509,22 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   }
   const allCandidates = new Map();
   const limits = [];
+  // Components often repeat the same product (for example, several PHP
+  // runtimes or identical libraries on different hosts). Fetch each distinct
+  // NVD query once per analysis, then evaluate the shared records against
+  // every component's own version and applicability evidence.
+  const nvdQueryCache = new Map();
+  const getNvdRecords = (component, query) => {
+    const usePhpCpe = normalize(component.name) === 'php' && !sourceOverrides.fetchNvdByKeyword;
+    const cacheKey = usePhpCpe ? 'cpe:cpe:2.3:a:php:php' : 'keyword:' + query;
+    if (!nvdQueryCache.has(cacheKey)) {
+      const request = usePhpCpe
+        ? sourceApi.fetchNvdByVirtualMatchString('cpe:2.3:a:php:php', { signal })
+        : sourceApi.fetchNvdByKeyword(query, { signal, maxResults: NVD_MAX_RESULTS });
+      nvdQueryCache.set(cacheKey, request);
+    }
+    return nvdQueryCache.get(cacheKey);
+  };
   let done = 0;
   for (const component of components) {
     const queries = componentQueries(component);
@@ -518,9 +534,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
         // advisories routinely hit the 6,000-record ceiling). Its NVD CPE
         // match string is the precise product identity already required by
         // matchesProductText, so use that complete, paginated result set.
-        const records = normalize(component.name) === 'php' && !sourceOverrides.fetchNvdByKeyword
-          ? await sourceApi.fetchNvdByVirtualMatchString('cpe:2.3:a:php:php', { signal })
-          : await sourceApi.fetchNvdByKeyword(query, { signal, maxResults: NVD_MAX_RESULTS });
+        const records = await getNvdRecords(component, query);
         if (records.truncated) limits.push({ source: 'NVD', component: component.name, maxResults: NVD_MAX_RESULTS, totalResults: records.totalResults });
         for (const cve of records) {
           if (!matchesProductText(cve, component)) continue;

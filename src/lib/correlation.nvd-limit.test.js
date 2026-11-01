@@ -51,3 +51,19 @@ test('analyses inventories containing more than ten components', async () => {
   assert.equal(queries, 12);
   assert.deepEqual(result.findings, []);
 });
+
+test('reuses one NVD response for repeated products in a large inventory', async () => {
+  let queries = 0;
+  const components = Array.from({ length: 20 }, (_, index) => ({
+    id: `php-${index}`, name: 'PHP', type: 'runtime', version: index % 2 ? '8.2.1' : '8.3.1'
+  }));
+  const result = await analyzeInventory(components, {
+    sources: {
+      fetchNvdByKeyword: async () => { queries += 1; return []; },
+      fetchEpssScores: async () => new Map(),
+      fetchKevCatalog: async () => new Map()
+    }
+  });
+  assert.equal(queries, 1);
+  assert.deepEqual(result.findings, []);
+});
