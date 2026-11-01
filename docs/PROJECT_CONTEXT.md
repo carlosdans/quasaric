@@ -792,3 +792,8 @@ La documentación de Canonical establece que:
 
 - `node`, `node.js` y `nodejs` se normalizan a la identidad CPE explícita `nodejs:node.js` (con compatibilidad para la identidad histórica `node.js:node.js`).
 - El alias `nodejs` tiene prueba positiva y negativa: acepta el vendor/product oficial y rechaza un vendor distinto. Esto no amplía el matching a productos de nombre parecido.
+
+### Alias `httpd` de inventario
+
+- `httpd` se trata como alias de Apache HTTP Server para búsquedas y matching CPE, pero solo acepta la pareja exacta `apache:http server`.
+- Hay pruebas para la identidad correcta, un vendor inesperado y Apache Tomcat; no se acepta cualquier producto del vendor Apache.

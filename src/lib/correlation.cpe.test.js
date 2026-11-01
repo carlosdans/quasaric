@@ -25,6 +25,12 @@ test('nodejs inventory alias matches only the explicit Node.js CPE identity', ()
   assert.equal(cpeMatchesComponent('cpe:2.3:a:attacker:node.js:22:*:*:*:*:*:*:*', component('nodejs')), false);
 });
 
+test('httpd alias matches Apache HTTP Server but not other vendors or Apache projects', () => {
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:apache:http_server:2.4:*:*:*:*:*:*:*', component('httpd')), true);
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:attacker:http_server:2.4:*:*:*:*:*:*:*', component('httpd')), false);
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:apache:tomcat:10:*:*:*:*:*:*:*', component('httpd')), false);
+});
+
 test('does not confuse Apache HTTP Server with other Apache projects', () => {
   assert.equal(cpeMatchesComponent('cpe:2.3:a:apache:tomcat:10:*:*:*:*:*:*:*', component('Apache HTTP Server')), false);
   assert.equal(cpeMatchesComponent('cpe:2.3:a:apache:http_server:2.4:*:*:*:*:*:*:*', component('Apache HTTP Server')), true);
