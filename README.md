@@ -4,7 +4,7 @@
 
 ## Estado del proyecto
 
-Quasaric es una versión funcional en evolución, con alcance deliberadamente limitado. La aplicación usa React + Vite, ofrece interfaz bilingüe (español/inglés), permite mantener un inventario local de hasta 10 componentes y consulta fuentes públicas de vulnerabilidades desde el navegador.
+Quasaric es una versión funcional en evolución, con alcance deliberadamente limitado. La aplicación usa React + Vite, ofrece interfaz bilingüe (español/inglés), mantiene el inventario local en el navegador y consulta fuentes públicas de vulnerabilidades desde el cliente. Los límites de importación y consulta se aplican por formato y fuente; no debe interpretarse el inventario como limitado a 10 componentes.
 
 Capacidades implementadas:
 
@@ -16,9 +16,12 @@ Capacidades implementadas:
 - Recuperación de documentos Canonical OpenVEX por CVE y correlación con el producto binario exacto (paquete, versión completa, arquitectura y distro), vinculada al PURL del paquete fuente OSV.
 - Comparación diagnóstica de estados Ubuntu OSV/OpenVEX por componente. Los conflictos se muestran sin sobrescribir la clasificación de ninguna fuente ni convertir un estado VEX en un veredicto global del CVE.
 - Trazabilidad de evidencias por componente y fuente (NVD, Ubuntu OSV y Canonical OpenVEX), con referencias, fechas y detalles del producto.
-- Importación local de inventarios desde CSV exportado por Quasaric, con validación de filas, límite de 10 componentes y tamaño máximo de 1 MB.
+- Importación local CSV con validación de esquema y filas; límites de seguridad: 5 MB de texto, 50.000 filas de datos, 32 columnas y 16.384 caracteres por celda.
 - Exportación CSV del inventario y de hallazgos; el CSV de hallazgos incluye la evidencia por fuente en una columna JSON.
-- Límites de recuperación OpenVEX por análisis (100 documentos y hasta cuatro fetches concurrentes).
+- Importación local de SBOM CycloneDX JSON 1.4–1.6 y SPDX JSON 2.3; extracción de nombre, versión, proveedor, CPE y PURL cuando están presentes. El importador procesa hasta 50.000 componentes y no instala paquetes ni contacta servicios externos.
+- Importación, exportación, restauración y comparación local de backups JSON del inventario; validación de campos y preservación de datos recuperables ante almacenamiento local corrupto.
+- Correlación adicional por PURL con OSV público para paquetes con identificador y versión explícitos; avisos sin CVE asociado permanecen en una lista informativa separada y requieren revisión.
+- Límites de recuperación OpenVEX por análisis (100 documentos y hasta cuatro fetches concurrentes). Las consultas OSV limitan los detalles a 200 avisos por consulta y cuatro descargas concurrentes.
 - Invalidación de los hallazgos visibles cuando cambia el inventario, para evitar presentar resultados de una composición anterior como actuales.
 - Cancelación explícita de análisis en curso y aviso cuando el historial no puede persistirse en el almacenamiento local.
 
@@ -33,7 +36,7 @@ Capacidades implementadas:
 - No introduzcas contraseñas, tokens, secretos ni datos personales.
 - Las consultas a proveedores externos pueden revelar la IP del visitante y los identificadores CVE consultados. No se envía el inventario completo a NVD, FIRST, CISA, OSV ni Canonical.
 - La consulta Canonical OpenVEX solicita el documento público usando el identificador CVE; el inventario local se usa para comparar el contenido recibido, no se transmite.
-- Las fuentes pueden tener límites, errores, datos incompletos o cambios de disponibilidad.
+- Las fuentes pueden tener límites, errores, datos incompletos o cambios de disponibilidad. Las respuestas JSON se limitan por tamaño: 5 MB para OSV y 20 MB para otros conectores que usan el lector común; se comprueba Content-Length y también el tamaño real durante la lectura en streaming.
 
 ## Centro de confianza en la aplicación
 
