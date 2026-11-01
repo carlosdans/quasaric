@@ -45,3 +45,14 @@ test('reports malformed PURLs instead of deriving a misleading component identit
   assert.equal(result.components.length,0);
   assert.deepEqual(result.errors,[{index:1,message:'Invalid Package URL.'}]);
 });
+
+
+test('rejects SBOM input larger than 10 MiB before JSON parsing', () => {
+  const oversized = ' '.repeat(10 * 1024 * 1024 + 1);
+  assert.throws(() => parseSbom(oversized), /10 MB limit/);
+});
+
+test('measures SBOM size in UTF-8 bytes, including multibyte characters', () => {
+  const oversized = '😀'.repeat(Math.ceil((10 * 1024 * 1024) / 4));
+  assert.throws(() => parseSbom(oversized), /10 MB limit/);
+});
