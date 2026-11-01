@@ -696,3 +696,14 @@ button{touch-action:manipulation}
 
 .status-pill.status-warning{color:#f0a36b;max-width:260px;line-height:1.4}
 .status-pill.status-warning .status-dot{background:#e99a55;box-shadow:0 0 8px #e99a55;flex:none}
+
+.inventory-quality-panel{margin:0 0 16px;padding:15px 18px;border:1px solid rgba(224,166,82,.3);background:var(--surface-raised)}
+.inventory-quality-heading{display:flex;align-items:center;gap:9px;color:var(--warning,#d99b4d);font-size:12px}
+.inventory-quality-heading strong{color:var(--text-primary)}
+.inventory-quality-heading span{margin-left:auto;color:var(--text-tertiary);font-size:10px}
+.inventory-quality-stats{display:flex;gap:22px;margin:12px 0}
+.inventory-quality-stats>div{display:flex;align-items:baseline;gap:7px}
+.inventory-quality-stats strong{font-size:19px;color:var(--text-primary)}
+.inventory-quality-stats span,.inventory-quality-panel li{font-size:10px;color:var(--text-secondary)}
+.inventory-quality-panel ul{display:flex;flex-wrap:wrap;gap:6px 22px;margin:0;padding-left:16px}
+@media(max-width:640px){.inventory-quality-heading{flex-wrap:wrap}.inventory-quality-heading span{width:100%;margin-left:26px}.inventory-quality-stats{gap:14px}}
