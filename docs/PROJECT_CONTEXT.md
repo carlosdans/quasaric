@@ -811,3 +811,10 @@ La documentación de Canonical establece que:
 - OpenSSL se reconoce como `library` (librería/dependencia), no como runtime ni servidor.
 - Su identidad CPE continúa restringida a `openssl:openssl`; la clasificación visual no amplía los criterios de correlación.
 - Se añade una prueba para que el alta manual recomiende el tipo correcto.
+
+
+### Alias `Node JS` en inventario
+
+- `Node JS` se reconoce como variante ortográfica de Node.js en la clasificación, búsqueda y correlación CPE.
+- El alias conserva exclusivamente las identidades CPE explícitas `nodejs:node.js` y `node.js:node.js`; una pareja con vendor distinto se rechaza.
+- Se añaden pruebas positivas y negativas para evitar ampliar el matching por semejanza textual.

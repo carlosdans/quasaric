@@ -7,7 +7,7 @@ test('known technologies receive their expected component type', () => {
   assert.equal(suggestedComponentType('OpenSSL'), 'library');
   assert.equal(suggestedComponentType('PHP-FPM'), 'runtime');
   assert.equal(suggestedComponentType('  Apache   HTTP Server  '), 'web');
-  assert.equal(suggestedComponentType('Node JS'), null);
+  assert.equal(suggestedComponentType('Node JS'), 'runtime');
   assert.equal(suggestedComponentType('Apache HTTP Server'), 'web');
   assert.equal(suggestedComponentType('apache2'), 'web');
   assert.equal(suggestedComponentType('httpd'), 'web');
