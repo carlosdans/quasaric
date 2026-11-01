@@ -885,3 +885,15 @@ La documentación de Canonical establece que:
 - Pruebas de integración verifican que un fallo OSV PURL se conserva como error parcial con su estado de fuente, y que una cancelación OSV propaga AbortError en lugar de convertirse en una lista vacía.
 - Los hallazgos obtenidos de otras fuentes se mantienen cuando un conector falla; la ausencia de resultados de la fuente fallida no se interpreta como ausencia de vulnerabilidades.
 - No se añaden servicios, dependencias, persistencia remota ni costes. Se mantiene Azure Static Web Apps Free y presupuesto 0 €.
+
+
+### 2026-11-01 — endurecimiento adicional de Ubuntu OSV
+
+- `fetchUbuntuOsvForSourcePackage` ahora valida la estructura de cada página y que cada aviso incluya un ID válido; rechaza respuestas incompletas en lugar de descartarlas silenciosamente.
+- Se detectan tokens de paginación repetidos y se limita el recorrido a 100 páginas para evitar bucles o consultas descontroladas.
+- Los detalles de avisos usan el helper común `fetchOsvAdvisoryDetails`: límite de 200 avisos, concurrencia acotada, orden estable, reintentos de errores transitorios y comprobación de que el ID devuelto coincide con el solicitado.
+- Se añadieron pruebas para avisos malformados, discrepancia de ID y reintento al recuperar el detalle.
+- Estos cambios no alteran la clasificación de aplicabilidad: los registros OSV siguen siendo evidencia que debe pasar por las reglas conservadoras existentes.
+- Presupuesto: 0 €; solo se utiliza la API pública gratuita de OSV.
+- Commits: `8da5ddae` (implementación), `6db057ee` (pruebas).
+- CI y despliegue de estos commits: pendientes de verificación.
