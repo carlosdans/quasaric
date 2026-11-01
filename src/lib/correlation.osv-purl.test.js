@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeInventory } from '../src/lib/correlation.js';
+import { analyzeInventory } from './correlation.js';
 
 const component = (id = 'pkg-1') => ({
   id,
