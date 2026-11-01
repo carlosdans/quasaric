@@ -111,7 +111,7 @@ const copy = {
     analysisTitle: 'Technology inventory', analysisDesc: 'Enter components and their versions manually. Quasaric does not scan your servers.',
     privacyNote: 'Your inventory stays in this browser. When you analyse it, external sources may receive the identifiers queried and see your IP address. Do not enter passwords, tokens or secrets.',
     language: 'Language', spanish: 'Español', english: 'English',
-    export: 'Export inventory CSV', localSaved: 'Saved locally', storageWarning: 'Could not save: export a CSV backup.',
+    export: 'Export inventory CSV', localSaved: 'Saved locally', storageWarning: 'The local inventory could not be fully saved or recovered. Recoverable data was preserved; export a backup and check browser storage.',
     sourceNotice: 'Candidate CVE correlation using public sources. Review evidence and coverage limits before making decisions.',
     priority: 'Priority', exposure: 'Exposure', noScan: 'No active scanning',
     noScanText: 'Quasaric analyses the data you provide; it does not perform reconnaissance connections or tests against your systems.',
@@ -386,11 +386,14 @@ function App() {
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString()
       }));
-      if (imported.length) persist([...items, ...imported]);
+      const previousDuplicateCount = inspectInventory(items).duplicates.length;
+      const combined = [...items, ...imported];
+      const duplicateCount = Math.max(0, inspectInventory(combined).duplicates.length - previousDuplicateCount);
+      if (imported.length) persist(combined);
       const summary = lang === 'es'
-        ? `Importados: ${imported.length}. Filas con errores: ${parsed.errors.length}.`
-        : `Imported: ${imported.length}. Invalid rows: ${parsed.errors.length}.`;
-      setImportMessage(summary + (parsed.errors.length ? ' ' + parsed.errors.map(error => `Fila ${error.row}: ${error.message}`).join(' ') : ''));
+        ? `Importados: ${imported.length}. Posibles duplicados: ${duplicateCount} (se conservan, no se descartan). Filas con errores: ${parsed.errors.length}.`
+        : `Imported: ${imported.length}. Possible duplicates: ${duplicateCount} (kept; none discarded). Invalid rows: ${parsed.errors.length}.`;
+      setImportMessage(summary + (parsed.errors.length ? ' ' + parsed.errors.map(error => `${lang === 'es' ? 'Fila' : 'Row'} ${error.row}: ${error.message}`).join(' ') : ''));
     } catch (error) {
       setImportError(error.message || (lang === 'es' ? 'No se pudo importar el CSV.' : 'Could not import CSV.'));
     } finally {
