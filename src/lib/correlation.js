@@ -600,6 +600,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     purlGroups.get(key).components.push(component);
   }
   const purlErrors = [];
+  const purlAdvisories = [];
   const purlQueue = [...purlGroups.values()].slice(0, 100);
   if (purlGroups.size > 100) purlErrors.push({ source: 'OSV (PURL)', message: 'Se alcanzó el límite de 100 consultas PURL explícitas por análisis.' });
   let purlNext = 0;
@@ -611,6 +612,21 @@ export async function analyzeInventory(components, { signal, onProgress, sources
         for (const record of records) {
           if (record.withdrawn) continue;
           const cveIds = [...new Set([...(record.aliases || []), ...(record.upstream || [])].filter(id => /^CVE-\\d{4}-\\d+$/.test(id)))];
+          if (!cveIds.length) {
+            for (const component of group.components) {
+              purlAdvisories.push({
+                id: record.id,
+                summary: record.summary || record.details || '',
+                published: record.published || null,
+                modified: record.modified || null,
+                url: record.id ? `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}` : null,
+                references: (record.references || []).map(reference => reference.url).filter(Boolean),
+                component: { id: component.id, name: component.name, version: component.version || null, purl: group.purl },
+                status: 'needs_review'
+              });
+            }
+            continue;
+          }
           for (const cveId of cveIds) {
             const current = allCandidates.get(cveId) || {
               cve: { id: cveId, descriptions: [{ lang: 'en', value: record.summary || record.details || 'OSV advisory; review the upstream record.' }],
@@ -858,6 +874,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
 
   return {
     findings,
+    purlAdvisories,
     sources: {
       nvd: errors.some(x => x.source === 'NVD') ? 'partial_or_unavailable' : (limits.length ? 'limited' : 'queried'),
       epss: errors.some(x => x.source === 'FIRST EPSS') ? 'unavailable' : 'queried',
