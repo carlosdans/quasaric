@@ -38,3 +38,24 @@ test('rejects invalid identifier metadata and handles quota or unavailable stora
   assert.equal(saveInventory([{ name: 'nginx' }], full), false);
   assert.deepEqual(loadInventory(null), { items: [], warning: true });
 });
+
+
+test('rejects inventories exceeding the component limit on load and save', async () => {
+  const { MAX_INVENTORY_COMPONENTS } = await import('./inventoryStorage.js');
+  const oversized = Array.from({ length: MAX_INVENTORY_COMPONENTS + 1 }, (_, i) => ({ id: String(i), name: 'package' }));
+  const raw = JSON.stringify(oversized);
+  const storage = memoryStorage([[INVENTORY_STORAGE_KEY, raw]]);
+  assert.deepEqual(loadInventory(storage), { items: [], warning: true });
+  assert.equal(storage.getItem(INVENTORY_RECOVERY_KEY), raw);
+  assert.equal(saveInventory(oversized, memoryStorage()), false);
+});
+
+test('rejects oversized serialized inventories and preserves oversized stored data', async () => {
+  const { MAX_INVENTORY_BYTES } = await import('./inventoryStorage.js');
+  const oversizedItem = { name: 'package', description: 'x'.repeat(MAX_INVENTORY_BYTES) };
+  assert.equal(saveInventory([oversizedItem], memoryStorage()), false);
+  const raw = JSON.stringify([{ name: 'package', description: 'x'.repeat(MAX_INVENTORY_BYTES) }]);
+  const storage = memoryStorage([[INVENTORY_STORAGE_KEY, raw]]);
+  assert.deepEqual(loadInventory(storage), { items: [], warning: true });
+  assert.equal(storage.getItem(INVENTORY_RECOVERY_KEY), raw);
+});
