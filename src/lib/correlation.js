@@ -1,7 +1,7 @@
 import { normalizeComponentType } from './componentTypes.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
-import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
 const NVD_MAX_RESULTS = 6000;
 
@@ -485,7 +485,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // the production source defaults or sending local inventory to test services.
   const sourceApi = {
     fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog,
-    fetchUbuntuOsvForSourcePackage, fetchCanonicalUbuntuVex,
+    fetchUbuntuOsvForSourcePackage, fetchCanonicalUbuntuVex, fetchOsvForPurl,
     ...sourceOverrides
   };
   if (!Array.isArray(components) || components.length === 0) throw new Error('Add at least one component before analysis.');
@@ -585,6 +585,62 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     done++;
     onProgress?.({ completed: done, total: components.length });
   }
+
+  // Query OSV only for explicit PURLs supplied by the inventory/SBOM. Keep
+  // requests deduplicated and bounded; generic OSV matches are review evidence,
+  // never an automatic affected/not-affected decision.
+  const purlGroups = new Map();
+  for (const component of components) {
+    const purl = String(component.purl || '').trim();
+    if (!purl || !/^pkg:[a-z][a-z0-9.+-]*\\/.{1,2000}$/.test(purl) || purl.length > 2048) continue;
+    const version = String(component.version || '').trim();
+    const key = purl + '\\u0000' + version;
+    if (!purlGroups.has(key)) purlGroups.set(key, { purl, version, components: [] });
+    purlGroups.get(key).components.push(component);
+  }
+  const purlErrors = [];
+  const purlQueue = [...purlGroups.values()].slice(0, 100);
+  if (purlGroups.size > 100) purlErrors.push({ source: 'OSV (PURL)', message: 'Se alcanzó el límite de 100 consultas PURL explícitas por análisis.' });
+  let purlNext = 0;
+  const purlWorker = async () => {
+    while (purlNext < purlQueue.length) {
+      const group = purlQueue[purlNext++];
+      try {
+        const records = await sourceApi.fetchOsvForPurl(group.purl, group.version, { signal });
+        for (const record of records) {
+          if (record.withdrawn) continue;
+          const cveIds = [...new Set((record.upstream || []).filter(id => /^CVE-\\d{4}-\\d+$/.test(id)))];
+          for (const cveId of cveIds) {
+            const current = allCandidates.get(cveId) || {
+              cve: { id: cveId, descriptions: [{ lang: 'en', value: record.summary || record.details || 'OSV advisory; review the upstream record.' }],
+                published: record.published, lastModified: record.modified, references: record.references || [], metrics: {}, weaknesses: [] },
+              components: []
+            };
+            for (const component of group.components) {
+              const existing = current.components.find(item => item.component.id === component.id);
+              const evidence = {
+                advisoryId: record.id,
+                status: 'needs_review',
+                reason: 'OSV matched the explicitly supplied PURL and version. Review the advisory affected ranges and ecosystem-specific guidance before deciding applicability.',
+                publishedAt: record.published || null,
+                updatedAt: record.modified || null,
+                url: record.id ? `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}` : null,
+                references: (record.references || []).map(reference => reference.url).filter(Boolean),
+                packageUrl: group.purl
+              };
+              if (existing) existing.osvPurlEvidence = [...(existing.osvPurlEvidence || []), evidence];
+              else current.components.push({ component, applicability: { status: 'needs_review', confidence: 'low', reason: evidence.reason }, osvPurlEvidence: [evidence] });
+            }
+            allCandidates.set(cveId, current);
+          }
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') throw error;
+        purlErrors.push({ source: 'OSV (PURL)', component: group.purl, message: error.message });
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(3, purlQueue.length) }, () => purlWorker()));
 
   // Correlate Ubuntu advisories using two independent pieces of evidence:
   // source-package version ranges and the exact binary build mapping. A binary
@@ -763,6 +819,9 @@ export async function analyzeInventory(components, { signal, onProgress, sources
           references: (cve.references || []).map(reference => reference.url).filter(Boolean)
         });
       }
+      for (const osv of item.osvPurlEvidence || []) {
+        evidence.push({ source: 'OSV (PURL)', ...osv, product });
+      }
       for (const osv of item.ubuntuOsvEvidence || []) {
         evidence.push({
           source: 'Ubuntu OSV',
@@ -802,10 +861,10 @@ export async function analyzeInventory(components, { signal, onProgress, sources
       nvd: errors.some(x => x.source === 'NVD') ? 'partial_or_unavailable' : (limits.length ? 'limited' : 'queried'),
       epss: errors.some(x => x.source === 'FIRST EPSS') ? 'unavailable' : 'queried',
       kev: errors.some(x => x.source === 'CISA KEV') ? 'unavailable' : 'queried',
-      ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured',
+      osvPurl: purlGroups.size ? (purlErrors.length ? (purlQueue.length ? 'partial_or_unavailable' : 'unavailable') : 'queried') : 'not_configured',\n      ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured',
       ubuntuVex: ubuntuOsv.size ? (vexErrors.length ? (vexDocuments.size ? 'partial_or_unavailable' : 'unavailable') : (vexDocuments.size ? 'queried' : 'needs_review')) : 'not_configured'
     },
-    errors: [...errors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
+    errors: [...errors, ...purlErrors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
     limits,
     analyzedAt: new Date().toISOString(),
     disclaimer: 'Candidate correlation only. Verify applicability against the exact vendor advisory, distribution package revision, edition, build and installed updates before treating a finding as confirmed.'
