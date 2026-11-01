@@ -11,6 +11,7 @@ const MAX_CELL_CHARACTERS = 16384;
  */
 export function parseInventoryCsv(input) {
   if (typeof input !== 'string') throw new TypeError('CSV content must be text.');
+  if (input.length > MAX_CSV_CHARACTERS) throw new Error('CSV exceeds the 5 MB text limit.');
   const source = input.replace(/^\uFEFF/, '');
   const rows = [];
   let row = [], cell = '', quoted = false, afterQuote = false;
@@ -37,7 +38,10 @@ export function parseInventoryCsv(input) {
       if (rows.length > MAX_ROWS + 1) throw new Error('CSV exceeds the 50000 data-row limit.');
       row = []; cell = ''; afterQuote = false;
     } else if (!afterQuote || char === ' ' || char === '\t') {
-      if (!afterQuote) cell += char;
+      if (!afterQuote) {
+        cell += char;
+        if (cell.length > MAX_CELL_CHARACTERS) throw new Error('CSV contains a field longer than 16384 characters.');
+      }
     }
   }
   if (quoted) throw new Error('CSV contains an unterminated quoted field.');
