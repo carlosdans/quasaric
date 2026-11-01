@@ -1,9 +1,12 @@
 export const INVENTORY_STORAGE_KEY = 'quasaric-inventory';
 export const INVENTORY_RECOVERY_KEY = 'quasaric-inventory-recovery';
+const MAX_IDENTIFIER_LENGTH = 2048;
 
 function isInventoryItem(item) {
   return item !== null && typeof item === 'object' && !Array.isArray(item) &&
-    typeof item.name === 'string' && item.name.trim().length > 0;
+    typeof item.name === 'string' && item.name.trim().length > 0 &&
+    ['purl', 'cpe'].every(field => item[field] == null ||
+      (typeof item[field] === 'string' && item[field].length <= MAX_IDENTIFIER_LENGTH));
 }
 
 /**
@@ -17,9 +20,8 @@ export function loadInventory(storage = globalThis.localStorage) {
     const raw = storage?.getItem(INVENTORY_STORAGE_KEY);
     if (raw == null || raw === '') return { items: [], warning: false };
     let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
+    try { parsed = JSON.parse(raw); }
+    catch {
       try { storage?.setItem(INVENTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
       return { items: [], warning: true };
     }
@@ -33,9 +35,7 @@ export function loadInventory(storage = globalThis.localStorage) {
       try { storage?.setItem(INVENTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
     }
     return { items, warning };
-  } catch {
-    return { items: [], warning: true };
-  }
+  } catch { return { items: [], warning: true }; }
 }
 
 export function saveInventory(items, storage = globalThis.localStorage) {
@@ -44,7 +44,5 @@ export function saveInventory(items, storage = globalThis.localStorage) {
     if (!storage) return false;
     storage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(items));
     return true;
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }

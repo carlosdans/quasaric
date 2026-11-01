@@ -46,3 +46,19 @@ test('enforces safe size, row, column and field limits', () => {
 test('rejects duplicate headers regardless of letter case', () => {
   assert.throws(() => parseInventoryCsv('name,Name\nnginx,nginx'), /duplicate/);
 });
+
+test('round-trips optional PURL and CPE columns while retaining old CSV compatibility', () => {
+  const result = parseInventoryCsv('name,purl,cpe\\nnginx,pkg:deb/debian/nginx@1.26.0,cpe:2.3:a:nginx:nginx:1.26.0:*:*:*:*:*:*:*\\n');
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.components[0].purl, 'pkg:deb/debian/nginx@1.26.0');
+  assert.match(result.components[0].cpe, /^cpe:2\\.3:/);
+  const old = parseInventoryCsv('name,type\\nnginx,web\\n');
+  assert.equal(old.components[0].purl, '');
+  assert.equal(old.components[0].cpe, '');
+});
+
+test('rejects excessively long PURL and CPE metadata as row errors', () => {
+  const result = parseInventoryCsv('name,purl\\nnginx,' + 'x'.repeat(2049));
+  assert.equal(result.components.length, 0);
+  assert.equal(result.errors[0].row, 2);
+});

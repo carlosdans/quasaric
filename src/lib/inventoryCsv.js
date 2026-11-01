@@ -1,5 +1,5 @@
 const ALLOWED_TYPES = new Set(['os', 'web', 'runtime', 'cms', 'database', 'library', 'other']);
-const FIELDS = ['name', 'type', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture'];
+const FIELDS = ['name', 'type', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'purl', 'cpe'];
 const MAX_CSV_CHARACTERS = 5 * 1024 * 1024;
 const MAX_ROWS = 50000;
 const MAX_COLUMNS = 32;
@@ -70,6 +70,10 @@ export function parseInventoryCsv(input) {
     const type = record.type || 'other';
     if (!ALLOWED_TYPES.has(type)) {
       errors.push({ row: rowNumber, message: 'Unsupported component type: ' + type });
+      return;
+    }
+    if ((record.purl || '').length > 2048 || (record.cpe || '').length > 2048) {
+      errors.push({ row: rowNumber, message: 'PURL and CPE fields must not exceed 2048 characters.' });
       return;
     }
     components.push(Object.fromEntries(FIELDS.map(field => [
