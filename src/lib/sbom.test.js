@@ -64,3 +64,23 @@ test('normalises SPDX originator prefixes and whitespace', () => {
   ]}));
   assert.deepEqual(result.components.map(component=>component.vendor),['Example Foundation','Jane Example']);
 });
+
+test('reports non-object CycloneDX and SPDX entries without aborting the import', () => {
+  const cyclone=parseSbom(JSON.stringify({bomFormat:'CycloneDX',specVersion:'1.6',components:[
+    null, 'not-a-component', {name:'openssl'}
+  ]}));
+  assert.equal(cyclone.components.length,1);
+  assert.deepEqual(cyclone.errors,[
+    {index:1,message:'Component entry must be a JSON object.'},
+    {index:2,message:'Component entry must be a JSON object.'}
+  ]);
+
+  const spdx=parseSbom(JSON.stringify({spdxVersion:'SPDX-2.3',dataLicense:'CC0-1.0',packages:[
+    null, 42, {name:'nginx'}
+  ]}));
+  assert.equal(spdx.components.length,1);
+  assert.deepEqual(spdx.errors,[
+    {index:1,message:'Package entry must be a JSON object.'},
+    {index:2,message:'Package entry must be a JSON object.'}
+  ]);
+});
