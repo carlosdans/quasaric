@@ -140,3 +140,31 @@ test('bounds saved history size and preserves oversized or malformed history for
   assert.deepEqual(loadAnalysisHistory(storage), []);
   assert.equal(data.get('quasaric-analysis-history-recovery'), malformedRaw);
 });
+
+
+test('rejects malformed analysis inputs before building a snapshot', () => {
+  assert.throws(() => createAnalysisSnapshot({ findings: [] }, {}), TypeError);
+  assert.throws(() => createAnalysisSnapshot({ findings: [null] }), TypeError);
+  assert.throws(() => createAnalysisSnapshot({ findings: [{ id: 'CVE-1', components: 'bad' }] }), TypeError);
+  assert.throws(() => createAnalysisSnapshot({ findings: [{ id: 'CVE-1', components: [null] }] }), TypeError);
+  assert.throws(() => createAnalysisSnapshot({ findings: [{ id: 'CVE-1', components: [{ component: [] }] }] }), TypeError);
+  assert.throws(() => createAnalysisSnapshot({ findings: [] }, [null]), TypeError);
+});
+
+test('validates stored inventory shape and finding identifiers while retaining legacy snapshots', () => {
+  const valid = { id: 'legacy', findings: [finding('CVE-2026-0001', [match('a')])] };
+  const invalidInventory = { id: 'bad-inventory', inventory: [null], findings: [] };
+  const invalidFinding = { id: 'bad-finding', findings: [{ components: [] }] };
+  const data = new Map([['quasaric-analysis-history', JSON.stringify([valid, invalidInventory, invalidFinding])]]);
+  const storage = { getItem: key => data.get(key) || null, setItem: (key, value) => data.set(key, value) };
+  assert.deepEqual(loadAnalysisHistory(storage), [valid]);
+  assert.equal(data.get('quasaric-analysis-history-recovery'), JSON.stringify([valid, invalidInventory, invalidFinding]));
+});
+
+test('preserves malformed JSON history for recovery and rejects non-array saves', () => {
+  const data = new Map([['quasaric-analysis-history', '{broken json']]);
+  const storage = { getItem: key => data.get(key) || null, setItem: (key, value) => data.set(key, value) };
+  assert.deepEqual(loadAnalysisHistory(storage), []);
+  assert.equal(data.get('quasaric-analysis-history-recovery'), '{broken json');
+  assert.equal(saveAnalysisHistory({ findings: [] }, storage), false);
+});
