@@ -1,6 +1,6 @@
 const ALLOWED_TYPES = new Set(['os', 'web', 'runtime', 'cms', 'database', 'library', 'other']);
 const FIELDS = ['name', 'type', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'purl', 'cpe'];
-const MAX_CSV_CHARACTERS = 5 * 1024 * 1024;
+const MAX_CSV_BYTES = 5 * 1024 * 1024;
 const MAX_ROWS = 50000;
 const MAX_COLUMNS = 32;
 const MAX_CELL_CHARACTERS = 16384;
@@ -11,7 +11,7 @@ const MAX_CELL_CHARACTERS = 16384;
  */
 export function parseInventoryCsv(input) {
   if (typeof input !== 'string') throw new TypeError('CSV content must be text.');
-  if (input.length > MAX_CSV_CHARACTERS) throw new Error('CSV exceeds the 5 MB text limit.');
+  if (new TextEncoder().encode(input).byteLength > MAX_CSV_BYTES) throw new Error('CSV exceeds the 5 MB text limit.');
   const source = input.replace(/^\uFEFF/, '');
   const rows = [];
   let row = [], cell = '', quoted = false, afterQuote = false;
