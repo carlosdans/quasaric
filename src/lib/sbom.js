@@ -20,7 +20,9 @@ function typeFor(name, ecosystem) {
 function cyclone(document) {
   if (document.bomFormat !== 'CycloneDX' || !['1.4','1.5','1.6'].includes(String(document.specVersion))) throw new Error('Unsupported CycloneDX format or version (supported: JSON 1.4–1.6).');
   if (!Array.isArray(document.components)) throw new Error('CycloneDX document has no components array.');
+  if (document.components.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
   return document.components.map((item,index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Component entry must be a JSON object.', index:index+1 };
     const rawPurl = str(item.purl);
     const purl = purlInfo(rawPurl);
     if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
@@ -40,7 +42,9 @@ function cyclone(document) {
 function spdx(document) {
   if (document.spdxVersion !== 'SPDX-2.3' || document.dataLicense !== 'CC0-1.0') throw new Error('Unsupported SPDX format or version (supported: SPDX 2.3 JSON).');
   if (!Array.isArray(document.packages)) throw new Error('SPDX document has no packages array.');
+  if (document.packages.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
   return document.packages.map((item,index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Package entry must be a JSON object.', index:index+1 };
     const refs = Array.isArray(item.externalRefs) ? item.externalRefs : [];
     const purlRef = refs.find(ref => /purl/i.test(str(ref.referenceType)));
     const cpeRef = refs.find(ref => /cpe/i.test(str(ref.referenceType)));
