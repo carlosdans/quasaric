@@ -24,6 +24,13 @@ test('remains backwards-compatible and rejects malformed backups', () => {
   assert.throws(() => parseInventoryBackup({ format: 'quasaric-inventory', version: 1, components: [{ name: 'nginx', purl: 4 }] }), /Invalid component/);
 });
 
+test('rejects oversized and excessive-component backups before mapping', () => {
+  const base = { format: 'quasaric-inventory', version: 1, components: [] };
+  assert.throws(() => parseInventoryBackup(' '.repeat(10 * 1024 * 1024 + 1)), /10 MB/);
+  assert.throws(() => parseInventoryBackup({ ...base, components: Array(50001).fill({ name: 'nginx' }) }), /50000/);
+  assert.throws(() => createInventoryBackup(Array(50001).fill({ name: 'nginx' })), /50000/);
+});
+
 test('compares SBOM identifiers as part of component identity', () => {
   const original = { name: 'A', version: '1', purl: 'pkg:npm/a@1' };
   const changed = { ...original, purl: 'pkg:npm/a@2' };
