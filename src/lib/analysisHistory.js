@@ -10,9 +10,13 @@ function withinByteLimit(value) {
 }
 
 function isValidSnapshot(snapshot) {
-  return isRecord(snapshot) && Array.isArray(snapshot.findings) &&
+  return isRecord(snapshot) &&
+    (snapshot.inventory === undefined || (Array.isArray(snapshot.inventory) &&
+      snapshot.inventory.length <= MAX_INVENTORY_COMPONENTS && snapshot.inventory.every(isRecord))) &&
+    Array.isArray(snapshot.findings) &&
     snapshot.findings.length <= MAX_FINDINGS_PER_SNAPSHOT &&
-    snapshot.findings.every(finding => isRecord(finding) && Array.isArray(finding.components) &&
+    snapshot.findings.every(finding => isRecord(finding) && typeof finding.id === 'string' &&
+      Array.isArray(finding.components) &&
       finding.components.every(match => isRecord(match) && isRecord(match.component)));
 }
 
@@ -33,11 +37,16 @@ function findingComponentKey(finding, match) {
 }
 
 export function createAnalysisSnapshot(analysis, inventory = []) {
-  if (!analysis || !Array.isArray(analysis.findings)) {
-    throw new TypeError('A completed analysis with findings is required.');
+  if (!analysis || !Array.isArray(analysis.findings) || !Array.isArray(inventory)) {
+    throw new TypeError('A completed analysis with findings and an inventory array is required.');
   }
   if (analysis.findings.length > MAX_FINDINGS_PER_SNAPSHOT || inventory.length > MAX_INVENTORY_COMPONENTS) {
     throw new Error('Analysis snapshot exceeds the 50000 findings or components limit.');
+  }
+  if (!inventory.every(isRecord) || !analysis.findings.every(finding =>
+    isRecord(finding) && typeof finding.id === 'string' && Array.isArray(finding.components) &&
+    finding.components.every(match => isRecord(match) && isRecord(match.component)))) {
+    throw new TypeError('Analysis snapshot contains malformed inventory, findings or component matches.');
   }
   const snapshot = {
     id: analysis.analyzedAt || new Date().toISOString(),
@@ -131,7 +140,12 @@ export function loadAnalysisHistory(storage) {
       try { target?.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
       return [];
     }
-    const parsed = JSON.parse(raw);
+    let parsed;
+    try { parsed = JSON.parse(raw); }
+    catch {
+      try { target?.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
+      return [];
+    }
     const valid = Array.isArray(parsed) ? parsed.filter(isValidSnapshot).slice(0, HISTORY_LIMIT) : [];
     if (!Array.isArray(parsed) || valid.length !== parsed.length) {
       try { target?.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
@@ -141,7 +155,8 @@ export function loadAnalysisHistory(storage) {
 }
 
 export function saveAnalysisHistory(history, storage) {
-  const next = (Array.isArray(history) ? history : []).slice(0, HISTORY_LIMIT);
+  if (!Array.isArray(history)) return false;
+  const next = history.slice(0, HISTORY_LIMIT);
   if (!next.every(isValidSnapshot)) return false;
   try {
     const serialized = JSON.stringify(next);
