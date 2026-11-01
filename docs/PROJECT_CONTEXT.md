@@ -2,7 +2,7 @@
 
 > Documento de continuidad para retomar el desarrollo en cualquier conversación. Actualizarlo al cerrar cada bloque de trabajo.
 >
-> **Última actualización:** 1 de noviembre de 2026 (alias de inventario y validación de main)  
+> **Última actualización:** 1 de noviembre de 2026 (importación CSV local de inventario)  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama principal:** `main`
 
@@ -50,6 +50,7 @@ No está concebida como un escáner ni como una herramienta de pentesting. La ca
 
 - Interfaz React/Vite bilingüe.
 - Inventario local de hasta 10 componentes.
+- Importación local de inventario CSV con validación de esquema y filas, límite de 10 componentes y tamaño máximo de 1 MB.
 - Exportación CSV.
 - Consultas desde navegador a NVD, FIRST EPSS y CISA KEV.
 - Correlación inicial de candidatos CVE con metadatos CPE y rangos de versión NVD.

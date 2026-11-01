@@ -348,3 +348,10 @@ button{touch-action:manipulation}
 .trust-center ul{display:grid;gap:6px;padding-left:19px;margin:9px 0 15px}
 .trust-center a{color:#9bb9f4;text-decoration:underline;text-underline-offset:3px}
 .trust-center a:hover{color:#c5d7ff}
+
+.import-file-btn{position:relative;display:inline-flex;align-items:center;gap:8px;overflow:hidden}
+.import-file-btn input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.import-file-btn:focus-within{outline:2px solid var(--blue);outline-offset:3px}
+.import-help{margin:10px 0 16px;color:var(--muted);font-size:11px;line-height:1.6}
+.import-feedback{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+@media(max-width:640px){.heading-actions .import-file-btn{justify-content:center}}

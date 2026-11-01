@@ -16,6 +16,7 @@ Capacidades implementadas:
 - Recuperación de documentos Canonical OpenVEX por CVE y correlación con el producto binario exacto (paquete, versión completa, arquitectura y distro), vinculada al PURL del paquete fuente OSV.
 - Comparación diagnóstica de estados Ubuntu OSV/OpenVEX por componente. Los conflictos se muestran sin sobrescribir la clasificación de ninguna fuente ni convertir un estado VEX en un veredicto global del CVE.
 - Trazabilidad de evidencias por componente y fuente (NVD, Ubuntu OSV y Canonical OpenVEX), con referencias, fechas y detalles del producto.
+- Importación local de inventarios desde CSV exportado por Quasaric, con validación de filas, límite de 10 componentes y tamaño máximo de 1 MB.
 - Exportación CSV del inventario y de hallazgos; el CSV de hallazgos incluye la evidencia por fuente en una columna JSON.
 - Límites de recuperación OpenVEX por análisis (100 documentos y hasta cuatro fetches concurrentes).
 
