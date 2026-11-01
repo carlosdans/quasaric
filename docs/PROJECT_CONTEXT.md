@@ -804,3 +804,10 @@ La documentación de Canonical establece que:
 - `apache2`, habitual en inventarios de paquetes Debian/Ubuntu, se normaliza como Apache HTTP Server para búsqueda y matching CPE.
 - La clasificación lo reconoce como componente web y el matching exige la pareja exacta `apache:http_server`; no se amplía a Apache Tomcat ni a otros proyectos Apache.
 - Se añade una prueba de clasificación del alias y pruebas CPE positivas/negativas.
+
+
+### Clasificación de OpenSSL en inventario
+
+- OpenSSL se reconoce como `library` (librería/dependencia), no como runtime ni servidor.
+- Su identidad CPE continúa restringida a `openssl:openssl`; la clasificación visual no amplía los criterios de correlación.
+- Se añade una prueba para que el alta manual recomiende el tipo correcto.

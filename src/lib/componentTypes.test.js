@@ -4,6 +4,7 @@ import { normalizeComponentType, suggestedComponentType } from './componentTypes
 
 test('known technologies receive their expected component type', () => {
   assert.equal(suggestedComponentType('PHP'), 'runtime');
+  assert.equal(suggestedComponentType('OpenSSL'), 'library');
   assert.equal(suggestedComponentType('PHP-FPM'), 'runtime');
   assert.equal(suggestedComponentType('  Apache   HTTP Server  '), 'web');
   assert.equal(suggestedComponentType('Node JS'), null);

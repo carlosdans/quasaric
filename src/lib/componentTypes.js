@@ -2,7 +2,7 @@
 const normalizeName = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 const componentTypes = {
   php: 'runtime', 'php-fpm': 'runtime', node: 'runtime', 'node.js': 'runtime', nodejs: 'runtime',
-  python: 'runtime', java: 'runtime',
+  python: 'runtime', java: 'runtime', openssl: 'library',
   apache: 'web', 'apache http server': 'web', apache2: 'web', httpd: 'web', nginx: 'web', 'microsoft iis': 'web', iis: 'web',
   wordpress: 'cms', joomla: 'cms', drupal: 'cms',
   mysql: 'database', mariadb: 'database', postgresql: 'database', mongodb: 'database',
