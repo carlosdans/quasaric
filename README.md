@@ -4,7 +4,7 @@
 
 ## Estado del proyecto
 
-Quasaric es un MVP funcional en evolución. La aplicación usa React + Vite, ofrece interfaz bilingüe (español/inglés), permite mantener un inventario local de hasta 10 componentes y consulta fuentes públicas de vulnerabilidades desde el navegador.
+Quasaric es una versión funcional en evolución, con alcance deliberadamente limitado. La aplicación usa React + Vite, ofrece interfaz bilingüe (español/inglés), permite mantener un inventario local de hasta 10 componentes y consulta fuentes públicas de vulnerabilidades desde el navegador.
 
 Capacidades implementadas:
 
@@ -19,6 +19,8 @@ Capacidades implementadas:
 - Importación local de inventarios desde CSV exportado por Quasaric, con validación de filas, límite de 10 componentes y tamaño máximo de 1 MB.
 - Exportación CSV del inventario y de hallazgos; el CSV de hallazgos incluye la evidencia por fuente en una columna JSON.
 - Límites de recuperación OpenVEX por análisis (100 documentos y hasta cuatro fetches concurrentes).
+- Invalidación de los hallazgos visibles cuando cambia el inventario, para evitar presentar resultados de una composición anterior como actuales.
+- Cancelación explícita de análisis en curso y aviso cuando el historial no puede persistirse en el almacenamiento local.
 
 **No está listo para decisiones de producción.** Una coincidencia sigue siendo evidencia que requiere validación; no se declara automáticamente una vulnerabilidad confirmada ni una remediación confirmada. La correlación necesita validación amplia para CPE ambiguos, backports y paquetes de distribuciones, ediciones/builds de Windows, plugins y dependencias transitivas. La ausencia de coincidencias no demuestra que un sistema sea seguro.
 
