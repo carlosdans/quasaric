@@ -671,3 +671,25 @@ button{touch-action:manipulation}
  .app-shell .finding-detail-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
  .app-shell .finding-evidence-heading{flex-direction:column}
 }
+
+
+/* Version help center */
+.app-shell .version-guide-intro{display:flex;align-items:flex-start;gap:14px;padding:18px;color:var(--blue)}
+.app-shell .version-guide-intro>div{display:grid;gap:6px}
+.app-shell .version-guide-intro strong{font-size:13px;color:var(--text-primary)}
+.app-shell .version-guide-intro p,.app-shell .version-guide-note p{margin:0;color:var(--text-secondary);font-size:11px;line-height:1.7}
+.app-shell .version-guide-grid{display:grid;gap:18px;margin-top:18px}
+.app-shell .version-guide-group{padding:20px}
+.app-shell .version-guide-group h2{margin:0 0 15px;color:var(--text-primary);font-size:14px}
+.app-shell .version-guide-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.app-shell .version-guide-item{min-width:0;padding:14px;border:1px solid var(--border);border-radius:11px;background:var(--surface-raised);display:grid;align-content:start;gap:10px}
+.app-shell .version-guide-item h3{margin:0;color:var(--text-primary);font-size:12px}
+.app-shell .version-guide-item p{margin:5px 0 0;color:var(--text-tertiary);font-size:10px;line-height:1.6}
+.app-shell .version-guide-item pre{margin:0;padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--surface-soft);white-space:pre-wrap;overflow-wrap:anywhere}
+.app-shell .version-guide-item code{color:var(--text-secondary);font-size:10px;line-height:1.65}
+.app-shell .copy-command-btn,.app-shell .inline-help-link{display:inline-flex;align-items:center;gap:6px;width:max-content;max-width:100%;padding:0;border:0;background:none;color:var(--blue);font-size:10px;cursor:pointer}
+.app-shell .inline-help-link{text-decoration:underline;text-underline-offset:3px;font-weight:650}
+.app-shell .version-guide-note{margin-top:18px;padding:17px}
+.app-shell .version-guide-note strong{display:block;margin-bottom:6px;color:var(--text-primary);font-size:12px}
+.app-shell[data-theme="light"] .version-guide-item{background:#f8faff}
+@media(max-width:680px){.app-shell .version-guide-items{grid-template-columns:1fr}.app-shell .version-guide-group{padding:14px}}
