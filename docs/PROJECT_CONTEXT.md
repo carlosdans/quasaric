@@ -876,3 +876,12 @@ La documentación de Canonical establece que:
 - Pruebas nuevas en `src/lib/vulnerabilitySources.osv-purl.test.js`: deduplicación/orden, límite superior, aviso malformado e identidad de detalle incorrecta.
 - Commits de código: `202f6ddb`, `4fef5300`, `28372673` y `7a356d78`. Los runs CI/Azure de los dos primeros commits finalizaron correctamente; los runs de los commits de validación de esquema deben comprobarse antes de considerar este bloque desplegado.
 - Se mantiene el envío mínimo de PURL/versión explícitos a OSV; no se transmite el inventario completo. No se añaden dependencias, servicios ni costes: Azure Static Web Apps Free y presupuesto 0 €.
+
+
+## Estado actualizado — 1 de noviembre de 2026 (errores parciales y cancelación OSV)
+
+- La interfaz de resultados muestra ahora el detalle de cada error de consulta (fuente, componente/identificador y mensaje), además del aviso agregado de resultados incompletos. Un recuento de errores ya no oculta qué conector ha fallado.
+- La correlación comprueba la señal de cancelación antes de devolver resultados; una cancelación tardía no puede publicar un análisis como si hubiera terminado correctamente.
+- Pruebas de integración verifican que un fallo OSV PURL se conserva como error parcial con su estado de fuente, y que una cancelación OSV propaga AbortError en lugar de convertirse en una lista vacía.
+- Los hallazgos obtenidos de otras fuentes se mantienen cuando un conector falla; la ausencia de resultados de la fuente fallida no se interpreta como ausencia de vulnerabilidades.
+- No se añaden servicios, dependencias, persistencia remota ni costes. Se mantiene Azure Static Web Apps Free y presupuesto 0 €.

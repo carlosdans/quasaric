@@ -63,3 +63,35 @@ test('keeps OSV advisories with CVE aliases in the CVE finding path', async () =
   assert.equal(result.findings[0].id, 'CVE-2025-12345');
   assert.equal(result.findings[0].components[0].applicability.status, 'needs_review');
 });
+
+
+test('preserves successful results and reports a partial OSV PURL failure', async () => {
+  const result = await analyzeInventory([component()], {
+    sources: {
+      ...sources([]),
+      fetchOsvForPurl: async () => { throw new Error('OSV temporarily unavailable'); }
+    }
+  });
+
+  assert.deepEqual(result.findings, []);
+  assert.equal(result.sources.osvPurl, 'partial_or_unavailable');
+  assert.equal(result.errors.length, 1);
+  assert.equal(result.errors[0].source, 'OSV (PURL)');
+  assert.match(result.errors[0].message, /temporarily unavailable/);
+});
+
+test('propagates OSV cancellation instead of returning an empty result', async () => {
+  const controller = new AbortController();
+  const resultPromise = analyzeInventory([component()], {
+    signal: controller.signal,
+    sources: {
+      ...sources([]),
+      fetchOsvForPurl: async () => {
+        controller.abort();
+        throw new DOMException('The operation was aborted.', 'AbortError');
+      }
+    }
+  });
+
+  await assert.rejects(resultPromise, error => error?.name === 'AbortError');
+});

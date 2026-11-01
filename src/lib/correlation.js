@@ -872,6 +872,8 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     };
   }).sort((a, b) => Number(b.kev) - Number(a.kev) || (b.epss ?? -1) - (a.epss ?? -1) || (b.cvss ?? -1) - (a.cvss ?? -1));
 
+  if (signal?.aborted) throw new DOMException('The operation was aborted.', 'AbortError');
+
   return {
     findings,
     purlAdvisories,
