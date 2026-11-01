@@ -264,17 +264,21 @@ function App() {
   const suggestedType = suggestedComponentType(form.name);
   const t = copy[lang];
 
-  const exportPostureCsv = () => {
-    const csv = buildSecurityPostureCsv(posture);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const triggerCsvDownload = (blob, filename) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'quasaric-security-posture.csv';
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     link.remove();
-    URL.revokeObjectURL(url);
+    // Let the browser begin consuming the blob before releasing its URL.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const exportPostureCsv = () => {
+    const csv = buildSecurityPostureCsv(posture);
+    triggerCsvDownload(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'quasaric-security-posture.csv');
   };
 
   const persist = (next) => {
@@ -331,12 +335,7 @@ function App() {
 
   const downloadCsv = (rows, filename) => {
     const blob = new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+    triggerCsvDownload(blob, filename);
   };
 
   const exportCsv = () => {
