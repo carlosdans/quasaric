@@ -117,3 +117,26 @@ test('handles unavailable or malformed browser storage safely', () => {
   assert.deepEqual(loadAnalysisHistory(malformed), []);
   assert.equal(saveAnalysisHistory([{ id: 'x' }], malformed), false);
 });
+
+
+test('rejects oversized snapshots and excessive finding or inventory counts', () => {
+  assert.throws(() => createAnalysisSnapshot({ findings: Array(50001).fill(finding('CVE-1', [])) }), /50000/);
+  assert.throws(() => createAnalysisSnapshot({ findings: [] }, Array(50001).fill({ name: 'nginx' })), /50000/);
+  const huge = snapshot('huge', [finding('CVE-1', [match('a', 'x'.repeat(10 * 1024 * 1024))])]);
+  assert.throws(() => createAnalysisSnapshot(huge), /10 MB/);
+});
+
+test('bounds saved history size and preserves oversized or malformed history for recovery', () => {
+  const data = new Map();
+  const storage = { getItem: key => data.get(key) || null, setItem: (key, value) => data.set(key, value) };
+  const huge = { id: 'huge', findings: [finding('CVE-1', [match('a', 'x'.repeat(10 * 1024 * 1024))])] };
+  assert.equal(saveAnalysisHistory([huge], storage), false);
+  const oversizedRaw = ' '.repeat(10 * 1024 * 1024 + 1);
+  data.set('quasaric-analysis-history', oversizedRaw);
+  assert.deepEqual(loadAnalysisHistory(storage), []);
+  assert.equal(data.get('quasaric-analysis-history-recovery'), oversizedRaw);
+  const malformedRaw = JSON.stringify([{ id: 'bad', findings: 'invalid' }]);
+  data.set('quasaric-analysis-history', malformedRaw);
+  assert.deepEqual(loadAnalysisHistory(storage), []);
+  assert.equal(data.get('quasaric-analysis-history-recovery'), malformedRaw);
+});
