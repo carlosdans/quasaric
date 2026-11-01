@@ -59,10 +59,10 @@ function spdx(document) {
 }
 export function parseSbom(input) {
   if (typeof input !== 'string') throw new TypeError('SBOM content must be text.');
-  if (!input.trim()) throw new Error('SBOM file is empty.');
   if (new TextEncoder().encode(input).byteLength > MAX_SBOM_BYTES) {
     throw new Error('SBOM exceeds the 10 MB limit.');
   }
+  if (!input.trim()) throw new Error('SBOM file is empty.');
   let document;
   try { document = JSON.parse(input); } catch { throw new Error('SBOM is not valid JSON.'); }
   if (!document || typeof document !== 'object' || Array.isArray(document)) throw new Error('SBOM root must be a JSON object.');
