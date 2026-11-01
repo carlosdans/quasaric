@@ -46,3 +46,18 @@ test('compares additions, removals and unchanged entries', () => {
   assert.equal(diff.removed[0].name, 'B');
   assert.equal(diff.unchanged[0].name, 'A');
 });
+
+
+test('enforces the byte limit for object inputs and newly created backups', () => {
+  const large = { name: 'nginx', description: '😀'.repeat(3 * 1024 * 1024) };
+  const backup = { format: 'quasaric-inventory', version: 1, components: [large] };
+  assert.throws(() => parseInventoryBackup(backup), /10 MB/);
+  assert.throws(() => createInventoryBackup([large]), /10 MB/);
+});
+
+test('rejects non-serializable object backups and non-object roots', () => {
+  const cyclic = { format: 'quasaric-inventory', version: 1, components: [] };
+  cyclic.self = cyclic;
+  assert.throws(() => parseInventoryBackup(cyclic), /serializable JSON/);
+  assert.throws(() => parseInventoryBackup([]), /Unsupported/);
+});
