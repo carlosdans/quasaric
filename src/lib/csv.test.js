@@ -29,16 +29,18 @@ test('CSV neutralizes spreadsheet formulas in untrusted values', () => {
     ['\r=1+1'],
     ['\n=1+1']
   ]);
-  assert.ok(csv.includes('"\'=HYPERLINK(""https://example.invalid"",""open"")"'));
-  assert.ok(csv.includes('"\' +SUM(1,1)"') === false);
-  assert.ok(csv.includes('"\'@cmd"'));
-  assert.ok(csv.includes('"\'-1+2"'));
-  assert.ok(csv.includes('"\'  =1+1"'));
-  assert.ok(csv.includes('"\'' + '\t=1+1"'));
-  assert.ok(csv.includes('"\'' + '\r=1+1"'));
-  assert.ok(csv.includes('"\'' + '\n=1+1"'));
-  assert.ok(csv.includes('"\' +SUM(1,1)"') === false);
-  assert.ok(csv.includes('"\'+' + 'SUM(1,1)"'));
+  assert.ok(csv.includes("\"'=HYPERLINK(\"\"https://example.invalid\"\",\"\"open\"\")\""));
+  assert.ok(csv.includes("\"'+SUM(1,1)\""));
+  assert.ok(csv.includes("\"'@cmd\""));
+  assert.ok(csv.includes("\"'-1+2\""));
+  assert.ok(csv.includes("\"'  =1+1\""));
+  assert.ok(csv.includes("\"\t=1+1\"") === false);
+  assert.ok(csv.includes("\"\r=1+1\"") === false);
+  assert.ok(csv.includes("\"\n=1+1\"") === false);
+  assert.ok(csv.includes("\"\t=1+1\"") === false);
+  assert.ok(csv.includes("\"'\t=1+1\""));
+  assert.ok(csv.includes("\"'\r=1+1\""));
+  assert.ok(csv.includes("\"'\n=1+1\""));
 });
 
 test('CSV leaves ordinary text and positive numeric values unchanged', () => {
