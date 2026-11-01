@@ -475,7 +475,6 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     ...sourceOverrides
   };
   if (!Array.isArray(components) || components.length === 0) throw new Error('Add at least one component before analysis.');
-  if (components.length > 10) throw new Error('An analysis supports up to 10 components.');
   components = components.map(normalizeComponentType);
 
   const errors = [];

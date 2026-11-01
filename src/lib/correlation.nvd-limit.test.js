@@ -37,3 +37,17 @@ test('uses the precise PHP CPE query instead of broad keyword search in producti
   assert.equal(requestedCpe, 'cpe:2.3:a:php:php');
   assert.deepEqual(result.findings, []);
 });
+
+test('analyses inventories containing more than ten components', async () => {
+  let queries = 0;
+  const components = Array.from({ length: 12 }, (_, index) => ({ id: `item-${index}`, name: `unknown-${index}`, type: 'other', version: '1.0' }));
+  const result = await analyzeInventory(components, {
+    sources: {
+      fetchNvdByKeyword: async () => { queries += 1; return []; },
+      fetchEpssScores: async () => new Map(),
+      fetchKevCatalog: async () => new Map()
+    }
+  });
+  assert.equal(queries, 12);
+  assert.deepEqual(result.findings, []);
+});
