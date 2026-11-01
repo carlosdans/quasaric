@@ -1,13 +1,4 @@
-function csvCell(value) {
-  let text = value == null ? '' : String(value);
-  // Prevent spreadsheet formula execution when untrusted labels are opened in Excel/Sheets.
-  const first = text.charCodeAt(0);
-  const formulaPrefix = /^\s*[=+@-]/.test(text);
-  if (formulaPrefix || first === 9 || first === 10 || first === 13) {
-    text = "'" + text;
-  }
-  return '"' + text.replace(/"/g, '""') + '"';
-}
+import { toCsv } from './csv.js';
 
 /**
  * Export the local posture window as a spreadsheet-friendly CSV.
@@ -39,6 +30,5 @@ export function buildSecurityPostureCsv(posture = {}) {
       item.snapshotsSeen, item.presentInLatest
     ]);
   }
-  return String.fromCharCode(0xfeff) +
-    rows.map(row => row.map(csvCell).join(',')).join(String.fromCharCode(13, 10));
+  return toCsv(rows);
 }
