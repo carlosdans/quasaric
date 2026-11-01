@@ -3,6 +3,8 @@ export const INVENTORY_RECOVERY_KEY = 'quasaric-inventory-recovery';
 export const MAX_INVENTORY_BYTES = 10 * 1024 * 1024;
 export const MAX_INVENTORY_COMPONENTS = 50000;
 const MAX_IDENTIFIER_LENGTH = 2048;
+const MAX_FIELD_LENGTH = 16384;
+const STRING_FIELDS = ['name', 'type', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture'];
 
 function withinByteLimit(value) {
   return new TextEncoder().encode(value).byteLength <= MAX_INVENTORY_BYTES;
@@ -15,6 +17,8 @@ function preserveForRecovery(storage, raw) {
 function isInventoryItem(item) {
   return item !== null && typeof item === 'object' && !Array.isArray(item) &&
     typeof item.name === 'string' && item.name.trim().length > 0 &&
+    STRING_FIELDS.every(field => item[field] == null ||
+      (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) &&
     ['purl', 'cpe'].every(field => item[field] == null ||
       (typeof item[field] === 'string' && item[field].length <= MAX_IDENTIFIER_LENGTH));
 }
