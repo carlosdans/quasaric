@@ -59,3 +59,21 @@ test('rejects oversized serialized inventories and preserves oversized stored da
   assert.deepEqual(loadInventory(storage), { items: [], warning: true });
   assert.equal(storage.getItem(INVENTORY_RECOVERY_KEY), raw);
 });
+
+
+test('rejects non-string and oversized inventory metadata fields', () => {
+  const storage = memoryStorage();
+  for (const field of ['type', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture']) {
+    assert.equal(saveInventory([{ name: 'nginx', [field]: 42 }], storage), false, field);
+    assert.equal(saveInventory([{ name: 'nginx', [field]: 'x'.repeat(16385) }], storage), false, field);
+  }
+  assert.equal(saveInventory([{ name: 'x'.repeat(16385) }], storage), false);
+  assert.equal(saveInventory([{ name: 'nginx', version: '1.26.0', architecture: 'amd64' }], storage), true);
+});
+
+test('preserves legacy entries with invalid optional field metadata for recovery', () => {
+  const raw = JSON.stringify([{ name: 'nginx', version: 42 }, { name: 'curl', version: '8.5.0' }]);
+  const storage = memoryStorage([[INVENTORY_STORAGE_KEY, raw]]);
+  assert.deepEqual(loadInventory(storage), { items: [{ name: 'curl', version: '8.5.0' }], warning: true });
+  assert.equal(storage.getItem(INVENTORY_RECOVERY_KEY), raw);
+});
