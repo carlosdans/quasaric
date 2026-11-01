@@ -56,3 +56,11 @@ test('measures SBOM size in UTF-8 bytes, including multibyte characters', () => 
   const oversized = '😀'.repeat(Math.ceil((10 * 1024 * 1024) / 4) + 1);
   assert.throws(() => parseSbom(oversized), /10 MB limit/);
 });
+
+test('normalises SPDX originator prefixes and whitespace', () => {
+  const result=parseSbom(JSON.stringify({spdxVersion:'SPDX-2.3',dataLicense:'CC0-1.0',packages:[
+    {name:'package-org',originator:'Organization: Example Foundation'},
+    {name:'package-person',originator:'Person: Jane Example'}
+  ]}));
+  assert.deepEqual(result.components.map(component=>component.vendor),['Example Foundation','Jane Example']);
+});
