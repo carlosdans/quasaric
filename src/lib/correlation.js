@@ -1,4 +1,5 @@
 import { normalizeComponentType } from './componentTypes.js';
+import { parsePackageUrl } from './packageUrl.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
 import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
@@ -592,9 +593,9 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   const purlGroups = new Map();
   for (const component of components) {
     const purl = String(component.purl || '').trim();
-    if (!purl || !/^pkg:[a-z][a-z0-9.+-]*\/.{1,2000}$/.test(purl) || purl.length > 2048) continue;
+    if (!parsePackageUrl(purl)) continue;
     const version = String(component.version || '').trim();
-    const key = purl + '\\u0000' + version;
+    const key = `${purl}\u0000${version}`;
     if (!purlGroups.has(key)) purlGroups.set(key, { purl, version, components: [] });
     purlGroups.get(key).components.push(component);
   }
