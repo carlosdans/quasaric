@@ -593,3 +593,47 @@ button{touch-action:manipulation}
 @media(prefers-reduced-motion:reduce){
   .app-shell,.app-shell *{transition:none!important;scroll-behavior:auto!important}
 }
+
+
+/* Data-driven overview visualizations */
+.app-shell .risk-score-visual{
+  min-height:190px;display:flex;align-items:center;justify-content:center;gap:25px;padding:18px 10px;
+}
+.app-shell .risk-score-ring{
+  --risk-score:0;
+  width:142px;height:142px;flex:0 0 142px;border-radius:50%;
+  display:grid;place-items:center;
+  background:conic-gradient(var(--blue) calc(var(--risk-score)*1%),var(--surface-soft) 0);
+  position:relative;
+  box-shadow:0 0 0 1px var(--border),0 12px 32px rgba(28,70,145,.12);
+}
+.app-shell .risk-score-ring:before{
+  content:"";position:absolute;inset:10px;border-radius:50%;
+  background:var(--surface-raised);border:1px solid var(--border);
+}
+.app-shell .risk-score-ring>div{position:relative;display:flex;align-items:baseline;gap:2px}
+.app-shell .risk-score-ring strong{font-size:35px;letter-spacing:-1.8px;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.app-shell .risk-score-ring span{font-size:10px;color:var(--text-tertiary)}
+.app-shell .risk-score-copy{max-width:175px;display:grid;gap:7px}
+.app-shell .risk-score-copy strong{font-size:13px;color:var(--text-primary)}
+.app-shell .risk-score-copy span{font-size:11px;line-height:1.65;color:var(--text-tertiary)}
+.app-shell .severity-chart{display:grid;gap:17px;padding:18px 2px 10px}
+.app-shell .severity-row{display:grid;gap:7px}
+.app-shell .severity-row-label{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-secondary)}
+.app-shell .severity-row-label strong{margin-left:auto;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.app-shell .severity-track{height:7px;border-radius:99px;background:var(--surface-soft);overflow:hidden}
+.app-shell .severity-fill{display:block;height:100%;border-radius:99px;min-width:0;transition:width .35s ease}
+.app-shell .severity-fill.critical{background:#e45b69}
+.app-shell .severity-fill.high{background:#e99555}
+.app-shell .severity-fill.medium{background:#d8b45d}
+.app-shell .severity-fill.low{background:#4eae91}
+.app-shell .sev.medium{background:#d8b45d}
+.app-shell .sev.low{background:#4eae91}
+.app-shell[data-theme="light"] .risk-score-ring:before{background:#fff}
+.app-shell[data-theme="light"] .severity-track{background:#e9eef5}
+@media(max-width:640px){
+ .app-shell .risk-score-visual{gap:15px;min-height:165px}
+ .app-shell .risk-score-ring{width:118px;height:118px;flex-basis:118px}
+ .app-shell .risk-score-ring strong{font-size:30px}
+ .app-shell .risk-score-copy{max-width:145px}
+}
