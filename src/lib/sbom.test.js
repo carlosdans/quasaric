@@ -53,6 +53,6 @@ test('rejects SBOM input larger than 10 MiB before JSON parsing', () => {
 });
 
 test('measures SBOM size in UTF-8 bytes, including multibyte characters', () => {
-  const oversized = '😀'.repeat(Math.ceil((10 * 1024 * 1024) / 4));
+  const oversized = '😀'.repeat(Math.ceil((10 * 1024 * 1024) / 4) + 1);
   assert.throws(() => parseSbom(oversized), /10 MB limit/);
 });
