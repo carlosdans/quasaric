@@ -53,6 +53,19 @@ npm run build
 npm run preview
 ```
 
+## Requisito no negociable: alojamiento y coste cero
+
+Quasaric debe seguir publicada como una aplicación estática en **Azure Static Web Apps, plan Free**, con un coste objetivo y requisito obligatorio de **0 € para el propietario**. Este requisito prevalece sobre cualquier propuesta de arquitectura, funcionalidad o escalabilidad.
+
+- Mantener Azure Static Web Apps en el plan **Free**. No cambiar a Standard ni contratar servicios o capacidades de pago.
+- Mantener el despliegue estático de React/Vite (app location: /, api location: vacío y output location: dist); no introducir Azure Functions, backend, bases de datos, almacenamiento, colas, contenedores ni otros recursos facturables.
+- No añadir servicios SaaS, APIs comerciales, dominios, certificados, analítica, monitorización, CDN u otras dependencias que generen cargos. Priorizar fuentes públicas gratuitas y consultas directas desde el navegador.
+- No habilitar recursos de pago temporalmente, pruebas de pago, upgrades automáticos ni compromisos de consumo. Si una mejora no puede hacerse dentro del plan Free y sin coste, no se implementa: se documenta como limitación y se propone una alternativa gratuita.
+- Diseñar dentro de las cuotas y límites del nivel Free. Controlar el consumo de GitHub Actions y de cualquier servicio externo gratuito; no asumir que gratis al empezar significa coste cero permanente.
+- Antes de aceptar una nueva dependencia o integración, verificar explícitamente que no requiere suscripción, clave de pago, facturación por uso o upgrade de Azure.
+- No realizar cambios en la suscripción, plan, recursos, facturación o configuración del portal Azure como parte del desarrollo.
+
+La aplicación debe seguir siendo **local-first**: inventario e historial en el navegador y consultas públicas mínimas desde el cliente. No enviar inventarios completos a terceros. Si el crecimiento exige capacidades que superen las cuotas gratuitas, optimizar o limitar la función antes que introducir costes.
 ## Despliegue en Azure Static Web Apps
 
 - Build preset: **Vite** (o Custom)
