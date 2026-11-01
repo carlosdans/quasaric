@@ -786,3 +786,9 @@ La documentación de Canonical establece que:
 - La entrada NVD de Rocky Linux muestra que algunos registros históricos aparecen inicialmente con parte `a` y se deprecian a parte `o`; el matching de inventario OS exige la parte `o`.
 - CI y despliegue Azure del commit `3f12ec2`: CI run [41262387014](https://github.com/carlosdans/quasaric/actions/runs/41262387014), success; Azure run [41262387123](https://github.com/carlosdans/quasaric/actions/runs/41262387123), success.
 - Siguiente criterio: no añadir nuevas parejas por semejanza textual; exigir una entrada CPE oficial y una prueba positiva y negativa por vendor/product y parte.
+
+
+### Alias Node.js en inventario
+
+- `node`, `node.js` y `nodejs` se normalizan a la identidad CPE explícita `nodejs:node.js` (con compatibilidad para la identidad histórica `node.js:node.js`).
+- El alias `nodejs` tiene prueba positiva y negativa: acepta el vendor/product oficial y rechaza un vendor distinto. Esto no amplía el matching a productos de nombre parecido.

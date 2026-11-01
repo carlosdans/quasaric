@@ -235,6 +235,7 @@ export function cpeMatchesComponent(criteria, component) {
     'windows server 2022': [['microsoft', 'windows server 2022']],
     'windows server 2025': [['microsoft', 'windows server 2025']],
     node: [['nodejs', 'node.js'], ['node.js', 'node.js']],
+    nodejs: [['nodejs', 'node.js'], ['node.js', 'node.js']],
     'node.js': [['nodejs', 'node.js'], ['node.js', 'node.js']]
   };
   // Unknown inventory labels do not establish a trustworthy CPE vendor/product identity.

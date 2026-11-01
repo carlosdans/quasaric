@@ -13,9 +13,16 @@ test('matches exact CPE vendor/product pairs for supported technologies', () => 
     ['cpe:2.3:a:postgresql:postgresql:16:*:*:*:*:*:*:*', 'PostgreSQL'],
     ['cpe:2.3:a:mongodb:mongodb:7.0:*:*:*:*:*:*:*', 'MongoDB'],
     ['cpe:2.3:a:microsoft:internet_information_services:10:*:*:*:*:*:*:*', 'IIS'],
-    ['cpe:2.3:a:nodejs:node.js:22:*:*:*:*:*:*:*', 'Node.js']
+    ['cpe:2.3:a:nodejs:node.js:22:*:*:*:*:*:*:*', 'Node.js'],
+    ['cpe:2.3:a:nodejs:node.js:22:*:*:*:*:*:*:*', 'nodejs']
   ];
   for (const [cpe, name] of cases) assert.equal(cpeMatchesComponent(cpe, component(name)), true, name);
+});
+
+
+test('nodejs inventory alias matches only the explicit Node.js CPE identity', () => {
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:nodejs:node.js:22:*:*:*:*:*:*:*', component('nodejs')), true);
+  assert.equal(cpeMatchesComponent('cpe:2.3:a:attacker:node.js:22:*:*:*:*:*:*:*', component('nodejs')), false);
 });
 
 test('does not confuse Apache HTTP Server with other Apache projects', () => {
