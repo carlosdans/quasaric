@@ -51,7 +51,7 @@ function spdx(document) {
     if (!name) return { error:'Missing package name.', index:index+1 };
     return {
       name, version:str(item.versionInfo) || purl?.version || '',
-      vendor:str(item.supplier).replace(/^Organization:[ \t]*/i,'') || str(item.originator).replace(/^(Organization|Person):\\s*/i,''),
+      vendor:str(item.supplier).replace(/^Organization:[ \t]*/i,'') || str(item.originator).replace(/^(Organization|Person):\s*/i,''),
       type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl,
       cpe:str(cpeRef?.referenceLocator), sourcePackage:'', sourceVersion:'', architecture:''
     };
