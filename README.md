@@ -138,3 +138,8 @@ El panel de postura resume la evolución de los análisis guardados localmente (
 6. Revisar textos legales, privacidad y límites de uso bilingües antes del lanzamiento público.
 
 Contacto: contacto@quasaric.com
+
+
+### Apariencia
+
+Quasaric incluye tema oscuro y tema claro. Puedes cambiarlo desde el control de apariencia de la barra superior o desde **Configuración → Apariencia**. La elección se guarda localmente en el navegador.
