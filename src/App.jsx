@@ -10,6 +10,7 @@ import { buildSecurityPosture } from './lib/securityPosture.js';
 import { buildSecurityPostureCsv } from './lib/securityPostureCsv.js';
 import { safeExternalUrl } from './lib/externalUrl.js';
 import { parseInventoryCsv } from './lib/inventoryCsv.js';
+import { loadInventory, saveInventory } from './lib/inventoryStorage.js';
 import { inspectInventory } from './lib/inventoryQuality.js';
 import { createInventoryBackup, parseInventoryBackup, compareInventories } from './lib/inventoryBackup.js';
 import {
@@ -50,7 +51,7 @@ const copy = {
     analysisTitle: 'Inventario tecnológico', analysisDesc: 'Declara manualmente los componentes y sus versiones. Quasaric no escanea tus servidores.',
     privacyNote: 'El inventario permanece en este navegador. Al analizar, las fuentes externas pueden recibir los identificadores consultados y ver tu IP. No introduzcas contraseñas, tokens ni secretos.',
     language: 'Idioma', spanish: 'Español', english: 'English',
-    export: 'Exportar inventario CSV', localSaved: 'Guardado localmente', storageWarning: 'No se pudo guardar: exporta una copia CSV.',
+    export: 'Exportar inventario CSV', localSaved: 'Guardado localmente', storageWarning: 'No se pudo guardar o recuperar íntegramente el inventario local. Conservamos los datos recuperables; exporta una copia y revisa el almacenamiento del navegador.',
     sourceNotice: 'Correlación de candidatos CVE con fuentes públicas. Revisa las evidencias y los límites de cobertura antes de tomar decisiones.',
     priority: 'Prioridad', exposure: 'Exposición', noScan: 'Sin escaneos activos',
     noScanText: 'Quasaric analiza los datos que proporcionas; no realiza conexiones de reconocimiento ni pruebas sobre tus sistemas.',
@@ -163,13 +164,9 @@ function App() {
     try { localStorage.setItem('quasaric-theme', theme); } catch { /* storage may be unavailable */ }
   }, [theme]);
   const [active, setActive] = useState('overview');
-  const [items, setItems] = useState(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('quasaric-inventory') || '[]');
-      return Array.isArray(stored) ? stored : [];
-    } catch { return []; }
-  });
-  const [storageWarning, setStorageWarning] = useState(false);
+  const [initialInventory] = useState(() => loadInventory());
+  const [items, setItems] = useState(initialInventory.items);
+  const [storageWarning, setStorageWarning] = useState(initialInventory.warning);
   const [showAdd, setShowAdd] = useState(false);
   const addDialogRef = useRef(null);
   const addTriggerRef = useRef(null);
@@ -307,7 +304,7 @@ function App() {
     setAnalysisError('');
     setSelectedFinding(null);
     try {
-      localStorage.setItem('quasaric-inventory', JSON.stringify(next));
+      if (!saveInventory(next)) throw new Error('Local storage unavailable or full.');
       setStorageWarning(false);
     } catch { setStorageWarning(true); }
   };
