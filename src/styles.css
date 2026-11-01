@@ -693,3 +693,6 @@ button{touch-action:manipulation}
 .app-shell .version-guide-note strong{display:block;margin-bottom:6px;color:var(--text-primary);font-size:12px}
 .app-shell[data-theme="light"] .version-guide-item{background:#f8faff}
 @media(max-width:680px){.app-shell .version-guide-items{grid-template-columns:1fr}.app-shell .version-guide-group{padding:14px}}
+
+.status-pill.status-warning{color:#f0a36b;max-width:260px;line-height:1.4}
+.status-pill.status-warning .status-dot{background:#e99a55;box-shadow:0 0 8px #e99a55;flex:none}

@@ -49,7 +49,7 @@ const copy = {
     analysisTitle: 'Inventario tecnológico', analysisDesc: 'Declara manualmente los componentes y sus versiones. Quasaric no escanea tus servidores.',
     privacyNote: 'El inventario permanece en este navegador. Al analizar, las fuentes externas pueden recibir los identificadores consultados y ver tu IP. No introduzcas contraseñas, tokens ni secretos.',
     language: 'Idioma', spanish: 'Español', english: 'English',
-    export: 'Exportar inventario CSV', localSaved: 'Guardado localmente',
+    export: 'Exportar inventario CSV', localSaved: 'Guardado localmente', storageWarning: 'No se pudo guardar: exporta una copia CSV.',
     sourceNotice: 'Motor de correlación y conectores de fuentes en desarrollo.',
     priority: 'Prioridad', exposure: 'Exposición', noScan: 'Sin escaneos activos',
     noScanText: 'Quasaric analiza los datos que proporcionas; no realiza conexiones de reconocimiento ni pruebas sobre tus sistemas.',
@@ -110,7 +110,7 @@ const copy = {
     analysisTitle: 'Technology inventory', analysisDesc: 'Enter components and their versions manually. Quasaric does not scan your servers.',
     privacyNote: 'Your inventory stays in this browser. When you analyse it, external sources may receive the identifiers queried and see your IP address. Do not enter passwords, tokens or secrets.',
     language: 'Language', spanish: 'Español', english: 'English',
-    export: 'Export inventory CSV', localSaved: 'Saved locally',
+    export: 'Export inventory CSV', localSaved: 'Saved locally', storageWarning: 'Could not save: export a CSV backup.',
     sourceNotice: 'Correlation engine and source connectors are under development.',
     priority: 'Priority', exposure: 'Exposure', noScan: 'No active scanning',
     noScanText: 'Quasaric analyses the data you provide; it does not perform reconnaissance connections or tests against your systems.',
@@ -169,6 +169,7 @@ function App() {
       return Array.isArray(stored) ? stored : [];
     } catch { return []; }
   });
+  const [storageWarning, setStorageWarning] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const addDialogRef = useRef(null);
   const addTriggerRef = useRef(null);
@@ -295,7 +296,10 @@ function App() {
 
   const persist = (next) => {
     setItems(next);
-    try { localStorage.setItem('quasaric-inventory', JSON.stringify(next)); } catch { /* storage may be unavailable */ }
+    try {
+      localStorage.setItem('quasaric-inventory', JSON.stringify(next));
+      setStorageWarning(false);
+    } catch { setStorageWarning(true); }
   };
   const posture = useMemo(() => buildSecurityPosture(analysisHistory), [analysisHistory]);
   const latestComparison = useMemo(() => analysisHistory.length >= 2
@@ -449,7 +453,7 @@ function App() {
           <button className="icon-btn mobile-menu" onClick={openMobileNav} aria-label={lang === 'es' ? 'Abrir menú' : 'Open menu'} aria-expanded={mobileNav} aria-controls="primary-navigation"><Menu size={19}/></button>
           <div className="breadcrumb"><span>Quasaric</span><ChevronRight size={14}/><strong>{active === 'overview' ? t.overview : active === 'inventory' ? t.inventory : active === 'vulnerabilities' ? t.vulnerabilities : active === 'posture' ? t.posture : active === 'reports' ? t.reports : active === 'help' ? (lang === 'es' ? 'Guía de versiones' : 'Version guide') : t.settings}</strong></div>
           <div className="top-actions">
-            <span className="status-pill"><span className="status-dot"/> {t.localSaved}</span>
+            <span className={`status-pill${storageWarning ? " status-warning" : ""}`} role={storageWarning ? "alert" : "status"}><span className="status-dot"/> {storageWarning ? t.storageWarning : t.localSaved}</span>
             <button className="language-btn" onClick={() => setLang(lang === 'es' ? 'en' : 'es')} aria-label={t.language}><Globe2 size={15}/><span>{lang.toUpperCase()}</span></button>
             <button className="language-btn theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={lang === 'es' ? (theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro') : (theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme')} title={lang === 'es' ? (theme === 'dark' ? 'Tema claro' : 'Tema oscuro') : (theme === 'dark' ? 'Light theme' : 'Dark theme')}>{theme === 'dark' ? <Sun size={15}/> : <Moon size={15}/>}</button>
             <button className="icon-btn" onClick={() => setActive('help')} aria-label={lang === 'es' ? 'Abrir guía de versiones' : 'Open version guide'} title={lang === 'es' ? 'Guía de versiones' : 'Version guide'}><CircleHelp size={18}/></button>
