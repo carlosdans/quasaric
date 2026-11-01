@@ -12,6 +12,7 @@ function isInventoryItem(item) {
  * application proceeds with the valid entries.
  */
 export function loadInventory(storage = globalThis.localStorage) {
+  if (!storage) return { items: [], warning: true };
   try {
     const raw = storage?.getItem(INVENTORY_STORAGE_KEY);
     if (raw == null || raw === '') return { items: [], warning: false };
