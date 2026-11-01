@@ -1,5 +1,9 @@
 const ALLOWED_TYPES = new Set(['os', 'web', 'runtime', 'cms', 'database', 'library', 'other']);
 const FIELDS = ['name', 'type', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture'];
+const MAX_CSV_CHARACTERS = 5 * 1024 * 1024;
+const MAX_ROWS = 50000;
+const MAX_COLUMNS = 32;
+const MAX_CELL_CHARACTERS = 16384;
 
 /**
  * Parse the inventory CSV exported by Quasaric. Parsing is local and deliberately
@@ -16,7 +20,10 @@ export function parseInventoryCsv(input) {
       if (char === '"') {
         if (source[i + 1] === '"') { cell += '"'; i += 1; }
         else { quoted = false; afterQuote = true; }
-      } else cell += char;
+      } else {
+        cell += char;
+        if (cell.length > MAX_CELL_CHARACTERS) throw new Error('CSV contains a field longer than 16384 characters.');
+      }
       continue;
     }
     if (afterQuote && char !== ',' && char !== '\r' && char !== '\n' && char !== ' ' && char !== '\t') {
@@ -26,7 +33,9 @@ export function parseInventoryCsv(input) {
     else if (char === ',') { row.push(cell); cell = ''; afterQuote = false; }
     else if (char === '\r' || char === '\n') {
       if (char === '\r' && source[i + 1] === '\n') i += 1;
-      row.push(cell); rows.push(row); row = []; cell = ''; afterQuote = false;
+      row.push(cell); rows.push(row);
+      if (rows.length > MAX_ROWS + 1) throw new Error('CSV exceeds the 50000 data-row limit.');
+      row = []; cell = ''; afterQuote = false;
     } else if (!afterQuote || char === ' ' || char === '\t') {
       if (!afterQuote) cell += char;
     }
@@ -36,7 +45,8 @@ export function parseInventoryCsv(input) {
   while (rows.length && rows[rows.length - 1].every(value => value.trim() === '')) rows.pop();
   if (!rows.length) throw new Error('CSV is empty.');
   const headers = rows.shift().map(value => value.trim());
-  if (new Set(headers).size !== headers.length) throw new Error('CSV contains duplicate column names.');
+  if (headers.length > MAX_COLUMNS) throw new Error('CSV exceeds the 32-column limit.');
+  if (new Set(headers.map(value => value.toLowerCase())).size !== headers.length) throw new Error('CSV contains duplicate column names.');
   if (!headers.includes('name')) throw new Error('CSV must include a name column.');
   const unknown = headers.filter(header => !FIELDS.includes(header));
   if (unknown.length) throw new Error('CSV contains unsupported columns: ' + unknown.join(', '));

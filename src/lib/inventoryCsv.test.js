@@ -35,3 +35,14 @@ test('rejects text input that is not a string and empty files', () => {
   assert.throws(() => parseInventoryCsv(null), /must be text/);
   assert.throws(() => parseInventoryCsv(''), /empty/);
 });
+
+test('enforces safe size, row, column and field limits', () => {
+  assert.throws(() => parseInventoryCsv('name\\n' + 'x'.repeat(5 * 1024 * 1024)), /5 MB/);
+  assert.throws(() => parseInventoryCsv('name\\n' + Array.from({length: 50002}, (_, i) => 'item' + i).join('\\n')), /50000 data-row/);
+  assert.throws(() => parseInventoryCsv(Array.from({length: 33}, (_, i) => i === 0 ? 'name' : 'x' + i).join(',') + '\\nitem' + ',x'.repeat(32)), /32-column/);
+  assert.throws(() => parseInventoryCsv('name\\n' + 'x'.repeat(16385)), /field longer/);
+});
+
+test('rejects duplicate headers regardless of letter case', () => {
+  assert.throws(() => parseInventoryCsv('name,Name\\nnginx,nginx'), /duplicate/);
+});
