@@ -100,3 +100,11 @@ test('overview applicability and candidate statuses are localized', () => {
   assert.match(app, /applicabilityLabel\(f\.applicabilityStatus\)/);
   assert.match(app, /f\.state === 'KEV' \? 'KEV' : \(lang === 'es' \? 'Candidato' : 'Candidate'\)/);
 });
+
+
+test('source names and query statuses are localized for Spanish users', () => {
+  assert.match(app, /const sourceNameLabel = source =>/);
+  assert.match(app, /const sourceStatusLabel = status =>/);
+  assert.match(app, /sourceNameLabel\(source\): \{sourceStatusLabel\(status\)\}/);
+  assert.match(app, /partial_or_unavailable: lang === 'es' \? 'parcial o no disponible'/);
+});
