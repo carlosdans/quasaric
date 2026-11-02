@@ -36,7 +36,8 @@ test('CSP allows the external vulnerability sources the app uses', () => {
     'https://api.first.org',
     'https://www.cisa.gov',
     'https://api.osv.dev',
-    'https://raw.githubusercontent.com'
+    'https://raw.githubusercontent.com',
+    'https://apollo.build.resf.org'
   ]) {
     assert.ok(connectSources.includes(source), `Missing connect-src source: ${source}`);
   }
