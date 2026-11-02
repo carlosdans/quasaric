@@ -25,3 +25,15 @@ test('manual component validation errors are announced inside the add dialog', (
   assert.match(app, /\{addFormError && <div className="error-banner" role="alert">\{addFormError\}<\/div>\}/);
   assert.match(app, /Could not save the inventory\. Check browser storage/);
 });
+
+
+test('mobile navigation is modal, keyboard-trapped and restores focus', () => {
+  assert.match(app, /const \[mobileNav, setMobileNav\] = useState\(false\)/);
+  assert.match(app, /role=\{mobileNav \? 'dialog' : undefined\}/);
+  assert.match(app, /aria-modal=\{mobileNav \? 'true' : undefined\}/);
+  assert.match(app, /event\.key === 'Escape'[\s\S]*?setMobileNav\(false\)/);
+  assert.match(app, /event\.key !== 'Tab'[\s\S]*?focusableElements/);
+  assert.match(app, /sidebar\?\.querySelector\('\.mobile-close'\)\?\.focus\(\)/);
+  assert.match(app, /mobileNavTriggerRef\.current\.focus\(\)/);
+  assert.match(app, /<main className="main-area" inert=\{mobileNav\}>/);
+});
