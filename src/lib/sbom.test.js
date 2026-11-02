@@ -138,3 +138,13 @@ test('rejects oversized source relationship metadata', () => {
   assert.equal(result.components.length,0);
   assert.match(result.errors[0].message,/source reference fields/);
 });
+
+
+test('rejects malformed explicit source PURLs instead of retaining invalid provenance', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    components: [{ name: 'nginx', properties: [{ name: 'quasaric:sourcePurl', value: 'pkg:rpm/%ZZ' }] }]
+  }));
+  assert.equal(result.components.length, 0);
+  assert.equal(result.errors[0].message, 'Invalid source Package URL.');
+});

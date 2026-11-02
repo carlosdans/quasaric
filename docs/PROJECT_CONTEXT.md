@@ -1044,3 +1044,10 @@ OSV muestra estos ecosistemas en su catálogo público: https://osv.dev/list?eco
 - CSV y backup JSON preservan relación, referencia y PURL de origen, además de nombre/versión de paquete fuente y arquitectura. Las relaciones se muestran en el inventario.
 - Se añaden pruebas para mapeos explícitos, relaciones ambiguas, ausencia de inferencias y límites de tamaño.
 - El cambio sigue siendo local al navegador y no incorpora dependencias, backend ni recursos Azure adicionales. El alojamiento continúa configurado para Azure Static Web Apps Free; no se ha modificado el plan ni la facturación.
+
+
+### 2026-11-02 — control de calidad de metadatos de paquete fuente
+
+- El panel de calidad del inventario señala los componentes que declaran un paquete fuente pero no su versión fuente. Se distingue de la versión del binario; no se rellena automáticamente.
+- Se validan los PURL fuente explícitos de SBOM antes de conservarlos. Un identificador fuente malformado se informa como error de entrada, no como procedencia válida.
+- Las comprobaciones son locales y no añaden consultas, dependencias ni consumo de Azure.

@@ -74,6 +74,8 @@ function cyclone(document) {
         component.sourceRelationship = 'cyclonedx_pedigree_ancestor_rpm_src';
       }
     }
+    if (component.sourcePurl && !purlInfo(component.sourcePurl)) return { error:'Invalid source Package URL.', index:index+1 };
+    if (component.sourcePurl && !purlInfo(component.sourcePurl)) return { error:'Invalid source Package URL.', index:index+1 };
     const error = validateComponentFields(component);
     return error ? { error, index:index+1 } : component;
   });
