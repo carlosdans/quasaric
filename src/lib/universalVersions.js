@@ -152,8 +152,8 @@ function comparePep440(left, right) {
     return x[0] !== y[0] ? (x[0] < y[0] ? -1 : 1) : x[1] === y[1] ? 0 : (x[1] < y[1] ? -1 : 1);
   };
   // A dev-only release sorts before prereleases; final release sorts after rc.
-  if (!a.pre && a.hasDev && !b.pre) return -1;
-  if (!b.pre && b.hasDev && !a.pre) return 1;
+  if (!a.pre && a.hasDev && (b.pre || !b.hasDev)) return -1;
+  if (!b.pre && b.hasDev && (a.pre || !a.hasDev)) return 1;
   order = preOrder(a.pre, b.pre); if (order) return order;
   if (a.post !== null && b.post === null) return 1;
   if (a.post === null && b.post !== null) return -1;
