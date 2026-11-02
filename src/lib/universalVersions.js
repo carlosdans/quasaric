@@ -105,7 +105,9 @@ function compareRpm(left, right) {
     const split = body.lastIndexOf('-');
     const version = split < 0 ? body : body.slice(0, split);
     const release = split < 0 ? '' : body.slice(split + 1);
-    if (!version || (split >= 0 && !release) || /[\s/]/.test(text)) return null;
+    const validRpmSegment = segment => /^[A-Za-z0-9._+~^]+$/.test(segment);
+    if (!version || (split >= 0 && !release) ||
+        !validRpmSegment(version) || (release && !validRpmSegment(release))) return null;
     return { epoch: epochMatch?.[1] || '0', version, release };
   };
   const a = parse(left), b = parse(right);

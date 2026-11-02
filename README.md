@@ -175,3 +175,10 @@ Quasaric incluye tema oscuro y tema claro. Puedes cambiarlo desde el control de 
 - Los avisos Rocky Linux RLSA/RXSA se enriquecen mediante el endpoint individual OSV de Peridot Apollo. Las respuestas deben conservar el ID exacto y el paquete/ecosistema exactos; si la fuente directa falla, se conserva la evidencia OSV y se informa del error.
 - Las consultas directas están acotadas a 25 avisos por grupo y cuatro solicitudes concurrentes. No se infiere parche instalado ni se altera la clasificación NVD.
 - Enlaces oficiales: https://github.com/AlmaLinux/osv-database y https://apollo.build.resf.org/docs.
+
+
+### SUSE CSAF VEX y ordenación RPM
+
+- La consulta CSAF VEX por CVE usa los documentos individuales oficiales publicados por SUSE. El análisis compara PURL RPM, namespace, paquete y, cuando está publicada, arquitectura. Si el proveedor omite la arquitectura, la evidencia se conserva con confianza media en lugar de presentarla como coincidencia exacta.
+- La comparación RPM sigue EVR (epoch, version, release), considera epoch omitido igual a cero y los operadores `~` y `^`. Se rechazan segmentos fuera del alfabeto EVR documentado para evitar ordenar entradas ambiguas.
+- La política CSP permite el host oficial `ftp.suse.com` usado por los documentos CSAF VEX.

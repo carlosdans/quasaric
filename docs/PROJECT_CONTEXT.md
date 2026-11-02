@@ -999,3 +999,10 @@ OSV muestra estos ecosistemas en su catálogo público: https://osv.dev/list?eco
 - La consulta OSV conserva la coincidencia exacta de paquete y ecosistema; cada aviso AlmaLinux ALSA/ALBA/ALEA puede verificarse contra el JSON individual del repositorio oficial AlmaLinux/osv-database. Rocky RLSA/RXSA puede verificarse contra el endpoint individual `/api/v3/osv/{advisory_id}` de Peridot Apollo.
 - Las consultas directas están limitadas a 25 avisos por grupo, con cuatro solicitudes concurrentes. Los fallos no descartan los resultados OSV y se exponen como errores parciales. Los avisos oficiales solo sustituyen el registro OSV cuando ID, paquete y ecosistema coinciden exactamente.
 - No se descarga `errata.full.json` completo; no se declara el host parcheado, ni se cambia aplicabilidad NVD. Los inventarios permanecen locales y el análisis sigue siendo sin backend ni coste añadido.
+
+
+### 2026-11-02 — precisión SUSE CSAF y RPM EVR
+
+- SUSE CSAF VEX ahora distingue coincidencia de arquitectura exacta, arquitectura no publicada por el proveedor (confianza media) y arquitectura incompatible (sin coincidencia). Solo se seleccionan IDs de producto que coinciden con el PURL RPM y la arquitectura solicitada cuando está disponible.
+- Se amplió cobertura de pruebas RPM para epoch implícito/0, release segmentado, snapshots caret y rechazo de caracteres fuera del formato EVR aceptado.
+- CSP añade el host oficial ftp.suse.com requerido por la consulta CSAF VEX individual.

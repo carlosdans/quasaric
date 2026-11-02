@@ -29,6 +29,9 @@ test('uses RPM EVR ordering including epoch, release, tilde and caret', () => {
   assert.equal(compareVersionForComponent('1.0-1.el9_4', '1.0-1.el9_10', rhel), -1);
   assert.equal(compareVersionForComponent('1.0-1', '1.0-1.0', rhel), -1);
   assert.equal(compareVersionForComponent('1.0-1', '0:1.0-1', rhel), 0);
+  assert.equal(compareVersionForComponent('1.0-1', '1.0-1.0', rhel), -1);
+  assert.equal(compareVersionForComponent('1.0-β', '1.0-1', rhel), null);
+  assert.equal(compareVersionForComponent('1.0!-1', '1.0-1', rhel), null);
 });
 
 test('uses PEP 440 ordering for Python pre, final, post and dev releases', () => {
