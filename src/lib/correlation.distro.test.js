@@ -49,3 +49,43 @@ test('attaches OSV distro advisory evidence to exact AlmaLinux package without o
   assert.equal(finding.components[0].applicability.status, 'possible', 'vendor fix metadata must not override NVD applicability');
   assert.equal(finding.components[0].applicability.status, 'possible');
 });
+
+
+test('attaches SUSE source-package VEX only as indirect review evidence through an explicit CSAF relationship', async () => {
+  const suseDocument = {
+    document: { csaf_version: '2.0' },
+    product_tree: {
+      branches: [{ name: 'SLES 15 SP6', branches: [
+        { product: { product_id: 'sles-openssl-bin', name: 'openssl binary', product_identification_helper: { purl: 'pkg:rpm/suse/openssl@3.0.0?arch=x86_64' } } },
+        { product: { product_id: 'sles-openssl-src', name: 'openssl source', product_identification_helper: { purl: 'pkg:rpm/suse/openssl@3.0.0?arch=src' } } }
+      ] }],
+      relationships: [{ category: 'default_component_of', product_reference: 'sles-openssl-src', relates_to_product_reference: 'sles-openssl-bin' }]
+    },
+    vulnerabilities: [{ cve: 'CVE-2025-67890', product_status: { fixed: ['sles-openssl-src'] } }]
+  };
+  const result = await analyzeInventory([{
+    id: 'openssl-suse', name: 'openssl', version: '3.0.0-1',
+    sourcePackage: 'openssl', ecosystem: 'SLES 15 SP6',
+    purl: 'pkg:rpm/suse/openssl@3.0.0?arch=x86_64',
+    architecture: 'x86_64', type: 'library'
+  }], {
+    sources: {
+      fetchNvdByKeyword: async () => [cve],
+      fetchSuseCsafVex: async cveId => {
+        assert.equal(cveId, 'CVE-2025-67890');
+        return suseDocument;
+      },
+      fetchEpssScores: async () => new Map(),
+      fetchKevCatalog: async () => new Map()
+    }
+  });
+  const finding = result.findings.find(item => item.id === 'CVE-2025-67890');
+  assert.ok(finding);
+  const evidence = finding.components[0].evidence.find(item => item.source === 'SUSE CSAF VEX');
+  assert.ok(evidence);
+  assert.equal(evidence.status, 'needs_review');
+  assert.equal(evidence.evidenceType, 'source_package_relationship');
+  assert.equal(evidence.confidence, 'medium');
+  assert.equal(evidence.relatedBinaryProducts[0].productId, 'sles-openssl-bin');
+  assert.equal(finding.components[0].applicability.status, 'possible', 'source-level VEX must not override NVD applicability');
+});
