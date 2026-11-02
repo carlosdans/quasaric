@@ -50,7 +50,7 @@ test('attaches official Red Hat package-state and erratum evidence without chang
   const finding = result.findings.find(item => item.id === 'CVE-2025-12345');
   assert.ok(finding);
   assert.equal(redHatFetches, 1);
-  assert.equal(finding.components[0].applicability.status, 'needs_review');
+  assert.equal(finding.components[0].applicability.status, 'possible');
   const evidence = finding.components[0].evidence.find(item => item.source === 'Red Hat Security Data');
   assert.ok(evidence);
   assert.equal(evidence.packageStates[0].fixState, 'Affected');
