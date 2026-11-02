@@ -2,6 +2,13 @@ import { parsePackageUrl } from './packageUrl.js';
 
 const MAX_COMPONENTS = 50000;
 const MAX_SBOM_BYTES = 10 * 1024 * 1024;
+const MAX_FIELD_LENGTH = 16384;
+const MAX_IDENTIFIER_LENGTH = 2048;
+function validateComponentFields(component) {
+  if (['name', 'version', 'vendor'].some(field => component[field].length > MAX_FIELD_LENGTH)) return 'Component metadata exceeds the 16384 character field limit.';
+  if (['purl', 'cpe'].some(field => component[field].length > MAX_IDENTIFIER_LENGTH)) return 'PURL and CPE fields must not exceed 2048 characters.';
+  return null;
+}
 const str = value => typeof value === 'string' ? value.trim() : '';
 function purlInfo(purl) {
   if (!str(purl)) return {};
@@ -30,13 +37,15 @@ function cyclone(document) {
     if (!name) return { error:'Missing component name.', index:index+1 };
     const refs = Array.isArray(item.externalReferences) ? item.externalReferences : [];
     const cpeRef = refs.find(ref => /cpe/i.test(str(ref.type) + ' ' + str(ref.referenceType)));
-    return {
+    const component = {
       name, version:str(item.version) || purl?.version || '',
       vendor:str(item.publisher) || str(item.supplier?.name),
       type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl,
       cpe:str(item.cpe) || str(cpeRef?.url) || str(cpeRef?.referenceLocator),
       sourcePackage:'', sourceVersion:'', architecture:''
     };
+    const error = validateComponentFields(component);
+    return error ? { error, index:index+1 } : component;
   });
 }
 function spdx(document) {
@@ -53,12 +62,14 @@ function spdx(document) {
     if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
     const name = str(item.name) || purl?.name;
     if (!name) return { error:'Missing package name.', index:index+1 };
-    return {
+    const component = {
       name, version:str(item.versionInfo) || purl?.version || '',
       vendor:str(item.supplier).replace(/^Organization:[ \t]*/i,'') || str(item.originator).replace(/^(Organization|Person):\s*/i,''),
       type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl,
       cpe:str(cpeRef?.referenceLocator), sourcePackage:'', sourceVersion:'', architecture:''
     };
+    const error = validateComponentFields(component);
+    return error ? { error, index:index+1 } : component;
   });
 }
 export function parseSbom(input) {
