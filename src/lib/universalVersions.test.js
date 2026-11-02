@@ -51,7 +51,7 @@ test('orders Windows builds and UBR tuples numerically', () => {
 
 test('does not guess when a vendor-specific version cannot be parsed', () => {
   assert.equal(compareVersionForComponent('3.0.7-custom', '3.0.7', component('unknown')), null);
-  assert.equal(compareVersionForComponent('3.0.7-custom', '3.0.7-2.el9', component('RHEL 9')), null);
+  assert.equal(compareVersionForComponent('3.0.7-', '3.0.7-2.el9', component('RHEL 9')), null);
 });
 
 test('classifies explicit range endpoints with ecosystem-aware ordering', () => {

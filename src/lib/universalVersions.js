@@ -217,6 +217,12 @@ export function normalizeEcosystem(component = {}) {
  */
 export function compareVersionForComponent(left, right, component = {}) {
   const ecosystem = normalizeEcosystem(component);
+  const componentName = String(component.name || '').trim().toLowerCase();
+  const hasUnknownPhpSuffix = value => {
+    const suffix = String(value).trim().split('-').slice(1).join('-').toLowerCase();
+    return suffix && !['alpha', 'beta', 'rc', 'dev', 'preview', 'pl'].some(prefix => suffix.startsWith(prefix));
+  };
+  if (componentName === 'php' && (hasUnknownPhpSuffix(left) || hasUnknownPhpSuffix(right))) return null;
   if (ecosystem === 'deb') return compareDebianVersions(left, right);
   if (ecosystem === 'rpm') return compareRpm(left, right);
   if (ecosystem === 'pypi') return comparePep440(left, right);
