@@ -74,7 +74,6 @@ function cyclone(document) {
         component.sourceRelationship = 'cyclonedx_pedigree_ancestor_rpm_src';
       }
     }
-    if (component.sourcePurl && !purlInfo(component.sourcePurl)) return { error:'Invalid source Package URL.', index:index+1 };
     const error = validateComponentFields(component);
     if (error) return { error, index:index+1 };
     if (component.sourcePurl && !purlInfo(component.sourcePurl)) return { error:'Invalid source Package URL.', index:index+1 };
@@ -130,7 +129,9 @@ function spdx(document) {
       component.sourceRelationship = 'spdx_generated_from';
     }
     const error = validateComponentFields(component);
-    return error ? { error, index:index+1 } : component;
+    if (error) return { error, index:index+1 };
+    if (component.sourcePurl && !purlInfo(component.sourcePurl)) return { error:'Invalid source Package URL.', index:index+1 };
+    return component;
   });
 }
 export function parseSbom(input) {
