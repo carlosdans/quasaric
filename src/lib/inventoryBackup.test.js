@@ -148,3 +148,11 @@ test('validates the serialized representation of object backups', () => {
   };
   assert.throws(() => parseInventoryBackup(omitted), /Unsupported/);
 });
+
+test('validates serialized component values before creating a backup', () => {
+  const item = {
+    name: 'nginx',
+    toJSON() { return { name: 'nginx', version: 42 }; }
+  };
+  assert.throws(() => createInventoryBackup([item]), /Invalid component at position 1/);
+});

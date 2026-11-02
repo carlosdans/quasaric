@@ -36,11 +36,14 @@ function assertBackupSize(value) {
 export function createInventoryBackup(items, createdAt = new Date().toISOString()) {
   if (!Array.isArray(items)) throw new Error('Inventory must be an array.');
   if (items.length > MAX_COMPONENTS) throw new Error('Backup exceeds the 50000 component limit.');
-  const invalidIndex = items.findIndex(item => !isValidBackupComponent(item));
-  if (invalidIndex >= 0) throw new Error('Invalid component at position ' + (invalidIndex + 1) + '.');
   const backup = { format: INVENTORY_BACKUP_FORMAT, version: INVENTORY_BACKUP_VERSION, createdAt, components: items };
-  assertBackupSize(backup);
-  return backup;
+  const normalized = JSON.parse(assertBackupSize(backup));
+  if (!Array.isArray(normalized.components) || normalized.components.length > MAX_COMPONENTS) {
+    throw new Error('Backup must contain a valid components array.');
+  }
+  const invalidIndex = normalized.components.findIndex(item => !isValidBackupComponent(item));
+  if (invalidIndex >= 0) throw new Error('Invalid component at position ' + (invalidIndex + 1) + '.');
+  return normalized;
 }
 
 export function parseInventoryBackup(input) {
