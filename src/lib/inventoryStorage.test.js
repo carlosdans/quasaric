@@ -113,3 +113,20 @@ test('preserves and validates explicit SBOM source relationship metadata', () =>
   assert.equal(saveInventory([{ ...component, sourceRef: 'x'.repeat(2049) }], storage), false);
   assert.equal(saveInventory([{ ...component, sourceRelationship: 42 }], storage), false);
 });
+
+
+test('rejects invalid PURLs on save and preserves invalid stored rows for recovery', () => {
+  const storage = memoryStorage();
+  assert.equal(saveInventory([{ name: 'nginx', purl: 'pkg:rpm/%ZZ' }], storage), false);
+  assert.equal(saveInventory([{ name: 'nginx', sourcePurl: 'not-a-purl' }], storage), false);
+  const raw = JSON.stringify([
+    { name: 'nginx', purl: 'pkg:rpm/%ZZ' },
+    { name: 'curl', purl: 'pkg:generic/curl@8.5.0' }
+  ]);
+  const stored = memoryStorage([[INVENTORY_STORAGE_KEY, raw]]);
+  assert.deepEqual(loadInventory(stored), {
+    items: [{ name: 'curl', purl: 'pkg:generic/curl@8.5.0' }],
+    warning: true
+  });
+  assert.equal(stored.getItem(INVENTORY_RECOVERY_KEY), raw);
+});

@@ -1,3 +1,5 @@
+import { parsePackageUrl } from './packageUrl.js';
+
 export const INVENTORY_STORAGE_KEY = 'quasaric-inventory';
 export const INVENTORY_RECOVERY_KEY = 'quasaric-inventory-recovery';
 export const MAX_INVENTORY_BYTES = 10 * 1024 * 1024;
@@ -20,7 +22,8 @@ function isInventoryItem(item) {
     STRING_FIELDS.every(field => item[field] == null ||
       (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) &&
     ['purl', 'cpe', 'sourceRef', 'sourcePurl'].every(field => item[field] == null ||
-      (typeof item[field] === 'string' && item[field].length <= MAX_IDENTIFIER_LENGTH));
+      (typeof item[field] === 'string' && item[field].length <= MAX_IDENTIFIER_LENGTH)) &&
+    ['purl', 'sourcePurl'].every(field => !item[field] || parsePackageUrl(item[field]) !== null);
 }
 
 /**

@@ -1,3 +1,5 @@
+import { parsePackageUrl } from './packageUrl.js';
+
 export const INVENTORY_BACKUP_FORMAT = 'quasaric-inventory';
 export const INVENTORY_BACKUP_VERSION = 1;
 const allowedTypes = new Set(['os', 'web', 'runtime', 'cms', 'database', 'library', 'other']);
@@ -40,7 +42,8 @@ export function parseInventoryBackup(input) {
     if (!item || typeof item !== 'object' || Array.isArray(item) || typeof item.name !== 'string' || !item.name.trim() ||
         !STRING_FIELDS.every(field => item[field] == null || (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) ||
         (item.type != null && (typeof item.type !== 'string' || !allowedTypes.has(item.type))) ||
-        !validIdentifier('purl') || !validIdentifier('cpe') || !validIdentifier('sourceRef') || !validIdentifier('sourcePurl')) {
+        !validIdentifier('purl') || !validIdentifier('cpe') || !validIdentifier('sourceRef') || !validIdentifier('sourcePurl') ||
+        (item.purl && !parsePackageUrl(item.purl)) || (item.sourcePurl && !parsePackageUrl(item.sourcePurl))) {
       throw new Error('Invalid component at position ' + (index + 1) + '.');
     }
     return {

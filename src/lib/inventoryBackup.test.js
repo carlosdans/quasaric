@@ -106,3 +106,19 @@ test('round-trips explicit SBOM source relationship metadata in local backups', 
     assert.equal(restored[field], component[field]);
   }
 });
+
+
+test('rejects malformed component and source PURLs in restored backups', () => {
+  const base = { format: 'quasaric-inventory', version: 1 };
+  for (const field of ['purl', 'sourcePurl']) {
+    assert.throws(
+      () => parseInventoryBackup({ ...base, components: [{ name: 'nginx', [field]: 'pkg:rpm/%ZZ' }] }),
+      /Invalid component/
+    );
+  }
+  const restored = parseInventoryBackup({
+    ...base,
+    components: [{ name: 'nginx', purl: '', sourcePurl: '' }]
+  });
+  assert.equal(restored.components.length, 1);
+});
