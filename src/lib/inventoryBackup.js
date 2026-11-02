@@ -2,6 +2,8 @@ export const INVENTORY_BACKUP_FORMAT = 'quasaric-inventory';
 export const INVENTORY_BACKUP_VERSION = 1;
 const allowedTypes = new Set(['os', 'web', 'runtime', 'cms', 'database', 'library', 'other']);
 const MAX_IDENTIFIER_LENGTH = 2048;
+const MAX_FIELD_LENGTH = 16384;
+const STRING_FIELDS = ['name', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture'];
 const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
 const MAX_COMPONENTS = 50000;
 
@@ -36,9 +38,8 @@ export function parseInventoryBackup(input) {
     const validIdentifier = field => item[field] == null ||
       (typeof item[field] === 'string' && item[field].length <= MAX_IDENTIFIER_LENGTH);
     if (!item || typeof item !== 'object' || Array.isArray(item) || typeof item.name !== 'string' || !item.name.trim() ||
-        (item.version != null && typeof item.version !== 'string') ||
-        (item.vendor != null && typeof item.vendor !== 'string') ||
-        (item.type != null && !allowedTypes.has(item.type)) ||
+        !STRING_FIELDS.every(field => item[field] == null || (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) ||
+        (item.type != null && (typeof item.type !== 'string' || !allowedTypes.has(item.type))) ||
         !validIdentifier('purl') || !validIdentifier('cpe')) {
       throw new Error('Invalid component at position ' + (index + 1) + '.');
     }
