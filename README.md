@@ -203,3 +203,10 @@ Quasaric incluye tema oscuro y tema claro. Puedes cambiarlo desde el control de 
 - Se consulta por separado el paquete binario instalado y el paquete fuente declarado, usando la versión propia de cada uno. La consulta fuente requiere `sourcePackage` y `sourceVersion` explícitos.
 - Los avisos OSV del paquete fuente se adjuntan como evidencia indirecta (`source_package`, confianza media y `needs_review`). Sus versiones corregidas se etiquetan como versiones del fuente y no se trasladan al binario.
 - No se usa el nombre fuente como sustituto silencioso del nombre binario, ni se consulta fuente sin versión fuente. La aplicabilidad NVD permanece independiente.
+
+
+### 2026-11-02 — entrada de metadatos fuente para distribuciones RPM
+
+- El formulario manual permite declarar `sourcePackage`, `sourceVersion` y arquitectura para Ubuntu, AlmaLinux, Rocky Linux y SUSE/openSUSE; antes los campos solo aparecían al seleccionar Ubuntu.
+- La ayuda distingue que AlmaLinux/Rocky consultan el aviso de fuente con su propia versión y que esa evidencia no confirma automáticamente el binario. En SUSE la arquitectura ayuda a afinar la coincidencia CSAF.
+- Los campos ya forman parte del CSV del inventario y permanecen en el almacenamiento local del navegador.

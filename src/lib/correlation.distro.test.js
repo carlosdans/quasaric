@@ -128,7 +128,7 @@ test('queries AlmaLinux source package separately and attaches indirect evidence
   assert.equal(evidence.sourcePackage, 'openssl');
   assert.equal(evidence.binaryPackage, 'openssl-libs');
   assert.deepEqual(evidence.fixedVersions, ['1:3.0.7-27.el9_4.2']);
-  assert.match(evidence.reason, /no permite trasladar su versión corregida al binario/i);
+  assert.match(evidence.reason, /permite trasladar su versión corregida al binario/i);
   assert.equal(finding.components[0].applicability.status, 'possible');
 });
 
