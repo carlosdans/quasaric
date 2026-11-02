@@ -2,7 +2,7 @@ import { normalizeComponentType } from './componentTypes.js';
 import { parsePackageUrl } from './packageUrl.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
-import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchOsvForDistroPackage, resolveOsvDistroEcosystem, fetchRedHatCve, matchRedHatCveComponent, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchOsvForDistroPackage, resolveOsvDistroEcosystem, fetchRedHatCve, fetchSuseCsafVex, matchRedHatCveComponent, fetchSuseCsafVex, matchSuseCsafVexComponent, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
 const NVD_MAX_RESULTS = 6000;
 
@@ -785,6 +785,21 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // Ubuntu OSV evidence, or the CVE-wide applicability summary.
   for (const { components: matched } of allCandidates.values()) {
     for (const item of matched) {
+      if (item.suseCsafVex) {
+        const cvePath = item.suseCsafVex.advisoryId.toLowerCase().replace(/^cve-/, 'cve-');
+        evidence.push({
+          source: 'SUSE CSAF VEX',
+          status: item.suseCsafVex.status,
+          reason: item.suseCsafVex.reason,
+          productStatuses: item.suseCsafVex.productStatuses,
+          products: item.suseCsafVex.products,
+          remediations: item.suseCsafVex.remediations,
+          advisoryId: item.suseCsafVex.advisoryId,
+          url: `https://ftp.suse.com/pub/projects/security/csaf-vex/${item.suseCsafVex.advisoryId.slice(4, 8)}/${cvePath}.json`,
+          confidence: item.suseCsafVex.confidence,
+          product
+        });
+      }
       if (item.ubuntuVex) {
         item.ubuntuVex.consistency = compareUbuntuOsvAndVex(item.ubuntuOsv, item.ubuntuVex);
       }
@@ -893,6 +908,46 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     }
   }
 
+  // SUSE publishes CSAF 2.0 VEX documents indexed by CVE. Match only
+  // explicit RPM PURLs; never infer package identity from a display name.
+  const suseComponents = components.filter(component =>
+    ['SUSE', 'openSUSE'].includes(resolveOsvDistroEcosystem(component.ecosystem || component.vendor)) &&
+    Boolean(component.purl)
+  );
+  const suseErrors = [];
+  const suseDocuments = new Map();
+  const suseQueue = suseComponents.length ? [...allCandidates.keys()].slice(0, 100) : [];
+  if (suseComponents.length && allCandidates.size > 100) {
+    suseErrors.push({ source: 'SUSE CSAF VEX', message: 'Se alcanzó el límite de 100 CVE por análisis; el resto queda pendiente.' });
+  }
+  let suseNext = 0;
+  const suseWorker = async () => {
+    while (suseNext < suseQueue.length) {
+      const cveId = suseQueue[suseNext++];
+      try {
+        suseDocuments.set(cveId, await sourceApi.fetchSuseCsafVex(cveId, { signal }));
+      } catch (error) {
+        if (error.name === 'AbortError') throw error;
+        if (!String(error.message || '').includes('HTTP 404')) {
+          suseErrors.push({ source: 'SUSE CSAF VEX', component: cveId, message: error.message });
+        }
+      }
+    }
+  };
+  if (suseComponents.length) {
+    await Promise.all(Array.from({ length: Math.min(3, suseQueue.length) }, () => suseWorker()));
+    for (const [cveId, document] of suseDocuments) {
+      const current = allCandidates.get(cveId);
+      if (!current) continue;
+      for (const component of suseComponents) {
+        const match = matchSuseCsafVexComponent(document, component, cveId);
+        if (match.status === 'needs_review') continue;
+        const item = current.components.find(entry => entry.component.id === component.id);
+        if (item) item.suseCsafVex = { ...match, source: 'SUSE CSAF VEX', advisoryId: cveId };
+      }
+    }
+  }
+
   const ids = [...allCandidates.keys()];
   let epss = new Map();
   let kev = new Map();
@@ -992,9 +1047,10 @@ export async function analyzeInventory(components, { signal, onProgress, sources
       ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured',
       osvLinuxDistributions: distroGroups.size ? (distroErrors.length ? 'partial_or_unavailable' : 'queried') : 'not_configured',
       redHatSecurityData: redHatComponents.length ? (redHatErrors.length ? (redHatEvidence.size ? 'partial_or_unavailable' : 'unavailable') : (redHatEvidence.size ? 'queried' : 'needs_review')) : 'not_configured',
-      ubuntuVex: ubuntuOsv.size ? (vexErrors.length ? (vexDocuments.size ? 'partial_or_unavailable' : 'unavailable') : (vexDocuments.size ? 'queried' : 'needs_review')) : 'not_configured'
+      ubuntuVex: ubuntuOsv.size ? (vexErrors.length ? (vexDocuments.size ? 'partial_or_unavailable' : 'unavailable') : (vexDocuments.size ? 'queried' : 'needs_review')) : 'not_configured',
+      suseCsafVex: suseComponents.length ? (suseErrors.length ? (suseDocuments.size ? 'partial_or_unavailable' : 'unavailable') : (suseDocuments.size ? 'queried' : 'no_matching_documents')) : 'not_configured'
     },
-    errors: [...errors, ...purlErrors, ...distroErrors, ...redHatErrors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
+    errors: [...errors, ...purlErrors, ...distroErrors, ...redHatErrors, ...suseErrors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
     limits,
     analyzedAt: new Date().toISOString(),
     disclaimer: 'Candidate correlation only. Verify applicability against the exact vendor advisory, distribution package revision, edition, build and installed updates before treating a finding as confirmed.'
