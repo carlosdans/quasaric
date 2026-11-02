@@ -67,6 +67,7 @@ La prioridad es la trazabilidad y la interpretación conservadora. Una coinciden
 - SBOM: 10 MiB / 50.000 componentes.
 - Backups e historial: 10 MiB; historial máximo de 10 snapshots.
 - Lector JSON común: 20 MiB; respuestas OSV: 5 MiB. Se comprueba Content-Length y el tamaño real del stream.
+- Cada petición individual a una fuente pública tiene un timeout de 30 segundos que incluye la lectura del cuerpo; la cancelación del usuario conserva su estado AbortError y los timeouts se notifican como error de fuente, nunca como ausencia de vulnerabilidades.
 - OSV PURL: máximo 100 grupos por análisis; detalles hasta 200 avisos por consulta y concurrencia acotada.
 - Ubuntu OSV por fuente: máximo 100 grupos por análisis y tres peticiones simultáneas. Los grupos restantes se notifican como cobertura parcial.
 - OSV de distribuciones: máximo 100 grupos por análisis.
