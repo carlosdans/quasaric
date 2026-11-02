@@ -26,12 +26,22 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
 
   let sawComparableRange = false;
   let insideAffectedRange = false;
+  let versionInRangeGap = false;
   let fixedVersions = [];
   for (const range of affectedEntry.ranges || []) {
     if (range.type !== 'ECOSYSTEM') continue;
     let introduced = null;
+    let closedRangeBeforeVersion = false;
     for (const event of range.events || []) {
-      if (event.introduced !== undefined) introduced = event.introduced;
+      if (event.introduced !== undefined) {
+        introduced = event.introduced;
+        const afterIntroduction = introduced === '0'
+          ? true
+          : compareDebianVersions(version, String(introduced));
+        if (closedRangeBeforeVersion && afterIntroduction !== null && afterIntroduction < 0) {
+          versionInRangeGap = true;
+        }
+      }
       if (event.fixed !== undefined) {
         const fixed = String(event.fixed);
         const beforeFixed = compareDebianVersions(version, fixed);
@@ -45,9 +55,11 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
               return order !== null && order >= 0;
             })();
         if (beforeFixed < 0 && afterIntroduced) insideAffectedRange = true;
+        if (beforeFixed >= 0) closedRangeBeforeVersion = true;
       }
       if (event.last_affected !== undefined) {
-        const lastAffected = compareDebianVersions(version, String(event.last_affected));
+        const last = String(event.last_affected);
+        const lastAffected = compareDebianVersions(version, last);
         if (lastAffected !== null) {
           sawComparableRange = true;
           const afterIntroduced = introduced === null || introduced === '0'
@@ -57,6 +69,7 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
                 return order !== null && order >= 0;
               })();
           if (lastAffected <= 0 && afterIntroduced) insideAffectedRange = true;
+          if (lastAffected > 0) closedRangeBeforeVersion = true;
         }
       }
     }
@@ -65,7 +78,7 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
   if (insideAffectedRange) {
     return { status: 'affected', confidence: 'high', reason: 'The source-package version falls inside the Ubuntu OSV source-version range.' };
   }
-  if (sawComparableRange && fixedVersions.length && fixedVersions.some(fixed => {
+  if (sawComparableRange && !versionInRangeGap && fixedVersions.length && fixedVersions.some(fixed => {
     const order = compareDebianVersions(version, fixed);
     return order !== null && order >= 0;
   })) {

@@ -40,3 +40,20 @@ test('does not infer unaffected when the package or release entry is absent', ()
 test('requires a non-empty source version from the caller', () => {
   assert.equal(classifyUbuntuOsvSourceVersion(base, '').status, 'needs_review');
 });
+
+
+test('does not treat a version between disjoint affected ranges as patched', () => {
+  const disjoint = {
+    package: base.package,
+    ranges: [{
+      type: 'ECOSYSTEM',
+      events: [
+        { introduced: '0' }, { fixed: '1.0-1' },
+        { introduced: '2.0-1' }, { fixed: '3.0-1' }
+      ]
+    }]
+  };
+  assert.equal(classifyUbuntuOsvSourceVersion(disjoint, '1.5-1').status, 'needs_review');
+  assert.equal(classifyUbuntuOsvSourceVersion(disjoint, '2.5-1').status, 'affected');
+  assert.equal(classifyUbuntuOsvSourceVersion(disjoint, '3.5-1').status, 'patched_candidate');
+});
