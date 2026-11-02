@@ -12,6 +12,21 @@ test('imports CycloneDX 1.6 components with PURL, publisher and CPE', () => {
   assert.equal(result.components[0].vendor,'OpenJS');
   assert.match(result.components[0].cpe,/^cpe:/);
 });
+test('preserves PURL namespaces when CycloneDX omits the component name', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    components: [
+      { purl: 'pkg:npm/%40acme/widget@1.2.3' },
+      { purl: 'pkg:maven/org.apache.commons/commons-lang3@3.14.0' },
+      { purl: 'pkg:pypi/requests@2.31.0' }
+    ]
+  }));
+  assert.deepEqual(result.components.map(item => item.name), [
+    '@acme/widget', 'org.apache.commons/commons-lang3', 'requests'
+  ]);
+  assert.deepEqual(result.components.map(item => item.version), ['1.2.3', '3.14.0', '2.31.0']);
+});
+
 test('imports SPDX 2.3 package and external references', () => {
   const result=parseSbom(JSON.stringify({spdxVersion:'SPDX-2.3',dataLicense:'CC0-1.0',packages:[{
     name:'nginx',versionInfo:'1.26.0',supplier:'Organization: F5',
@@ -34,6 +49,18 @@ test('rejects malformed, unknown and unsupported SBOM documents', () => {
   assert.throws(()=>parseSbom(JSON.stringify({bomFormat:'CycloneDX',specVersion:'1.3',components:[]})),/Unsupported CycloneDX/);
   assert.throws(()=>parseSbom(JSON.stringify({spdxVersion:'SPDX-2.2',dataLicense:'CC0-1.0',packages:[]})),/Unsupported SPDX/);
 });
+test('preserves PURL namespaces when SPDX omits the package name', () => {
+  const result = parseSbom(JSON.stringify({
+    spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0',
+    packages: [{
+      SPDXID: 'SPDXRef-npm',
+      externalRefs: [{ referenceType: 'purl', referenceLocator: 'pkg:npm/%40acme/widget@1.2.3' }]
+    }]
+  }));
+  assert.equal(result.components[0].name, '@acme/widget');
+  assert.equal(result.components[0].version, '1.2.3');
+});
+
 test('reports malformed PURLs instead of deriving a misleading component identity', () => {
   const result=parseSbom(JSON.stringify({bomFormat:'CycloneDX',specVersion:'1.6',components:[{name:'safe-name',purl:'pkg:npm/%ZZ'}]}));
   assert.equal(result.components.length,0);
