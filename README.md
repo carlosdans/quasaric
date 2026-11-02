@@ -42,7 +42,7 @@ Capacidades implementadas:
 - No introduzcas contraseñas, tokens, secretos ni datos personales.
 - Las consultas a proveedores externos pueden revelar la IP del visitante y los identificadores CVE consultados. No se envía el inventario completo a NVD, FIRST, CISA, OSV ni Canonical.
 - La consulta Canonical OpenVEX solicita el documento público usando el identificador CVE; el inventario local se usa para comparar el contenido recibido, no se transmite.
-- Las fuentes pueden tener límites, errores, datos incompletos o cambios de disponibilidad. Las respuestas JSON se limitan por tamaño: 5 MB para OSV y 20 MB para otros conectores que usan el lector común; se comprueba Content-Length y también el tamaño real durante la lectura en streaming.
+- Las fuentes pueden tener límites, errores, datos incompletos o cambios de disponibilidad. Las respuestas JSON se limitan por tamaño: 5 MB para OSV y 20 MB para otros conectores que usan el lector común; se comprueba Content-Length y también el tamaño real durante la lectura en streaming. Cada petición tiene un timeout de 30 segundos, incluida la lectura del cuerpo.
 
 ## Centro de confianza en la aplicación
 
