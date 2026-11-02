@@ -84,3 +84,28 @@ test('reports non-object CycloneDX and SPDX entries without aborting the import'
     {index:2,message:'Package entry must be a JSON object.'}
   ]);
 });
+
+
+test('reports oversized component metadata as an entry error before persistence', () => {
+  const result = parseSbom(JSON.stringify({bomFormat:'CycloneDX',specVersion:'1.6',components:[
+    {name:'x'.repeat(16385)},
+    {name:'nginx',purl:'x'.repeat(2049)},
+    {name:'openssl',version:'3.0.0'}
+  ]}));
+  assert.equal(result.components.length,1);
+  assert.equal(result.components[0].name,'openssl');
+  assert.deepEqual(result.errors,[
+    {index:1,message:'Component metadata exceeds the 16384 character field limit.'},
+    {index:2,message:'PURL and CPE fields must not exceed 2048 characters.'}
+  ]);
+});
+
+test('applies SBOM field limits to SPDX packages too', () => {
+  const result = parseSbom(JSON.stringify({spdxVersion:'SPDX-2.3',dataLicense:'CC0-1.0',packages:[
+    {name:'nginx',versionInfo:'v'.repeat(16385)},
+    {name:'openssl'}
+  ]}));
+  assert.equal(result.components.length,1);
+  assert.equal(result.errors[0].index,1);
+  assert.match(result.errors[0].message,/16384 character/);
+});
