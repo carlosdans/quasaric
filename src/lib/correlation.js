@@ -2,7 +2,7 @@ import { normalizeComponentType } from './componentTypes.js';
 import { parsePackageUrl } from './packageUrl.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
-import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchOsvForDistroPackage, resolveOsvDistroEcosystem, fetchRedHatCve, fetchSuseCsafVex, matchRedHatCveComponent, fetchSuseCsafVex, matchSuseCsafVexComponent, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchOsvForDistroPackage, resolveOsvDistroEcosystem, fetchRedHatCve, matchRedHatCveComponent, fetchSuseCsafVex, matchSuseCsafVexComponent, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
 const NVD_MAX_RESULTS = 6000;
 
@@ -475,7 +475,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // the production source defaults or sending local inventory to test services.
   const sourceApi = {
     fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog,
-    fetchUbuntuOsvForSourcePackage, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchRedHatCve,
+    fetchUbuntuOsvForSourcePackage, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchRedHatCve, fetchSuseCsafVex,
     ...sourceOverrides
   };
   if (!Array.isArray(components) || components.length === 0) throw new Error('Add at least one component before analysis.');
