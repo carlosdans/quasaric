@@ -18,8 +18,8 @@ class AppErrorBoundary extends React.Component {
           <div className="app-error-mark" aria-hidden="true">Q</div>
           <h1 id="app-error-title">{english ? 'Quasaric could not load this view' : 'Quasaric no ha podido cargar esta vista'}</h1>
           <p>{english
-            ? 'Your local inventory has not been sent to a server. Reload the page to try again.'
-            : 'Tu inventario local no se ha enviado a ningún servidor. Recarga la página para volver a intentarlo.'}</p>
+            ? 'Reload the page to try again. If your inventory was saved locally, it will be restored.'
+            : 'Recarga la página para volver a intentarlo. Si el inventario se guardó localmente, se restaurará.'}</p>
           <button type="button" onClick={() => window.location.reload()}>
             {english ? 'Reload Quasaric' : 'Recargar Quasaric'}
           </button>
