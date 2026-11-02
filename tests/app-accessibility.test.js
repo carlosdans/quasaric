@@ -17,3 +17,11 @@ test('vulnerability detail dialog traps focus and closes with Escape', () => {
 test('vulnerability search input has an accessible name', () => {
   assert.match(app, /<input aria-label=\{t\.search\} value=\{query\}/);
 });
+
+
+test('manual component validation errors are announced inside the add dialog', () => {
+  assert.match(app, /const \[addFormError, setAddFormError\] = useState\(''\)/);
+  assert.match(app, /setAddFormError\(lang === 'es' \? 'El PURL debe ser una Package URL válida/);
+  assert.match(app, /\{addFormError && <div className="error-banner" role="alert">\{addFormError\}<\/div>\}/);
+  assert.match(app, /Could not save the inventory\. Check browser storage/);
+});
