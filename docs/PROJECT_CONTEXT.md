@@ -135,3 +135,15 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 
 
 - En SPDX, una relación `GENERATED_FROM` solo se conserva si ambos identificadores de paquete son únicos en el documento. Un SPDXID duplicado invalida esa arista para evitar asociar el binario al paquete fuente equivocado.
+
+
+### 2026-11-02 — validación de inventario, SBOM y accesibilidad
+
+- El alta manual, CSV, SBOM, restauración JSON y almacenamiento local usan el parser común para validar PURL binario y PURL fuente. Los PURL opcionales vacíos siguen permitidos; los malformados se rechazan.
+- La carga de inventario antiguo preserva el JSON original en la clave de recuperación si encuentra filas con PURL inválidos y no incorpora esas filas al inventario activo.
+- En SPDX, `GENERATED_FROM` solo crea una relación cuando los SPDXID del binario y la fuente son únicos. Relaciones múltiples o identificadores duplicados permanecen sin resolver; no se asocia provenance por orden de aparición.
+- Los errores de PURL y almacenamiento en el alta manual se anuncian dentro del propio diálogo. El panel de importación conserva sus errores separados.
+- La navegación móvil y el detalle de vulnerabilidad gestionan Escape, trampa de foco, restauración de foco y bloqueo del scroll; el contenido principal queda inerte mientras la navegación móvil está abierta.
+- La interfaz identifica el espacio como local (sin cuenta ni workspace en la nube).
+- Validación previa a esta actualización documental: 337 tests correctos en Node 20 y Node 22, sin fallos; builds correctos. CI run [41475952854](https://github.com/carlosdans/quasaric/actions/runs/41475952854). El despliegue Azure del mismo commit estaba en curso al redactar esta actualización.
+- Los cambios no añaden backend, servicios externos de pago, recursos Azure ni dependencias; mantienen la arquitectura estática/local-first y el requisito de Azure Static Web Apps Free.
