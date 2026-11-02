@@ -182,3 +182,10 @@ Quasaric incluye tema oscuro y tema claro. Puedes cambiarlo desde el control de 
 - La consulta CSAF VEX por CVE usa los documentos individuales oficiales publicados por SUSE. El análisis compara PURL RPM, namespace, paquete y, cuando está publicada, arquitectura. Si el proveedor omite la arquitectura, la evidencia se conserva con confianza media en lugar de presentarla como coincidencia exacta.
 - La comparación RPM sigue EVR (epoch, version, release), considera epoch omitido igual a cero y los operadores `~` y `^`. Se rechazan segmentos fuera del alfabeto EVR documentado para evitar ordenar entradas ambiguas.
 - La política CSP permite el host oficial `ftp.suse.com` usado por los documentos CSAF VEX.
+
+
+### 2026-11-02 — separación de evidencia RHEL por paquete fuente y binario
+
+- La evidencia Red Hat distingue coincidencia exacta del nombre del paquete binario (confianza alta) de coincidencia basada únicamente en `sourcePackage` declarado en el inventario (confianza media, `needs_review`).
+- Una coincidencia del paquete fuente no se interpreta como prueba de que el binario instalado contenga el código vulnerable: un RPM fuente puede generar varios paquetes binarios con contenido y aplicabilidad diferentes.
+- La interfaz identifica explícitamente la evidencia indirecta de paquete fuente. No se amplían coincidencias por similitud de nombres ni se cambia la aplicabilidad NVD.

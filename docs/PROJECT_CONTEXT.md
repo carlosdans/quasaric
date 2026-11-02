@@ -1006,3 +1006,10 @@ OSV muestra estos ecosistemas en su catálogo público: https://osv.dev/list?eco
 - SUSE CSAF VEX ahora distingue coincidencia de arquitectura exacta, arquitectura no publicada por el proveedor (confianza media) y arquitectura incompatible (sin coincidencia). Solo se seleccionan IDs de producto que coinciden con el PURL RPM y la arquitectura solicitada cuando está disponible.
 - Se amplió cobertura de pruebas RPM para epoch implícito/0, release segmentado, snapshots caret y rechazo de caracteres fuera del formato EVR aceptado.
 - CSP añade el host oficial ftp.suse.com requerido por la consulta CSAF VEX individual.
+
+
+### 2026-11-02 — separación de evidencia RHEL por paquete fuente y binario
+
+- La evidencia Red Hat distingue coincidencia exacta del nombre del paquete binario (confianza alta) de coincidencia basada únicamente en `sourcePackage` declarado en el inventario (confianza media, `needs_review`).
+- Una coincidencia del paquete fuente no se interpreta como prueba de que el binario instalado contenga el código vulnerable: un RPM fuente puede generar varios paquetes binarios con contenido y aplicabilidad diferentes.
+- La interfaz identifica explícitamente la evidencia indirecta de paquete fuente. No se amplían coincidencias por similitud de nombres ni se cambia la aplicabilidad NVD.
