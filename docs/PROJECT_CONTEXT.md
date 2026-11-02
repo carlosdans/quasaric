@@ -5,7 +5,7 @@
 > **Actualizado:** 2 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD documentado:** `c4c333764086fd78f167cd41340a70af0fa0ecb6`
+> **HEAD de código validado:** `4026832bb348d84f5c82a3e519594a69bce623b4`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main`. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación antes de esta actualización documental:** commit `c4c333764086fd78f167cd41340a70af0fa0ecb6`; 328/328 tests correctos en Node 20 y 22, build correcto en ambas versiones; CI run [41468235111](https://github.com/carlosdans/quasaric/actions/runs/41468235111) y Azure run [41468235076](https://github.com/carlosdans/quasaric/actions/runs/41468235076) satisfactorios.
+**Última validación de código en `main`:** commit `4026832bb348d84f5c82a3e519594a69bce623b4`; 351/351 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones. CI run [41490335199](https://github.com/carlosdans/quasaric/actions/runs/41490335199) y despliegue Azure Static Web Apps [41490335102](https://github.com/carlosdans/quasaric/actions/runs/41490335102), ambos satisfactorios.
 
 ## 7. Limitaciones y trabajo pendiente
 
@@ -147,4 +147,9 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La navegación móvil y los diálogos de alta y detalle de vulnerabilidad gestionan Escape, trampa de foco, restauración de foco y bloqueo del scroll; el contenido principal queda inerte mientras la navegación móvil está abierta.
 - La interfaz identifica el espacio como local (sin cuenta ni workspace en la nube).
 - Validación de `main` en commit `1c0eba249d32b785ff44f483bab93dc5bdfc1105`: 348/348 tests correctos en Node 20 y Node 22, sin fallos; builds correctos en ambas versiones. CI run [41488978767](https://github.com/carlosdans/quasaric/actions/runs/41488978767) y despliegue Azure Static Web Apps [41488978569](https://github.com/carlosdans/quasaric/actions/runs/41488978569), ambos satisfactorios.
+- La importación CycloneDX recorre componentes anidados de forma iterativa y aplica el límite global de 50.000 elementos al árbol completo.
+- El parser PURL alinea normalización y codificación con ECMA-427 sin inferir identidades CPE.
+- Cada petición de fuente pública está limitada a 30 segundos, incluida la lectura del cuerpo; la cancelación del usuario sigue siendo explícita y distinta del timeout.
+- El comparador SemVer usa BigInt para ordenar major/minor/patch sin pérdida de precisión en identificadores numéricos grandes.
+- Validación actualizada en commit de código `4026832`: 351/351 tests en Node 20 y 22; CI [41490335199](https://github.com/carlosdans/quasaric/actions/runs/41490335199) y Azure [41490335102](https://github.com/carlosdans/quasaric/actions/runs/41490335102), satisfactorios.
 - Los cambios no añaden backend, servicios externos de pago, recursos Azure ni dependencias; mantienen la arquitectura estática/local-first y el requisito de Azure Static Web Apps Free.
