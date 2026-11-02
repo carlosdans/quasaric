@@ -193,3 +193,9 @@ test('snapshot comparison keys cannot collide on separators in finding or compon
   assert.equal(result.resolved[0].cve, 'CVE-A');
   assert.equal(result.counts.retained, 1);
 });
+
+test('uses one consistent timestamp when the analysis has no analyzedAt value', () => {
+  const result = createAnalysisSnapshot({ findings: [] });
+  assert.equal(result.id, result.analyzedAt);
+  assert.doesNotThrow(() => new Date(result.analyzedAt).toISOString());
+});

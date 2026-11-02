@@ -59,9 +59,10 @@ export function createAnalysisSnapshot(analysis, inventory = []) {
     finding.components.every(match => isRecord(match) && hasComponentIdentity(match.component)))) {
     throw new TypeError('Analysis snapshot contains malformed inventory, findings or component matches.');
   }
+  const analyzedAt = analysis.analyzedAt || new Date().toISOString();
   const snapshot = {
-    id: analysis.analyzedAt || new Date().toISOString(),
-    analyzedAt: analysis.analyzedAt || new Date().toISOString(),
+    id: analyzedAt,
+    analyzedAt,
     inventory: inventory.map(item => ({ ...item })),
     findings: analysis.findings.map(finding => ({
       id: finding.id,
