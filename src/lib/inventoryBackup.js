@@ -58,13 +58,33 @@ export function parseInventoryBackup(input) {
 }
 
 export function compareInventories(previous = [], current = []) {
-  const key = x => [x.name, x.type, x.vendor, x.version, x.sourcePackage, x.sourceVersion, x.architecture, x.purl, x.cpe]
-    .map(v => String(v || '').trim().toLowerCase()).join('|');
-  const old = new Map(previous.map(x => [key(x), x]));
-  const now = new Map(current.map(x => [key(x), x]));
+  // Use a structured key and queues rather than Maps of single records:
+  // inventories may legitimately contain duplicate package rows.
+  const key = item => JSON.stringify([
+    item.name, item.type, item.vendor, item.version, item.sourcePackage,
+    item.sourceVersion, item.architecture, item.purl, item.cpe
+  ].map(value => String(value || '').trim().toLowerCase()));
+  const available = new Map();
+  current.forEach((item, index) => {
+    const identity = key(item);
+    if (!available.has(identity)) available.set(identity, []);
+    available.get(identity).push(index);
+  });
+  const matchedCurrent = new Set();
+  const removed = [];
+  const unchanged = [];
+  previous.forEach(item => {
+    const matches = available.get(key(item));
+    if (matches?.length) {
+      matchedCurrent.add(matches.shift());
+      unchanged.push(item);
+    } else {
+      removed.push(item);
+    }
+  });
   return {
-    added: current.filter(x => !old.has(key(x))),
-    removed: previous.filter(x => !now.has(key(x))),
-    unchanged: current.filter(x => old.has(key(x)))
+    added: current.filter((item, index) => !matchedCurrent.has(index)),
+    removed,
+    unchanged
   };
 }
