@@ -118,7 +118,8 @@ test('matches the official Apache Log4j CPE only to the vulnerable core artifact
   // NVD CVE-2021-44228 identifies cpe:2.3:a:apache:log4j as the product.
   const cpe = 'cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*';
   assert.equal(cpeMatchesComponent(cpe, component('log4j-core')), true);
-  assert.equal(cpeMatchesComponent(cpe, component('Log4j')), true);
+  assert.equal(cpeMatchesComponent(cpe, component('Log4j Core')), true);
+  assert.equal(cpeMatchesComponent(cpe, component('Log4j')), false);
   assert.equal(cpeMatchesComponent(cpe, component('log4j-api')), false);
   assert.equal(cpeMatchesComponent(
     'cpe:2.3:a:attacker:log4j:2.14.1:*:*:*:*:*:*:*',

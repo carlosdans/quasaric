@@ -211,8 +211,8 @@ export function cpeMatchesComponent(criteria, component) {
   const productPairs = {
     nginx: [['nginx', 'nginx']],
     openssl: [['openssl', 'openssl']],
-    log4j: [['apache', 'log4j']],
     'log4j-core': [['apache', 'log4j']],
+    'log4j core': [['apache', 'log4j']],
     apache: [['apache', 'http server']],
     'apache http server': [['apache', 'http server']],
     httpd: [['apache', 'http server']],
