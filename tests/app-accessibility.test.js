@@ -60,3 +60,43 @@ test('keyboard users can skip repeated navigation and focus the main content', (
   assert.match(app, /<a className="skip-link" href="#main-content">/);
   assert.match(app, /<main id="main-content" className="main-area" tabIndex=\{-1\}/);
 });
+
+
+test('Spanish dashboard severity legend is localized', () => {
+  assert.match(app, /lang === 'es' \? 'Crítica' : 'Critical'/);
+  assert.match(app, /lang === 'es' \? 'Alta' : 'High'/);
+  assert.match(app, /lang === 'es' \? 'Media' : 'Medium'/);
+  assert.match(app, /lang === 'es' \? 'Baja' : 'Low'/);
+});
+
+test('KEV presence and backup controls have localized Spanish labels', () => {
+  assert.match(app, /lang === 'es' \? 'Sí' : 'Yes'/);
+  assert.match(app, /aria-label=\{lang === 'es' \? 'Restaurar copia JSON' : 'Restore JSON backup'\}/);
+  assert.match(app, /aria-label=\{lang === 'es' \? 'Comparar copia JSON' : 'Compare JSON backup'\}/);
+  assert.match(app, /aria-label=\{lang === 'es' \? 'Cerrar comparación' : 'Close comparison'\}/);
+});
+
+
+test('document language follows the selected interface language', () => {
+  assert.match(app, /document\.documentElement\.lang = lang/);
+  assert.match(app, /\}, \[lang\]\)/);
+});
+
+
+test('severity values are localized in the vulnerability list and printable report', () => {
+  assert.match(app, /const severityLabel = severity =>/);
+  assert.match(app, /\{severityLabel\(f\.severity\)\}/);
+  assert.match(app, /\{severityLabel\(finding\.severity\)\}/);
+});
+
+
+test('correlation result severity uses the localized severity label', () => {
+  assert.match(app, /<td>\{severityLabel\(f\.severity\)\}<\/td>/);
+});
+
+
+test('overview applicability and candidate statuses are localized', () => {
+  assert.match(app, /const applicabilityLabel = status =>/);
+  assert.match(app, /applicabilityLabel\(f\.applicabilityStatus\)/);
+  assert.match(app, /f\.state === 'KEV' \? 'KEV' : \(lang === 'es' \? 'Candidato' : 'Candidate'\)/);
+});
