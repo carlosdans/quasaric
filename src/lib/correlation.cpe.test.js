@@ -175,7 +175,7 @@ test('uses a declared CPE to verify qualifiers and cross-checks supplied archite
     name: 'Windows Server 2022',
     type: 'os',
     version: '10.0.20348.4467',
-    cpe: 'cpe:2.3:o:microsoft:windows_server_2022:*:*:*:datacenter:*:x64:*'
+    cpe: 'cpe:2.3:o:microsoft:windows_server_2022:*:*:*:*:datacenter:*:x64:*'
   };
   assert.equal(cpeMatchesComponent(criteria, declared), true);
   assert.equal(classifyCpeApplicability([{ criteria, vulnerable: true }], declared).status, 'possible');
