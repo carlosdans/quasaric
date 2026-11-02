@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { classifyVersionRange } from './universalVersions.js';
+import { classifyCpeApplicability, cpeMatchesComponent } from './correlation.js';
 
 // Real NVD configuration ranges for CVE-2021-44228 (Apache Log4j).
 // Source: https://nvd.nist.gov/vuln/detail/CVE-2021-44228
@@ -59,4 +60,40 @@ test('keeps the NVD Log4j range conservative for unorderable vendor versions', (
     classifyVersionRange('2.14.1-redhat', range, log4jCore).status,
     'needs_review'
   );
+});
+
+
+// Real NVD CPE configurations:
+// CVE-2026-47360: https://nvd.nist.gov/vuln/detail/CVE-2026-47360
+// CVE-2023-44487: https://nvd.nist.gov/vuln/detail/CVE-2023-44487
+
+test('classifies the NVD Apache HTTP Server CVE-2026-47360 range at its boundaries', () => {
+  const cpeItems = [{
+    criteria: 'cpe:2.3:a:apache:http_server:*:*:*:*:*:*:*:*',
+    vulnerable: true,
+    versionStartIncluding: '2.4.60',
+    versionEndExcluding: '2.4.69'
+  }];
+  const classify = version => classifyCpeApplicability(cpeItems, {
+    name: 'Apache HTTP Server',
+    version
+  }).status;
+
+  assert.equal(classify('2.4.59'), 'not_affected');
+  assert.equal(classify('2.4.60'), 'possible');
+  assert.equal(classify('2.4.68'), 'possible');
+  assert.equal(classify('2.4.69'), 'not_affected');
+});
+
+test('does not confuse the F5 NGINX CPE in CVE-2023-44487 with upstream NGINX', () => {
+  const f5Nginx = {
+    criteria: 'cpe:2.3:a:f5:nginx:*:*:*:*:*:*:*:*',
+    vulnerable: true,
+    versionStartIncluding: '1.9.5',
+    versionEndIncluding: '1.25.2'
+  };
+  const upstreamNginx = { name: 'NGINX', version: '1.24.0' };
+
+  assert.equal(cpeMatchesComponent(f5Nginx.criteria, upstreamNginx), false);
+  assert.equal(classifyCpeApplicability([f5Nginx], upstreamNginx).status, 'needs_review');
 });
