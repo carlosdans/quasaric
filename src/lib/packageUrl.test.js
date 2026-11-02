@@ -16,9 +16,35 @@ test('decodes escaped package coordinates but preserves the input outside the pa
 });
 
 test('rejects malformed, ambiguous, duplicate and oversized PURLs', () => {
-  for (const value of ['', 'pkg:npm', 'pkg:NPM/a@1', 'pkg:npm/a@', 'pkg:npm/a?arch=x&arch=y', 'pkg:npm/a?arch', 'pkg:npm/%ZZ', 'pkg:npm/a/../b', 'pkg:npm/' + 'a'.repeat(2049)]) {
+  for (const value of ['', 'pkg:npm', 'pkg:1npm/a@1', 'pkg:npm/a@', 'pkg:npm/a?arch=x&arch=y', 'pkg:npm/a?arch', 'pkg:npm/a?arch=', 'pkg:npm/a?arch=x&ARCH=y', 'pkg:npm/%ZZ', 'pkg:npm/a@%ZZ', 'pkg:npm/a/../b', 'pkg:npm/org%2Fteam/a@1', 'pkg:npm/a@1#dist/%2Ffile', 'pkg:npm/a@1#', 'pkg:npm/a b@1', 'pkg:npm/a+b@1', 'pkg:npm/' + 'a'.repeat(2049)]) {
     assert.equal(parsePackageUrl(value), null, value);
   }
+});
+
+test('accepts equivalent pkg:// URLs and normalizes type and qualifier case', () => {
+  const parsed = parsePackageUrl('pkg://NPM/%40Scope/package@1.2.3?ARCH=x64');
+  assert.equal(parsed.type, 'npm');
+  assert.equal(parsed.namespace, '@Scope');
+  assert.equal(parsed.name, 'package');
+  assert.deepEqual(parsed.qualifiers, { arch: 'x64' });
+});
+
+test('normalizes insignificant leading and trailing path slashes', () => {
+  const parsed = parsePackageUrl('pkg:npm//scope/package@1.2.3#//dist/index.js/');
+  assert.equal(parsed.namespace, 'scope');
+  assert.equal(parsed.name, 'package');
+  assert.equal(parsed.subpath, 'dist/index.js');
+});
+
+test('treats qualifier keys as case-insensitive when detecting duplicates', () => {
+  assert.equal(parsePackageUrl('pkg:npm/package@1?ARCH=x&arch=y'), null);
+});
+
+test('requires reserved and non-ASCII component characters to be percent-encoded', () => {
+  assert.equal(parsePackageUrl('pkg:npm/a%2Bb@1').name, 'a+b');
+  assert.equal(parsePackageUrl('pkg:npm/%C3%A9@1').name, 'é');
+  assert.equal(parsePackageUrl('pkg:npm/a+b@1'), null);
+  assert.equal(parsePackageUrl('pkg:npm/café@1'), null);
 });
 
 test('does not infer CPE identity from a PURL', () => {
