@@ -890,7 +890,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
       if (!current) continue;
       for (const component of redHatComponents) {
         const match = matchRedHatCveComponent(record, component);
-        if (match.status === 'needs_review') continue;
+        if (!match.packageStates?.length && !match.affectedReleases?.length) continue;
         const item = current.components.find(entry => entry.component.id === component.id);
         if (item) item.redHat = { ...match, source: 'Red Hat Security Data', advisoryId: cveId };
       }
