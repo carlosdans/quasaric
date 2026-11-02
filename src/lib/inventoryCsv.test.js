@@ -71,6 +71,6 @@ test('rejects malformed component and source Package URLs as row errors', () => 
 
 
 test('enforces the CSV row limit when the final row has no line terminator', () => {
-  const csv = 'name\\n' + Array.from({ length: 50001 }, (_, i) => 'component-' + i).join('\\n');
+  const csv = 'name\n' + Array.from({ length: 50001 }, (_, i) => 'component-' + i).join('\n');
   assert.throws(() => parseInventoryCsv(csv), /50000 data-row/);
 });
