@@ -589,7 +589,7 @@ function App() {
         <div className="sidebar-bottom">
           <div className="privacy-card"><div className="privacy-icon"><LockKeyhole size={16}/></div><div><strong>{t.noScan}</strong><p>{t.noScanText}</p></div></div>
           <button className={'nav-link ' + (active === 'settings' ? 'active' : '')} onClick={() => { setActive('settings'); setMobileNav(false); }}><Settings2 size={17}/><span>{t.settings}</span></button>
-          <div className="sidebar-user"><div className="avatar">Q</div><div className="user-copy"><strong>Quasaric</strong><span>Personal workspace</span></div><ChevronDown size={15}/></div>
+          <div className="sidebar-user"><div className="avatar">Q</div><div className="user-copy"><strong>Quasaric</strong><span>{lang === 'es' ? 'Espacio local' : 'Local workspace'}</span></div><ChevronDown size={15}/></div>
         </div>
       </aside>
       {mobileNav && <div className="mobile-nav-backdrop" aria-hidden="true" onClick={() => setMobileNav(false)} />}

@@ -37,3 +37,9 @@ test('mobile navigation is modal, keyboard-trapped and restores focus', () => {
   assert.match(app, /mobileNavTriggerRef\.current\.focus\(\)/);
   assert.match(app, /<main className="main-area" inert=\{mobileNav\}>/);
 });
+
+
+test('workspace label does not imply a user account or cloud workspace', () => {
+  assert.match(app, /lang === 'es' \? 'Espacio local' : 'Local workspace'/);
+  assert.doesNotMatch(app, /<span>Personal workspace<\/span>/);
+});
