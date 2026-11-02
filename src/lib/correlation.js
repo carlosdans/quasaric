@@ -608,7 +608,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     const cacheKey = usePhpCpe ? 'cpe:cpe:2.3:a:php:php' : 'keyword:' + query;
     if (!nvdQueryCache.has(cacheKey)) {
       const request = usePhpCpe
-        ? sourceApi.fetchNvdByVirtualMatchString('cpe:2.3:a:php:php', { signal })
+        ? sourceApi.fetchNvdByVirtualMatchString('cpe:2.3:a:php:php', { signal, maxResults: NVD_MAX_RESULTS })
         : sourceApi.fetchNvdByKeyword(query, { signal, maxResults: NVD_MAX_RESULTS });
       nvdQueryCache.set(cacheKey, request);
     }

@@ -26,8 +26,9 @@ test('uses the precise PHP CPE query instead of broad keyword search in producti
     { id: 'php-runtime', name: 'php', type: 'runtime', version: '7.2.0' }
   ], {
     sources: {
-      fetchNvdByVirtualMatchString: async criteria => {
+      fetchNvdByVirtualMatchString: async (criteria, options) => {
         requestedCpe = criteria;
+        assert.equal(options.maxResults, 6000);
         return [];
       },
       fetchEpssScores: async () => new Map(),
