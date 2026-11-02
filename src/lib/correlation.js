@@ -2,7 +2,7 @@ import { normalizeComponentType } from './componentTypes.js';
 import { parsePackageUrl } from './packageUrl.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
-import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchRedHatCve, matchRedHatCveComponent, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchOsvForDistroPackage, resolveOsvDistroEcosystem, fetchRedHatCve, matchRedHatCveComponent, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
 const NVD_MAX_RESULTS = 6000;
 
@@ -792,6 +792,70 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   }
 
 
+
+  // Query official OSV distro ecosystems for exact installed package/version.
+  // Advisory matches are attached as vendor evidence; they never override NVD.
+  const distroGroups = new Map();
+  for (const component of components) {
+    const ecosystem = resolveOsvDistroEcosystem(component.ecosystem || component.vendor);
+    const packageName = String(component.name || component.sourcePackage || '').trim();
+    const version = String(component.version || '').trim();
+    if (!ecosystem || !packageName || !version) continue;
+    const key = `${ecosystem}\\u0000${packageName}\\u0000${version}`;
+    if (!distroGroups.has(key)) distroGroups.set(key, { ecosystem, packageName, version, components: [] });
+    distroGroups.get(key).components.push(component);
+  }
+  const distroErrors = [];
+  const distroQueue = [...distroGroups.values()].slice(0, 100);
+  if (distroGroups.size > 100) distroErrors.push({ source: 'OSV (Linux distributions)', message: 'Se alcanzó el límite de 100 consultas de paquetes de distribución por análisis.' });
+  let distroNext = 0;
+  const distroWorker = async () => {
+    while (distroNext < distroQueue.length) {
+      const group = distroQueue[distroNext++];
+      try {
+        const records = await sourceApi.fetchOsvForDistroPackage(group.packageName, group.ecosystem, group.version, { signal });
+        for (const record of records) {
+          const cveIds = [...new Set([...(record.aliases || []), ...(record.upstream || [])]
+            .filter(id => /^CVE-[0-9]{4}-[0-9]+$/.test(id)))];
+          if (!cveIds.length) continue;
+          for (const cveId of cveIds) {
+            const current = allCandidates.get(cveId) || {
+              cve: { id: cveId, descriptions: [{ lang: 'en', value: record.summary || record.details || 'OSV distribution advisory; review vendor record.' }],
+                published: record.published, lastModified: record.modified, references: record.references || [], metrics: {}, weaknesses: [] },
+              components: []
+            };
+            for (const component of group.components) {
+              const evidence = {
+                advisoryId: record.id,
+                status: 'needs_review',
+                reason: `OSV encontró el paquete exacto en el ecosistema ${group.ecosystem} para la versión consultada. La evidencia del proveedor debe revisarse antes de concluir aplicabilidad o remediación.`,
+                ecosystem: group.ecosystem,
+                packageName: group.packageName,
+                installedVersion: group.version,
+                publishedAt: record.published || null,
+                updatedAt: record.modified || null,
+                url: `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}`,
+                references: (record.references || []).map(reference => reference.url).filter(Boolean)
+              };
+              const existing = current.components.find(item => item.component.id === component.id);
+              if (existing) existing.distroOsvEvidence = [...(existing.distroOsvEvidence || []), evidence];
+              else current.components.push({
+                component,
+                applicability: { status: 'needs_review', confidence: 'low', reason: evidence.reason },
+                distroOsvEvidence: [evidence]
+              });
+            }
+            allCandidates.set(cveId, current);
+          }
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') throw error;
+        distroErrors.push({ source: 'OSV (Linux distributions)', component: group.packageName, message: error.message });
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(3, distroQueue.length) }, () => distroWorker()));
+
   // Red Hat publishes package-level fix states and fixed errata independently
   // from NVD. Query candidate CVE IDs and attach exact product/package evidence.
   const redHatComponents = components.filter(component =>
@@ -873,6 +937,9 @@ export async function analyzeInventory(components, { signal, onProgress, sources
           product
         });
       }
+      for (const advisory of item.distroOsvEvidence || []) {
+        evidence.push({ source: 'OSV (Linux distributions)', ...advisory, product });
+      }
       if (item.redHat) {
         evidence.push({
           source: 'Red Hat Security Data',
@@ -923,10 +990,11 @@ export async function analyzeInventory(components, { signal, onProgress, sources
       kev: errors.some(x => x.source === 'CISA KEV') ? 'unavailable' : 'queried',
       osvPurl: purlGroups.size ? (purlErrors.length ? (purlQueue.length ? 'partial_or_unavailable' : 'unavailable') : 'queried') : 'not_configured',
       ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured',
+      osvLinuxDistributions: distroGroups.size ? (distroErrors.length ? 'partial_or_unavailable' : 'queried') : 'not_configured',
       redHatSecurityData: redHatComponents.length ? (redHatErrors.length ? (redHatEvidence.size ? 'partial_or_unavailable' : 'unavailable') : (redHatEvidence.size ? 'queried' : 'needs_review')) : 'not_configured',
       ubuntuVex: ubuntuOsv.size ? (vexErrors.length ? (vexDocuments.size ? 'partial_or_unavailable' : 'unavailable') : (vexDocuments.size ? 'queried' : 'needs_review')) : 'not_configured'
     },
-    errors: [...errors, ...purlErrors, ...redHatErrors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
+    errors: [...errors, ...purlErrors, ...distroErrors, ...redHatErrors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
     limits,
     analyzedAt: new Date().toISOString(),
     disclaimer: 'Candidate correlation only. Verify applicability against the exact vendor advisory, distribution package revision, edition, build and installed updates before treating a finding as confirmed.'

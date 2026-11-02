@@ -976,3 +976,12 @@ Se incorpora `src/lib/universalVersions.js` y su batería de pruebas.
 **Límites conocidos:** este bloque aporta comparadores, no conectores de avisos específicos de RHEL, Rocky, AlmaLinux, SUSE, Windows Update, Composer audit ni CMS. La compatibilidad PEP 440 y RPM debe ampliarse con fixtures oficiales de cada proveedor y pruebas diferenciales contra sus herramientas de referencia antes de elevar la confianza de aplicabilidad. Los formatos no soportados deben permanecer en revisión.
 
 **Validación:** ejecutar `npm test` y `npm run build` en CI para el commit que integra este bloque. No declarar el despliegue Azure completado hasta comprobar el workflow de publicación asociado.
+
+
+## OSV para AlmaLinux, Rocky Linux, SUSE y openSUSE — 2026-11-02
+
+Se añade consulta de OSV por nombre exacto del paquete, versión instalada y ecosistema de distribución declarado. Los ecosistemas admitidos son `AlmaLinux`, `Rocky Linux`, `SUSE` y `openSUSE`; la resolución parte del campo de distribución del inventario y no del nombre del paquete. Se consultan hasta 100 grupos por análisis, con tres solicitudes concurrentes y paginación acotada.
+
+Los avisos recuperados se asocian a los CVE publicados como alias/upstream y se adjuntan a la trazabilidad como evidencia OSV de distribución. El resultado se mantiene en `needs_review`: no modifica el dictamen NVD ni demuestra por sí solo que el paquete instalado esté corregido. Para SUSE, OSV puede publicar entradas para varios productos, módulos y service packs; esta integración identifica el ecosistema y paquete, pero todavía no valida automáticamente el producto exacto/SLES service pack ni todos los rangos RPM de cada errata. Tampoco sustituye el análisis OVAL/CSAF nativo.
+
+OSV muestra estos ecosistemas en su catálogo público: https://osv.dev/list?ecosystem=AlmaLinux, https://osv.dev/list?ecosystem=Rocky%20Linux, https://osv.dev/list?ecosystem=SUSE y https://osv.dev/list?ecosystem=openSUSE.
