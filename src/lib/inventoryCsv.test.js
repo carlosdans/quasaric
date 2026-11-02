@@ -26,6 +26,8 @@ test('reports invalid data rows while preserving valid rows', () => {
 
 test('rejects malformed quoting, unsupported headers and missing name header', () => {
   assert.throws(() => parseInventoryCsv('name,type\n"NGINX,web'), /unterminated/);
+  assert.throws(() => parseInventoryCsv('name,type\nng"inx,web'), /quote in an unquoted/);
+  assert.throws(() => parseInventoryCsv('name,type\nnginx" ,web'), /quote in an unquoted/);
   assert.throws(() => parseInventoryCsv('product,type\nNGINX,web'), /name column/);
   assert.throws(() => parseInventoryCsv('name,name\nNGINX,web'), /duplicate/);
   assert.throws(() => parseInventoryCsv('name,secret\nNGINX,x'), /unsupported columns/);
