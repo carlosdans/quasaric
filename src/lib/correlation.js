@@ -813,6 +813,9 @@ export async function analyzeInventory(components, { signal, onProgress, sources
       const group = distroQueue[distroNext++];
       try {
         const records = await sourceApi.fetchOsvForDistroPackage(group.packageName, group.ecosystem, group.version, { signal });
+        for (const officialError of records.officialSourceErrors || []) {
+          distroErrors.push({ source: 'Official distro advisory', component: group.packageName, message: `${officialError.advisoryId ? officialError.advisoryId + ': ' : ''}${officialError.message}` });
+        }
         for (const record of records) {
           const cveIds = [...new Set([...(record.aliases || []), ...(record.upstream || [])]
             .filter(id => /^CVE-[0-9]{4}-[0-9]+$/.test(id)))];
@@ -834,7 +837,8 @@ export async function analyzeInventory(components, { signal, onProgress, sources
                 installedVersion: group.version,
                 publishedAt: record.published || null,
                 updatedAt: record.modified || null,
-                url: `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}`,
+                url: record.officialSource?.url || `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}`,
+                officialSourceStatus: record.officialSource?.status || 'osv_only',
                 references: (record.references || []).map(reference => reference.url).filter(Boolean)
               };
               const existing = current.components.find(item => item.component.id === component.id);

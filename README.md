@@ -166,3 +166,12 @@ Contacto: contacto@quasaric.com
 ### Apariencia
 
 Quasaric incluye tema oscuro y tema claro. Puedes cambiarlo desde el control de apariencia de la barra superior o desde **Configuración → Apariencia**. La elección se guarda localmente en el navegador.
+
+
+### Fuentes oficiales AlmaLinux y Rocky Linux — 2026-11-02
+
+- AlmaLinux se resuelve por major explícito (8, 9 o 10) al ecosistema OSV versionado real `AlmaLinux:8/9/10`; no se consulta si el inventario solo declara “AlmaLinux” sin versión principal.
+- Los avisos AlmaLinux se enriquecen mediante el registro individual de su repositorio oficial `AlmaLinux/osv-database`, evitando descargar el gran `errata.full.json` completo en cada análisis.
+- Los avisos Rocky Linux RLSA/RXSA se enriquecen mediante el endpoint individual OSV de Peridot Apollo. Las respuestas deben conservar el ID exacto y el paquete/ecosistema exactos; si la fuente directa falla, se conserva la evidencia OSV y se informa del error.
+- Las consultas directas están acotadas a 25 avisos por grupo y cuatro solicitudes concurrentes. No se infiere parche instalado ni se altera la clasificación NVD.
+- Enlaces oficiales: https://github.com/AlmaLinux/osv-database y https://apollo.build.resf.org/docs.

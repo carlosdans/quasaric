@@ -991,3 +991,11 @@ Se añade consulta de OSV por nombre exacto del paquete, versión instalada y ec
 Los avisos recuperados se asocian a los CVE publicados como alias/upstream y se adjuntan a la trazabilidad como evidencia OSV de distribución. El resultado se mantiene en `needs_review`: no modifica el dictamen NVD ni demuestra por sí solo que el paquete instalado esté corregido. Para SUSE, OSV puede publicar entradas para varios productos, módulos y service packs; esta integración identifica el ecosistema y paquete, pero todavía no valida automáticamente el producto exacto/SLES service pack ni todos los rangos RPM de cada errata. Tampoco sustituye el análisis OVAL/CSAF nativo.
 
 OSV muestra estos ecosistemas en su catálogo público: https://osv.dev/list?ecosystem=AlmaLinux, https://osv.dev/list?ecosystem=Rocky%20Linux, https://osv.dev/list?ecosystem=SUSE y https://osv.dev/list?ecosystem=openSUSE.
+
+
+### 2026-11-02 — enriquecimiento de errata AlmaLinux/Rocky
+
+- Se corrigió el ecosistema AlmaLinux a su forma OSV versionada `AlmaLinux:8/9/10`, con rechazo explícito de inventarios sin major.
+- La consulta OSV conserva la coincidencia exacta de paquete y ecosistema; cada aviso AlmaLinux ALSA/ALBA/ALEA puede verificarse contra el JSON individual del repositorio oficial AlmaLinux/osv-database. Rocky RLSA/RXSA puede verificarse contra el endpoint individual `/api/v3/osv/{advisory_id}` de Peridot Apollo.
+- Las consultas directas están limitadas a 25 avisos por grupo, con cuatro solicitudes concurrentes. Los fallos no descartan los resultados OSV y se exponen como errores parciales. Los avisos oficiales solo sustituyen el registro OSV cuando ID, paquete y ecosistema coinciden exactamente.
+- No se descarga `errata.full.json` completo; no se declara el host parcheado, ni se cambia aplicabilidad NVD. Los inventarios permanecen locales y el análisis sigue siendo sin backend ni coste añadido.
