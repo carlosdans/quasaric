@@ -128,7 +128,7 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 
 ### 2026-11-02 — validación de PURL en restauración y almacenamiento
 
-- La restauración de copias JSON y el almacenamiento local validan tanto el PURL del componente como el PURL del paquete fuente con el mismo parser usado en SBOM y CSV.
+- La restauración de copias JSON y el almacenamiento local validan tanto el PURL del componente como el PURL del paquete fuente con el mismo parser alineado con ECMA-427 usado en SBOM y CSV.
 - Los PURL opcionales vacíos siguen siendo válidos para inventarios heredados; los PURL malformados no entran en el inventario activo.
 - Si el almacenamiento ya contiene filas con PURL inválidos, se preserva el JSON original en la clave de recuperación y se excluyen esas filas de la vista activa con advertencia; no se sobrescribe silenciosamente el original.
 - No se cambia el formato/versionado de las copias ni se añade servicio externo.
