@@ -54,7 +54,7 @@ export function loadInventory(storage) {
     const items = parsed.filter(isInventoryItem);
     const warning = items.length !== parsed.length;
     if (warning) {
-      preserveForRecovery(storage, raw)
+      preserveForRecovery(target, raw);
     }
     return { items, warning };
   } catch { return { items: [], warning: true }; }
