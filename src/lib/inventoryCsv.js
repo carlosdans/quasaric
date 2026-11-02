@@ -31,6 +31,7 @@ export function parseInventoryCsv(input) {
       throw new Error('Unexpected character after a quoted CSV field.');
     }
     if (char === '"' && cell.length === 0 && !afterQuote) quoted = true;
+    else if (char === '"') throw new Error('Unexpected quote in an unquoted CSV field.');
     else if (char === ',') { row.push(cell); cell = ''; afterQuote = false; }
     else if (char === '\r' || char === '\n') {
       if (char === '\r' && source[i + 1] === '\n') i += 1;
