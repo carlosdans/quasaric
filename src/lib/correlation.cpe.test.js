@@ -177,6 +177,7 @@ test('uses a declared CPE to verify qualifiers and cross-checks supplied archite
     version: '10.0.20348.4467',
     cpe: 'cpe:2.3:o:microsoft:windows_server_2022:*:*:*:datacenter:*:x64:*'
   };
+  assert.equal(cpeMatchesComponent(criteria, declared), true);
   assert.equal(classifyCpeApplicability([{ criteria, vulnerable: true }], declared).status, 'possible');
   assert.equal(classifyCpeApplicability([{ criteria, vulnerable: true }], {
     ...declared, architecture: 'arm64'

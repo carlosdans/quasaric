@@ -265,8 +265,8 @@ export function cpeMatchesComponent(criteria, component) {
   if (cpeQualifierStatus(criteria, component, declaredFields) === false) return false;
   if (declaredFields) {
     const declaredPart = declaredFields[2];
-    const declaredVendor = normalize(declaredFields[3].replaceAll('\\_', '_'));
-    const declaredProduct = normalize(declaredFields[4].replaceAll('\\_', '_'));
+    const declaredVendor = normalize(decodeCpeAttribute(declaredFields[3]));
+    const declaredProduct = normalize(decodeCpeAttribute(declaredFields[4]));
     return (declaredPart === '*' || declaredPart === cpe.part) &&
       declaredVendor !== '' && declaredProduct !== '' &&
       declaredVendor === vendor && declaredProduct === product;
