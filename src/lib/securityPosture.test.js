@@ -50,6 +50,8 @@ test('ignores malformed snapshots and nested records when called directly', () =
     { id: 'bad-components', findings: [{ id: 'CVE-2' }] },
     { id: 'bad-match', findings: [{ id: 'CVE-3', components: [null] }] },
     { id: 'bad-component', findings: [{ id: 'CVE-4', components: [{ component: [] }] }] },
+    { id: 'missing-cve-id', findings: [{ components: [{ component: { id: 'a', name: 'openssl' } }] }] },
+    { id: 'missing-component-identity', findings: [{ id: 'CVE-5', components: [{ component: { version: '3.0.2' } }] }] },
     [],
     valid
   ]);

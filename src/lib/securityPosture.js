@@ -17,8 +17,8 @@ function exposureEntries(snapshot = {}) {
           component.architecture ?? null, component.ecosystem ?? null
         ]);
       entries.push({
-        key: JSON.stringify([String(finding.id), componentId]),
-        cve: String(finding.id),
+        key: JSON.stringify([String(finding.id).trim(), componentId]),
+        cve: String(finding.id).trim(),
         severity: finding.severity || 'Unknown',
         kev: Boolean(finding.kev),
         riskScore: calculateRiskPriority(finding).score,
@@ -37,8 +37,12 @@ function exposureEntries(snapshot = {}) {
 export function buildSecurityPosture(history = []) {
   const chronological = (Array.isArray(history) ? history : [])
     .filter(snapshot => isRecord(snapshot) && Array.isArray(snapshot.findings) &&
-      snapshot.findings.every(finding => isRecord(finding) && Array.isArray(finding.components) &&
-        finding.components.every(match => isRecord(match) && isRecord(match.component))))
+      snapshot.findings.every(finding => isRecord(finding) &&
+        typeof finding.id === 'string' && finding.id.trim().length > 0 &&
+        Array.isArray(finding.components) &&
+        finding.components.every(match => isRecord(match) && isRecord(match.component) &&
+          ((typeof match.component.id === 'string' && match.component.id.trim().length > 0) ||
+           (typeof match.component.name === 'string' && match.component.name.trim().length > 0)))))
     .slice(0, 10).reverse();
   const timeline = chronological.map(snapshot => {
     const entries = exposureEntries(snapshot);
