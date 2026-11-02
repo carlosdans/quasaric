@@ -280,3 +280,27 @@ test('does not infer CycloneDX source provenance when multiple RPM source ancest
   assert.equal(result.components[0].sourcePurl, '');
   assert.equal(result.components[0].sourceRelationship, '');
 });
+
+
+test('imports the CycloneDX metadata component when it is the BOM subject', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    metadata: { component: { type: 'application', name: 'quasaric-app', version: '2.4.0', purl: 'pkg:generic/quasaric-app@2.4.0' } }
+  }));
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.components.length, 1);
+  assert.equal(result.components[0].name, 'quasaric-app');
+  assert.equal(result.components[0].version, '2.4.0');
+  assert.equal(result.components[0].purl, 'pkg:generic/quasaric-app@2.4.0');
+});
+
+test('does not duplicate CycloneDX metadata component when its bom-ref is in components', () => {
+  const root = { 'bom-ref': 'app-ref', type: 'application', name: 'quasaric-app', version: '2.4.0' };
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    metadata: { component: root },
+    components: [{ 'bom-ref': 'app-ref', type: 'application', name: 'quasaric-app', version: '2.4.0' }, { name: 'react', version: '19.0.0' }]
+  }));
+  assert.equal(result.components.length, 2);
+  assert.deepEqual(result.components.map(item => item.name), ['quasaric-app', 'react']);
+});

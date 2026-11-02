@@ -56,8 +56,17 @@ function flattenCycloneComponents(components) {
 
 function cyclone(document) {
   if (document.bomFormat !== 'CycloneDX' || !['1.4','1.5','1.6','1.7'].includes(String(document.specVersion))) throw new Error('Unsupported CycloneDX format or version (supported: JSON 1.4–1.7).');
-  if (!Array.isArray(document.components)) throw new Error('CycloneDX document has no components array.');
-  return flattenCycloneComponents(document.components).map((item,index) => {
+  if (document.components !== undefined && !Array.isArray(document.components)) throw new Error('CycloneDX components must be an array.');
+  const nested = flattenCycloneComponents(document.components || []);
+  const root = document.metadata?.component;
+  const rootRef = str(root?.['bom-ref']);
+  // metadata.component is the BOM subject and can be the only component in
+  // otherwise valid BOMs. Avoid importing it twice when listed by bom-ref.
+  const includesRoot = root && typeof root === 'object' && rootRef &&
+    nested.some(item => str(item?.['bom-ref']) === rootRef);
+  const flattened = root && !includesRoot ? [root, ...nested] : nested;
+  if (flattened.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
+  return flattened.map((item,index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Component entry must be a JSON object.', index:index+1 };
     const rawPurl = str(item.purl);
     if (rawPurl.length > MAX_IDENTIFIER_LENGTH || str(item.cpe).length > MAX_IDENTIFIER_LENGTH) return { error:'PURL and CPE fields must not exceed 2048 characters.', index:index+1 };
