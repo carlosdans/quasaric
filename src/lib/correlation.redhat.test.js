@@ -10,7 +10,8 @@ const cve = {
   metrics: {}, weaknesses: [], references: [],
   configurations: [{ nodes: [{ cpeMatch: [{
     vulnerable: true,
-    criteria: 'cpe:2.3:a:openssl:openssl:*:*:*:*:*:*:*:*'
+    criteria: 'cpe:2.3:a:openssl:openssl:*:*:*:*:*:*:*:*',
+    versionStartIncluding: '0'
   }] }] }]
 };
 const redHatRecord = {
