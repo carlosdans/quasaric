@@ -16,7 +16,7 @@ test('decodes escaped package coordinates but preserves the input outside the pa
 });
 
 test('rejects malformed, ambiguous, duplicate and oversized PURLs', () => {
-  for (const value of ['', 'pkg:npm', 'pkg:1npm/a@1', 'pkg:npm/a@', 'pkg:npm/a?arch=x&arch=y', 'pkg:npm/a?arch', 'pkg:npm/a?arch=', 'pkg:npm/a?arch=x&ARCH=y', 'pkg:npm/%ZZ', 'pkg:npm/a/../b', 'pkg:npm/org%2Fteam/a@1', 'pkg:npm/a@1#dist/%2Ffile', 'pkg:npm/a@1#', 'pkg:npm/' + 'a'.repeat(2049)]) {
+  for (const value of ['', 'pkg:npm', 'pkg:1npm/a@1', 'pkg:npm/a@', 'pkg:npm/a?arch=x&arch=y', 'pkg:npm/a?arch', 'pkg:npm/a?arch=', 'pkg:npm/a?arch=x&ARCH=y', 'pkg:npm/%ZZ', 'pkg:npm/a/../b', 'pkg:npm/org%2Fteam/a@1', 'pkg:npm/a@1#dist/%2Ffile', 'pkg:npm/a@1#', 'pkg:npm/a b@1', 'pkg:npm/a+b@1', 'pkg:npm/' + 'a'.repeat(2049)]) {
     assert.equal(parsePackageUrl(value), null, value);
   }
 });
@@ -38,6 +38,13 @@ test('normalizes insignificant leading and trailing path slashes', () => {
 
 test('treats qualifier keys as case-insensitive when detecting duplicates', () => {
   assert.equal(parsePackageUrl('pkg:npm/package@1?ARCH=x&arch=y'), null);
+});
+
+test('requires reserved and non-ASCII component characters to be percent-encoded', () => {
+  assert.equal(parsePackageUrl('pkg:npm/a%2Bb@1').name, 'a+b');
+  assert.equal(parsePackageUrl('pkg:npm/%C3%A9@1').name, 'é');
+  assert.equal(parsePackageUrl('pkg:npm/a+b@1'), null);
+  assert.equal(parsePackageUrl('pkg:npm/café@1'), null);
 });
 
 test('does not infer CPE identity from a PURL', () => {
