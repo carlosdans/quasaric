@@ -122,3 +122,9 @@ test('rejects malformed component and source PURLs in restored backups', () => {
   });
   assert.equal(restored.components.length, 1);
 });
+
+test('does not create backups that cannot be restored', () => {
+  assert.throws(() => createInventoryBackup([{ name: '' }]), /Invalid component at position 1/);
+  assert.throws(() => createInventoryBackup([{ name: 'nginx', purl: 'not-a-purl' }]), /Invalid component at position 1/);
+  assert.throws(() => createInventoryBackup([{ name: 'nginx', type: 'unsupported' }]), /Invalid component at position 1/);
+});

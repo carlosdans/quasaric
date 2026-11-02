@@ -9,6 +9,20 @@ const STRING_FIELDS = ['name', 'version', 'vendor', 'sourcePackage', 'sourceVers
 const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
 const MAX_COMPONENTS = 50000;
 
+
+function isValidBackupComponent(item) {
+  const validIdentifier = field => item?.[field] == null ||
+    (typeof item[field] === 'string' && item[field].length <= MAX_IDENTIFIER_LENGTH);
+  return item !== null && typeof item === 'object' && !Array.isArray(item) &&
+    typeof item.name === 'string' && item.name.trim().length > 0 &&
+    STRING_FIELDS.every(field => item[field] == null ||
+      (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) &&
+    (item.type == null || (typeof item.type === 'string' && allowedTypes.has(item.type))) &&
+    ['purl', 'cpe', 'sourceRef', 'sourcePurl'].every(validIdentifier) &&
+    (!item.purl || parsePackageUrl(item.purl) !== null) &&
+    (!item.sourcePurl || parsePackageUrl(item.sourcePurl) !== null);
+}
+
 function assertBackupSize(value) {
   let serialized;
   try { serialized = typeof value === 'string' ? value : JSON.stringify(value); }
@@ -22,6 +36,8 @@ function assertBackupSize(value) {
 export function createInventoryBackup(items, createdAt = new Date().toISOString()) {
   if (!Array.isArray(items)) throw new Error('Inventory must be an array.');
   if (items.length > MAX_COMPONENTS) throw new Error('Backup exceeds the 50000 component limit.');
+  const invalidIndex = items.findIndex(item => !isValidBackupComponent(item));
+  if (invalidIndex >= 0) throw new Error('Invalid component at position ' + (invalidIndex + 1) + '.');
   const backup = { format: INVENTORY_BACKUP_FORMAT, version: INVENTORY_BACKUP_VERSION, createdAt, components: items };
   assertBackupSize(backup);
   return backup;
@@ -37,13 +53,7 @@ export function parseInventoryBackup(input) {
   }
   if (data.components.length > MAX_COMPONENTS) throw new Error('Backup exceeds the 50000 component limit.');
   const components = data.components.map((item, index) => {
-    const validIdentifier = field => item[field] == null ||
-      (typeof item[field] === 'string' && item[field].length <= MAX_IDENTIFIER_LENGTH);
-    if (!item || typeof item !== 'object' || Array.isArray(item) || typeof item.name !== 'string' || !item.name.trim() ||
-        !STRING_FIELDS.every(field => item[field] == null || (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) ||
-        (item.type != null && (typeof item.type !== 'string' || !allowedTypes.has(item.type))) ||
-        !validIdentifier('purl') || !validIdentifier('cpe') || !validIdentifier('sourceRef') || !validIdentifier('sourcePurl') ||
-        (item.purl && !parsePackageUrl(item.purl)) || (item.sourcePurl && !parsePackageUrl(item.sourcePurl))) {
+    if (!isValidBackupComponent(item)) {
       throw new Error('Invalid component at position ' + (index + 1) + '.');
     }
     return {
