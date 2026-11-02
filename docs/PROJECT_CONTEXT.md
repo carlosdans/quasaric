@@ -15,7 +15,7 @@ La prioridad es la trazabilidad y la interpretación conservadora. Una coinciden
 
 ## 2. Arquitectura y requisito de coste cero
 
-- React 18 + Vite; interfaz en español e inglés.
+- React 19 + Vite 8; interfaz en español e inglés.
 - Alojamiento estático en Azure Static Web Apps, con **plan Free como requisito de diseño**.
 - App location `/`, API location vacía y output `dist`; despliegue desde `main`.
 - No hay backend propio, Azure Functions, base de datos, colas, contenedores ni almacenamiento central.
