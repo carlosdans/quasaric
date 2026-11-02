@@ -77,3 +77,20 @@ test('preserves legacy entries with invalid optional field metadata for recovery
   assert.deepEqual(loadInventory(storage), { items: [{ name: 'curl', version: '8.5.0' }], warning: true });
   assert.equal(storage.getItem(INVENTORY_RECOVERY_KEY), raw);
 });
+
+test('rejects inventory objects whose serialized representation is invalid', () => {
+  const storage = memoryStorage();
+  const item = {
+    name: 'nginx',
+    toJSON() { return { name: 'nginx', version: 42 }; }
+  };
+  assert.equal(saveInventory([item], storage), false);
+  assert.equal(storage.getItem(INVENTORY_STORAGE_KEY), null);
+
+  const omitted = {
+    name: 'nginx',
+    toJSON() { return { version: '1.26.0' }; }
+  };
+  assert.equal(saveInventory([omitted], storage), false);
+  assert.equal(storage.getItem(INVENTORY_STORAGE_KEY), null);
+});
