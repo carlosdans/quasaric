@@ -75,9 +75,10 @@ function cyclone(document) {
       }
     }
     if (component.sourcePurl && !purlInfo(component.sourcePurl)) return { error:'Invalid source Package URL.', index:index+1 };
-    if (component.sourcePurl && !purlInfo(component.sourcePurl)) return { error:'Invalid source Package URL.', index:index+1 };
     const error = validateComponentFields(component);
-    return error ? { error, index:index+1 } : component;
+    if (error) return { error, index:index+1 };
+    if (component.sourcePurl && !purlInfo(component.sourcePurl)) return { error:'Invalid source Package URL.', index:index+1 };
+    return component;
   });
 }
 function spdx(document) {
