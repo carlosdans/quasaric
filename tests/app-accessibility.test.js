@@ -93,3 +93,10 @@ test('severity values are localized in the vulnerability list and printable repo
 test('correlation result severity uses the localized severity label', () => {
   assert.match(app, /<td>\{severityLabel\(f\.severity\)\}<\/td>/);
 });
+
+
+test('overview applicability and candidate statuses are localized', () => {
+  assert.match(app, /const applicabilityLabel = status =>/);
+  assert.match(app, /applicabilityLabel\(f\.applicabilityStatus\)/);
+  assert.match(app, /f\.state === 'KEV' \? 'KEV' : \(lang === 'es' \? 'Candidato' : 'Candidate'\)/);
+});
