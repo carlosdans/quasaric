@@ -4,16 +4,16 @@ const MAX_COMPONENTS = 50000;
 const MAX_SBOM_BYTES = 10 * 1024 * 1024;
 const MAX_FIELD_LENGTH = 16384;
 const MAX_IDENTIFIER_LENGTH = 2048;
+const str = value => typeof value === 'string' ? value.trim() : '';
 function validateComponentFields(component) {
-  if (['name', 'version', 'vendor'].some(field => component[field].length > MAX_FIELD_LENGTH)) return 'Component metadata exceeds the 16384 character field limit.';
-  if (['purl', 'cpe'].some(field => component[field].length > MAX_IDENTIFIER_LENGTH)) return 'PURL and CPE fields must not exceed 2048 characters.';
+  if (['name', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'sourceRelationship'].some(field => component[field].length > MAX_FIELD_LENGTH)) return 'Component metadata exceeds the 16384 character field limit.';
+  if (['purl', 'cpe', 'sourceRef', 'sourcePurl'].some(field => component[field].length > MAX_IDENTIFIER_LENGTH)) return 'PURL, CPE and source reference fields must not exceed 2048 characters.';
   return null;
 }
-const str = value => typeof value === 'string' ? value.trim() : '';
 function purlInfo(purl) {
   if (!str(purl)) return {};
   const parsed = parsePackageUrl(purl);
-  return parsed ? { name: parsed.name, version: parsed.version, ecosystem: parsed.type } : null;
+  return parsed ? { name: parsed.name, version: parsed.version, ecosystem: parsed.type, qualifiers: parsed.qualifiers } : null;
 }
 function typeFor(name, ecosystem) {
   const value = (name + ' ' + ecosystem).toLowerCase();
@@ -23,6 +23,14 @@ function typeFor(name, ecosystem) {
   if (/wordpress|drupal|joomla/.test(value)) return 'cms';
   if (/postgres|mysql|mariadb|mongodb|redis/.test(value)) return 'database';
   return 'library';
+}
+function propertiesFor(item) {
+  const result = {};
+  for (const property of Array.isArray(item.properties) ? item.properties : []) {
+    const key = str(property?.name);
+    if (key.startsWith('quasaric:') && typeof property.value === 'string') result[key.slice(9)] = property.value.trim();
+  }
+  return result;
 }
 function cyclone(document) {
   if (document.bomFormat !== 'CycloneDX' || !['1.4','1.5','1.6'].includes(String(document.specVersion))) throw new Error('Unsupported CycloneDX format or version (supported: JSON 1.4–1.6).');
@@ -38,13 +46,34 @@ function cyclone(document) {
     if (!name) return { error:'Missing component name.', index:index+1 };
     const refs = Array.isArray(item.externalReferences) ? item.externalReferences : [];
     const cpeRef = refs.find(ref => /cpe/i.test(str(ref.type) + ' ' + str(ref.referenceType)));
+    const properties = propertiesFor(item);
     const component = {
       name, version:str(item.version) || purl?.version || '',
       vendor:str(item.publisher) || str(item.supplier?.name),
       type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl,
       cpe:str(item.cpe) || str(cpeRef?.url) || str(cpeRef?.referenceLocator),
-      sourcePackage:'', sourceVersion:'', architecture:''
+      sourcePackage:str(properties.sourcePackage), sourceVersion:str(properties.sourceVersion),
+      architecture:str(properties.architecture) || str(purl?.qualifiers?.arch),
+      sourceRelationship:str(properties.sourceRelationship), sourceRef:str(properties.sourceRef),
+      sourcePurl:str(properties.sourcePurl)
     };
+    // CycloneDX pedigree ancestors describe provenance. Promote only ancestors
+    // explicitly identified as RPM source packages (arch=src), never by name.
+    if (!component.sourcePackage) {
+      const ancestors = Array.isArray(item.pedigree?.ancestors) ? item.pedigree.ancestors : [];
+      const source = ancestors.find(ancestor => {
+        const parsed = purlInfo(str(ancestor?.purl));
+        return parsed?.type === 'rpm' && parsed.qualifiers?.arch === 'src';
+      });
+      if (source) {
+        const parsed = purlInfo(str(source.purl));
+        component.sourcePackage = parsed.name;
+        component.sourceVersion = parsed.version;
+        component.sourcePurl = str(source.purl);
+        component.sourceRef = str(source['bom-ref']);
+        component.sourceRelationship = 'cyclonedx_pedigree_ancestor_rpm_src';
+      }
+    }
     const error = validateComponentFields(component);
     return error ? { error, index:index+1 } : component;
   });
@@ -53,6 +82,16 @@ function spdx(document) {
   if (document.spdxVersion !== 'SPDX-2.3' || document.dataLicense !== 'CC0-1.0') throw new Error('Unsupported SPDX format or version (supported: SPDX 2.3 JSON).');
   if (!Array.isArray(document.packages)) throw new Error('SPDX document has no packages array.');
   if (document.packages.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
+  const packages = new Map(document.packages.filter(item => item && typeof item === 'object' && !Array.isArray(item) && str(item.SPDXID)).map(item => [str(item.SPDXID), item]));
+  const generatedFrom = new Map();
+  for (const relationship of Array.isArray(document.relationships) ? document.relationships : []) {
+    if (str(relationship?.relationshipType) !== 'GENERATED_FROM') continue;
+    const binaryId = str(relationship.spdxElementId);
+    const sourceId = str(relationship.relatedSpdxElement);
+    if (!packages.has(binaryId) || !packages.has(sourceId) || binaryId === sourceId) continue;
+    if (!generatedFrom.has(binaryId)) generatedFrom.set(binaryId, []);
+    generatedFrom.get(binaryId).push(sourceId);
+  }
   return document.packages.map((item,index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Package entry must be a JSON object.', index:index+1 };
     const refs = Array.isArray(item.externalRefs) ? item.externalRefs : [];
@@ -68,18 +107,32 @@ function spdx(document) {
     const component = {
       name, version:str(item.versionInfo) || purl?.version || '',
       vendor:str(item.supplier).replace(/^Organization:[ \t]*/i,'') || str(item.originator).replace(/^(Organization|Person):\s*/i,''),
-      type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl,
-      cpe:rawCpe, sourcePackage:'', sourceVersion:'', architecture:''
+      type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl, cpe:rawCpe,
+      sourcePackage:'', sourceVersion:'', architecture:str(purl?.qualifiers?.arch),
+      sourceRelationship:'', sourceRef:'', sourcePurl:''
     };
+    // SPDX GENERATED_FROM is directional: binary (left) is generated from source (right).
+    // Multiple source targets are intentionally left unresolved for manual review.
+    const sources = generatedFrom.get(str(item.SPDXID)) || [];
+    if (sources.length === 1) {
+      const source = packages.get(sources[0]);
+      const sourceRefs = Array.isArray(source.externalRefs) ? source.externalRefs : [];
+      const sourcePurlRef = sourceRefs.find(ref => /purl/i.test(str(ref.referenceType)));
+      const sourcePurl = str(sourcePurlRef?.referenceLocator);
+      const sourcePurlData = purlInfo(sourcePurl);
+      component.sourcePackage = str(source.name) || sourcePurlData?.name || '';
+      component.sourceVersion = str(source.versionInfo) || sourcePurlData?.version || '';
+      component.sourceRef = str(source.SPDXID);
+      component.sourcePurl = sourcePurl;
+      component.sourceRelationship = 'spdx_generated_from';
+    }
     const error = validateComponentFields(component);
     return error ? { error, index:index+1 } : component;
   });
 }
 export function parseSbom(input) {
   if (typeof input !== 'string') throw new TypeError('SBOM content must be text.');
-  if (new TextEncoder().encode(input).byteLength > MAX_SBOM_BYTES) {
-    throw new Error('SBOM exceeds the 10 MB limit.');
-  }
+  if (new TextEncoder().encode(input).byteLength > MAX_SBOM_BYTES) throw new Error('SBOM exceeds the 10 MB limit.');
   if (!input.trim()) throw new Error('SBOM file is empty.');
   let document;
   try { document = JSON.parse(input); } catch { throw new Error('SBOM is not valid JSON.'); }
