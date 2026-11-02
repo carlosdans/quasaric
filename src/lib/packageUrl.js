@@ -1,4 +1,5 @@
 const MAX_PURL_LENGTH = 2048;
+const isEncodedComponent = value => /^(?:[A-Za-z0-9._~-]|%[0-9A-Fa-f]{2})*$/.test(value);
 const decode = value => {
   try { return decodeURIComponent(value); } catch { return null; }
 };
@@ -39,8 +40,10 @@ export function parsePackageUrl(value) {
   const at = last.indexOf('@');
   const nameRaw = at < 0 ? last : last.slice(0, at);
   const versionRaw = at < 0 ? '' : last.slice(at + 1);
-  if (!nameRaw || (at >= 0 && !versionRaw)) return null;
+  if (!nameRaw || !isEncodedComponent(nameRaw) ||
+      (at >= 0 && (!versionRaw || !isEncodedComponent(versionRaw)))) return null;
 
+  if (segments.some(segment => !isEncodedComponent(segment))) return null;
   const namespaceParts = segments.map(decode);
   const name = decode(nameRaw);
   const version = versionRaw ? decode(versionRaw) : '';
@@ -55,7 +58,7 @@ export function parsePackageUrl(value) {
   if (query) {
     for (const pair of query.split('&')) {
       const equals = pair.indexOf('=');
-      if (equals < 1 || pair.indexOf('=', equals + 1) >= 0) return null;
+      if (equals < 1 || pair.indexOf('=', equals + 1) >= 0 || !isEncodedComponent(pair.slice(equals + 1))) return null;
       const key = pair.slice(0, equals).toLowerCase();
       const qualifierValue = decode(pair.slice(equals + 1));
       if (!/^[a-z][a-z0-9._-]*$/.test(key) ||
@@ -66,7 +69,9 @@ export function parsePackageUrl(value) {
   }
 
   const normalizedSubpath = subpathRaw.replace(/^\/+|\/+$/g, '');
-  const subpathParts = normalizedSubpath ? normalizedSubpath.split('/').map(decode) : [];
+  const rawSubpathParts = normalizedSubpath ? normalizedSubpath.split('/') : [];
+  if (rawSubpathParts.some(part => !isEncodedComponent(part))) return null;
+  const subpathParts = rawSubpathParts.map(decode);
   if (hash >= 0 && !subpathParts.length) return null;
   if (subpathParts.some(part =>
     part === null || part === '' || part === '.' || part === '..' || part.includes('/')
