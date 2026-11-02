@@ -30,3 +30,35 @@ test('does not report false duplicates when metadata contains separators',()=>{
   ]);
   assert.deepEqual(result.duplicates,[]);
 });
+
+
+test('does not mark distinct architectures, ecosystems, PURLs or CPEs as duplicates', () => {
+  const items = [
+    { id: 'a', name: 'openssl', type: 'library', vendor: 'Ubuntu', ecosystem: 'Ubuntu:24.04:LTS', version: '3.0.2', architecture: 'amd64', purl: 'pkg:deb/ubuntu/openssl@3.0.2' },
+    { id: 'b', name: 'openssl', type: 'library', vendor: 'Ubuntu', ecosystem: 'Ubuntu:24.04:LTS', version: '3.0.2', architecture: 'arm64', purl: 'pkg:deb/ubuntu/openssl@3.0.2?arch=arm64' },
+    { id: 'c', name: 'openssl', type: 'library', vendor: 'Debian', ecosystem: 'Debian:12', version: '3.0.2', architecture: 'amd64', purl: 'pkg:deb/debian/openssl@3.0.2' },
+    { id: 'd', name: 'openssl', type: 'library', vendor: 'Ubuntu', ecosystem: 'Ubuntu:24.04:LTS', version: '3.0.2', architecture: 'amd64', purl: 'pkg:deb/ubuntu/openssl@3.0.2', cpe: 'cpe:2.3:a:openssl:openssl:3.0.2:*:*:*:*:*:*:*' }
+  ];
+  assert.deepEqual(inspectInventory(items).duplicates, []);
+});
+
+test('does not guess duplicates when installed versions are missing', () => {
+  const result = inspectInventory([
+    { id: 'a', name: 'nginx' },
+    { id: 'b', name: 'nginx' }
+  ]);
+  assert.deepEqual(result.missingVersion, [
+    { id: 'a', name: 'nginx' }, { id: 'b', name: 'nginx' }
+  ]);
+  assert.deepEqual(result.duplicates, []);
+});
+
+test('still detects exact package duplicates when all identity metadata matches', () => {
+  const result = inspectInventory([
+    { id: 'a', name: 'openssl-libs', type: 'library', vendor: 'Rocky', ecosystem: 'Rocky Linux', version: '3.0.7-1', architecture: 'x86_64', sourcePackage: 'openssl', sourceVersion: '3.0.7-1', purl: 'pkg:rpm/openssl-libs@3.0.7-1?arch=x86_64' },
+    { id: 'b', name: ' OpenSSL-Libs ', type: 'library', vendor: 'rocky', ecosystem: 'Rocky Linux', version: ' 3.0.7-1 ', architecture: 'X86_64', sourcePackage: 'OpenSSL', sourceVersion: '3.0.7-1', purl: 'pkg:rpm/openssl-libs@3.0.7-1?arch=x86_64' }
+  ]);
+  assert.deepEqual(result.duplicates, [
+    { id: 'b', name: ' OpenSSL-Libs ', firstIndex: 1, row: 2 }
+  ]);
+});

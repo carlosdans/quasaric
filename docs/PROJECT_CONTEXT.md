@@ -1051,3 +1051,11 @@ OSV muestra estos ecosistemas en su catálogo público: https://osv.dev/list?eco
 - El panel de calidad del inventario señala los componentes que declaran un paquete fuente pero no su versión fuente. Se distingue de la versión del binario; no se rellena automáticamente.
 - Se validan los PURL fuente explícitos de SBOM antes de conservarlos. Un identificador fuente malformado se informa como error de entrada, no como procedencia válida.
 - Las comprobaciones son locales y no añaden consultas, dependencias ni consumo de Azure.
+
+
+### 2026-11-02 — precisión del control de duplicados del inventario
+
+- La detección de duplicados exige nombre y versión binaria instalados; no etiqueta como duplicados registros incompletos.
+- La identidad compara tipo, proveedor, ecosistema, versión, arquitectura, paquete/versión fuente, PURL y CPE. Así se evitan falsos positivos entre arquitecturas, distribuciones o paquetes distintos.
+- Se mantiene como aviso de posible duplicado, no como eliminación automática. El inventario original nunca se modifica por esta comprobación.
+- Cambio local de lógica y pruebas; sin servicios, dependencias ni recursos Azure nuevos.
