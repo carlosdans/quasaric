@@ -5,7 +5,7 @@
 > **Actualizado:** 2 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `c120697db4ecddf06007a60ccd5314d4ab6f6600`
+> **HEAD de código validado:** `5c906e49da89798ee4030c702e3cb98d222b7f89`
 
 ## 1. Objetivo y límites
 
@@ -96,9 +96,9 @@ npm run dev
 npm run preview
 ```
 
-CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main`. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
+CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main` y omite despliegues cuando el cambio solo afecta a documentación, pruebas o workflows; si el mismo commit incluye código de aplicación, el despliegue sigue ejecutándose. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `c120697db4ecddf06007a60ccd5314d4ab6f6600`; 369/369 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41504287266](https://github.com/carlosdans/quasaric/actions/runs/41504287266) y despliegue Azure Static Web Apps [41504287342](https://github.com/carlosdans/quasaric/actions/runs/41504287342), ambos satisfactorios.
+**Última validación de código en `main`:** commit `5c906e49da89798ee4030c702e3cb98d222b7f89`; 372/372 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41505631835](https://github.com/carlosdans/quasaric/actions/runs/41505631835) y despliegue Azure Static Web Apps [41505631814](https://github.com/carlosdans/quasaric/actions/runs/41505631814), ambos satisfactorios.
 
 ## 7. Limitaciones y trabajo pendiente
 
@@ -173,4 +173,14 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se añaden fixtures derivados de NVD para CVE-2026-47360 (Apache HTTP Server): se comprueban los límites inclusivo 2.4.60 y exclusivo 2.4.69, así como versiones inmediatamente fuera/dentro del rango.
 - Se añade fixture de CVE-2023-44487 para el CPE de F5 NGINX. La identidad del fabricante F5 no se confunde con el NGINX upstream: queda en revisión, no como coincidencia positiva.
 - Validación en main commit c120697db4ecddf06007a60ccd5314d4ab6f6600: 369/369 tests correctos en Node 20 y 22; builds correctas en ambos. CI [41504287266](https://github.com/carlosdans/quasaric/actions/runs/41504287266) y despliegue Azure [41504287342](https://github.com/carlosdans/quasaric/actions/runs/41504287342), satisfactorios.
+- No se añaden dependencias, backend, servicios externos ni recursos Azure.
+
+
+### 2026-11-02 — cualificadores CPE, fixtures NVD y despliegues eficientes
+
+- Se incorporan fixtures NVD para CVE-2026-47360 (Apache HTTP Server), con límites inclusivo 2.4.60 y exclusivo 2.4.69, y CVE-2023-44487 (F5 NGINX), cuya identidad de fabricante no se confunde con NGINX upstream.
+- La correlación CPE conserva la identidad fabricante/producto y evalúa además update, edition, language, sw_edition, target_sw, target_hw y other. Un cualificador conocido que no coincide rechaza la coincidencia; si falta el dato necesario, la aplicabilidad queda en needs_review, no se eleva a posible.
+- Los CPE declarados manualmente se normalizan con las mismas reglas de escapes y guiones bajos que los CPE de NVD. Se valida además que la arquitectura declarada no contradiga target_hw.
+- Validación del código en commit 5c906e49da89798ee4030c702e3cb98d222b7f89: 372/372 tests correctos y builds correctas en Node 20 y 22. CI [41505631835](https://github.com/carlosdans/quasaric/actions/runs/41505631835) y Azure [41505631814](https://github.com/carlosdans/quasaric/actions/runs/41505631814), satisfactorios.
+- El workflow Azure ignora commits que solo cambian tests, documentación o workflows, evitando publicaciones innecesarias y consumo de cuota. Cambio de pipeline en commit cc86bb2; CI [41505985363](https://github.com/carlosdans/quasaric/actions/runs/41505985363).
 - No se añaden dependencias, backend, servicios externos ni recursos Azure.
