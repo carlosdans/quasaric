@@ -62,9 +62,18 @@ function cyclone(document) {
   const rootRef = str(root?.['bom-ref']);
   // metadata.component is the BOM subject and can be the only component in
   // otherwise valid BOMs. Avoid importing it twice when listed by bom-ref.
-  const includesRoot = root && typeof root === 'object' && rootRef &&
-    nested.some(item => str(item?.['bom-ref']) === rootRef);
-  const flattened = root && !includesRoot ? [root, ...nested] : nested;
+  const rootIndex = root && typeof root === 'object' && rootRef
+    ? nested.findIndex(item => str(item?.['bom-ref']) === rootRef)
+    : -1;
+  // The metadata subject is authoritative for shared fields. Retain nested
+  // relationships/collections when the subject omits them, rather than
+  // silently losing richer root metadata or importing the same ref twice.
+  const flattened = rootIndex >= 0
+    ? nested.map((item, index) => index === rootIndex
+      ? { ...item, ...root,
+          components: Array.isArray(root.components) ? root.components : item?.components }
+      : item)
+    : root ? [root, ...nested] : nested;
   if (flattened.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
   return flattened.map((item,index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Component entry must be a JSON object.', index:index+1 };

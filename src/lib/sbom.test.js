@@ -304,3 +304,22 @@ test('does not duplicate CycloneDX metadata component when its bom-ref is in com
   assert.equal(result.components.length, 2);
   assert.deepEqual(result.components.map(item => item.name), ['quasaric-app', 'react']);
 });
+
+test('merges richer CycloneDX metadata subject fields into its matching component', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    metadata: { component: {
+      'bom-ref': 'app-ref', type: 'application', name: 'quasaric-app', version: '2.4.0',
+      publisher: 'Quasaric Project', purl: 'pkg:generic/quasaric-app@2.4.0'
+    } },
+    components: [
+      { 'bom-ref': 'app-ref', type: 'application', name: 'quasaric-app' },
+      { name: 'react', version: '19.0.0' }
+    ]
+  }));
+  assert.equal(result.components.length, 2);
+  assert.equal(result.components[0].name, 'quasaric-app');
+  assert.equal(result.components[0].version, '2.4.0');
+  assert.equal(result.components[0].vendor, 'Quasaric Project');
+  assert.equal(result.components[0].purl, 'pkg:generic/quasaric-app@2.4.0');
+});
