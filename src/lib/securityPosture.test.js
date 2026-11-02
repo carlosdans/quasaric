@@ -89,3 +89,15 @@ test('marks a previously observed exposure as not detected when absent from late
   assert.equal(result.dwell[0].presentInLatest, false);
   assert.equal(result.latest.uniqueCves, 0);
 });
+
+test('keeps fallback component identities distinct when metadata contains separators', () => {
+  const result = buildSecurityPosture([snap('latest', [
+    finding('CVE-1', [
+      { component: { name: 'a|b', version: 'c' } },
+      { component: { name: 'a', version: 'b|c' } }
+    ])
+  ])]);
+  assert.equal(result.latest.exposures, 2);
+  assert.equal(result.dwell.length, 2);
+  assert.deepEqual(result.dwell.map(item => item.componentName).sort(), ['a', 'a|b']);
+});

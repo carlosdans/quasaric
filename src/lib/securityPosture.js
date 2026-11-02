@@ -9,13 +9,15 @@ function exposureEntries(snapshot = {}) {
   for (const finding of snapshot.findings || []) {
     for (const match of finding.components || []) {
       const component = match.component || {};
-      const componentId = String(component.id || [
-        component.name, component.version, component.vendor,
-        component.sourcePackage, component.sourceVersion,
-        component.architecture, component.ecosystem
-      ].filter(Boolean).join('|'));
+      const componentId = component.id
+        ? JSON.stringify(['id', String(component.id)])
+        : JSON.stringify([
+          component.name ?? null, component.version ?? null, component.vendor ?? null,
+          component.sourcePackage ?? null, component.sourceVersion ?? null,
+          component.architecture ?? null, component.ecosystem ?? null
+        ]);
       entries.push({
-        key: String(finding.id) + '::' + componentId,
+        key: JSON.stringify([String(finding.id), componentId]),
         cve: String(finding.id),
         severity: finding.severity || 'Unknown',
         kev: Boolean(finding.kev),
