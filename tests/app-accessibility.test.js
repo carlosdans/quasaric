@@ -43,3 +43,14 @@ test('workspace label does not imply a user account or cloud workspace', () => {
   assert.match(app, /lang === 'es' \? 'Espacio local' : 'Local workspace'/);
   assert.doesNotMatch(app, /<span>Personal workspace<\/span>/);
 });
+
+
+test('add-component dialog traps focus, closes with Escape and restores focus', () => {
+  assert.match(app, /const \[showAdd, setShowAdd\] = useState\(false\)/);
+  assert.match(app, /const openAdd = \(\) => \{[\s\S]*?addTriggerRef\.current = document\.activeElement/);
+  assert.match(app, /if \(!showAdd\) return undefined/);
+  assert.match(app, /event\.key === 'Escape'[\s\S]*?setShowAdd\(false\)/);
+  assert.match(app, /event\.key !== 'Tab'[\s\S]*?addDialogRef/);
+  assert.match(app, /addTriggerRef\.current\?\.isConnected\) addTriggerRef\.current\.focus\(\)/);
+  assert.match(app, /ref=\{addDialogRef\} className="modal" role="dialog" tabIndex=\{-1\} aria-modal="true"/);
+});
