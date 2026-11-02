@@ -39,7 +39,7 @@ function propertiesFor(item) {
   return result;
 }
 function cyclone(document) {
-  if (document.bomFormat !== 'CycloneDX' || !['1.4','1.5','1.6'].includes(String(document.specVersion))) throw new Error('Unsupported CycloneDX format or version (supported: JSON 1.4–1.6).');
+  if (document.bomFormat !== 'CycloneDX' || !['1.4','1.5','1.6','1.7'].includes(String(document.specVersion))) throw new Error('Unsupported CycloneDX format or version (supported: JSON 1.4–1.7).');
   if (!Array.isArray(document.components)) throw new Error('CycloneDX document has no components array.');
   if (document.components.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
   return document.components.map((item,index) => {
