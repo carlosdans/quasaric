@@ -196,3 +196,10 @@ Quasaric incluye tema oscuro y tema claro. Puedes cambiarlo desde el control de 
 - SUSE CSAF solo aporta evidencia indirecta de paquete fuente cuando el inventario declara `sourcePackage`, el CSAF identifica el paquete fuente con PURL RPM `arch=src`, identifica el binario instalado por PURL y publica una relación explícita entre ambos productos.
 - El estado VEX publicado para el paquete fuente se conserva como confianza media y `needs_review`; no se eleva a afectación confirmada del binario. Se muestran los productos binarios relacionados y la relación publicada.
 - No se infieren relaciones por nombres compartidos, ni se cambia la aplicabilidad NVD. La coincidencia binaria exacta mantiene su flujo previo.
+
+
+### 2026-11-02 — OSV de paquetes fuente para AlmaLinux y Rocky Linux
+
+- Se consulta por separado el paquete binario instalado y el paquete fuente declarado, usando la versión propia de cada uno. La consulta fuente requiere `sourcePackage` y `sourceVersion` explícitos.
+- Los avisos OSV del paquete fuente se adjuntan como evidencia indirecta (`source_package`, confianza media y `needs_review`). Sus versiones corregidas se etiquetan como versiones del fuente y no se trasladan al binario.
+- No se usa el nombre fuente como sustituto silencioso del nombre binario, ni se consulta fuente sin versión fuente. La aplicabilidad NVD permanece independiente.

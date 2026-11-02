@@ -795,14 +795,27 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // Query official OSV distro ecosystems for exact installed package/version.
   // Advisory matches are attached as vendor evidence; they never override NVD.
   const distroGroups = new Map();
+  const addDistroGroup = (component, ecosystem, packageName, version, evidenceType) => {
+    const name = String(packageName || '').trim();
+    const installedVersion = String(version || '').trim();
+    if (!ecosystem || !name || !installedVersion) return;
+    const key = [ecosystem, name.toLowerCase(), installedVersion, evidenceType].join('\u0000');
+    if (!distroGroups.has(key)) distroGroups.set(key, { ecosystem, packageName: name, version: installedVersion, evidenceType, components: [] });
+    distroGroups.get(key).components.push(component);
+  };
   for (const component of components) {
     const ecosystem = resolveOsvDistroEcosystem(component.ecosystem || component.vendor);
-    const packageName = String(component.name || component.sourcePackage || '').trim();
-    const version = String(component.version || '').trim();
-    if (!ecosystem || !packageName || !version) continue;
-    const key = `${ecosystem}\\u0000${packageName}\\u0000${version}`;
-    if (!distroGroups.has(key)) distroGroups.set(key, { ecosystem, packageName, version, components: [] });
-    distroGroups.get(key).components.push(component);
+    // Query binary identity only from the declared installed package name.
+    // A sourcePackage fallback would mislabel source evidence as binary.
+    addDistroGroup(component, ecosystem, component.name, component.version, 'binary_package');
+    // AlmaLinux and Rocky OSV advisories may identify source RPMs separately.
+    // Require both source name and its own version; never compare a source fix boundary with a binary version.
+    if ((ecosystem?.startsWith('AlmaLinux:') || ecosystem === 'Rocky Linux') &&
+        component.sourcePackage && component.sourceVersion &&
+        (String(component.sourcePackage).trim().toLowerCase() !== String(component.name || '').trim().toLowerCase() ||
+         String(component.sourceVersion).trim() !== String(component.version || '').trim())) {
+      addDistroGroup(component, ecosystem, component.sourcePackage, component.sourceVersion, 'source_package');
+    }
   }
   const distroErrors = [];
   const distroQueue = [...distroGroups.values()].slice(0, 100);
@@ -827,14 +840,22 @@ export async function analyzeInventory(components, { signal, onProgress, sources
               components: []
             };
             for (const component of group.components) {
+              const sourcePackageEvidence = group.evidenceType === 'source_package';
               const evidence = {
                 advisoryId: record.id,
                 status: 'needs_review',
-                reason: `OSV encontró el paquete exacto en el ecosistema ${group.ecosystem} para la versión consultada. La evidencia del proveedor debe revisarse antes de concluir aplicabilidad o remediación.`,
+                evidenceType: group.evidenceType,
+                confidence: sourcePackageEvidence ? 'medium' : 'low',
+                reason: sourcePackageEvidence
+                  ? `OSV identifica el paquete fuente exacto ${group.packageName} en ${group.ecosystem} para la versión fuente ${group.version}. Es evidencia indirecta: no demuestra que el binario ${component.name || 'inventariado'} incorpore el código afectado ni permite trasladar su versión corregida al binario.`
+                  : `OSV encontró el paquete binario exacto en el ecosistema ${group.ecosystem} para la versión consultada. La evidencia del proveedor debe revisarse antes de concluir aplicabilidad o remediación.`,
                 ...extractOsvDistroPackageFixes(record, group.packageName, group.ecosystem),
                 ecosystem: group.ecosystem,
                 packageName: group.packageName,
                 installedVersion: group.version,
+                sourcePackage: sourcePackageEvidence ? group.packageName : null,
+                sourceVersion: sourcePackageEvidence ? group.version : null,
+                binaryPackage: sourcePackageEvidence ? (component.name || null) : group.packageName,
                 publishedAt: record.published || null,
                 updatedAt: record.modified || null,
                 url: record.officialSource?.url || `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}`,

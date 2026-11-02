@@ -89,3 +89,61 @@ test('attaches SUSE source-package VEX only as indirect review evidence through 
   assert.equal(evidence.relatedBinaryProducts[0].productId, 'sles-openssl-bin');
   assert.equal(finding.components[0].applicability.status, 'possible', 'source-level VEX must not override NVD applicability');
 });
+
+test('queries AlmaLinux source package separately and attaches indirect evidence without transferring fixed version to binary', async () => {
+  const sourceAdvisory = {
+    id: 'ALSA-2025:5678', aliases: ['CVE-2025-67890'], summary: 'Source package security update',
+    affected: [{ package: { ecosystem: 'AlmaLinux:9', name: 'openssl' }, ranges: [
+      { type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '1:3.0.7-27.el9_4.2' }] }
+    ] }]
+  };
+  const calls = [];
+  const result = await analyzeInventory([{
+    id: 'openssl-libs-alma9', name: 'openssl-libs', version: '3.0.7-27.el9',
+    sourcePackage: 'openssl', sourceVersion: '1:3.0.7-27.el9',
+    ecosystem: 'AlmaLinux 9', type: 'library'
+  }], {
+    sources: {
+      fetchNvdByKeyword: async () => [cve],
+      fetchOsvForDistroPackage: async (name, ecosystem, version) => {
+        calls.push({ name, ecosystem, version });
+        return name === 'openssl' && version.startsWith('1:') ? [sourceAdvisory] : [];
+      },
+      fetchEpssScores: async () => new Map(),
+      fetchKevCatalog: async () => new Map()
+    }
+  });
+  assert.deepEqual(calls.sort((a, b) => a.name.localeCompare(b.name)), [
+    { name: 'openssl', ecosystem: 'AlmaLinux:9', version: '1:3.0.7-27.el9' },
+    { name: 'openssl-libs', ecosystem: 'AlmaLinux:9', version: '3.0.7-27.el9' }
+  ]);
+  const finding = result.findings.find(item => item.id === 'CVE-2025-67890');
+  assert.ok(finding);
+  const evidence = finding.components[0].evidence.find(item =>
+    item.source === 'OSV (Linux distributions)' && item.evidenceType === 'source_package'
+  );
+  assert.ok(evidence);
+  assert.equal(evidence.status, 'needs_review');
+  assert.equal(evidence.confidence, 'medium');
+  assert.equal(evidence.sourcePackage, 'openssl');
+  assert.equal(evidence.binaryPackage, 'openssl-libs');
+  assert.deepEqual(evidence.fixedVersions, ['1:3.0.7-27.el9_4.2']);
+  assert.match(evidence.reason, /no permite trasladar su versión corregida al binario/i);
+  assert.equal(finding.components[0].applicability.status, 'possible');
+});
+
+test('does not query distro source package without an explicit source version', async () => {
+  const calls = [];
+  await analyzeInventory([{
+    id: 'openssl-libs-rocky9', name: 'openssl-libs', version: '3.0.7-1.el9',
+    sourcePackage: 'openssl', ecosystem: 'Rocky Linux 9', type: 'library'
+  }], {
+    sources: {
+      fetchNvdByKeyword: async () => [],
+      fetchOsvForDistroPackage: async (...args) => { calls.push(args); return []; },
+      fetchEpssScores: async () => new Map(),
+      fetchKevCatalog: async () => new Map()
+    }
+  });
+  assert.deepEqual(calls, [['openssl-libs', 'Rocky Linux', '3.0.7-1.el9', { signal: undefined }]]);
+});
