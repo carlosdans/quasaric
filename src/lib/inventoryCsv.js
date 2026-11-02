@@ -34,7 +34,11 @@ export function parseInventoryCsv(input) {
     }
   }
   if (quoted) throw new Error('CSV contains an unterminated quoted field.');
-  if (cell.length || row.length || afterQuote) { row.push(cell); rows.push(row); }
+  if (cell.length || row.length || afterQuote) {
+    row.push(cell);
+    rows.push(row);
+    if (rows.length > MAX_ROWS + 1) throw new Error('CSV exceeds the 50000 data-row limit.');
+  }
   while (rows.length && rows[rows.length - 1].every(value => value.trim() === '')) rows.pop();
   if (!rows.length) throw new Error('CSV is empty.');
   const headers = rows.shift().map(value => value.trim());

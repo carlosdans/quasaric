@@ -68,3 +68,9 @@ test('rejects malformed component and source Package URLs as row errors', () => 
   assert.deepEqual(result.errors.map(error => error.row), [3, 4]);
   assert.match(result.errors[0].message, /valid Package URLs/);
 });
+
+
+test('enforces the CSV row limit when the final row has no line terminator', () => {
+  const csv = 'name\\n' + Array.from({ length: 50001 }, (_, i) => 'component-' + i).join('\\n');
+  assert.throws(() => parseInventoryCsv(csv), /50000 data-row/);
+});
