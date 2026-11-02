@@ -386,7 +386,7 @@ function App() {
     : [], [analysis]);
   const riskBandLabel = band => ({ critical: t.riskCritical, high: t.riskHigh, moderate: t.riskModerate, low: t.riskLow }[band] || t.riskLow);
   const severityLabel = severity => ({ critical: lang === 'es' ? 'Crítica' : 'Critical', high: lang === 'es' ? 'Alta' : 'High', medium: lang === 'es' ? 'Media' : 'Medium', low: lang === 'es' ? 'Baja' : 'Low', unknown: lang === 'es' ? 'Desconocida' : 'Unknown' }[String(severity || '').toLowerCase()] || severity || '—');
-  const applicabilityLabel = status => ({ possible: lang === 'es' ? 'Posible' : 'Possible', affected: lang === 'es' ? 'Afectado' : 'Affected', patched_candidate: lang === 'es' ? 'Parche candidato · verificar' : 'Patch candidate · verify', unaffected: lang === 'es' ? 'No afectado' : 'Not affected', needs_review: lang === 'es' ? 'Verificar' : 'Review' }[String(status || '').toLowerCase()] || status || '—');
+  const applicabilityLabel = status => ({ possible: lang === 'es' ? 'Posible' : 'Possible', affected: lang === 'es' ? 'Afectado' : 'Affected', patched_candidate: lang === 'es' ? 'Parche candidato · verificar' : 'Patch candidate · verify', unaffected: lang === 'es' ? 'No afectado' : 'Not affected', needs_review: lang === 'es' ? 'Verificar' : 'Review' }[String(status || '').toLowerCase()] || status || '');
   const findingStats = useMemo(() => {
     const findings = prioritizedFindings;
     const countSeverity = severity => findings.filter(item => String(item.severity || '').toLowerCase() === severity).length;
