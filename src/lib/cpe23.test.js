@@ -17,6 +17,12 @@ test('accepts escaped delimiters without splitting CPE attributes', () => {
   assert.equal(parsed.version, '1.0');
 });
 
+test('accepts escaped spaces but rejects unescaped spaces', () => {
+  const parsed = parseCpe23('cpe:2.3:a:vendor:product\\ edition:1.0:*:*:*:*:*:*:*');
+  assert.equal(parsed.product, 'product edition');
+  assert.equal(parseCpe23('cpe:2.3:a:vendor:product edition:1.0:*:*:*:*:*:*:*'), null);
+});
+
 test('accepts valid wildcard and not-applicable bindings', () => {
   assert.equal(parseCpe23('cpe:2.3:o:*:*:*:*:*:*:*:*:*:*').part, 'o');
   assert.equal(parseCpe23('cpe:2.3:h:vendor:device:-:*:*:*:*:*:*:*').version, '-');

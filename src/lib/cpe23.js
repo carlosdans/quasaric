@@ -18,7 +18,7 @@ function splitFormattedString(value) {
       fields.push(field);
       field = '';
     } else {
-      if (character.charCodeAt(0) < 0x20 || character.charCodeAt(0) > 0x7e || /\\s/.test(character)) return null;
+      if (character.charCodeAt(0) < 0x20 || character.charCodeAt(0) > 0x7e || /\s/.test(character)) return null;
       field += character;
     }
   }
@@ -40,6 +40,5 @@ export function parseCpe23(value) {
   const attributes = fields.slice(2);
   if (attributes.some(attribute => attribute.length === 0)) return null;
   if (!['a', 'o', 'h', '*', '-'].includes(attributes[0])) return null;
-  if (attributes.some(attribute => /[\s]/.test(attribute))) return null;
   return Object.fromEntries(ATTRIBUTE_NAMES.map((name, index) => [name, attributes[index]]));
 }
