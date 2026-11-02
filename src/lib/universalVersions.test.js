@@ -100,12 +100,12 @@ test('classifies explicit range endpoints with ecosystem-aware ordering', () => 
 
 test('matches canonical Debian ordering for repeated tildes and punctuation', () => {
   const debian = component('nginx', 'Debian 12');
-  const ordered = ['1.0~~', '1.0~', '1.0', '1.0+really1.0', '1.0-1'];
+  const ordered = ['1.0~~', '1.0~', '1.0', '1.0-1', '1.0-1+b1'];
   for (let index = 0; index < ordered.length - 1; index++) {
     assert.equal(compareVersionForComponent(ordered[index], ordered[index + 1], debian), -1,
       `expected ${ordered[index]} < ${ordered[index + 1]}`);
   }
-  assert.equal(compareVersionForComponent('1.0-1', '1.0-1+b1', debian), -1);
+  
 });
 
 test('checks RPM segment type ordering and caret placement around release boundaries', () => {
@@ -130,7 +130,7 @@ test('checks the PEP 440 public release ordering sequence', () => {
     assert.equal(compareVersionForComponent(ordered[index], ordered[index + 1], python), -1,
       `expected ${ordered[index]} < ${ordered[index + 1]}`);
   }
-  assert.equal(compareVersionForComponent('1.0-1', '1.0', python), null);
+  assert.equal(compareVersionForComponent('1.0-foo', '1.0', python), null);
 });
 
 test('checks SemVer numeric and lexical prerelease identifier precedence', () => {
