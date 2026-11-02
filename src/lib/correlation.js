@@ -185,6 +185,52 @@ function compareVersions(a, b, component) {
   return compareVersionForComponent(a, b, component);
 }
 
+function decodeCpeAttribute(value) {
+  return String(value ?? '')
+    .replaceAll('\uE000', '*')
+    .replaceAll('\uE001', '-')
+    .replaceAll('\uE002', '?')
+    .replaceAll('\uE003', '\uE004')
+    .replaceAll('_', ' ')
+    .replaceAll('\uE004', '_');
+}
+
+function cpeQualifierStatus(criteria, component, declaredFields = null) {
+  const fields = splitCpe23(criteria);
+  const qualifiers = [
+    [6, ['update']],
+    [7, ['edition']],
+    [8, ['language']],
+    [9, ['swEdition', 'sw_edition']],
+    [10, ['targetSw', 'target_sw']],
+    [11, ['architecture', 'targetHw', 'target_hw']],
+    [12, ['other']]
+  ];
+  let uncertain = false;
+
+  for (const [index, componentFields] of qualifiers) {
+    const expected = fields[index] || '*';
+    if (expected === '*') continue;
+
+    const declared = declaredFields?.[index];
+    const actual = declared && declared !== '*'
+      ? declared
+      : componentFields.map(field => component?.[field]).find(value =>
+        value !== undefined && value !== null && String(value).trim() !== ''
+      );
+    if (actual === undefined || actual === null || String(actual).trim() === '') {
+      uncertain = true;
+      continue;
+    }
+
+    const left = normalize(decodeCpeAttribute(expected));
+    const right = normalize(decodeCpeAttribute(actual));
+    if (left === '' || left !== right) return false;
+  }
+
+  return uncertain ? null : true;
+}
+
 export function cpeMatchesComponent(criteria, component) {
   const cpe = cpeProduct(criteria);
   const vendor = normalize(cpe.vendor);
@@ -196,9 +242,16 @@ export function cpeMatchesComponent(criteria, component) {
   // unsupported labels. It is only an identity hint: NVD version ranges
   // remain authoritative, and malformed/incomplete CPEs fail closed.
   const declaredCpe = String(component.cpe || '').trim();
+  let declaredFields = null;
   if (declaredCpe) {
-    const declaredFields = splitCpe23(declaredCpe);
+    declaredFields = splitCpe23(declaredCpe);
     if (declaredFields.length !== 13 || declaredFields[0] !== 'cpe' || declaredFields[1] !== '2.3') return false;
+  }
+  // NVD CPEs can constrain update, edition, language, software edition,
+  // target software, hardware or other attributes. Known mismatches are
+  // rejected; missing metadata remains a candidate for manual review.
+  if (cpeQualifierStatus(criteria, component, declaredFields) === false) return false;
+  if (declaredFields) {
     const declaredPart = declaredFields[2];
     const declaredVendor = normalize(declaredFields[3].replaceAll('\\_', '_'));
     const declaredProduct = normalize(declaredFields[4].replaceAll('\\_', '_'));
@@ -343,7 +396,9 @@ export function classifyCpeApplicability(cpeItems, component) {
       if (order === null) { uncertain = true; continue; }
       if (!accepts(order)) return false;
     }
-    return uncertain ? null : true;
+    if (uncertain) return null;
+    const qualifierStatus = cpeQualifierStatus(item.criteria, component);
+    return qualifierStatus === true ? true : qualifierStatus;
   });
   if (affected.includes(true)) return { status: 'possible', confidence: 'medium', reason: 'The supplied version falls within an NVD CPE match/range. Confirm against the vendor advisory and distribution build before treating as affected.' };
   if (affected.includes(null)) return { status: 'needs_review', confidence: 'low', reason: 'The NVD CPE range uses a version format or suffix that cannot be safely ordered against the installed version.' };
@@ -414,6 +469,8 @@ function cpeConditionInInventory(item, inventory) {
       if (order === null) return null;
       if (!accepts(order)) return false;
     }
+    const qualifierStatus = cpeQualifierStatus(item.criteria, component);
+    if (qualifierStatus !== true) return qualifierStatus;
     // A wildcard CPE still proves product presence for configuration logic;
     // vulnerability range classification is performed separately per product.
     return !cpe.versionNotApplicable;

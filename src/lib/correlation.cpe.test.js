@@ -82,16 +82,17 @@ test('matches verified operating-system CPE vendor/product pairs', () => {
     ['cpe:2.3:o:redhat:enterprise_linux:9.0:*:*:*:*:*:*:*', 'Red Hat Enterprise Linux'],
     ['cpe:2.3:o:fedoraproject:fedora:40:*:*:*:*:*:*:*', 'Fedora'],
     ['cpe:2.3:o:alpinelinux:alpine_linux:3.20:*:*:*:*:*:*:*', 'Alpine Linux'],
-    ['cpe:2.3:o:microsoft:windows_server_2019:10.0.17763.7919:*:*:*:*:*:x64:*', 'Windows Server 2019'],
-    ['cpe:2.3:o:microsoft:windows_server_2022:10.0.20348.4467:*:*:*:datacenter:*:x64:*', 'Windows Server 2022'],
-    ['cpe:2.3:o:microsoft:windows_server_2025:10.0.26100.4946:*:*:*:*:*:x64:*', 'Windows Server 2025'],
+    ['cpe:2.3:o:microsoft:windows_server_2019:10.0.17763.7919:*:*:*:*:*:x64:*', { name: 'Windows Server 2019', type: 'os', architecture: 'x64' }],
+    ['cpe:2.3:o:microsoft:windows_server_2022:10.0.20348.4467:*:*:*:datacenter:*:x64:*', { name: 'Windows Server 2022', type: 'os', edition: 'datacenter', architecture: 'x64' }],
+    ['cpe:2.3:o:microsoft:windows_server_2025:10.0.26100.4946:*:*:*:*:*:x64:*', { name: 'Windows Server 2025', type: 'os', architecture: 'x64' }],
     ['cpe:2.3:o:almalinux:almalinux:9.5:*:*:*:*:*:*:*', 'AlmaLinux'],
     ['cpe:2.3:o:resf:rocky_linux:8.4:*:*:*:*:*:*:*', 'Rocky Linux'],
-    ['cpe:2.3:o:suse:linux_enterprise_server:15:sp2:*:*:*:*:*:*', 'SUSE Linux Enterprise Server'],
+    ['cpe:2.3:o:suse:linux_enterprise_server:15:sp2:*:*:*:*:*:*', { name: 'SUSE Linux Enterprise Server', type: 'os', update: 'sp2' }],
     ['cpe:2.3:o:suse:linux_enterprise_server:15:*:*:*:*:*:*:*', 'SLES']
   ];
-  for (const [cpe, name] of cases) {
-    assert.equal(cpeMatchesComponent(cpe, { name, type: 'os' }), true, name);
+  for (const [cpe, identity] of cases) {
+    const component = typeof identity === 'string' ? { name: identity, type: 'os' } : identity;
+    assert.equal(cpeMatchesComponent(cpe, component), true, component.name);
   }
 });
 
@@ -125,4 +126,44 @@ test('matches the official Apache Log4j CPE only to the vulnerable core artifact
     'cpe:2.3:a:attacker:log4j:2.14.1:*:*:*:*:*:*:*',
     component('log4j-core')
   ), false);
+});
+
+
+test('requires exact inventory metadata for constrained CPE qualifiers', () => {
+  const windows = 'cpe:2.3:o:microsoft:windows_server_2022:10.0.20348.4467:*:*:*:datacenter:*:x64:*';
+  assert.equal(cpeMatchesComponent(windows, {
+    name: 'Windows Server 2022', type: 'os', version: '10.0.20348.4467'
+  }), true, 'product identity remains a candidate when edition metadata is unknown');
+  assert.equal(cpeMatchesComponent(windows, {
+    name: 'Windows Server 2022', type: 'os', version: '10.0.20348.4467', architecture: 'x64'
+  }), true, 'architecture alone does not resolve the missing edition');
+  assert.equal(cpeMatchesComponent(windows, {
+    name: 'Windows Server 2022', type: 'os', version: '10.0.20348.4467',
+    edition: 'datacenter', architecture: 'x64'
+  }), true);
+  assert.equal(cpeMatchesComponent(windows, {
+    name: 'Windows Server 2022', type: 'os', version: '10.0.20348.4467',
+    edition: 'datacenter', architecture: 'arm64'
+  }), false);
+
+  const suseSp2 = 'cpe:2.3:o:suse:linux_enterprise_server:15:sp2:*:*:*:*:*:*';
+  assert.equal(cpeMatchesComponent(suseSp2, {
+    name: 'SUSE Linux Enterprise Server', type: 'os', version: '15'
+  }), true, 'product identity remains a candidate when update metadata is unknown');
+  assert.equal(cpeMatchesComponent(suseSp2, {
+    name: 'SUSE Linux Enterprise Server', type: 'os', version: '15', update: 'sp2'
+  }), true);
+});
+
+test('keeps qualified NVD CPE evidence in review when edition metadata is absent', () => {
+  const result = classifyCpeApplicability([{
+    criteria: 'cpe:2.3:o:microsoft:windows_server_2022:10.0.20348.4467:*:*:*:datacenter:*:x64:*',
+    vulnerable: true
+  }], {
+    name: 'Windows Server 2022',
+    type: 'os',
+    version: '10.0.20348.4467',
+    architecture: 'x64'
+  });
+  assert.equal(result.status, 'needs_review');
 });
