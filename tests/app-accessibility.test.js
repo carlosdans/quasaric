@@ -81,3 +81,10 @@ test('document language follows the selected interface language', () => {
   assert.match(app, /document\.documentElement\.lang = lang/);
   assert.match(app, /\}, \[lang\]\)/);
 });
+
+
+test('severity values are localized in the vulnerability list and printable report', () => {
+  assert.match(app, /const severityLabel = severity =>/);
+  assert.match(app, /\{severityLabel\(f\.severity\)\}/);
+  assert.match(app, /\{severityLabel\(finding\.severity\)\}/);
+});
