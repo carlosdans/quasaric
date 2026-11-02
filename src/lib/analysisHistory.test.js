@@ -199,3 +199,33 @@ test('uses one consistent timestamp when the analysis has no analyzedAt value', 
   assert.equal(result.id, result.analyzedAt);
   assert.doesNotThrow(() => new Date(result.analyzedAt).toISOString());
 });
+
+test('compares PURL and CPE identity metadata instead of silently retaining changed package coordinates', () => {
+  const before = snapshot('before', [finding('CVE-2026-0001', [
+    { component: { id: 'a', name: 'openssl', version: '3.0.2', purl: 'pkg:rpm/openssl@3.0.2?arch=x86_64' } }
+  ])]);
+  const after = snapshot('after', [finding('CVE-2026-0001', [
+    { component: { id: 'a', name: 'openssl', version: '3.0.2', purl: 'pkg:rpm/openssl@3.0.2?arch=aarch64' } }
+  ])]);
+  const result = compareAnalysisSnapshots(before, after);
+  assert.equal(result.counts.retained, 1);
+  assert.equal(result.counts.changed, 1);
+  assert.deepEqual(result.changed[0].differences, [{
+    field: 'component.purl',
+    before: 'pkg:rpm/openssl@3.0.2?arch=x86_64',
+    after: 'pkg:rpm/openssl@3.0.2?arch=aarch64'
+  }]);
+});
+
+test('uses PURL and CPE in fallback identity when legacy component IDs are missing', () => {
+  const before = snapshot('before', [finding('CVE-2026-0001', [
+    { component: { name: 'openssl', version: '3.0.2', purl: 'pkg:rpm/openssl@3.0.2?arch=x86_64' } },
+    { component: { name: 'openssl', version: '3.0.2', purl: 'pkg:rpm/openssl@3.0.2?arch=aarch64' } }
+  ])]);
+  const after = snapshot('after', [finding('CVE-2026-0001', [
+    { component: { name: 'openssl', version: '3.0.2', purl: 'pkg:rpm/openssl@3.0.2?arch=x86_64' } }
+  ])]);
+  const result = compareAnalysisSnapshots(before, after);
+  assert.equal(result.counts.retained, 1);
+  assert.equal(result.counts.resolved, 1);
+});

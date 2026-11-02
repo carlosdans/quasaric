@@ -14,7 +14,8 @@ function exposureEntries(snapshot = {}) {
         : JSON.stringify([
           component.name ?? null, component.version ?? null, component.vendor ?? null,
           component.sourcePackage ?? null, component.sourceVersion ?? null,
-          component.architecture ?? null, component.ecosystem ?? null
+          component.architecture ?? null, component.ecosystem ?? null,
+          component.purl ?? null, component.cpe ?? null, component.sourcePurl ?? null
         ]);
       entries.push({
         key: JSON.stringify([String(finding.id).trim(), componentId]),

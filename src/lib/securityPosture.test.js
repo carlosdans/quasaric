@@ -103,3 +103,14 @@ test('keeps fallback component identities distinct when metadata contains separa
   assert.equal(result.dwell.length, 2);
   assert.deepEqual(result.dwell.map(item => item.componentName).sort(), ['a', 'a|b']);
 });
+
+test('keeps fallback posture identities distinct when explicit PURLs differ', () => {
+  const result = buildSecurityPosture([snap('latest', [
+    finding('CVE-1', [
+      { component: { name: 'openssl', version: '3.0.2', purl: 'pkg:rpm/openssl@3.0.2?arch=x86_64' } },
+      { component: { name: 'openssl', version: '3.0.2', purl: 'pkg:rpm/openssl@3.0.2?arch=aarch64' } }
+    ])
+  ])]);
+  assert.equal(result.latest.exposures, 2);
+  assert.equal(result.dwell.length, 2);
+});
