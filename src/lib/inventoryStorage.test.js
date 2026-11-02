@@ -94,3 +94,22 @@ test('rejects inventory objects whose serialized representation is invalid', () 
   assert.equal(saveInventory([omitted], storage), false);
   assert.equal(storage.getItem(INVENTORY_STORAGE_KEY), null);
 });
+
+
+test('preserves and validates explicit SBOM source relationship metadata', () => {
+  const storage = memoryStorage();
+  const component = {
+    name: 'openssl-libs', type: 'library', version: '3.0.7',
+    sourcePackage: 'openssl', sourceVersion: '3.0.7-1',
+    sourceRelationship: 'spdx_generated_from', sourceRef: 'SPDXRef-source',
+    sourcePurl: 'pkg:rpm/openssl@3.0.7-1?arch=src'
+  };
+  assert.equal(saveInventory([component], storage), true);
+  const loaded = loadInventory(storage);
+  assert.equal(loaded.warning, false);
+  for (const field of ['sourcePackage', 'sourceVersion', 'sourceRelationship', 'sourceRef', 'sourcePurl']) {
+    assert.equal(loaded.items[0][field], component[field]);
+  }
+  assert.equal(saveInventory([{ ...component, sourceRef: 'x'.repeat(2049) }], storage), false);
+  assert.equal(saveInventory([{ ...component, sourceRelationship: 42 }], storage), false);
+});

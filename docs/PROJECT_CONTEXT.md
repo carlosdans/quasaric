@@ -1034,3 +1034,13 @@ OSV muestra estos ecosistemas en su catálogo público: https://osv.dev/list?eco
 - El formulario manual permite declarar `sourcePackage`, `sourceVersion` y arquitectura para Ubuntu, AlmaLinux, Rocky Linux y SUSE/openSUSE; antes los campos solo aparecían al seleccionar Ubuntu.
 - La ayuda distingue que AlmaLinux/Rocky consultan el aviso de fuente con su propia versión y que esa evidencia no confirma automáticamente el binario. En SUSE la arquitectura ayuda a afinar la coincidencia CSAF.
 - Los campos ya forman parte del CSV del inventario y permanecen en el almacenamiento local del navegador.
+
+
+### 2026-11-02 — trazabilidad de paquetes fuente en SBOM e inventario
+
+- SPDX 2.3: se conservan relaciones GENERATED_FROM solo cuando el binario y el paquete fuente se resuelven a paquetes del mismo documento y existe una única relación explícita. Se respeta la dirección: el paquete binario indicado por spdxElementId se genera desde el paquete relatedSpdxElement.
+- CycloneDX 1.4–1.6: se aceptan propiedades quasaric:sourcePackage, quasaric:sourceVersion, quasaric:sourceRelationship, quasaric:sourceRef y quasaric:sourcePurl. También se reconoce un ancestro pedigree solo cuando su PURL RPM declara explícitamente arch=src.
+- No se deducen relaciones por nombres similares, versiones compartidas ni orden de componentes. Las relaciones múltiples o incompletas no se promueven a metadatos fuente.
+- CSV y backup JSON preservan relación, referencia y PURL de origen, además de nombre/versión de paquete fuente y arquitectura. Las relaciones se muestran en el inventario.
+- Se añaden pruebas para mapeos explícitos, relaciones ambiguas, ausencia de inferencias y límites de tamaño.
+- El cambio sigue siendo local al navegador y no incorpora dependencias, backend ni recursos Azure adicionales. El alojamiento continúa configurado para Azure Static Web Apps Free; no se ha modificado el plan ni la facturación.

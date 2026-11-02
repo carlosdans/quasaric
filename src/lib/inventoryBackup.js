@@ -3,7 +3,7 @@ export const INVENTORY_BACKUP_VERSION = 1;
 const allowedTypes = new Set(['os', 'web', 'runtime', 'cms', 'database', 'library', 'other']);
 const MAX_IDENTIFIER_LENGTH = 2048;
 const MAX_FIELD_LENGTH = 16384;
-const STRING_FIELDS = ['name', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'sourceRelationship', 'sourceRef', 'sourcePurl'];
+const STRING_FIELDS = ['name', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'sourceRelationship'];
 const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
 const MAX_COMPONENTS = 50000;
 
@@ -40,7 +40,7 @@ export function parseInventoryBackup(input) {
     if (!item || typeof item !== 'object' || Array.isArray(item) || typeof item.name !== 'string' || !item.name.trim() ||
         !STRING_FIELDS.every(field => item[field] == null || (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) ||
         (item.type != null && (typeof item.type !== 'string' || !allowedTypes.has(item.type))) ||
-        !validIdentifier('purl') || !validIdentifier('cpe')) {
+        !validIdentifier('purl') || !validIdentifier('cpe') || !validIdentifier('sourceRef') || !validIdentifier('sourcePurl')) {
       throw new Error('Invalid component at position ' + (index + 1) + '.');
     }
     return {

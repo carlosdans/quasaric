@@ -23,7 +23,7 @@ Capacidades implementadas:
 - Trazabilidad de evidencias por componente y fuente (NVD, Ubuntu OSV y Canonical OpenVEX), con referencias, fechas y detalles del producto.
 - Importación local CSV con validación de esquema y filas; límites de seguridad: 5 MB de texto, 50.000 filas de datos, 32 columnas y 16.384 caracteres por celda.
 - Exportación CSV del inventario y de hallazgos; el CSV de hallazgos incluye la evidencia por fuente en una columna JSON.
-- Importación local de SBOM CycloneDX JSON 1.4–1.6 y SPDX JSON 2.3; extracción de nombre, versión, proveedor, CPE y PURL cuando están presentes. El importador procesa hasta 50.000 componentes y no instala paquetes ni contacta servicios externos.
+- Importación local de SBOM CycloneDX JSON 1.4–1.6 y SPDX JSON 2.3; extracción de nombre, versión, proveedor, CPE y PURL cuando están presentes; conserva las relaciones fuente→binario explícitas de SPDX GENERATED_FROM y las relaciones CycloneDX pedigree hacia componentes RPM arch=src, además de propiedades quasaric:source*. El importador procesa hasta 50.000 componentes y no instala paquetes ni contacta servicios externos.
 - Importación, exportación, restauración y comparación local de backups JSON del inventario; validación de campos y preservación de datos recuperables ante almacenamiento local corrupto.
 - Correlación adicional por PURL con OSV público para paquetes con identificador y versión explícitos; avisos sin CVE asociado permanecen en una lista informativa separada y requieren revisión.
 - Límites de recuperación OpenVEX por análisis (100 documentos y hasta cuatro fetches concurrentes). Las consultas OSV limitan los detalles a 200 avisos por consulta y cuatro descargas concurrentes.
@@ -209,4 +209,4 @@ Quasaric incluye tema oscuro y tema claro. Puedes cambiarlo desde el control de 
 
 - El formulario manual permite declarar `sourcePackage`, `sourceVersion` y arquitectura para Ubuntu, AlmaLinux, Rocky Linux y SUSE/openSUSE; antes los campos solo aparecían al seleccionar Ubuntu.
 - La ayuda distingue que AlmaLinux/Rocky consultan el aviso de fuente con su propia versión y que esa evidencia no confirma automáticamente el binario. En SUSE la arquitectura ayuda a afinar la coincidencia CSAF.
-- Los campos ya forman parte del CSV del inventario y permanecen en el almacenamiento local del navegador.
+- Los campos de paquete fuente, versión, arquitectura y relación SBOM explícita se conservan en CSV, backups JSON y almacenamiento local del navegador. SPDX GENERATED_FROM se interpreta en su dirección normativa; CycloneDX solo promueve ancestros RPM con arch=src o propiedades quasaric:source* declaradas. No se infieren relaciones por nombres.
