@@ -18,3 +18,10 @@ test('the error fallback remains visible and keyboard accessible', () => {
   assert.match(styles, /\.app-error\{/);
   assert.match(styles, /\.app-error button:focus-visible\{/);
 });
+
+
+test('the fallback does not make an absolute claim about data persistence or transmission', () => {
+  assert.match(main, /If your inventory was saved locally, it will be restored/);
+  assert.match(main, /Si el inventario se guardó localmente, se restaurará/);
+  assert.doesNotMatch(main, /has not been sent to a server|no se ha enviado a ningún servidor/);
+});
