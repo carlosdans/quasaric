@@ -46,3 +46,15 @@ test('rejects missing PURLs, other distros, mismatched architectures and CVEs', 
     ecosystem: 'SUSE Linux Enterprise Server 15', purl: 'pkg:rpm/suse/openssl?arch=x86_64'
   }, 'CVE-2026-99999').status, 'needs_review');
 });
+
+test('requires review when SUSE CSAF assigns conflicting VEX states to one product', () => {
+  const conflicting = structuredClone(vex);
+  conflicting.vulnerabilities[0].product_status.fixed = ['openssl-sles15-x86_64'];
+  const result = matchSuseCsafVexComponent(conflicting, {
+    ecosystem: 'SUSE Linux Enterprise Server 15 SP6',
+    purl: 'pkg:rpm/suse/openssl?arch=x86_64'
+  }, 'CVE-2026-12345');
+  assert.equal(result.status, 'needs_review');
+  assert.deepEqual(result.productStatuses, ['fixed', 'known_affected']);
+  assert.match(result.reason, /contradictorios/i);
+});
