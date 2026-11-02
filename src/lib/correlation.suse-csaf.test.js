@@ -89,3 +89,19 @@ test('uses exact SUSE PURL version when available and lowers confidence when ver
   assert.equal(unversionedVex.versionMatch, 'not_specified');
   assert.equal(unversionedVex.confidence, 'medium');
 });
+
+test('does not combine version and architecture evidence from separate SUSE PURLs', () => {
+  const splitIdentityVex = structuredClone(vex);
+  splitIdentityVex.product_tree.branches[0].branches[0].product.product_identification_helper.purls = [
+    'pkg:rpm/suse/openssl@3.0.8-1',
+    'pkg:rpm/suse/openssl?arch=x86_64'
+  ];
+  const result = matchSuseCsafVexComponent(splitIdentityVex, {
+    ecosystem: 'SUSE Linux Enterprise Server 15 SP6',
+    purl: 'pkg:rpm/suse/openssl@3.0.8-1?arch=x86_64'
+  }, 'CVE-2026-12345');
+  assert.equal(result.status, 'vendor_evidence');
+  assert.equal(result.versionMatch, 'exact');
+  assert.equal(result.architectureMatch, 'not_specified');
+  assert.equal(result.confidence, 'medium');
+});
