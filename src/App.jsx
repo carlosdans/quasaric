@@ -434,7 +434,7 @@ function App() {
   const addItem = (event) => {
     event.preventDefault();
     if (!form.name.trim()) return;
-    persist([...items, { ...normalizeComponentType(form), id: crypto.randomUUID(), createdAt: new Date().toISOString() }]);
+    if (!persist([...items, { ...normalizeComponentType(form), id: crypto.randomUUID(), createdAt: new Date().toISOString() }])) return;
     setForm({ name: '', type: 'other', version: '', vendor: '', sourcePackage: '', sourceVersion: '', architecture: '', purl: '', cpe: '' });
     setShowAdd(false);
   };
@@ -456,11 +456,12 @@ function App() {
     const file = event.target.files?.[0]; if (!file) return;
     setImportError(''); setImportMessage('');
     try {
-      if (file.size > 1024 * 1024) throw new Error(lang === 'es' ? 'La copia supera el límite de 1 MB.' : 'Backup exceeds the 1 MB limit.');
+      if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'La copia supera el límite de 10 MB.' : 'Backup exceeds the 10 MB limit.');
       const backup = parseInventoryBackup(await file.text());
       const restored = backup.components.map(item => ({ ...normalizeComponentType(item), id: crypto.randomUUID(), createdAt: item.createdAt || new Date().toISOString() }));
       if (!window.confirm(lang === 'es' ? `Vas a reemplazar los ${items.length} componentes actuales por ${restored.length} de la copia. ¿Continuar?` : `Replace the current ${items.length} components with ${restored.length} from backup?`)) return;
-      persist(restored); setAnalysis(null); setInventoryComparison(null);
+      if (!persist(restored)) throw new Error(lang === 'es' ? 'No se pudo guardar el inventario. La restauración no se ha aplicado.' : 'Could not save the inventory. The restore was not applied.');
+      setInventoryComparison(null);
       setImportMessage(lang === 'es' ? `Copia restaurada: ${restored.length} componentes.` : `Backup restored: ${restored.length} components.`);
     } catch(error) { setImportError(error.message || 'Could not restore backup.'); }
     finally { event.target.value = ''; }
