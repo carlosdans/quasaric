@@ -13,7 +13,13 @@ function validateComponentFields(component) {
 function purlInfo(purl) {
   if (!str(purl)) return {};
   const parsed = parsePackageUrl(purl);
-  return parsed ? { name: parsed.name, version: parsed.version, ecosystem: parsed.type, qualifiers: parsed.qualifiers } : null;
+  return parsed ? {
+    name: parsed.name,
+    qualifiedName: parsed.namespace ? `${parsed.namespace}/${parsed.name}` : parsed.name,
+    version: parsed.version,
+    ecosystem: parsed.type,
+    qualifiers: parsed.qualifiers
+  } : null;
 }
 function typeFor(name, ecosystem) {
   const value = (name + ' ' + ecosystem).toLowerCase();
@@ -42,7 +48,7 @@ function cyclone(document) {
     if (rawPurl.length > MAX_IDENTIFIER_LENGTH || str(item.cpe).length > MAX_IDENTIFIER_LENGTH) return { error:'PURL and CPE fields must not exceed 2048 characters.', index:index+1 };
     const purl = purlInfo(rawPurl);
     if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
-    const name = str(item.name) || purl?.name;
+    const name = str(item.name) || purl?.qualifiedName || purl?.name;
     if (!name) return { error:'Missing component name.', index:index+1 };
     const refs = Array.isArray(item.externalReferences) ? item.externalReferences : [];
     const cpeRef = refs.find(ref => /cpe/i.test(str(ref.type) + ' ' + str(ref.referenceType)));
@@ -116,7 +122,7 @@ function spdx(document) {
     if (rawPurl.length > MAX_IDENTIFIER_LENGTH || rawCpe.length > MAX_IDENTIFIER_LENGTH) return { error:'PURL and CPE fields must not exceed 2048 characters.', index:index+1 };
     const purl = purlInfo(rawPurl);
     if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
-    const name = str(item.name) || purl?.name;
+    const name = str(item.name) || purl?.qualifiedName || purl?.name;
     if (!name) return { error:'Missing package name.', index:index+1 };
     const component = {
       name, version:str(item.versionInfo) || purl?.version || '',
