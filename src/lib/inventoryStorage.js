@@ -44,11 +44,11 @@ export function loadInventory(storage) {
     let parsed;
     try { parsed = JSON.parse(raw); }
     catch {
-      preserveForRecovery(storage, raw);
+      preserveForRecovery(target, raw);
       return { items: [], warning: true };
     }
     if (!Array.isArray(parsed) || parsed.length > MAX_INVENTORY_COMPONENTS) {
-      preserveForRecovery(storage, raw);
+      preserveForRecovery(target, raw);
       return { items: [], warning: true };
     }
     const items = parsed.filter(isInventoryItem);
