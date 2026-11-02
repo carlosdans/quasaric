@@ -35,7 +35,7 @@ test('mobile navigation is modal, keyboard-trapped and restores focus', () => {
   assert.match(app, /event\.key !== 'Tab'[\s\S]*?focusableElements/);
   assert.match(app, /sidebar\?\.querySelector\('\.mobile-close'\)\?\.focus\(\)/);
   assert.match(app, /mobileNavTriggerRef\.current\.focus\(\)/);
-  assert.match(app, /<main className="main-area" inert=\{mobileNav\}>/);
+  assert.match(app, /<main id="main-content" className="main-area" tabIndex=\{-1\} inert=\{mobileNav\}>/);
 });
 
 
