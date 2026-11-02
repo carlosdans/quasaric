@@ -74,7 +74,7 @@ test('rejects non-string and oversized inventory metadata fields', () => {
 test('preserves legacy entries with invalid optional field metadata for recovery', () => {
   const raw = JSON.stringify([{ name: 'nginx', version: 42 }, { name: 'curl', version: '8.5.0' }]);
   const storage = memoryStorage([[INVENTORY_STORAGE_KEY, raw]]);
-  assert.deepEqual(loadInventory(storage), { items: [{ name: 'curl', version: '8.5.0' }], warning: true });
+  assert.deepEqual(loadInventory(storage), { items: [{ name: 'curl', version: '8.5.0', id: 'recovered-1' }], warning: true });
   assert.equal(storage.getItem(INVENTORY_RECOVERY_KEY), raw);
 });
 
@@ -125,7 +125,7 @@ test('rejects invalid PURLs on save and preserves invalid stored rows for recove
   ]);
   const stored = memoryStorage([[INVENTORY_STORAGE_KEY, raw]]);
   assert.deepEqual(loadInventory(stored), {
-    items: [{ name: 'curl', purl: 'pkg:generic/curl@8.5.0' }],
+    items: [{ name: 'curl', purl: 'pkg:generic/curl@8.5.0', id: 'recovered-1' }],
     warning: true
   });
   assert.equal(stored.getItem(INVENTORY_RECOVERY_KEY), raw);
