@@ -25,7 +25,7 @@ function compareSemver(left, right) {
     if (!match) return null;
     const pre = match[4] ? match[4].split('.') : [];
     if (pre.some(id => !id || (/^\d+$/.test(id) && id.length > 1 && id.startsWith('0')))) return null;
-    return { core: match.slice(1, 4).map(Number), pre };
+    return { core: match.slice(1, 4).map(BigInt), pre };
   };
   const a = parse(left), b = parse(right);
   if (!a || !b) {

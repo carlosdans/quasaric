@@ -65,6 +65,19 @@ test('uses SemVer prerelease ordering for npm and Composer packages', () => {
   assert.equal(compareVersionForComponent('01.0.0', '1.0.0', { purl: 'pkg:npm/example@1.0.0' }), null);
 });
 
+test('compares arbitrarily large SemVer core identifiers without Number precision loss', () => {
+  const npm = { purl: 'pkg:npm/example@1.0.0' };
+  assert.equal(compareVersionForComponent(
+    '9007199254740992.0.0', '9007199254740993.0.0', npm
+  ), -1);
+  assert.equal(compareVersionForComponent(
+    '18446744073709551616.0.0', '18446744073709551615.0.0', npm
+  ), 1);
+  assert.equal(compareVersionForComponent(
+    '1.9007199254740993.0', '1.9007199254740992.0', npm
+  ), 1);
+});
+
 test('orders Windows builds and UBR tuples numerically', () => {
   const windows = component('Windows Server 2022');
   assert.equal(compareVersionForComponent('10.0.20348.2159', '10.0.20348.2160', windows), -1);
