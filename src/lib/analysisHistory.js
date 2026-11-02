@@ -25,15 +25,18 @@ function isRecord(value) {
 }
 
 function componentKey(component) {
-  return String(component?.id || [
-    component?.name, component?.version, component?.vendor,
-    component?.sourcePackage, component?.sourceVersion,
-    component?.architecture, component?.ecosystem
-  ].filter(Boolean).join('|'));
+  // Keep fallback identity collision-safe when package metadata contains separators.
+  return component?.id
+    ? JSON.stringify(['id', String(component.id)])
+    : JSON.stringify([
+      component?.name ?? null, component?.version ?? null, component?.vendor ?? null,
+      component?.sourcePackage ?? null, component?.sourceVersion ?? null,
+      component?.architecture ?? null, component?.ecosystem ?? null
+    ]);
 }
 
 function findingComponentKey(finding, match) {
-  return finding.id + '::' + componentKey(match.component);
+  return JSON.stringify([finding.id, componentKey(match.component)]);
 }
 
 export function createAnalysisSnapshot(analysis, inventory = []) {
