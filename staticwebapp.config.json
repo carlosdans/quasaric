@@ -1,19 +1,14 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": [
-      "/assets/*",
-      "*.{css,scss,js,png,gif,ico,jpg,svg,webp,json,txt}"
-    ]
+    "exclude": ["/assets/*", "*.{css,scss,js,png,gif,ico,jpg,svg,webp,json,txt}"]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://services.nvd.nist.gov https://api.first.org https://www.cisa.gov https://api.osv.dev https://raw.githubusercontent.com https://apollo.build.resf.org https://ftp.suse.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://services.nvd.nist.gov https://api.first.org https://www.cisa.gov https://api.osv.dev https://access.redhat.com https://raw.githubusercontent.com https://apollo.build.resf.org https://ftp.suse.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
   },
-  "mimeTypes": {
-    ".json": "application/json"
-  }
+  "mimeTypes": { ".json": "application/json" }
 }
