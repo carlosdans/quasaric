@@ -9,7 +9,7 @@ test('known technologies receive their expected component type', () => {
     assert.equal(suggestedComponentType(name), 'runtime', name);
   }
   assert.equal(suggestedComponentType('Caddy'), 'web');
-  assert.equal(suggestedComponentType('Apache Tomcat'), null);
+  assert.equal(suggestedComponentType('Apache Tomcat'), 'web');
   assert.equal(suggestedComponentType('PHP-FPM'), 'runtime');
   assert.equal(suggestedComponentType('  Apache   HTTP Server  '), 'web');
   assert.equal(suggestedComponentType('Node JS'), 'runtime');

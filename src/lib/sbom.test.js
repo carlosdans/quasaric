@@ -253,10 +253,11 @@ test('infers common runtime families from CycloneDX package identity', () => {
       { name: 'Ruby', version: '3.4.0', purl: 'pkg:gem/ruby@3.4.0' },
       { name: '.NET Runtime', version: '9.0.0' },
       { name: 'Rust', version: '1.85.0', purl: 'pkg:cargo/rust@1.85.0' },
-      { name: 'Caddy', version: '2.9.0' }
+      { name: 'Caddy', version: '2.9.0' },
+      { name: 'Apache Tomcat', version: '10.1.0' }
     ]
   }));
   assert.deepEqual(result.components.map(item => item.type), [
-    'runtime', 'runtime', 'runtime', 'runtime', 'web'
+    'runtime', 'runtime', 'runtime', 'runtime', 'web', 'web'
   ]);
 });
