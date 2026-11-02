@@ -47,6 +47,7 @@ export function parsePackageUrl(value) {
   const namespaceParts = segments.map(decode);
   const name = decode(nameRaw);
   const version = versionRaw ? decode(versionRaw) : '';
+  if (versionRaw && version === null) return null;
   if ([
     ...namespaceParts,
     name,
