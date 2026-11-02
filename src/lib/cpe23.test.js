@@ -18,7 +18,7 @@ test('accepts escaped delimiters without splitting CPE attributes', () => {
 });
 
 test('accepts valid wildcard and not-applicable bindings', () => {
-  assert.equal(parseCpe23('cpe:2.3:o:*:*:*:*:*:*:*:*:*:*:*').part, 'o');
+  assert.equal(parseCpe23('cpe:2.3:o:*:*:*:*:*:*:*:*:*:*').part, 'o');
   assert.equal(parseCpe23('cpe:2.3:h:vendor:device:-:*:*:*:*:*:*:*').version, '-');
 });
 
