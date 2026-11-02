@@ -67,15 +67,36 @@ export function summarizeApplicabilityStatus(matchedComponents) {
 export function classifyCanonicalUbuntuVexComponent(vexRecord, record, component) {
   const sourcePackage = String(component?.sourcePackage || '').trim();
   const ecosystem = String(component?.ecosystem || component?.vendor || '').trim();
-  const affectedEntry = (record?.affected || []).find(entry =>
+  const affectedEntries = (record?.affected || []).filter(entry =>
     entry.package?.name === sourcePackage &&
     entry.package?.ecosystem === ecosystem
   );
-  const result = matchCanonicalUbuntuVexProduct(
+  // OSV may publish multiple entries for one source package and release.
+  // Try each associated source PURL so an incomplete first entry cannot hide
+  // an exact OpenVEX product match in a later entry.
+  const assessments = affectedEntries.map(entry => matchCanonicalUbuntuVexProduct(
     vexRecord,
     component,
-    affectedEntry?.package?.purl
-  );
+    entry.package?.purl
+  ));
+  const validStatuses = new Set(['affected', 'fixed', 'not_affected', 'under_investigation']);
+  const matched = assessments.filter(item => validStatuses.has(item.status));
+  const matchedStatuses = new Set(matched.map(item => item.status));
+  let result;
+  if (matchedStatuses.size > 1) {
+    result = {
+      status: 'needs_review',
+      reason: 'Multiple Ubuntu OSV source-package entries lead to conflicting exact-product OpenVEX statuses.',
+      matches: matched.flatMap(item => item.matches || [])
+    };
+  } else if (matched.length) {
+    result = {
+      ...matched[0],
+      matches: matched.flatMap(item => item.matches || [])
+    };
+  } else {
+    result = assessments[0] || matchCanonicalUbuntuVexProduct(vexRecord, component, null);
+  }
   return {
     ...result,
     source: 'Canonical OpenVEX',

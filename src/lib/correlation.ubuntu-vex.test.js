@@ -51,3 +51,15 @@ test('does not reuse a status when source package and Ubuntu ecosystem disagree'
   const wrongSource = { affected: [{ package: { name: 'other-source', ecosystem: 'Ubuntu:Pro:14.04:LTS', purl: sourcePurl } }] };
   assert.equal(classifyCanonicalUbuntuVexComponent(vex('fixed'), wrongSource, component).status, 'needs_review');
 });
+
+test('finds exact OpenVEX evidence when the first matching OSV source entry lacks a PURL', () => {
+  const multiEntryRecord = {
+    affected: [
+      { package: { name: 'openssl', ecosystem: 'Ubuntu:Pro:14.04:LTS' } },
+      { package: { name: 'openssl', ecosystem: 'Ubuntu:Pro:14.04:LTS', purl: sourcePurl } }
+    ]
+  };
+  const result = classifyCanonicalUbuntuVexComponent(vex('fixed'), multiEntryRecord, component);
+  assert.equal(result.status, 'fixed');
+  assert.equal(result.matches.length, 1);
+});
