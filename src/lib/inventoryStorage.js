@@ -31,13 +31,14 @@ function isInventoryItem(item) {
  * A recoverable copy of the original serialized value is kept before the
  * application proceeds with the valid entries.
  */
-export function loadInventory(storage = globalThis.localStorage) {
-  if (!storage) return { items: [], warning: true };
+export function loadInventory(storage) {
   try {
-    const raw = storage?.getItem(INVENTORY_STORAGE_KEY);
+    const target = storage === undefined ? globalThis.localStorage : storage;
+    if (!target) return { items: [], warning: true };
+    const raw = target.getItem(INVENTORY_STORAGE_KEY);
     if (raw == null || raw === '') return { items: [], warning: false };
     if (!withinByteLimit(raw)) {
-      preserveForRecovery(storage, raw);
+      preserveForRecovery(target, raw);
       return { items: [], warning: true };
     }
     let parsed;
@@ -59,11 +60,12 @@ export function loadInventory(storage = globalThis.localStorage) {
   } catch { return { items: [], warning: true }; }
 }
 
-export function saveInventory(items, storage = globalThis.localStorage) {
+export function saveInventory(items, storage) {
   if (!Array.isArray(items) || !items.every(isInventoryItem)) return false;
   if (items.length > MAX_INVENTORY_COMPONENTS) return false;
   try {
-    if (!storage) return false;
+    const target = storage === undefined ? globalThis.localStorage : storage;
+    if (!target) return false;
     const serialized = JSON.stringify(items);
     if (typeof serialized !== 'string' || !withinByteLimit(serialized)) return false;
     // Validate the exact JSON representation that will be persisted. This
@@ -72,7 +74,7 @@ export function saveInventory(items, storage = globalThis.localStorage) {
     const normalized = JSON.parse(serialized);
     if (!Array.isArray(normalized) || normalized.length > MAX_INVENTORY_COMPONENTS ||
         !normalized.every(isInventoryItem)) return false;
-    storage.setItem(INVENTORY_STORAGE_KEY, serialized);
+    target.setItem(INVENTORY_STORAGE_KEY, serialized);
     return true;
   } catch { return false; }
 }

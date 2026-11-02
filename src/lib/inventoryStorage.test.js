@@ -130,3 +130,18 @@ test('rejects invalid PURLs on save and preserves invalid stored rows for recove
   });
   assert.equal(stored.getItem(INVENTORY_RECOVERY_KEY), raw);
 });
+
+test('handles browsers where accessing localStorage itself throws', () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  try {
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() { throw new Error('storage access blocked'); }
+    });
+    assert.deepEqual(loadInventory(), { items: [], warning: true });
+    assert.equal(saveInventory([{ name: 'nginx' }]), false);
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+    else delete globalThis.localStorage;
+  }
+});
