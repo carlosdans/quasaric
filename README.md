@@ -12,7 +12,7 @@ Capacidades implementadas:
 - Motor común de comparación de versiones por ecosistema: dpkg (Debian/Ubuntu), RPM EVR (RHEL/Rocky/AlmaLinux/SUSE/Fedora), PEP 440 (Python/PyPI), SemVer (npm/Composer) y builds de Windows.
 - Comparación inclusiva/exclusiva de límites con estados conservadores: versión afectada candidata, fuera de rango o revisión necesaria. Los formatos desconocidos no se ordenan por aproximación.
 - Señales EPSS de FIRST y presencia en el catálogo CISA KEV.
-- Consulta de Ubuntu OSV por paquete fuente y ecosistema/release explícitos.
+- Consulta de Red Hat Security Data por CVE para RHEL, con coincidencia exacta de producto/paquete y conservación de estados de paquete y errata (sin asumir que un errata demuestra la versión local corregida).\n- Consulta de Ubuntu OSV por paquete fuente y ecosistema/release explícitos.
 - Mapeo de los paquetes binarios instalados mediante `ecosystem_specific.binaries` del aviso Ubuntu OSV.
 - Evaluación separada de versión fuente y versión binaria Debian/Ubuntu, teniendo en cuenta las revisiones y backports.
 - Recuperación de documentos Canonical OpenVEX por CVE y correlación con el producto binario exacto (paquete, versión completa, arquitectura y distro), vinculada al PURL del paquete fuente OSV.
@@ -27,7 +27,7 @@ Capacidades implementadas:
 - Invalidación de los hallazgos visibles cuando cambia el inventario, para evitar presentar resultados de una composición anterior como actuales.
 - Cancelación explícita de análisis en curso y aviso cuando el historial no puede persistirse en el almacenamiento local.
 
-**No está listo para decisiones de producción.** Una coincidencia sigue siendo evidencia que requiere validación; no se declara automáticamente una vulnerabilidad confirmada ni una remediación confirmada. La correlación necesita validación amplia con avisos reales para CPE ambiguos, backports, rangos RPM de cada fabricante, ediciones/builds de Windows, plugins y dependencias transitivas. El motor de versiones ya dispone de comparadores específicos, pero no implica por sí solo que todas esas fuentes/adaptadores estén conectados. La ausencia de coincidencias no demuestra que un sistema sea seguro.
+**No está listo para decisiones de producción.** Una coincidencia sigue siendo evidencia que requiere validación; no se declara automáticamente una vulnerabilidad confirmada ni una remediación confirmada. La cobertura de Red Hat se limita a los CVE que ya entran como candidatos NVD y a los productos/paquetes identificados exactamente; no sustituye el análisis OVAL/CSAF completo ni demuestra backports locales. La correlación necesita validación amplia con avisos reales para CPE ambiguos, backports, rangos RPM de cada fabricante, ediciones/builds de Windows, plugins y dependencias transitivas. El motor de versiones ya dispone de comparadores específicos, pero no implica por sí solo que todas esas fuentes/adaptadores estén conectados. La ausencia de coincidencias no demuestra que un sistema sea seguro.
 
 ## Principios y privacidad
 

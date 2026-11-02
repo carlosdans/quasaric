@@ -2,7 +2,7 @@ import { normalizeComponentType } from './componentTypes.js';
 import { parsePackageUrl } from './packageUrl.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
-import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
+import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchRedHatCve, matchRedHatCveComponent, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
 const NVD_MAX_RESULTS = 6000;
 
@@ -475,7 +475,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // the production source defaults or sending local inventory to test services.
   const sourceApi = {
     fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog,
-    fetchUbuntuOsvForSourcePackage, fetchCanonicalUbuntuVex, fetchOsvForPurl,
+    fetchUbuntuOsvForSourcePackage, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchRedHatCve,
     ...sourceOverrides
   };
   if (!Array.isArray(components) || components.length === 0) throw new Error('Add at least one component before analysis.');
@@ -785,8 +785,59 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // Ubuntu OSV evidence, or the CVE-wide applicability summary.
   for (const { components: matched } of allCandidates.values()) {
     for (const item of matched) {
+      if (item.redHat) {
+        evidence.push({
+          source: 'Red Hat Security Data',
+          status: item.redHat.status,
+          reason: item.redHat.reason,
+          advisoryId: item.redHat.advisoryId,
+          url: `https://access.redhat.com/security/cve/${encodeURIComponent(item.redHat.advisoryId)}`,
+          packageStates: item.redHat.packageStates,
+          affectedReleases: item.redHat.affectedReleases,
+          product,
+          confidence: item.redHat.confidence
+        });
+      }
       if (item.ubuntuVex) {
         item.ubuntuVex.consistency = compareUbuntuOsvAndVex(item.ubuntuOsv, item.ubuntuVex);
+      }
+    }
+  }
+
+
+  // Red Hat publishes package-level fix states and fixed errata independently
+  // from NVD. Query candidate CVE IDs and attach exact product/package evidence.
+  const redHatComponents = components.filter(component =>
+    /^red hat enterprise linux\\s+\\d+/i.test(String(component.ecosystem || component.vendor || '').trim())
+  );
+  const redHatErrors = [];
+  const redHatEvidence = new Map();
+  const redHatQueue = [...allCandidates.keys()].slice(0, 100);
+  if (redHatComponents.length && allCandidates.size > 100) {
+    redHatErrors.push({ source: 'Red Hat Security Data', message: 'Se ha alcanzado el límite de 100 CVE por análisis; la evidencia Red Hat restante queda pendiente.' });
+  }
+  let redHatNext = 0;
+  const redHatWorker = async () => {
+    while (redHatNext < redHatQueue.length) {
+      const cveId = redHatQueue[redHatNext++];
+      try {
+        redHatEvidence.set(cveId, await sourceApi.fetchRedHatCve(cveId, { signal }));
+      } catch (error) {
+        if (error.name === 'AbortError') throw error;
+        redHatErrors.push({ source: 'Red Hat Security Data', component: cveId, message: error.message });
+      }
+    }
+  };
+  if (redHatComponents.length) {
+    await Promise.all(Array.from({ length: Math.min(4, redHatQueue.length) }, () => redHatWorker()));
+    for (const [cveId, record] of redHatEvidence) {
+      const current = allCandidates.get(cveId);
+      if (!current) continue;
+      for (const component of redHatComponents) {
+        const match = matchRedHatCveComponent(record, component);
+        if (match.status === 'needs_review') continue;
+        const item = current.components.find(entry => entry.component.id === component.id);
+        if (item) item.redHat = { ...match, source: 'Red Hat Security Data', advisoryId: cveId };
       }
     }
   }
@@ -872,9 +923,10 @@ export async function analyzeInventory(components, { signal, onProgress, sources
       kev: errors.some(x => x.source === 'CISA KEV') ? 'unavailable' : 'queried',
       osvPurl: purlGroups.size ? (purlErrors.length ? (purlQueue.length ? 'partial_or_unavailable' : 'unavailable') : 'queried') : 'not_configured',
       ubuntuOsv: ubuntuComponents.length ? (errors.some(x => x.source === 'Ubuntu OSV') ? 'partial_or_unavailable' : (ubuntuGroups.size ? 'queried' : 'needs_source_package')) : 'not_configured',
+      redHatSecurityData: redHatComponents.length ? (redHatErrors.length ? (redHatEvidence.size ? 'partial_or_unavailable' : 'unavailable') : (redHatEvidence.size ? 'queried' : 'needs_review')) : 'not_configured',
       ubuntuVex: ubuntuOsv.size ? (vexErrors.length ? (vexDocuments.size ? 'partial_or_unavailable' : 'unavailable') : (vexDocuments.size ? 'queried' : 'needs_review')) : 'not_configured'
     },
-    errors: [...errors, ...purlErrors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
+    errors: [...errors, ...purlErrors, ...redHatErrors, ...vexErrors.map(error => ({ source: 'Canonical OpenVEX', component: error.cveId, message: error.message }))],
     limits,
     analyzedAt: new Date().toISOString(),
     disclaimer: 'Candidate correlation only. Verify applicability against the exact vendor advisory, distribution package revision, edition, build and installed updates before treating a finding as confirmed.'
