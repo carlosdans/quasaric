@@ -183,3 +183,28 @@ test('uses a declared CPE to verify qualifiers and cross-checks supplied archite
     ...declared, architecture: 'arm64'
   }).status, 'needs_review');
 });
+
+
+test('keeps unbounded wildcard CPE product matches in review instead of excluding them', () => {
+  const result = classifyCpeApplicability([{
+    criteria: 'cpe:2.3:a:php:php:*:*:*:*:*:*:*:*',
+    vulnerable: true
+  }], {
+    name: 'PHP',
+    version: '8.3.12'
+  });
+  assert.equal(result.status, 'needs_review');
+  assert.match(result.reason, /cannot be safely ordered|not proven/i);
+});
+
+test('does not turn an unbounded wildcard CPE into an affected verdict', () => {
+  const result = classifyCpeApplicability([{
+    criteria: 'cpe:2.3:a:openssl:openssl:*:*:*:*:*:*:*:*',
+    vulnerable: true
+  }], {
+    name: 'OpenSSL',
+    version: '3.0.14'
+  });
+  assert.notEqual(result.status, 'possible');
+  assert.notEqual(result.status, 'affected');
+});

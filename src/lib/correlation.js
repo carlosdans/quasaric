@@ -391,7 +391,7 @@ export function classifyCpeApplicability(cpeItems, component) {
     const bounded = Boolean(item.versionStartIncluding || item.versionStartExcluding || item.versionEndIncluding || item.versionEndExcluding);
     if (cpe.versionNotApplicable) return false;
     if (cpe.versionPattern && !cpe.versionWildcard) return null;
-    if (cpe.versionWildcard && !bounded) return false;
+    if (cpe.versionWildcard && !bounded) return null;
     if (!cpe.versionWildcard && cpe.version !== version) return false;
     let uncertain = false;
     const checks = [
