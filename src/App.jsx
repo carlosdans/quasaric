@@ -296,7 +296,15 @@ function App() {
   };
 
   const persist = (next) => {
-    // Stop any in-flight analysis before changing its source inventory.
+    // Do not change the in-memory inventory unless the same snapshot can be
+    // persisted; otherwise the UI could report an import that disappears on reload.
+    try {
+      if (!saveInventory(next)) throw new Error('Local storage unavailable or full.');
+    } catch {
+      setStorageWarning(true);
+      return false;
+    }
+    // Stop any in-flight analysis only after the inventory has been saved.
     analysisAbortRef.current?.abort();
     setItems(next);
     // Findings belong to the exact inventory snapshot that was analysed.
@@ -304,10 +312,8 @@ function App() {
     setAnalysis(null);
     setAnalysisError('');
     setSelectedFinding(null);
-    try {
-      if (!saveInventory(next)) throw new Error('Local storage unavailable or full.');
-      setStorageWarning(false);
-    } catch { setStorageWarning(true); }
+    setStorageWarning(false);
+    return true;
   };
   const inventoryQuality = useMemo(() => inspectInventory(items), [items]);
   const posture = useMemo(() => buildSecurityPosture(analysisHistory), [analysisHistory]);
@@ -390,7 +396,7 @@ function App() {
       const previousDuplicateCount = inspectInventory(items).duplicates.length;
       const combined = [...items, ...imported];
       const duplicateCount = Math.max(0, inspectInventory(combined).duplicates.length - previousDuplicateCount);
-      if (imported.length) persist(combined);
+      if (imported.length && !persist(combined)) throw new Error(lang === 'es' ? 'No se pudo guardar el inventario. No se ha aplicado la importación.' : 'Could not save the inventory. The import was not applied.');
       const summary = lang === 'es'
         ? `Importados: ${imported.length}. Posibles duplicados: ${duplicateCount} (se conservan, no se descartan). Filas con errores: ${parsed.errors.length}.`
         : `Imported: ${imported.length}. Possible duplicates: ${duplicateCount} (kept; none discarded). Invalid rows: ${parsed.errors.length}.`;
@@ -415,7 +421,7 @@ function App() {
       const previousDuplicateCount = inspectInventory(items).duplicates.length;
       const combined = [...items, ...imported];
       const duplicateCount = Math.max(0, inspectInventory(combined).duplicates.length - previousDuplicateCount);
-      if (imported.length) persist(combined);
+      if (imported.length && !persist(combined)) throw new Error(lang === 'es' ? 'No se pudo guardar el inventario. No se ha aplicado la importación.' : 'Could not save the inventory. The import was not applied.');
       const summary = lang === 'es'
         ? `SBOM ${parsed.format}: importados ${imported.length}. Posibles duplicados: ${duplicateCount} (se conservan). Entradas omitidas: ${parsed.errors.length}.`
         : `SBOM ${parsed.format}: imported ${imported.length}. Possible duplicates: ${duplicateCount} (kept). Skipped entries: ${parsed.errors.length}.`;
