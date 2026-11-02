@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cpeMatchesComponent } from './correlation.js';
+import { classifyCpeApplicability, cpeMatchesComponent } from './correlation.js';
 
 const component = name => ({ name });
 
@@ -166,4 +166,19 @@ test('keeps qualified NVD CPE evidence in review when edition metadata is absent
     architecture: 'x64'
   });
   assert.equal(result.status, 'needs_review');
+});
+
+
+test('uses a declared CPE to verify qualifiers and cross-checks supplied architecture', () => {
+  const criteria = 'cpe:2.3:o:microsoft:windows_server_2022:10.0.20348.4467:*:*:*:datacenter:*:x64:*';
+  const declared = {
+    name: 'Windows Server 2022',
+    type: 'os',
+    version: '10.0.20348.4467',
+    cpe: 'cpe:2.3:o:microsoft:windows_server_2022:*:*:*:datacenter:*:x64:*'
+  };
+  assert.equal(classifyCpeApplicability([{ criteria, vulnerable: true }], declared).status, 'possible');
+  assert.equal(classifyCpeApplicability([{ criteria, vulnerable: true }], {
+    ...declared, architecture: 'arm64'
+  }).status, 'needs_review');
 });

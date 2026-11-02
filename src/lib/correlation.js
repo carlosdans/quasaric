@@ -196,6 +196,13 @@ function decodeCpeAttribute(value) {
 }
 
 function cpeQualifierStatus(criteria, component, declaredFields = null) {
+  if (!declaredFields && component?.cpe) {
+    const candidate = splitCpe23(String(component.cpe).trim());
+    if (candidate.length === 13 && candidate[0] === 'cpe' && candidate[1] === '2.3') {
+      declaredFields = candidate;
+    }
+  }
+
   const fields = splitCpe23(criteria);
   const qualifiers = [
     [6, ['update']],
@@ -212,20 +219,25 @@ function cpeQualifierStatus(criteria, component, declaredFields = null) {
     const expected = fields[index] || '*';
     if (expected === '*') continue;
 
+    const actualValues = [];
     const declared = declaredFields?.[index];
-    const actual = declared && declared !== '*'
-      ? declared
-      : componentFields.map(field => component?.[field]).find(value =>
-        value !== undefined && value !== null && String(value).trim() !== ''
-      );
-    if (actual === undefined || actual === null || String(actual).trim() === '') {
+    if (declared && declared !== '*') actualValues.push(declared);
+    for (const field of componentFields) {
+      const value = component?.[field];
+      if (value !== undefined && value !== null && String(value).trim() !== '') {
+        actualValues.push(value);
+      }
+    }
+    if (!actualValues.length) {
       uncertain = true;
       continue;
     }
 
     const left = normalize(decodeCpeAttribute(expected));
-    const right = normalize(decodeCpeAttribute(actual));
-    if (left === '' || left !== right) return false;
+    if (left === '') return false;
+    for (const actual of actualValues) {
+      if (left !== normalize(decodeCpeAttribute(actual))) return false;
+    }
   }
 
   return uncertain ? null : true;
