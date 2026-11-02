@@ -56,3 +56,15 @@ test('rejects oversized source references',()=>{
   const result=parseInventoryCsv('name,sourcePurl\nnginx,'+'x'.repeat(2049));
   assert.equal(result.components.length,0); assert.match(result.errors[0].message,/source reference fields/);
 });
+
+
+test('rejects malformed component and source Package URLs as row errors', () => {
+  const result = parseInventoryCsv(
+    'name,purl,sourcePurl\\nnginx,pkg:deb/debian/nginx@1.26,pkg:rpm/nginx@1.26?arch=src\\n' +
+    'bad-component,not-a-purl,\\n' +
+    'bad-source,pkg:deb/debian/nginx@1.26,not-a-purl\\n'
+  );
+  assert.equal(result.components.length, 1);
+  assert.deepEqual(result.errors.map(error => error.row), [3, 4]);
+  assert.match(result.errors[0].message, /valid Package URLs/);
+});

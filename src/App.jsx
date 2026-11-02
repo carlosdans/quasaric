@@ -9,6 +9,7 @@ import { buildFindingRemediation } from './lib/remediation.js';
 import { buildSecurityPosture } from './lib/securityPosture.js';
 import { buildSecurityPostureCsv } from './lib/securityPostureCsv.js';
 import { safeExternalUrl } from './lib/externalUrl.js';
+import { parsePackageUrl } from './lib/packageUrl.js';
 import { parseInventoryCsv } from './lib/inventoryCsv.js';
 import { parseSbom } from './lib/sbom.js';
 import { loadInventory, saveInventory } from './lib/inventoryStorage.js';
@@ -489,6 +490,11 @@ function App() {
   const addItem = (event) => {
     event.preventDefault();
     if (!form.name.trim()) return;
+    if (form.purl.trim() && !parsePackageUrl(form.purl)) {
+      setImportError(lang === 'es' ? 'El PURL debe ser una Package URL válida (formato pkg:...). No se ha añadido el componente.' : 'PURL must be a valid Package URL (pkg:... format). The component was not added.');
+      return;
+    }
+    setImportError('');
     if (!persist([...items, { ...normalizeComponentType(form), id: crypto.randomUUID(), createdAt: new Date().toISOString() }])) return;
     setForm({ name: '', type: 'other', version: '', vendor: '', sourcePackage: '', sourceVersion: '', architecture: '', purl: '', cpe: '' });
     setShowAdd(false);

@@ -1,3 +1,4 @@
+import { parsePackageUrl } from './packageUrl.js';
 const ALLOWED_TYPES = new Set(['os', 'web', 'runtime', 'cms', 'database', 'library', 'other']);
 const FIELDS = ['name', 'type', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'sourceRelationship', 'sourceRef', 'sourcePurl', 'purl', 'cpe'];
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
@@ -53,6 +54,9 @@ export function parseInventoryCsv(input) {
     if (!ALLOWED_TYPES.has(type)) { errors.push({ row: rowNumber, message: 'Unsupported component type: ' + type }); return; }
     if (['purl', 'cpe', 'sourceRef', 'sourcePurl'].some(field => (record[field] || '').length > 2048)) {
       errors.push({ row: rowNumber, message: 'PURL, CPE and source reference fields must not exceed 2048 characters.' }); return;
+    }
+    if (['purl', 'sourcePurl'].some(field => record[field] && !parsePackageUrl(record[field]))) {
+      errors.push({ row: rowNumber, message: 'PURL and sourcePURL fields must contain valid Package URLs.' }); return;
     }
     components.push(Object.fromEntries(FIELDS.map(field => [field, field === 'type' ? type : (record[field] || '')])));
   });
