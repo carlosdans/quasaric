@@ -31,6 +31,9 @@ No está concebida como un escáner ni como una herramienta de pentesting. La ca
 - Mostrar errores, límites y disponibilidad de fuentes. Un resultado vacío o una fuente caída no equivale a ausencia de vulnerabilidades.
 - No bloquear funciones críticas por una futura monetización. Presupuesto inicial: 0 €, sin anuncios ni monetización inicial.
 
+
+- Los avisos OSV de AlmaLinux/Rocky/SUSE/openSUSE conservan los eventos `fixed` y `last_affected` del paquete y ecosistema exactos. Se exponen como metadatos del proveedor, sin comparar automáticamente NEVRA ni inferir que el host tenga instalada la versión corregida.
+
 ## 3. Arquitectura y despliegue
 
 ### Restricción obligatoria de coste cero
@@ -284,7 +287,8 @@ Pega este mensaje:
 ### Próximos pasos
 
 1. Verificar CI de `main` y workflow Azure de `main` por separado.
-2. Mejorar la ayuda de inventario para obtener `sourcePackage` mediante consulta local de solo lectura, por ejemplo: `dpkg-query -W -f='${binary:Package}\\t${Version}\\t${source:Package}\\t${source:Version}\\n'`. No ejecutar remotamente ni enviar inventarios completos.
+2. Mejorar la ayuda de inventario para obtener `sourcePackage` mediante consulta local de solo lectura, por ejemplo: `dpkg-query -W -f='${binary:Package}\\t${Version}\\t${source:Package}\\t${source:Version}
+'`. No ejecutar remotamente ni enviar inventarios completos.
 3. Añadir fixtures oficiales/sintéticos adicionales para advisories con varios binarios, múltiples releases y estados de parche; documentar que no se cubren avisos sin CVE upstream.
 4. Mantener los resultados como candidatos que requieren verificación con avisos oficiales de Canonical.
 
@@ -297,10 +301,12 @@ Pega este mensaje:
 
 - PR #7 integrada mediante squash: https://github.com/carlosdans/quasaric/pull/7.
 - Commit actual de `main`: `b7cb6c437216592176c8102fefb1646d058d1ce6`.
-- La PR añade ayuda bilingüe para distinguir paquete binario instalado y paquete fuente Ubuntu, e incluye el comando local read-only `dpkg-query -W -f='${binary:Package}\\t${Version}\\t${source:Package}\\t${source:Version}\\n'`. La interfaz indica copiar solo el nombre del paquete fuente y no enviar el inventario completo.
+- La PR añade ayuda bilingüe para distinguir paquete binario instalado y paquete fuente Ubuntu, e incluye el comando local read-only `dpkg-query -W -f='${binary:Package}\\t${Version}\\t${source:Package}\\t${source:Version}
+'`. La interfaz indica copiar solo el nombre del paquete fuente y no enviar el inventario completo.
 - CI de PR #7 satisfactorio: https://github.com/carlosdans/quasaric/actions/runs/41065484533.
 - CI de `main` para el commit integrado satisfactorio (tests y build): https://github.com/carlosdans/quasaric/actions/runs/41066132085.
-- Se revisó el diff: `BookOpen` está importado desde lucide-react y el comando se representa con escapes dobles para que el usuario pueda copiar los literales \\t y \\n.
+- Se revisó el diff: `BookOpen` está importado desde lucide-react y el comando se representa con escapes dobles para que el usuario pueda copiar los literales \\t y 
+.
 
 ### Estado Azure — token renovado pero rechazado
 

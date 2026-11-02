@@ -2,6 +2,7 @@ import { normalizeComponentType } from './componentTypes.js';
 import { parsePackageUrl } from './packageUrl.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
+import { extractOsvDistroPackageFixes } from './vulnerabilitySources.js';
 import { fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog, fetchUbuntuOsvForSourcePackage, matchUbuntuOsvBinary, matchCanonicalUbuntuVexProduct, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchOsvForDistroPackage, resolveOsvDistroEcosystem, fetchRedHatCve, matchRedHatCveComponent, fetchSuseCsafVex, matchSuseCsafVexComponent, extractCveSummary, isSupportedUbuntuOsvEcosystem } from './vulnerabilitySources.js';
 
 const NVD_MAX_RESULTS = 6000;
@@ -475,7 +476,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // the production source defaults or sending local inventory to test services.
   const sourceApi = {
     fetchNvdByKeyword, fetchNvdByVirtualMatchString, fetchEpssScores, fetchKevCatalog,
-    fetchUbuntuOsvForSourcePackage, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchRedHatCve, fetchSuseCsafVex,
+    fetchUbuntuOsvForSourcePackage, fetchCanonicalUbuntuVex, fetchOsvForPurl, fetchOsvForDistroPackage, fetchRedHatCve, fetchSuseCsafVex,
     ...sourceOverrides
   };
   if (!Array.isArray(components) || components.length === 0) throw new Error('Add at least one component before analysis.');
@@ -783,31 +784,6 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // Compare source assessments only after exact-product VEX matching.
   // This is diagnostic metadata: it never overwrites NVD applicability,
   // Ubuntu OSV evidence, or the CVE-wide applicability summary.
-  for (const { components: matched } of allCandidates.values()) {
-    for (const item of matched) {
-      if (item.suseCsafVex) {
-        const cvePath = item.suseCsafVex.advisoryId.toLowerCase().replace(/^cve-/, 'cve-');
-        evidence.push({
-          source: 'SUSE CSAF VEX',
-          status: item.suseCsafVex.status,
-          reason: item.suseCsafVex.reason,
-          productStatuses: item.suseCsafVex.productStatuses,
-          products: item.suseCsafVex.products,
-          remediations: item.suseCsafVex.remediations,
-          advisoryId: item.suseCsafVex.advisoryId,
-          url: `https://ftp.suse.com/pub/projects/security/csaf-vex/${item.suseCsafVex.advisoryId.slice(4, 8)}/${cvePath}.json`,
-          confidence: item.suseCsafVex.confidence,
-          product
-        });
-      }
-      if (item.ubuntuVex) {
-        item.ubuntuVex.consistency = compareUbuntuOsvAndVex(item.ubuntuOsv, item.ubuntuVex);
-      }
-    }
-  }
-
-
-
   // Query official OSV distro ecosystems for exact installed package/version.
   // Advisory matches are attached as vendor evidence; they never override NVD.
   const distroGroups = new Map();
@@ -844,6 +820,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
                 advisoryId: record.id,
                 status: 'needs_review',
                 reason: `OSV encontró el paquete exacto en el ecosistema ${group.ecosystem} para la versión consultada. La evidencia del proveedor debe revisarse antes de concluir aplicabilidad o remediación.`,
+                ...extractOsvDistroPackageFixes(record, group.packageName, group.ecosystem),
                 ecosystem: group.ecosystem,
                 packageName: group.packageName,
                 installedVersion: group.version,
@@ -994,6 +971,21 @@ export async function analyzeInventory(components, { signal, onProgress, sources
       }
       for (const advisory of item.distroOsvEvidence || []) {
         evidence.push({ source: 'OSV (Linux distributions)', ...advisory, product });
+      }
+      if (item.suseCsafVex) {
+        const cvePath = item.suseCsafVex.advisoryId.toLowerCase();
+        evidence.push({
+          source: 'SUSE CSAF VEX',
+          status: item.suseCsafVex.status,
+          reason: item.suseCsafVex.reason,
+          productStatuses: item.suseCsafVex.productStatuses,
+          products: item.suseCsafVex.products,
+          remediations: item.suseCsafVex.remediations,
+          advisoryId: item.suseCsafVex.advisoryId,
+          url: `https://ftp.suse.com/pub/projects/security/csaf-vex/${item.suseCsafVex.advisoryId.slice(4, 8)}/${cvePath}.json`,
+          confidence: item.suseCsafVex.confidence,
+          product
+        });
       }
       if (item.redHat) {
         evidence.push({

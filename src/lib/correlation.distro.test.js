@@ -18,7 +18,7 @@ const advisory = {
   aliases: ['CVE-2025-67890'],
   summary: 'OpenSSL security update',
   published: '2025-02-01T00:00:00Z',
-  affected: [{ package: { ecosystem: 'AlmaLinux', name: 'openssl' } }],
+  affected: [{ package: { ecosystem: 'AlmaLinux', name: 'openssl' }, ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '1:3.0.7-27.el9_4.2' }] }] }],
   references: [{ type: 'ADVISORY', url: 'https://errata.almalinux.org/9/ALSA-2025-1234.html' }]
 };
 
@@ -45,5 +45,7 @@ test('attaches OSV distro advisory evidence to exact AlmaLinux package without o
   assert.ok(evidence);
   assert.equal(evidence.advisoryId, 'ALSA-2025:1234');
   assert.equal(evidence.ecosystem, 'AlmaLinux');
+  assert.deepEqual(evidence.fixedVersions, ['1:3.0.7-27.el9_4.2']);
+  assert.equal(finding.components[0].applicability.status, 'possible', 'vendor fix metadata must not override NVD applicability');
   assert.equal(finding.components[0].applicability.status, 'possible');
 });
