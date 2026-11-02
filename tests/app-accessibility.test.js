@@ -60,3 +60,18 @@ test('keyboard users can skip repeated navigation and focus the main content', (
   assert.match(app, /<a className="skip-link" href="#main-content">/);
   assert.match(app, /<main id="main-content" className="main-area" tabIndex=\{-1\}/);
 });
+
+
+test('Spanish dashboard severity legend is localized', () => {
+  assert.match(app, /lang === 'es' \? 'Crítica' : 'Critical'/);
+  assert.match(app, /lang === 'es' \? 'Alta' : 'High'/);
+  assert.match(app, /lang === 'es' \? 'Media' : 'Medium'/);
+  assert.match(app, /lang === 'es' \? 'Baja' : 'Low'/);
+});
+
+test('KEV presence and backup controls have localized Spanish labels', () => {
+  assert.match(app, /lang === 'es' \? 'Sí' : 'Yes'/);
+  assert.match(app, /aria-label=\{lang === 'es' \? 'Restaurar copia JSON' : 'Restore JSON backup'\}/);
+  assert.match(app, /aria-label=\{lang === 'es' \? 'Comparar copia JSON' : 'Compare JSON backup'\}/);
+  assert.match(app, /aria-label=\{lang === 'es' \? 'Cerrar comparación' : 'Close comparison'\}/);
+});
