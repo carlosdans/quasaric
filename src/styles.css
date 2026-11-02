@@ -714,3 +714,9 @@ button{touch-action:manipulation}
 .inventory-pagination .secondary-btn{min-height:30px;padding:5px 10px;font-size:10px}
 .inventory-pagination button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:520px){.inventory-pagination{align-items:flex-start;flex-direction:column}.inventory-pagination>div{width:100%;justify-content:space-between}}
+
+
+/* Keyboard users can bypass the repeated sidebar and top navigation. */
+.skip-link{position:fixed;top:10px;left:10px;z-index:1000;transform:translateY(-160%);padding:11px 15px;border:2px solid #8fb0ff;border-radius:7px;background:#101b2c;color:#fff;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 6px 24px #0008}
+.skip-link:focus{transform:translateY(0);outline:3px solid #fff;outline-offset:3px}
+.main-area:focus{outline:none}

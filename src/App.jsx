@@ -576,6 +576,7 @@ function App() {
 
   return (
     <div className="app-shell" data-theme={theme}>
+      <a className="skip-link" href="#main-content">{lang === 'es' ? 'Saltar al contenido principal' : 'Skip to main content'}</a>
       <aside ref={mobileNavRef} id="primary-navigation" className={'sidebar ' + (mobileNav ? 'sidebar-open' : '')} role={mobileNav ? 'dialog' : undefined} aria-modal={mobileNav ? 'true' : undefined} aria-label={lang === 'es' ? 'Navegación principal' : 'Primary navigation'}>
         <div className="brand">
           <img className="brand-mark" src="/favicon.svg" alt="" />
@@ -594,7 +595,7 @@ function App() {
       </aside>
       {mobileNav && <div className="mobile-nav-backdrop" aria-hidden="true" onClick={() => setMobileNav(false)} />}
 
-      <main className="main-area" inert={mobileNav}>
+      <main id="main-content" className="main-area" tabIndex={-1} inert={mobileNav}>
         <header className="topbar">
           <button className="icon-btn mobile-menu" onClick={openMobileNav} aria-label={lang === 'es' ? 'Abrir menú' : 'Open menu'} aria-expanded={mobileNav} aria-controls="primary-navigation"><Menu size={19}/></button>
           <div className="breadcrumb"><span>Quasaric</span><ChevronRight size={14}/><strong>{active === 'overview' ? t.overview : active === 'inventory' ? t.inventory : active === 'vulnerabilities' ? t.vulnerabilities : active === 'posture' ? t.posture : active === 'reports' ? t.reports : active === 'help' ? (lang === 'es' ? 'Guía de versiones' : 'Version guide') : t.settings}</strong></div>

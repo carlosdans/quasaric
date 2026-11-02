@@ -35,7 +35,7 @@ test('mobile navigation is modal, keyboard-trapped and restores focus', () => {
   assert.match(app, /event\.key !== 'Tab'[\s\S]*?focusableElements/);
   assert.match(app, /sidebar\?\.querySelector\('\.mobile-close'\)\?\.focus\(\)/);
   assert.match(app, /mobileNavTriggerRef\.current\.focus\(\)/);
-  assert.match(app, /<main className="main-area" inert=\{mobileNav\}>/);
+  assert.match(app, /<main id="main-content" className="main-area" tabIndex=\{-1\} inert=\{mobileNav\}>/);
 });
 
 
@@ -53,4 +53,10 @@ test('add-component dialog traps focus, closes with Escape and restores focus', 
   assert.match(app, /event\.key !== 'Tab'[\s\S]*?addDialogRef/);
   assert.match(app, /addTriggerRef\.current\?\.isConnected\) addTriggerRef\.current\.focus\(\)/);
   assert.match(app, /ref=\{addDialogRef\} className="modal" role="dialog" tabIndex=\{-1\} aria-modal="true"/);
+});
+
+
+test('keyboard users can skip repeated navigation and focus the main content', () => {
+  assert.match(app, /<a className="skip-link" href="#main-content">/);
+  assert.match(app, /<main id="main-content" className="main-area" tabIndex=\{-1\}/);
 });
