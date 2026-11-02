@@ -5,7 +5,7 @@
 > **Actualizado:** 2 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `b1e8c10eecc6a64a544cc491591fa066c13667e9`
+> **HEAD de código validado:** `d89837be1376ebb3631d8f7a9b0e8b0bf82785cd`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main`. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `b1e8c10eecc6a64a544cc491591fa066c13667e9`; 366/366 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41496934196](https://github.com/carlosdans/quasaric/actions/runs/41496934196) y despliegue Azure Static Web Apps [41496934217](https://github.com/carlosdans/quasaric/actions/runs/41496934217) (reintento 3 satisfactorio).
+**Última validación de código en `main`:** commit `d89837be1376ebb3631d8f7a9b0e8b0bf82785cd`; 367/367 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41498352207](https://github.com/carlosdans/quasaric/actions/runs/41498352207) y despliegue Azure Static Web Apps [41498352265](https://github.com/carlosdans/quasaric/actions/runs/41498352265), ambos satisfactorios.
 
 ## 7. Limitaciones y trabajo pendiente
 
@@ -152,7 +152,7 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Cada petición de fuente pública está limitada a 30 segundos, incluida la lectura del cuerpo; la cancelación del usuario sigue siendo explícita y distinta del timeout.
 - El comparador SemVer usa BigInt para ordenar major/minor/patch sin pérdida de precisión en identificadores numéricos grandes.
 - Se añaden fixtures de regresión basados en los rangos CPE publicados por NVD para Log4j CVE-2021-44228: límites inferiores inclusivos, superiores exclusivos y versiones con sufijo de proveedor no ordenables que deben quedar en revisión.
-- La identidad CPE oficial de Apache Log4j se vincula explícitamente a `log4j-core` y al nombre genérico Log4j, pero no a `log4j-api` ni a otros proveedores; la regresión cubre estas distinciones.
+- La identidad CPE oficial de Apache Log4j se vincula solo a `log4j-core` / `Log4j Core`; el nombre ambiguo `Log4j`, `log4j-api` y otros proveedores no se consideran una coincidencia automática y quedan para revisión.
 - La plataforma de interfaz se ha actualizado de React 18/Vite 6 a React 19/Vite 8, junto con `@vitejs/plugin-react` 6; las actualizaciones se integraron juntas para respetar sus dependencias peer. 351/351 tests y build correctos en Node 20 y 22.
 - La navegación incluye un enlace bilingüe para saltar directamente al contenido principal, visible al recibir foco de teclado; se ha añadido prueba de regresión. Validación posterior: 352/352 tests y build correctos en Node 20 y 22.
 - Se han localizado en español los valores de severidad, aplicabilidad, estado candidato y KEV en paneles, resultados e informes; las etiquetas accesibles de copias también cambian con el idioma.
