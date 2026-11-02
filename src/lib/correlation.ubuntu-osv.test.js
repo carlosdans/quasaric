@@ -125,3 +125,43 @@ test('binary evidence from another source package cannot validate this component
   assert.deepEqual(result.ubuntuBinaryEvidence, []);
   assert.match(result.reason, /binary package name is not listed/i);
 });
+
+test('evaluates all duplicate Ubuntu OSV entries for the same source package and release', () => {
+  const multiEntry = {
+    ...record,
+    affected: [
+      {
+        ...record.affected[0],
+        versions: [],
+        ranges: [{ type: 'ECOSYSTEM', events: [
+          { introduced: '9.0-1' }, { fixed: '10.0-1' }
+        ] }]
+      },
+      {
+        ...record.affected[0],
+        versions: [],
+        ranges: [{ type: 'ECOSYSTEM', events: [
+          { introduced: '0' }, { fixed: '3.0.13-0ubuntu3.2' }
+        ] }]
+      }
+    ]
+  };
+  const result = classifyUbuntuOsvComponent(multiEntry, component());
+  assert.equal(result.status, 'affected');
+  assert.equal(result.ubuntuSourceEvidence.classification, 'affected');
+});
+
+test('keeps contradictory Ubuntu OSV source entries under manual review', () => {
+  const multiEntry = {
+    ...record,
+    affected: [
+      { ...record.affected[0], versions: ['3.0.13-0ubuntu3.1'], ranges: [] },
+      { ...record.affected[0], versions: [], ranges: [
+        { type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '3.0.13-0ubuntu3.1' }] }
+      ] }
+    ]
+  };
+  const result = classifyUbuntuOsvComponent(multiEntry, component());
+  assert.equal(result.status, 'needs_review');
+  assert.match(result.reason, /conflicting source-version assessments/i);
+});

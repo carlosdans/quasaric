@@ -108,25 +108,52 @@ export function classifyUbuntuOsvComponent(record, component) {
   const ecosystem = String(component?.ecosystem || component?.vendor || '').trim();
   const binaryVersion = String(component?.version || '').trim();
   const binaryMatch = matchUbuntuOsvBinary(record, component?.name, binaryVersion, ecosystem, sourcePackage);
-  const affectedEntry = (record?.affected || []).find(entry =>
-    entry.package?.name === sourcePackage && entry.package?.ecosystem === ecosystem
+  // OSV can publish multiple affected entries for one source package and
+  // release. Evaluate all of them: taking the first silently drops ranges
+  // represented by later entries.
+  const affectedEntries = (record?.affected || []).filter(entry =>
+    entry.package?.name === sourcePackage &&
+    entry.package?.ecosystem === ecosystem &&
+    entry.package?.name === record.package
   );
-  const sourceClassification = classifyUbuntuOsvSourceVersion(
-    affectedEntry && affectedEntry.package?.name === record.package ? affectedEntry : null,
-    component?.sourceVersion
+  const sourceAssessments = affectedEntries.map(entry =>
+    classifyUbuntuOsvSourceVersion(entry, component?.sourceVersion)
   );
+  const sourceStatuses = new Set(sourceAssessments.map(item => item.status));
+  const contradictorySourceStatuses =
+    (sourceStatuses.has('affected') && (sourceStatuses.has('unaffected') || sourceStatuses.has('patched_candidate'))) ||
+    (sourceStatuses.has('unaffected') && sourceStatuses.has('patched_candidate'));
+  let sourceClassification;
+  if (contradictorySourceStatuses) {
+    sourceClassification = {
+      status: 'needs_review',
+      reason: 'Ubuntu OSV contains conflicting source-version assessments across multiple entries for this package and release.'
+    };
+  } else if (sourceStatuses.has('affected')) {
+    sourceClassification = sourceAssessments.find(item => item.status === 'affected');
+  } else if (sourceStatuses.has('patched_candidate')) {
+    sourceClassification = sourceAssessments.find(item => item.status === 'patched_candidate');
+  } else if (sourceStatuses.has('unaffected')) {
+    sourceClassification = sourceAssessments.find(item => item.status === 'unaffected');
+  } else {
+    sourceClassification = sourceAssessments[0] || classifyUbuntuOsvSourceVersion(null, component?.sourceVersion);
+  }
 
   let status = 'needs_review';
   let reason = sourceClassification.reason;
   const advisoryBinaryVersions = [...new Set(
     (binaryMatch.evidence || []).map(item => item.advisoryBinaryVersion).filter(Boolean)
   )];
-  const hasFixedSourceBoundary = (affectedEntry?.ranges || []).some(range =>
-    range.type === 'ECOSYSTEM' && (range.events || []).some(event => event.fixed !== undefined)
+  const hasFixedSourceBoundary = affectedEntries.some(entry =>
+    (entry.ranges || []).some(range =>
+      range.type === 'ECOSYSTEM' && (range.events || []).some(event => event.fixed !== undefined)
+    )
   );
 
   if (binaryMatch.status !== 'matched') {
     reason = `Ubuntu binary-to-source mapping is unconfirmed: ${binaryMatch.reason} Source-version assessment: ${sourceClassification.reason}`;
+  } else if (contradictorySourceStatuses) {
+    reason = sourceClassification.reason;
   } else if (hasFixedSourceBoundary && advisoryBinaryVersions.length > 1) {
     reason = 'The advisory lists multiple fixed binary versions for this binary package; manual review is required.';
   } else if (sourceClassification.status === 'affected') {
