@@ -43,6 +43,21 @@ test('uses PEP 440 ordering for Python pre, final, post and dev releases', () =>
   assert.equal(compareVersionForComponent('2!1.0', '1!9.9', python), 1);
 });
 
+test('accepts PEP 440 prerelease, postrelease and dev aliases with omitted numbers', () => {
+  const python = component('Python', 'PyPI');
+  assert.equal(compareVersionForComponent('1.0a', '1.0a0', python), 0);
+  assert.equal(compareVersionForComponent('1.0alpha', '1.0a0', python), 0);
+  assert.equal(compareVersionForComponent('1.0b', '1.0b0', python), 0);
+  assert.equal(compareVersionForComponent('1.0rc', '1.0rc0', python), 0);
+  assert.equal(compareVersionForComponent('1.0.post', '1.0.post0', python), 0);
+  assert.equal(compareVersionForComponent('1.0rev', '1.0.post0', python), 0);
+  assert.equal(compareVersionForComponent('1.0.dev', '1.0.dev0', python), 0);
+  assert.equal(compareVersionForComponent('1.0.post1.dev', '1.0.post1.dev0', python), 0);
+  assert.equal(compareVersionForComponent('1.0.dev', '1.0a0', python), -1);
+  assert.equal(compareVersionForComponent('1.0a', '1.0', python), -1);
+  assert.equal(compareVersionForComponent('1.0', '1.0.post', python), -1);
+});
+
 test('uses SemVer prerelease ordering for npm and Composer packages', () => {
   assert.equal(compareVersionForComponent('1.0.0-alpha.2', '1.0.0-alpha.10', { purl: 'pkg:npm/example@1.0.0' }), -1);
   assert.equal(compareVersionForComponent('1.0.0-rc.1', '1.0.0', component('php', 'Composer')), -1);
