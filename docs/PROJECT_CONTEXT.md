@@ -32,7 +32,7 @@ La prioridad es la trazabilidad y la interpretación conservadora. Una coinciden
 - Inventario local de hasta 50.000 componentes, condicionado por el límite de 10 MiB y la capacidad del navegador.
 - Alta manual con nombre, tipo, versión, proveedor/ecosistema, PURL, CPE, paquete fuente, versión fuente y arquitectura cuando corresponde.
 - Importación CSV local: 5 MiB, 50.000 filas de datos, 32 columnas y 16.384 caracteres por celda. Valida esquema, cabeceras, tipos, filas y tamaños; informa de filas rechazadas sin perder las válidas.
-- Importación SBOM: CycloneDX JSON 1.4–1.7 y SPDX JSON 2.3; máximo 10 MiB y 50.000 componentes. No consulta servicios externos durante la importación.
+- Importación SBOM: CycloneDX JSON 1.4–1.7 (incluidos componentes anidados de forma recursiva) y SPDX JSON 2.3; máximo 10 MiB y 50.000 componentes totales. No consulta servicios externos durante la importación.
 - Las relaciones fuente→binario se conservan solo si el documento las declara explícitamente: SPDX `GENERATED_FROM`, propiedades `quasaric:source*` o ancestro CycloneDX con PURL RPM `arch=src`. No se infieren por nombres parecidos.
 - CSV y backups JSON preservan PURL/CPE, arquitectura y metadatos de procedencia. Backups versionados y comparación local de inventarios.
 - Almacenamiento local con validación de campos y copia de recuperación cuando puede rescatarse información corrupta.
