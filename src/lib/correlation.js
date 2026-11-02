@@ -785,19 +785,6 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // Ubuntu OSV evidence, or the CVE-wide applicability summary.
   for (const { components: matched } of allCandidates.values()) {
     for (const item of matched) {
-      if (item.redHat) {
-        evidence.push({
-          source: 'Red Hat Security Data',
-          status: item.redHat.status,
-          reason: item.redHat.reason,
-          advisoryId: item.redHat.advisoryId,
-          url: `https://access.redhat.com/security/cve/${encodeURIComponent(item.redHat.advisoryId)}`,
-          packageStates: item.redHat.packageStates,
-          affectedReleases: item.redHat.affectedReleases,
-          product,
-          confidence: item.redHat.confidence
-        });
-      }
       if (item.ubuntuVex) {
         item.ubuntuVex.consistency = compareUbuntuOsvAndVex(item.ubuntuOsv, item.ubuntuVex);
       }
@@ -884,6 +871,19 @@ export async function analyzeInventory(components, { signal, onProgress, sources
           source: 'Ubuntu OSV',
           ...osv,
           product
+        });
+      }
+      if (item.redHat) {
+        evidence.push({
+          source: 'Red Hat Security Data',
+          status: item.redHat.status,
+          reason: item.redHat.reason,
+          advisoryId: item.redHat.advisoryId,
+          url: `https://access.redhat.com/security/cve/${encodeURIComponent(item.redHat.advisoryId)}`,
+          packageStates: item.redHat.packageStates,
+          affectedReleases: item.redHat.affectedReleases,
+          product,
+          confidence: item.redHat.confidence
         });
       }
       if (item.ubuntuVex) {
