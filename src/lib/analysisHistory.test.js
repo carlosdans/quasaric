@@ -168,3 +168,18 @@ test('preserves malformed JSON history for recovery and rejects non-array saves'
   assert.equal(data.get('quasaric-analysis-history-recovery'), '{broken json');
   assert.equal(saveAnalysisHistory({ findings: [] }, storage), false);
 });
+
+
+test('snapshot comparison keys cannot collide on separators in finding or component metadata', () => {
+  const before = snapshot('before', [
+    finding('CVE-A::B', [match('component')]),
+    finding('CVE-A', [match('B::component')])
+  ]);
+  const after = snapshot('after', [
+    finding('CVE-A::B', [match('component')])
+  ]);
+  const result = compareAnalysisSnapshots(before, after);
+  assert.equal(result.counts.resolved, 1);
+  assert.equal(result.resolved[0].cve, 'CVE-A');
+  assert.equal(result.counts.retained, 1);
+});
