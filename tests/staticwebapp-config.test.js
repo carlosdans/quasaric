@@ -12,6 +12,8 @@ test('security headers remain enabled',()=>{
   assert.equal(headers['X-Frame-Options'],'DENY');
   assert.equal(headers['Referrer-Policy'],'strict-origin-when-cross-origin');
   assert.equal(headers['Permissions-Policy'],'camera=(), microphone=(), geolocation=()');
+  assert.equal(headers['Strict-Transport-Security'],'max-age=31536000');
+  assert.equal(headers['X-Permitted-Cross-Domain-Policies'],'none');
 });
 test('CSP allows every external vulnerability API used by the application',()=>{
   const connectSources=directives['connect-src']??[];
