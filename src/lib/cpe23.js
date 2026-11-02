@@ -12,13 +12,13 @@ function splitFormattedString(value) {
       if (character.charCodeAt(0) < 0x20 || character.charCodeAt(0) > 0x7e) return null;
       field += character;
       escaped = false;
-    } else if (character === '\\\\') {
+    } else if (character === '\\') {
       escaped = true;
     } else if (character === ':') {
       fields.push(field);
       field = '';
     } else {
-      if (character.charCodeAt(0) < 0x20 || character.charCodeAt(0) > 0x7e) return null;
+      if (character.charCodeAt(0) < 0x20 || character.charCodeAt(0) > 0x7e || /\\s/.test(character)) return null;
       field += character;
     }
   }

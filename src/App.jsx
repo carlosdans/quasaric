@@ -10,7 +10,6 @@ import { buildSecurityPosture } from './lib/securityPosture.js';
 import { buildSecurityPostureCsv } from './lib/securityPostureCsv.js';
 import { safeExternalUrl } from './lib/externalUrl.js';
 import { parsePackageUrl } from './lib/packageUrl.js';
-import { parseCpe23 } from './lib/cpe23.js';
 import { parseInventoryCsv } from './lib/inventoryCsv.js';
 import { parseSbom } from './lib/sbom.js';
 import { loadInventory, saveInventory } from './lib/inventoryStorage.js';
