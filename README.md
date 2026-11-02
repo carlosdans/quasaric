@@ -12,7 +12,8 @@ Capacidades implementadas:
 - Motor común de comparación de versiones por ecosistema: dpkg (Debian/Ubuntu), RPM EVR (RHEL/Rocky/AlmaLinux/SUSE/Fedora), PEP 440 (Python/PyPI), SemVer (npm/Composer) y builds de Windows.
 - Comparación inclusiva/exclusiva de límites con estados conservadores: versión afectada candidata, fuera de rango o revisión necesaria. Los formatos desconocidos no se ordenan por aproximación.
 - Señales EPSS de FIRST y presencia en el catálogo CISA KEV.
-- Consulta de Red Hat Security Data por CVE para RHEL, con coincidencia exacta de producto/paquete y conservación de estados de paquete y errata (sin asumir que un errata demuestra la versión local corregida).\n- Consulta de Ubuntu OSV por paquete fuente y ecosistema/release explícitos.
+- Consulta de Red Hat Security Data por CVE para RHEL, con coincidencia exacta de producto/paquete y conservación de estados de paquete y errata (sin asumir que un errata demuestra la versión local corregida).
+- Consulta de Ubuntu OSV por paquete fuente y ecosistema/release explícitos.
 - Mapeo de los paquetes binarios instalados mediante `ecosystem_specific.binaries` del aviso Ubuntu OSV.
 - Evaluación separada de versión fuente y versión binaria Debian/Ubuntu, teniendo en cuenta las revisiones y backports.
 - Recuperación de documentos Canonical OpenVEX por CVE y correlación con el producto binario exacto (paquete, versión completa, arquitectura y distro), vinculada al PURL del paquete fuente OSV.

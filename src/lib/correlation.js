@@ -808,7 +808,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // Red Hat publishes package-level fix states and fixed errata independently
   // from NVD. Query candidate CVE IDs and attach exact product/package evidence.
   const redHatComponents = components.filter(component =>
-    /^red hat enterprise linux\\s+\\d+/i.test(String(component.ecosystem || component.vendor || '').trim())
+    /^red hat enterprise linux\s+\d+/i.test(String(component.ecosystem || component.vendor || '').trim())
   );
   const redHatErrors = [];
   const redHatEvidence = new Map();
