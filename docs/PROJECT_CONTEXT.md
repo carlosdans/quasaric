@@ -5,7 +5,7 @@
 > **Actualizado:** 2 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `d2ec0dd5683cb46d7b8e94a7ab55266c0bf621b6`
+> **HEAD de código validado:** `104960b97b916fa2bdc6aef95c29103339c8d28e`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main`. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `d2ec0dd5683cb46d7b8e94a7ab55266c0bf621b6`; 358/358 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41494274438](https://github.com/carlosdans/quasaric/actions/runs/41494274438) y despliegue Azure Static Web Apps [41494274492](https://github.com/carlosdans/quasaric/actions/runs/41494274492), ambos satisfactorios.
+**Última validación de código en `main`:** commit `104960b97b916fa2bdc6aef95c29103339c8d28e`; 361/361 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41495225048](https://github.com/carlosdans/quasaric/actions/runs/41495225048) y despliegue Azure Static Web Apps [41495225039](https://github.com/carlosdans/quasaric/actions/runs/41495225039), ambos satisfactorios.
 
 ## 7. Limitaciones y trabajo pendiente
 
@@ -156,5 +156,8 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se han localizado en español los valores de severidad, aplicabilidad, estado candidato y KEV en paneles, resultados e informes; las etiquetas accesibles de copias también cambian con el idioma.
 - El atributo `lang` del documento se sincroniza con el idioma seleccionado para que lectores de pantalla y herramientas del navegador interpreten correctamente el contenido.
 - Validación de esta versión: 358/358 tests y build correctos en Node 20 y 22; despliegue Azure del commit `d2ec0dd` satisfactorio.
+- La vista de análisis traduce los nombres y estados de las fuentes consultadas para que la cobertura y los fallos parciales sean comprensibles en español.
+- Se ha añadido un límite de error React con mensaje de recuperación bilingüe y recarga, para evitar una pantalla vacía ante fallos inesperados de renderizado.
+- Validación de esta versión: 361/361 tests y build correctos en Node 20 y 22; despliegue Azure del commit `104960b` satisfactorio.
 - Validación actualizada en commit de código `4026832`: 351/351 tests en Node 20 y 22; CI [41490335199](https://github.com/carlosdans/quasaric/actions/runs/41490335199) y Azure [41490335102](https://github.com/carlosdans/quasaric/actions/runs/41490335102), satisfactorios.
 - Los cambios no añaden backend, servicios externos de pago, recursos Azure ni dependencias; mantienen la arquitectura estática/local-first y el requisito de Azure Static Web Apps Free.
