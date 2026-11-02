@@ -121,7 +121,7 @@ function compareRpm(left, right) {
 function comparePep440(left, right) {
   const parse = value => {
     const text = String(value).trim().toLowerCase();
-    const m = /^(?:(\d+)!)?(\d+(?:\.\d+)*)(?:[-_.]?(a|b|rc|alpha|beta|c|pre|preview)[-_.]?(\d+))?(?:[-_.]?(post|rev|r)[-_.]?(\d+))?(?:[-_.]?dev[-_.]?(\d+))?(?:\+([a-z0-9]+(?:[-_.][a-z0-9]+)*))?$/.exec(text);
+    const m = /^(?:(\d+)!)?(\d+(?:\.\d+)*)(?:[-_.]?(a|b|rc|alpha|beta|c|pre|preview)[-_.]?(\d*))?(?:[-_.]?(post|rev|r)[-_.]?(\d*))?(?:[-_.]?dev[-_.]?(\d*))?(?:\+([a-z0-9]+(?:[-_.][a-z0-9]+)*))?$/.exec(text);
     if (!m) return null;
     const preName = m[3] ? ({ alpha: 'a', beta: 'b', c: 'rc', pre: 'rc', preview: 'rc' }[m[3]] || m[3]) : null;
     const local = m[8] ? m[8].split(/[-_.]/).map(part => /^\d+$/.test(part) ? { n: BigInt(part) } : { s: part }) : [];
@@ -136,13 +136,13 @@ function comparePep440(left, right) {
   // Parse dev separately to keep public and local ordering explicit.
   const parseFull = value => {
     const text = String(value).trim().toLowerCase();
-    const m = /^(?:(\d+)!)?(\d+(?:\.\d+)*)(?:[-_.]?(a|b|rc|alpha|beta|c|pre|preview)[-_.]?(\d+))?(?:[-_.]?(post|rev|r)[-_.]?(\d+))?(?:[-_.]?dev[-_.]?(\d+))?(?:\+([a-z0-9]+(?:[-_.][a-z0-9]+)*))?$/.exec(text);
+    const m = /^(?:(\d+)!)?(\d+(?:\.\d+)*)(?:[-_.]?(a|b|rc|alpha|beta|c|pre|preview)[-_.]?(\d*))?(?:[-_.]?(post|rev|r)[-_.]?(\d*))?(?:[-_.]?dev[-_.]?(\d*))?(?:\+([a-z0-9]+(?:[-_.][a-z0-9]+)*))?$/.exec(text);
     if (!m) return null;
     const preName = m[3] ? ({ alpha: 'a', beta: 'b', c: 'rc', pre: 'rc', preview: 'rc' }[m[3]] || m[3]) : null;
     const local = m[8] ? m[8].split(/[-_.]/).map(part => /^\d+$/.test(part) ? { n: BigInt(part) } : { s: part }) : [];
     return { epoch: m[1] || '0', release: m[2].split('.').map(BigInt),
       pre: preName ? [({ a: 0, b: 1, rc: 2 })[preName], BigInt(m[4] || '0')] : null,
-      post: m[6] ? BigInt(m[7] || '0') : null, dev: m[8] ? null : (m[7] && !m[6] ? BigInt(m[7]) : (m[8] ? null : null)),
+      post: m[5] ? BigInt(m[6] || '0') : null, dev: m[7] !== undefined ? BigInt(m[7] || '0') : null,
       devNumber: m[7] && !m[6] ? BigInt(m[7]) : null, hasDev: m[7] !== undefined && m[6] === undefined,
       local };
   };
