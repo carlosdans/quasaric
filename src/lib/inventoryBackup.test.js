@@ -61,3 +61,14 @@ test('rejects non-serializable object backups and non-object roots', () => {
   assert.throws(() => parseInventoryBackup(cyclic), /serializable JSON/);
   assert.throws(() => parseInventoryBackup([]), /Unsupported/);
 });
+
+
+test('rejects invalid or oversized optional metadata instead of silently dropping it', () => {
+  const base = { format: 'quasaric-inventory', version: 1 };
+  for (const field of ['version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture']) {
+    assert.throws(() => parseInventoryBackup({ ...base, components: [{ name: 'nginx', [field]: 42 }] }), /Invalid component/);
+    assert.throws(() => parseInventoryBackup({ ...base, components: [{ name: 'nginx', [field]: 'x'.repeat(16385) }] }), /Invalid component/);
+  }
+  assert.throws(() => parseInventoryBackup({ ...base, components: [{ name: 'x'.repeat(16385) }] }), /Invalid component/);
+  assert.throws(() => parseInventoryBackup({ ...base, components: [{ name: 'nginx', type: 42 }] }), /Invalid component/);
+});
