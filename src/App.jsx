@@ -449,8 +449,14 @@ function App() {
     downloadCsv(rows, 'quasaric-inventory.csv');
   };
   const exportJsonBackup = () => {
-    const blob = new Blob([JSON.stringify(createInventoryBackup(items), null, 2)], { type: 'application/json;charset=utf-8' });
-    triggerCsvDownload(blob, 'quasaric-inventory-backup.json');
+    try {
+      const blob = new Blob([JSON.stringify(createInventoryBackup(items), null, 2)], { type: 'application/json;charset=utf-8' });
+      triggerCsvDownload(blob, 'quasaric-inventory-backup.json');
+      setImportError('');
+      setImportMessage(lang === 'es' ? 'Copia JSON exportada correctamente.' : 'JSON backup exported successfully.');
+    } catch (error) {
+      setImportError(error.message || (lang === 'es' ? 'No se pudo exportar la copia.' : 'Could not export backup.'));
+    }
   };
   const handleJsonRestore = async event => {
     const file = event.target.files?.[0]; if (!file) return;
@@ -470,7 +476,7 @@ function App() {
     const file = event.target.files?.[0]; if (!file) return;
     setImportError('');
     try {
-      if (file.size > 1024 * 1024) throw new Error(lang === 'es' ? 'La copia supera el límite de 1 MB.' : 'Backup exceeds the 1 MB limit.');
+      if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'La copia supera el límite de 10 MB.' : 'Backup exceeds the 10 MB limit.');
       const backup = parseInventoryBackup(await file.text());
       setInventoryComparison(compareInventories(backup.components, items));
     } catch(error) { setImportError(error.message || 'Could not compare backup.'); }
