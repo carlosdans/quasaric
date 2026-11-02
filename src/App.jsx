@@ -159,6 +159,9 @@ const sampleFindings = [
 
 function App() {
   const [lang, setLang] = useState('es');
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
   const [theme, setTheme] = useState(() => {
     try { return localStorage.getItem('quasaric-theme') === 'light' ? 'light' : 'dark'; }
     catch { return 'dark'; }
