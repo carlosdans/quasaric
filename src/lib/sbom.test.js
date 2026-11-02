@@ -27,6 +27,24 @@ test('preserves PURL namespaces when CycloneDX omits the component name', () => 
   assert.deepEqual(result.components.map(item => item.version), ['1.2.3', '3.14.0', '2.31.0']);
 });
 
+test('imports CycloneDX 1.7 component metadata', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    components: [{
+      type: 'library', name: 'openssl', version: '3.3.2',
+      publisher: 'OpenSSL Foundation',
+      purl: 'pkg:generic/openssl@3.3.2',
+      cpe: 'cpe:2.3:a:openssl:openssl:3.3.2:*:*:*:*:*:*:*'
+    }]
+  }));
+  assert.equal(result.format, 'CycloneDX');
+  assert.equal(result.components[0].name, 'openssl');
+  assert.equal(result.components[0].version, '3.3.2');
+  assert.equal(result.components[0].vendor, 'OpenSSL Foundation');
+  assert.equal(result.components[0].purl, 'pkg:generic/openssl@3.3.2');
+  assert.match(result.components[0].cpe, /^cpe:/);
+});
+
 test('imports SPDX 2.3 package and external references', () => {
   const result=parseSbom(JSON.stringify({spdxVersion:'SPDX-2.3',dataLicense:'CC0-1.0',packages:[{
     name:'nginx',versionInfo:'1.26.0',supplier:'Organization: F5',
