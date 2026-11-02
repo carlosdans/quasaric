@@ -54,3 +54,9 @@ test('add-component dialog traps focus, closes with Escape and restores focus', 
   assert.match(app, /addTriggerRef\.current\?\.isConnected\) addTriggerRef\.current\.focus\(\)/);
   assert.match(app, /ref=\{addDialogRef\} className="modal" role="dialog" tabIndex=\{-1\} aria-modal="true"/);
 });
+
+
+test('keyboard users can skip repeated navigation and focus the main content', () => {
+  assert.match(app, /<a className="skip-link" href="#main-content">/);
+  assert.match(app, /<main id="main-content" className="main-area" tabIndex=\{-1\}/);
+});
