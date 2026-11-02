@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main`. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `4ddffaa8c7d05e97f5798cfa93f5efdf43be04c0`; 363/363 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41495892132](https://github.com/carlosdans/quasaric/actions/runs/41495892132) (código de `4ddffaa` más documentación) y despliegue Azure Static Web Apps [41495887981](https://github.com/carlosdans/quasaric/actions/runs/41495887981), ambos satisfactorios.
+**Última validación de código en `main`:** commit `4ddffaa8c7d05e97f5798cfa93f5efdf43be04c0`; 363/363 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41496172430](https://github.com/carlosdans/quasaric/actions/runs/41496172430) y despliegue Azure Static Web Apps [41496172649](https://github.com/carlosdans/quasaric/actions/runs/41496172649), ambos satisfactorios para la revisión documental que contiene el código `4ddffaa`.
 
 ## 7. Limitaciones y trabajo pendiente
 
