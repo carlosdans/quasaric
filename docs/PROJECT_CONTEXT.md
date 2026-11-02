@@ -5,7 +5,7 @@
 > **Actualizado:** 2 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `d89837be1376ebb3631d8f7a9b0e8b0bf82785cd`
+> **HEAD de código validado:** `c120697db4ecddf06007a60ccd5314d4ab6f6600`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main`. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `d89837be1376ebb3631d8f7a9b0e8b0bf82785cd`; 367/367 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41498352207](https://github.com/carlosdans/quasaric/actions/runs/41498352207) y despliegue Azure Static Web Apps [41498352265](https://github.com/carlosdans/quasaric/actions/runs/41498352265), ambos satisfactorios.
+**Última validación de código en `main`:** commit `c120697db4ecddf06007a60ccd5314d4ab6f6600`; 369/369 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41504287266](https://github.com/carlosdans/quasaric/actions/runs/41504287266) y despliegue Azure Static Web Apps [41504287342](https://github.com/carlosdans/quasaric/actions/runs/41504287342), ambos satisfactorios.
 
 ## 7. Limitaciones y trabajo pendiente
 
@@ -166,3 +166,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Validación actual: 362/362 tests y build correctos en Node 20 y 22; despliegue Azure del commit `30565b5` satisfactorio.
 - Validación actualizada en commit de código `4026832`: 351/351 tests en Node 20 y 22; CI [41490335199](https://github.com/carlosdans/quasaric/actions/runs/41490335199) y Azure [41490335102](https://github.com/carlosdans/quasaric/actions/runs/41490335102), satisfactorios.
 - Los cambios no añaden backend, servicios externos de pago, recursos Azure ni dependencias; mantienen la arquitectura estática/local-first y el requisito de Azure Static Web Apps Free.
+
+
+### 2026-11-02 — regresión adicional de identidad CPE y rangos NVD reales
+
+- Se añaden fixtures derivados de NVD para CVE-2026-47360 (Apache HTTP Server): se comprueban los límites inclusivo 2.4.60 y exclusivo 2.4.69, así como versiones inmediatamente fuera/dentro del rango.
+- Se añade fixture de CVE-2023-44487 para el CPE de F5 NGINX. La identidad del fabricante F5 no se confunde con el NGINX upstream: queda en revisión, no como coincidencia positiva.
+- Validación en main commit c120697db4ecddf06007a60ccd5314d4ab6f6600: 369/369 tests correctos en Node 20 y 22; builds correctas en ambos. CI [41504287266](https://github.com/carlosdans/quasaric/actions/runs/41504287266) y despliegue Azure [41504287342](https://github.com/carlosdans/quasaric/actions/runs/41504287342), satisfactorios.
+- No se añaden dependencias, backend, servicios externos ni recursos Azure.
