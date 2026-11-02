@@ -148,6 +148,8 @@ test('rejects malformed analysis inputs before building a snapshot', () => {
   assert.throws(() => createAnalysisSnapshot({ findings: [{ id: 'CVE-1', components: 'bad' }] }), TypeError);
   assert.throws(() => createAnalysisSnapshot({ findings: [{ id: 'CVE-1', components: [null] }] }), TypeError);
   assert.throws(() => createAnalysisSnapshot({ findings: [{ id: 'CVE-1', components: [{ component: [] }] }] }), TypeError);
+  assert.throws(() => createAnalysisSnapshot({ findings: [{ id: '  ', components: [] }] }), TypeError);
+  assert.throws(() => createAnalysisSnapshot({ findings: [{ id: 'CVE-1', components: [{ component: { version: '3.0.2' } }] }] }), TypeError);
   assert.throws(() => createAnalysisSnapshot({ findings: [] }, [null]), TypeError);
 });
 
@@ -155,10 +157,18 @@ test('validates stored inventory shape and finding identifiers while retaining l
   const valid = { id: 'legacy', findings: [finding('CVE-2026-0001', [match('a')])] };
   const invalidInventory = { id: 'bad-inventory', inventory: [null], findings: [] };
   const invalidFinding = { id: 'bad-finding', findings: [{ components: [] }] };
-  const data = new Map([['quasaric-analysis-history', JSON.stringify([valid, invalidInventory, invalidFinding])]]);
+  const blankFindingId = { id: 'blank-finding', findings: [{ id: '  ', components: [] }] };
+  const missingComponentIdentity = { id: 'missing-component', findings: [
+    finding('CVE-2026-0002', [{ component: { version: '3.0.2' } }])
+  ] };
+  const data = new Map([['quasaric-analysis-history', JSON.stringify([
+    valid, invalidInventory, invalidFinding, blankFindingId, missingComponentIdentity
+  ])]]);
   const storage = { getItem: key => data.get(key) || null, setItem: (key, value) => data.set(key, value) };
   assert.deepEqual(loadAnalysisHistory(storage), [valid]);
-  assert.equal(data.get('quasaric-analysis-history-recovery'), JSON.stringify([valid, invalidInventory, invalidFinding]));
+  assert.equal(data.get('quasaric-analysis-history-recovery'), JSON.stringify([
+    valid, invalidInventory, invalidFinding, blankFindingId, missingComponentIdentity
+  ]));
 });
 
 test('preserves malformed JSON history for recovery and rejects non-array saves', () => {

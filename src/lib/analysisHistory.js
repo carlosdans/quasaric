@@ -9,15 +9,22 @@ function withinByteLimit(value) {
   return new TextEncoder().encode(value).byteLength <= MAX_HISTORY_BYTES;
 }
 
+function hasComponentIdentity(component) {
+  return isRecord(component) &&
+    ((typeof component.id === 'string' && component.id.trim().length > 0) ||
+     (typeof component.name === 'string' && component.name.trim().length > 0));
+}
+
 function isValidSnapshot(snapshot) {
   return isRecord(snapshot) &&
     (snapshot.inventory === undefined || (Array.isArray(snapshot.inventory) &&
       snapshot.inventory.length <= MAX_INVENTORY_COMPONENTS && snapshot.inventory.every(isRecord))) &&
     Array.isArray(snapshot.findings) &&
     snapshot.findings.length <= MAX_FINDINGS_PER_SNAPSHOT &&
-    snapshot.findings.every(finding => isRecord(finding) && typeof finding.id === 'string' &&
+    snapshot.findings.every(finding => isRecord(finding) &&
+      typeof finding.id === 'string' && finding.id.trim().length > 0 &&
       Array.isArray(finding.components) &&
-      finding.components.every(match => isRecord(match) && isRecord(match.component)));
+      finding.components.every(match => isRecord(match) && hasComponentIdentity(match.component)));
 }
 
 function isRecord(value) {
@@ -47,8 +54,9 @@ export function createAnalysisSnapshot(analysis, inventory = []) {
     throw new Error('Analysis snapshot exceeds the 50000 findings or components limit.');
   }
   if (!inventory.every(isRecord) || !analysis.findings.every(finding =>
-    isRecord(finding) && typeof finding.id === 'string' && Array.isArray(finding.components) &&
-    finding.components.every(match => isRecord(match) && isRecord(match.component)))) {
+    isRecord(finding) && typeof finding.id === 'string' && finding.id.trim().length > 0 &&
+    Array.isArray(finding.components) &&
+    finding.components.every(match => isRecord(match) && hasComponentIdentity(match.component)))) {
     throw new TypeError('Analysis snapshot contains malformed inventory, findings or component matches.');
   }
   const snapshot = {
