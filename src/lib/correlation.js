@@ -784,6 +784,14 @@ export async function analyzeInventory(components, { signal, onProgress, sources
   // Compare source assessments only after exact-product VEX matching.
   // This is diagnostic metadata: it never overwrites NVD applicability,
   // Ubuntu OSV evidence, or the CVE-wide applicability summary.
+  for (const { components: matched } of allCandidates.values()) {
+    for (const item of matched) {
+      if (item.ubuntuVex) {
+        item.ubuntuVex.consistency = compareUbuntuOsvAndVex(item.ubuntuOsv, item.ubuntuVex);
+      }
+    }
+  }
+
   // Query official OSV distro ecosystems for exact installed package/version.
   // Advisory matches are attached as vendor evidence; they never override NVD.
   const distroGroups = new Map();
