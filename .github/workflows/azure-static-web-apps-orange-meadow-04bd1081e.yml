@@ -8,6 +8,10 @@ on:
       - 'docs/**'
       - '*.md'
       - '**/*.md'
+      - '**/*.test.js'
+      - '**/*.spec.js'
+      - 'tests/**'
+      - '.github/workflows/**'
   workflow_dispatch:
   pull_request:
     types: [closed]
