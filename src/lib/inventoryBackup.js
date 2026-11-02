@@ -3,7 +3,7 @@ export const INVENTORY_BACKUP_VERSION = 1;
 const allowedTypes = new Set(['os', 'web', 'runtime', 'cms', 'database', 'library', 'other']);
 const MAX_IDENTIFIER_LENGTH = 2048;
 const MAX_FIELD_LENGTH = 16384;
-const STRING_FIELDS = ['name', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture'];
+const STRING_FIELDS = ['name', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'sourceRelationship', 'sourceRef', 'sourcePurl'];
 const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
 const MAX_COMPONENTS = 50000;
 
@@ -49,6 +49,9 @@ export function parseInventoryBackup(input) {
       version: item.version || '', vendor: item.vendor || '',
       sourcePackage: typeof item.sourcePackage === 'string' ? item.sourcePackage : '',
       sourceVersion: typeof item.sourceVersion === 'string' ? item.sourceVersion : '',
+      sourceRelationship: typeof item.sourceRelationship === 'string' ? item.sourceRelationship : '',
+      sourceRef: typeof item.sourceRef === 'string' ? item.sourceRef : '',
+      sourcePurl: typeof item.sourcePurl === 'string' ? item.sourcePurl : '',
       architecture: typeof item.architecture === 'string' ? item.architecture : '',
       purl: item.purl || '', cpe: item.cpe || '',
       createdAt: typeof item.createdAt === 'string' ? item.createdAt : null
@@ -62,7 +65,7 @@ export function compareInventories(previous = [], current = []) {
   // inventories may legitimately contain duplicate package rows.
   const key = item => JSON.stringify([
     item.name, item.type, item.vendor, item.version, item.sourcePackage,
-    item.sourceVersion, item.architecture, item.purl, item.cpe
+    item.sourceVersion, item.architecture, item.sourceRelationship, item.sourceRef, item.sourcePurl, item.purl, item.cpe
   ].map(value => String(value || '').trim().toLowerCase()));
   const available = new Map();
   current.forEach((item, index) => {

@@ -92,3 +92,17 @@ test('comparison keys cannot collide when metadata contains separators', () => {
   assert.equal(diff.removed.length, 1);
   assert.equal(diff.unchanged.length, 0);
 });
+
+
+test('round-trips explicit SBOM source relationship metadata in local backups', () => {
+  const component = {
+    id: 'binary', name: 'openssl-libs', type: 'library', version: '3.0.7-1',
+    sourcePackage: 'openssl', sourceVersion: '3.0.7-1',
+    sourceRelationship: 'spdx_generated_from', sourceRef: 'SPDXRef-openssl-src',
+    sourcePurl: 'pkg:rpm/openssl@3.0.7-1?arch=src'
+  };
+  const restored = parseInventoryBackup(createInventoryBackup([component])).components[0];
+  for (const field of ['sourcePackage', 'sourceVersion', 'sourceRelationship', 'sourceRef', 'sourcePurl']) {
+    assert.equal(restored[field], component[field]);
+  }
+});
