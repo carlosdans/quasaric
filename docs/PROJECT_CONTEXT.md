@@ -5,7 +5,7 @@
 > **Actualizado:** 2 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `5c906e49da89798ee4030c702e3cb98d222b7f89`
+> **HEAD de código validado:** `c9a20e6e70dfceed913d42cdd266b3b8c39a09d0`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main` y omite despliegues cuando el cambio solo afecta a documentación, pruebas o workflows; si el mismo commit incluye código de aplicación, el despliegue sigue ejecutándose. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `5c906e49da89798ee4030c702e3cb98d222b7f89`; 372/372 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41505631835](https://github.com/carlosdans/quasaric/actions/runs/41505631835) y despliegue Azure Static Web Apps [41505631814](https://github.com/carlosdans/quasaric/actions/runs/41505631814), ambos satisfactorios.
+**Última validación de código en `main`:** commit `c9a20e6e70dfceed913d42cdd266b3b8c39a09d0`; 377/377 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41508498115](https://github.com/carlosdans/quasaric/actions/runs/41508498115) y despliegue Azure Static Web Apps [41508498377](https://github.com/carlosdans/quasaric/actions/runs/41508498377), ambos satisfactorios.
 
 ## 7. Limitaciones y trabajo pendiente
 
@@ -183,4 +183,13 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Los CPE declarados manualmente se normalizan con las mismas reglas de escapes y guiones bajos que los CPE de NVD. Se valida además que la arquitectura declarada no contradiga target_hw.
 - Validación del código en commit 5c906e49da89798ee4030c702e3cb98d222b7f89: 372/372 tests correctos y builds correctas en Node 20 y 22. CI [41505631835](https://github.com/carlosdans/quasaric/actions/runs/41505631835) y Azure [41505631814](https://github.com/carlosdans/quasaric/actions/runs/41505631814), satisfactorios.
 - El workflow Azure ignora commits que solo cambian tests, documentación o workflows, evitando publicaciones innecesarias y consumo de cuota. Cambio de pipeline integrado en el commit cc86bb2.
+- No se añaden dependencias, backend, servicios externos ni recursos Azure.
+
+
+### 2026-11-02 — regresión de ordenación PEP 440 y validación final
+
+- Se amplía la matriz de regresión de comparadores Debian, RPM, PEP 440 y SemVer: prereleases, revisiones, epoch/release, metadatos build y propiedades de ordenación inversa.
+- La prueba de secuencia pública PEP 440 detectó un caso límite en versiones post-release-dev: `1.0.post0.dev0` debe ordenarse después de `1.0`. La condición especial de versiones dev-only se limita ahora a versiones sin segmento post-release.
+- Validación en `main`, commit `c9a20e6e70dfceed913d42cdd266b3b8c39a09d0`: 377/377 tests correctos en Node 20 y 22; build de producción correcta en ambas versiones. CI [41508498115](https://github.com/carlosdans/quasaric/actions/runs/41508498115) y despliegue Azure [41508498377](https://github.com/carlosdans/quasaric/actions/runs/41508498377), satisfactorios.
+- El build emite advertencias `MODULE_LEVEL_DIRECTIVE` procedentes de `lucide-react` sobre la directiva `use client`; no impiden la compilación ni las pruebas. No se modifica la dependencia por esta advertencia aislada.
 - No se añaden dependencias, backend, servicios externos ni recursos Azure.
