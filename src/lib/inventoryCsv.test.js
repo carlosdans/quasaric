@@ -73,6 +73,6 @@ test('enforces the CSV import limit in UTF-8 bytes, not JavaScript characters', 
 
 
 test('enforces field limits while decoding escaped quotes in quoted cells', () => {
-  const valid = 'name\\n"' + 'a'.repeat(16382) + '""' + 'b' + '"';
+  const valid = 'name\n"' + 'a'.repeat(16383) + '""' + 'b' + '"';
   assert.throws(() => parseInventoryCsv(valid), /field longer than 16384/);
 });
