@@ -161,7 +161,7 @@ test('keeps contradictory Ubuntu OSV source entries under manual review', () => 
       ] }
     ]
   };
-  const result = classifyUbuntuOsvComponent(multiEntry, component());
+  const result = classifyUbuntuOsvComponent(multiEntry, component({ sourceVersion: '3.0.13-0ubuntu3.1' }));
   assert.equal(result.status, 'needs_review');
   assert.match(result.reason, /conflicting source-version assessments/i);
 });
