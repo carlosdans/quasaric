@@ -72,3 +72,23 @@ test('rejects invalid or oversized optional metadata instead of silently droppin
   assert.throws(() => parseInventoryBackup({ ...base, components: [{ name: 'x'.repeat(16385) }] }), /Invalid component/);
   assert.throws(() => parseInventoryBackup({ ...base, components: [{ name: 'nginx', type: 42 }] }), /Invalid component/);
 });
+
+
+test('compares duplicate inventory entries as a multiset without losing rows', () => {
+  const first = { name: 'nginx', type: 'web', version: '1.25' };
+  const second = { ...first };
+  const diff = compareInventories([first, second], [first]);
+  assert.equal(diff.added.length, 0);
+  assert.equal(diff.removed.length, 1);
+  assert.equal(diff.unchanged.length, 1);
+  assert.equal(diff.removed[0], second);
+});
+
+test('comparison keys cannot collide when metadata contains separators', () => {
+  const previous = [{ name: 'a|b', version: 'c' }];
+  const current = [{ name: 'a', version: 'b|c' }];
+  const diff = compareInventories(previous, current);
+  assert.equal(diff.added.length, 1);
+  assert.equal(diff.removed.length, 1);
+  assert.equal(diff.unchanged.length, 0);
+});
