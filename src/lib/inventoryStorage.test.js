@@ -99,7 +99,7 @@ test('rejects inventory objects whose serialized representation is invalid', () 
 test('preserves and validates explicit SBOM source relationship metadata', () => {
   const storage = memoryStorage();
   const component = {
-    name: 'openssl-libs', type: 'library', version: '3.0.7',
+    id: 'openssl-libs-id', name: 'openssl-libs', type: 'library', version: '3.0.7',
     sourcePackage: 'openssl', sourceVersion: '3.0.7-1',
     sourceRelationship: 'spdx_generated_from', sourceRef: 'SPDXRef-source',
     sourcePurl: 'pkg:rpm/openssl@3.0.7-1?arch=src'
