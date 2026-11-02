@@ -28,7 +28,14 @@ function compareSemver(left, right) {
     return { core: match.slice(1, 4).map(Number), pre };
   };
   const a = parse(left), b = parse(right);
-  if (!a || !b) return null;
+  if (!a || !b) {
+    // NVD CPE boundaries may use major.minor shorthand while inventory has a patch segment.
+    const shorthand = /^\d+(?:\.\d+){1,3}$/;
+    const leftText = String(left).trim(), rightText = String(right).trim();
+    const hasShortForm = leftText.split('.').length < 3 || rightText.split('.').length < 3;
+    return hasShortForm && shorthand.test(leftText) && shorthand.test(rightText)
+      ? numericCompare(leftText, rightText) : null;
+  }
   for (let i = 0; i < 3; i++) if (a.core[i] !== b.core[i]) return a.core[i] < b.core[i] ? -1 : 1;
   if (!a.pre.length && !b.pre.length) return 0;
   if (!a.pre.length) return 1;
