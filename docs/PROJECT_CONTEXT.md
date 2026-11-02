@@ -2,7 +2,7 @@
 
 > Documento de continuidad para retomar el desarrollo en cualquier conversación. Actualizarlo al cerrar cada bloque de trabajo.
 >
-> **Última actualización:** 1 de noviembre de 2026 (endurecimiento de límites JSON y actualización de capacidades de inventario)  
+> **Última actualización:** 2 de noviembre de 2026 (motor inicial de versiones multi-ecosistema integrado)  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama principal:** `main`
 
@@ -958,3 +958,21 @@ La documentación de Canonical establece que:
 2. Auditar límites y errores de importación SBOM (incluidos documentos JSON grandes) y comprobar que el límite de 50.000 componentes no permite un consumo de memoria excesivo antes de validar el tamaño del archivo.
 3. Añadir pruebas con fixtures oficiales NVD/CPE y paquetes Debian/Ubuntu reales, manteniendo separación entre paquete binario y fuente.
 4. Verificar los runs del commit documental y seguir sin modificar recursos ni facturación de Azure.
+
+
+## 12. Motor inicial de versiones multi-ecosistema — 2026-11-02
+
+Se incorpora `src/lib/universalVersions.js` y su batería de pruebas.
+
+- Comparador Debian/Ubuntu: reutiliza `compareDebianVersions`, preservando epoch, upstream, revisión y sufijos de distribución.
+- Comparador RPM EVR: separa epoch, version y release; implementa ordenación de segmentos alfanuméricos, `~` y `^`.
+- Comparador PEP 440 para Python/PyPI: epochs, releases, alpha/beta/rc, dev, post y etiquetas locales.
+- Comparador SemVer para npm y Composer: prereleases, identificadores numéricos y metadata build.
+- Comparador de tuplas de build Windows (2–4 segmentos), incluyendo UBR.
+- Detección conservadora del ecosistema mediante PURL, ecosistema, fabricante y nombre.
+- Evaluador de rangos inclusivos/exclusivos: no compara si el formato no es reconocido y devuelve `needs_review`.
+- `correlation.js` usa ahora el comparador contextual para evaluar límites CPE y rangos en descripciones PHP; no se cambia la política de resultados conservadores.
+
+**Límites conocidos:** este bloque aporta comparadores, no conectores de avisos específicos de RHEL, Rocky, AlmaLinux, SUSE, Windows Update, Composer audit ni CMS. La compatibilidad PEP 440 y RPM debe ampliarse con fixtures oficiales de cada proveedor y pruebas diferenciales contra sus herramientas de referencia antes de elevar la confianza de aplicabilidad. Los formatos no soportados deben permanecer en revisión.
+
+**Validación:** ejecutar `npm test` y `npm run build` en CI para el commit que integra este bloque. No declarar el despliegue Azure completado hasta comprobar el workflow de publicación asociado.

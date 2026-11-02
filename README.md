@@ -9,6 +9,8 @@ Quasaric es una versión funcional en evolución, con alcance deliberadamente li
 Capacidades implementadas:
 
 - Correlación de candidatos CVE mediante NVD/CPE y rangos de versión.
+- Motor común de comparación de versiones por ecosistema: dpkg (Debian/Ubuntu), RPM EVR (RHEL/Rocky/AlmaLinux/SUSE/Fedora), PEP 440 (Python/PyPI), SemVer (npm/Composer) y builds de Windows.
+- Comparación inclusiva/exclusiva de límites con estados conservadores: versión afectada candidata, fuera de rango o revisión necesaria. Los formatos desconocidos no se ordenan por aproximación.
 - Señales EPSS de FIRST y presencia en el catálogo CISA KEV.
 - Consulta de Ubuntu OSV por paquete fuente y ecosistema/release explícitos.
 - Mapeo de los paquetes binarios instalados mediante `ecosystem_specific.binaries` del aviso Ubuntu OSV.
@@ -25,7 +27,7 @@ Capacidades implementadas:
 - Invalidación de los hallazgos visibles cuando cambia el inventario, para evitar presentar resultados de una composición anterior como actuales.
 - Cancelación explícita de análisis en curso y aviso cuando el historial no puede persistirse en el almacenamiento local.
 
-**No está listo para decisiones de producción.** Una coincidencia sigue siendo evidencia que requiere validación; no se declara automáticamente una vulnerabilidad confirmada ni una remediación confirmada. La correlación necesita validación amplia para CPE ambiguos, backports y paquetes de distribuciones, ediciones/builds de Windows, plugins y dependencias transitivas. La ausencia de coincidencias no demuestra que un sistema sea seguro.
+**No está listo para decisiones de producción.** Una coincidencia sigue siendo evidencia que requiere validación; no se declara automáticamente una vulnerabilidad confirmada ni una remediación confirmada. La correlación necesita validación amplia con avisos reales para CPE ambiguos, backports, rangos RPM de cada fabricante, ediciones/builds de Windows, plugins y dependencias transitivas. El motor de versiones ya dispone de comparadores específicos, pero no implica por sí solo que todas esas fuentes/adaptadores estén conectados. La ausencia de coincidencias no demuestra que un sistema sea seguro.
 
 ## Principios y privacidad
 

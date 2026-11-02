@@ -178,21 +178,10 @@ export function classifyUbuntuOsvComponent(record, component) {
   };
 }
 
-function compareVersions(a, b) {
-  const leftValue = String(a ?? '').trim();
-  const rightValue = String(b ?? '').trim();
-  // Do not guess ordering for prereleases, distro revisions, epochs or other
-  // vendor-specific suffixes. Callers must treat null as insufficient evidence.
-  if (!/^\d+(?:\.\d+)*$/.test(leftValue) || !/^\d+(?:\.\d+)*$/.test(rightValue)) return null;
-  const left = leftValue.split('.').map(value => BigInt(value));
-  const right = rightValue.split('.').map(BigInt);
-  const length = Math.max(left.length, right.length);
-  for (let i = 0; i < length; i++) {
-    const x = left[i] ?? 0n;
-    const y = right[i] ?? 0n;
-    if (x !== y) return x < y ? -1 : 1;
-  }
-  return 0;
+import { compareVersionForComponent } from './universalVersions.js';
+
+function compareVersions(a, b, component) {
+  return compareVersionForComponent(a, b, component);
 }
 
 export function cpeMatchesComponent(criteria, component) {
@@ -303,7 +292,7 @@ export function classifyPhpDescriptionApplicability(cve, component) {
     if (!parts) { uncertainRange = true; return false; }
     const [major, minor] = parts.split('.').map(Number);
     if (major !== family.major || (family.minor !== null && minor !== family.minor)) return false;
-    const order = compareVersions(installed, boundary);
+    const order = compareVersions(installed, boundary, component);
     if (order === null) { uncertainRange = true; return false; }
     return ['before', 'prior to', 'below', 'less than', 'earlier than'].includes(operator)
       ? order < 0
@@ -347,7 +336,7 @@ export function classifyCpeApplicability(cpeItems, component) {
       // NVD uses an inclusive lower boundary of 0 to mean all released versions.
       // It is a sentinel, not a version that can be ordered against distro revisions.
       if (!boundary || (boundary === '0' && item.versionStartIncluding === '0')) continue;
-      const order = compareVersions(version, boundary);
+      const order = compareVersions(version, boundary, component);
       if (order === null) { uncertain = true; continue; }
       if (!accepts(order)) return false;
     }
@@ -418,7 +407,7 @@ function cpeConditionInInventory(item, inventory) {
       // NVD uses an inclusive lower boundary of 0 to mean all released versions.
       // It is a sentinel, not a version that can be ordered against distro revisions.
       if (!boundary || (boundary === '0' && item.versionStartIncluding === '0')) continue;
-      const order = compareVersions(version, boundary);
+      const order = compareVersions(version, boundary, component);
       if (order === null) return null;
       if (!accepts(order)) return false;
     }
