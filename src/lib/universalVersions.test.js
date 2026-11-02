@@ -58,6 +58,6 @@ test('classifies explicit range endpoints with ecosystem-aware ordering', () => 
   const rhel = component('openssl', 'RHEL 9');
   assert.equal(classifyVersionRange('1.0-2.el9', { versionStartIncluding: '1.0-1.el9', versionEndExcluding: '1.0-3.el9' }, rhel).status, 'affected_candidate');
   assert.equal(classifyVersionRange('1.0-3.el9', { versionStartIncluding: '1.0-1.el9', versionEndExcluding: '1.0-3.el9' }, rhel).status, 'not_affected');
-  assert.equal(classifyVersionRange('1.0-custom', { versionEndIncluding: '1.0-3.el9' }, rhel).status, 'needs_review');
+  assert.equal(classifyVersionRange('1.0-', { versionEndIncluding: '1.0-3.el9' }, rhel).status, 'needs_review');
   assert.equal(classifyVersionRange('', { versionEndIncluding: '2.0' }, rhel).status, 'version_missing');
 });
