@@ -189,3 +189,10 @@ Quasaric incluye tema oscuro y tema claro. Puedes cambiarlo desde el control de 
 - La evidencia Red Hat distingue coincidencia exacta del nombre del paquete binario (confianza alta) de coincidencia basada únicamente en `sourcePackage` declarado en el inventario (confianza media, `needs_review`).
 - Una coincidencia del paquete fuente no se interpreta como prueba de que el binario instalado contenga el código vulnerable: un RPM fuente puede generar varios paquetes binarios con contenido y aplicabilidad diferentes.
 - La interfaz identifica explícitamente la evidencia indirecta de paquete fuente. No se amplían coincidencias por similitud de nombres ni se cambia la aplicabilidad NVD.
+
+
+### 2026-11-02 — relaciones SUSE CSAF entre paquetes fuente y binarios
+
+- SUSE CSAF solo aporta evidencia indirecta de paquete fuente cuando el inventario declara `sourcePackage`, el CSAF identifica el paquete fuente con PURL RPM `arch=src`, identifica el binario instalado por PURL y publica una relación explícita entre ambos productos.
+- El estado VEX publicado para el paquete fuente se conserva como confianza media y `needs_review`; no se eleva a afectación confirmada del binario. Se muestran los productos binarios relacionados y la relación publicada.
+- No se infieren relaciones por nombres compartidos, ni se cambia la aplicabilidad NVD. La coincidencia binaria exacta mantiene su flujo previo.

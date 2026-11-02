@@ -930,7 +930,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
       if (!current) continue;
       for (const component of suseComponents) {
         const match = matchSuseCsafVexComponent(document, component, cveId);
-        if (match.status === 'needs_review') continue;
+        if (match.status === 'needs_review' && match.evidenceType !== 'source_package_relationship') continue;
         const item = current.components.find(entry => entry.component.id === component.id);
         if (item) item.suseCsafVex = { ...match, source: 'SUSE CSAF VEX', advisoryId: cveId };
       }
@@ -992,6 +992,9 @@ export async function analyzeInventory(components, { signal, onProgress, sources
           reason: item.suseCsafVex.reason,
           productStatuses: item.suseCsafVex.productStatuses,
           products: item.suseCsafVex.products,
+          relatedBinaryProducts: item.suseCsafVex.relatedBinaryProducts,
+          sourceRelationship: item.suseCsafVex.sourceRelationship,
+          evidenceType: item.suseCsafVex.evidenceType,
           remediations: item.suseCsafVex.remediations,
           advisoryId: item.suseCsafVex.advisoryId,
           url: `https://ftp.suse.com/pub/projects/security/csaf-vex/${item.suseCsafVex.advisoryId.slice(4, 8)}/${cvePath}.json`,
