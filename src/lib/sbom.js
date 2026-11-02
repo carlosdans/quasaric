@@ -63,7 +63,7 @@ function cyclone(document) {
       const ancestors = Array.isArray(item.pedigree?.ancestors) ? item.pedigree.ancestors : [];
       const source = ancestors.find(ancestor => {
         const parsed = purlInfo(str(ancestor?.purl));
-        return parsed?.type === 'rpm' && parsed.qualifiers?.arch === 'src';
+        return parsed?.ecosystem === 'rpm' && parsed.qualifiers?.arch === 'src';
       });
       if (source) {
         const parsed = purlInfo(str(source.purl));
