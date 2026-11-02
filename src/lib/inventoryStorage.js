@@ -51,8 +51,30 @@ export function loadInventory(storage) {
       preserveForRecovery(target, raw);
       return { items: [], warning: true };
     }
-    const items = parsed.filter(isInventoryItem);
-    const warning = items.length !== parsed.length;
+    const validItems = parsed.filter(isInventoryItem);
+    const items = [];
+    const seenIds = new Set();
+    let duplicateIds = false;
+    for (let index = 0; index < validItems.length; index += 1) {
+      const item = validItems[index];
+      let id = typeof item.id === 'string' && item.id.trim() ? item.id : null;
+      if (id && seenIds.has(id)) {
+        duplicateIds = true;
+        id = null;
+      }
+      if (!id) {
+        let suffix = index + 1;
+        id = `recovered-${suffix}`;
+        while (seenIds.has(id)) {
+          suffix += 1;
+          id = `recovered-${suffix}`;
+        }
+      }
+      seenIds.add(id);
+      items.push(item.id === id ? item : { ...item, id });
+    }
+    const warning = items.length !== parsed.length || duplicateIds ||
+      validItems.some(item => typeof item.id !== 'string' || !item.id.trim());
     if (warning) {
       preserveForRecovery(target, raw);
     }
@@ -74,6 +96,8 @@ export function saveInventory(items, storage) {
     const normalized = JSON.parse(serialized);
     if (!Array.isArray(normalized) || normalized.length > MAX_INVENTORY_COMPONENTS ||
         !normalized.every(isInventoryItem)) return false;
+    const ids = normalized.map(item => item.id).filter(id => typeof id === 'string' && id.trim());
+    if (new Set(ids).size !== ids.length) return false;
     target.setItem(INVENTORY_STORAGE_KEY, serialized);
     return true;
   } catch { return false; }

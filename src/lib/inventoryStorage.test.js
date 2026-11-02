@@ -145,3 +145,31 @@ test('handles browsers where accessing localStorage itself throws', () => {
     else delete globalThis.localStorage;
   }
 });
+
+test('repairs duplicate or missing component IDs without losing inventory rows', () => {
+  const raw = JSON.stringify([
+    { id: 'same-id', name: 'nginx' },
+    { id: 'same-id', name: 'curl' },
+    { name: 'openssl' }
+  ]);
+  const storage = memoryStorage([[INVENTORY_STORAGE_KEY, raw]]);
+  const result = loadInventory(storage);
+  assert.equal(result.warning, true);
+  assert.equal(result.items.length, 3);
+  assert.equal(result.items[0].id, 'same-id');
+  assert.notEqual(result.items[1].id, 'same-id');
+  assert.ok(result.items[1].id);
+  assert.ok(result.items[2].id);
+  assert.equal(new Set(result.items.map(item => item.id)).size, 3);
+  assert.equal(storage.getItem(INVENTORY_RECOVERY_KEY), raw);
+  assert.equal(saveInventory(result.items, storage), true);
+});
+
+test('rejects saving duplicate non-empty component IDs', () => {
+  const storage = memoryStorage();
+  assert.equal(saveInventory([
+    { id: 'duplicate', name: 'nginx' },
+    { id: 'duplicate', name: 'curl' }
+  ], storage), false);
+  assert.equal(storage.getItem(INVENTORY_STORAGE_KEY), null);
+});
