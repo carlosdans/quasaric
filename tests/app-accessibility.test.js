@@ -75,3 +75,9 @@ test('KEV presence and backup controls have localized Spanish labels', () => {
   assert.match(app, /aria-label=\{lang === 'es' \? 'Comparar copia JSON' : 'Compare JSON backup'\}/);
   assert.match(app, /aria-label=\{lang === 'es' \? 'Cerrar comparación' : 'Close comparison'\}/);
 });
+
+
+test('document language follows the selected interface language', () => {
+  assert.match(app, /document\.documentElement\.lang = lang/);
+  assert.match(app, /\}, \[lang\]\)/);
+});
