@@ -109,3 +109,12 @@ test('source names and query statuses are localized for Spanish users', () => {
   assert.match(app, /\{sourceStatusLabel\(status\)\}/);
   assert.match(app, /partial_or_unavailable: lang === 'es' \? 'parcial o no disponible'/);
 });
+
+
+test('vendor evidence source names and technical statuses are localized', () => {
+  assert.match(app, /const evidenceStatusLabel = status =>/);
+  assert.match(app, /\{sourceNameLabel\(entry\.source\)\}/);
+  assert.match(app, /\{evidenceStatusLabel\(entry\.status\)\}/);
+  assert.match(app, /\{evidenceStatusLabel\(status\)\}/);
+  assert.match(app, /vendor_evidence: lang === 'es' \? 'evidencia del fabricante'/);
+});
