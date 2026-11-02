@@ -58,3 +58,34 @@ test('requires review when SUSE CSAF assigns conflicting VEX states to one produ
   assert.deepEqual(result.productStatuses, ['fixed', 'known_affected']);
   assert.match(result.reason, /contradictorios/i);
 });
+
+test('does not attach SUSE VEX evidence from a different published RPM version', () => {
+  const versionedVex = structuredClone(vex);
+  versionedVex.product_tree.branches[0].branches[0].product.product_identification_helper.purl =
+    'pkg:rpm/suse/openssl@3.0.8-1?arch=x86_64';
+  const result = matchSuseCsafVexComponent(versionedVex, {
+    ecosystem: 'SUSE Linux Enterprise Server 15 SP6',
+    purl: 'pkg:rpm/suse/openssl@3.0.7-1?arch=x86_64'
+  }, 'CVE-2026-12345');
+  assert.equal(result.status, 'needs_review');
+  assert.match(result.reason, /versión/i);
+});
+
+test('uses exact SUSE PURL version when available and lowers confidence when version is omitted', () => {
+  const versionedVex = structuredClone(vex);
+  versionedVex.product_tree.branches[0].branches[0].product.product_identification_helper.purl =
+    'pkg:rpm/suse/openssl@3.0.8-1?arch=x86_64';
+  const exact = matchSuseCsafVexComponent(versionedVex, {
+    ecosystem: 'SUSE Linux Enterprise Server 15 SP6',
+    purl: 'pkg:rpm/suse/openssl@3.0.8-1?arch=x86_64'
+  }, 'CVE-2026-12345');
+  assert.equal(exact.status, 'vendor_evidence');
+  assert.equal(exact.versionMatch, 'exact');
+  const unversionedVex = matchSuseCsafVexComponent(vex, {
+    ecosystem: 'SUSE Linux Enterprise Server 15 SP6',
+    purl: 'pkg:rpm/suse/openssl@3.0.8-1?arch=x86_64'
+  }, 'CVE-2026-12345');
+  assert.equal(unversionedVex.status, 'vendor_evidence');
+  assert.equal(unversionedVex.versionMatch, 'not_specified');
+  assert.equal(unversionedVex.confidence, 'medium');
+});
