@@ -148,3 +148,23 @@ test('rejects malformed explicit source PURLs instead of retaining invalid prove
   assert.equal(result.components.length, 0);
   assert.equal(result.errors[0].message, 'Invalid source Package URL.');
 });
+
+
+test('does not attach SPDX source provenance when package identifiers are duplicated', () => {
+  const result = parseSbom(JSON.stringify({
+    spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0',
+    packages: [
+      { SPDXID: 'SPDXRef-binary', name: 'openssl-libs' },
+      { SPDXID: 'SPDXRef-source', name: 'openssl' },
+      { SPDXID: 'SPDXRef-source', name: 'unrelated-source' }
+    ],
+    relationships: [{
+      spdxElementId: 'SPDXRef-binary',
+      relationshipType: 'GENERATED_FROM',
+      relatedSpdxElement: 'SPDXRef-source'
+    }]
+  }));
+  assert.equal(result.components.length, 3);
+  assert.equal(result.components[0].sourcePackage, '');
+  assert.equal(result.components[0].sourceRelationship, '');
+});

@@ -84,13 +84,25 @@ function spdx(document) {
   if (document.spdxVersion !== 'SPDX-2.3' || document.dataLicense !== 'CC0-1.0') throw new Error('Unsupported SPDX format or version (supported: SPDX 2.3 JSON).');
   if (!Array.isArray(document.packages)) throw new Error('SPDX document has no packages array.');
   if (document.packages.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
-  const packages = new Map(document.packages.filter(item => item && typeof item === 'object' && !Array.isArray(item) && str(item.SPDXID)).map(item => [str(item.SPDXID), item]));
+  const packageIdCounts = new Map();
+  for (const item of document.packages) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    const id = str(item.SPDXID);
+    if (id) packageIdCounts.set(id, (packageIdCounts.get(id) || 0) + 1);
+  }
+  const packages = new Map(document.packages.filter(item =>
+    item && typeof item === 'object' && !Array.isArray(item) &&
+    str(item.SPDXID) && packageIdCounts.get(str(item.SPDXID)) === 1
+  ).map(item => [str(item.SPDXID), item]));
   const generatedFrom = new Map();
   for (const relationship of Array.isArray(document.relationships) ? document.relationships : []) {
     if (str(relationship?.relationshipType) !== 'GENERATED_FROM') continue;
     const binaryId = str(relationship.spdxElementId);
     const sourceId = str(relationship.relatedSpdxElement);
-    if (!packages.has(binaryId) || !packages.has(sourceId) || binaryId === sourceId) continue;
+    // Duplicate SPDX identifiers make an edge ambiguous even if the JSON
+    // contains an explicit relationship. Never attach provenance by map order.
+    if (packageIdCounts.get(binaryId) !== 1 || packageIdCounts.get(sourceId) !== 1 ||
+        !packages.has(binaryId) || !packages.has(sourceId) || binaryId === sourceId) continue;
     if (!generatedFrom.has(binaryId)) generatedFrom.set(binaryId, []);
     generatedFrom.get(binaryId).push(sourceId);
   }
