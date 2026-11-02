@@ -38,11 +38,26 @@ function propertiesFor(item) {
   }
   return result;
 }
+function flattenCycloneComponents(components) {
+  const pending = [...components].reverse();
+  const flattened = [];
+  while (pending.length) {
+    const item = pending.pop();
+    flattened.push(item);
+    if (flattened.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
+    if (item && typeof item === 'object' && !Array.isArray(item) && Array.isArray(item.components)) {
+      for (let index = item.components.length - 1; index >= 0; index -= 1) {
+        pending.push(item.components[index]);
+      }
+    }
+  }
+  return flattened;
+}
+
 function cyclone(document) {
   if (document.bomFormat !== 'CycloneDX' || !['1.4','1.5','1.6','1.7'].includes(String(document.specVersion))) throw new Error('Unsupported CycloneDX format or version (supported: JSON 1.4–1.7).');
   if (!Array.isArray(document.components)) throw new Error('CycloneDX document has no components array.');
-  if (document.components.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
-  return document.components.map((item,index) => {
+  return flattenCycloneComponents(document.components).map((item,index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Component entry must be a JSON object.', index:index+1 };
     const rawPurl = str(item.purl);
     if (rawPurl.length > MAX_IDENTIFIER_LENGTH || str(item.cpe).length > MAX_IDENTIFIER_LENGTH) return { error:'PURL and CPE fields must not exceed 2048 characters.', index:index+1 };

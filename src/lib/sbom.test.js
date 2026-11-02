@@ -45,6 +45,37 @@ test('imports CycloneDX 1.7 component metadata', () => {
   assert.match(result.components[0].cpe, /^cpe:/);
 });
 
+test('imports nested CycloneDX components recursively in document order', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    components: [
+      {
+        name: 'application', version: '1.0',
+        components: [
+          {
+            name: 'framework', version: '2.0',
+            components: [{ name: 'transitive-library', version: '3.0' }]
+          },
+          { name: 'direct-library', version: '4.0' }
+        ]
+      },
+      { name: 'second-root-library', version: '5.0' }
+    ]
+  }));
+  assert.deepEqual(result.components.map(item => item.name), [
+    'application', 'framework', 'transitive-library', 'direct-library', 'second-root-library'
+  ]);
+  assert.deepEqual(result.components.map(item => item.version), ['1.0', '2.0', '3.0', '4.0', '5.0']);
+});
+
+test('applies the 50000 component limit across nested CycloneDX components', () => {
+  const result = {
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    components: [{ name: 'root', components: Array.from({ length: 50000 }, (_, index) => ({ name: 'pkg-' + index })) }]
+  };
+  assert.throws(() => parseSbom(JSON.stringify(result)), /50000 component limit/);
+});
+
 test('imports SPDX 2.3 package and external references', () => {
   const result=parseSbom(JSON.stringify({spdxVersion:'SPDX-2.3',dataLicense:'CC0-1.0',packages:[{
     name:'nginx',versionInfo:'1.26.0',supplier:'Organization: F5',
