@@ -173,3 +173,13 @@ test('rejects saving duplicate non-empty component IDs', () => {
   ], storage), false);
   assert.equal(storage.getItem(INVENTORY_STORAGE_KEY), null);
 });
+
+test('does not assign a generated ID that belongs to a later valid row', () => {
+  const storage = memoryStorage([[INVENTORY_STORAGE_KEY, JSON.stringify([
+    { name: 'nginx' },
+    { id: 'recovered-2', name: 'curl' }
+  ])]]);
+  const result = loadInventory(storage);
+  assert.equal(result.items[1].id, 'recovered-2');
+  assert.notEqual(result.items[0].id, result.items[1].id);
+});

@@ -54,6 +54,11 @@ export function loadInventory(storage) {
     const validItems = parsed.filter(isInventoryItem);
     const items = [];
     const seenIds = new Set();
+    // Reserve every original ID before generating replacements so a missing
+    // or duplicate row never steals an ID belonging to a later valid row.
+    const reservedIds = new Set(validItems
+      .map(item => typeof item.id === 'string' && item.id.trim() ? item.id : null)
+      .filter(Boolean));
     let duplicateIds = false;
     for (let index = 0; index < validItems.length; index += 1) {
       const item = validItems[index];
@@ -65,7 +70,7 @@ export function loadInventory(storage) {
       if (!id) {
         let suffix = index + 1;
         id = `recovered-${suffix}`;
-        while (seenIds.has(id)) {
+        while (reservedIds.has(id) || seenIds.has(id)) {
           suffix += 1;
           id = `recovered-${suffix}`;
         }
