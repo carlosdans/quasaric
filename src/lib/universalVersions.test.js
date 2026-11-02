@@ -96,3 +96,74 @@ test('classifies explicit range endpoints with ecosystem-aware ordering', () => 
   assert.equal(classifyVersionRange('1.0-', { versionEndIncluding: '1.0-3.el9' }, rhel).status, 'needs_review');
   assert.equal(classifyVersionRange('', { versionEndIncluding: '2.0' }, rhel).status, 'version_missing');
 });
+
+
+test('matches canonical Debian ordering for repeated tildes and punctuation', () => {
+  const debian = component('nginx', 'Debian 12');
+  const ordered = ['1.0~~', '1.0~', '1.0', '1.0+really1.0', '1.0-1'];
+  for (let index = 0; index < ordered.length - 1; index++) {
+    assert.equal(compareVersionForComponent(ordered[index], ordered[index + 1], debian), -1,
+      `expected ${ordered[index]} < ${ordered[index + 1]}`);
+  }
+  assert.equal(compareVersionForComponent('1.0-1', '1.0-1+b1', debian), -1);
+});
+
+test('checks RPM segment type ordering and caret placement around release boundaries', () => {
+  const rpm = component('kernel', 'Fedora');
+  const ordered = ['1.0~rc1', '1.0', '1.0^git1', '1.0.1'];
+  for (let index = 0; index < ordered.length - 1; index++) {
+    assert.equal(compareVersionForComponent(ordered[index], ordered[index + 1], rpm), -1,
+      `expected ${ordered[index]} < ${ordered[index + 1]}`);
+  }
+  assert.equal(compareVersionForComponent('1.0a', '1.0.1', rpm), -1);
+  assert.equal(compareVersionForComponent('1.0.1', '1.0a', rpm), 1);
+});
+
+test('checks the PEP 440 public release ordering sequence', () => {
+  const python = component('Python', 'PyPI');
+  const ordered = [
+    '1.0.dev0', '1.0a0.dev0', '1.0a0', '1.0a1.dev0', '1.0a1',
+    '1.0b1', '1.0rc1.dev0', '1.0rc1', '1.0', '1.0.post0.dev0',
+    '1.0.post0', '1.0.post1.dev0', '1.0.post1'
+  ];
+  for (let index = 0; index < ordered.length - 1; index++) {
+    assert.equal(compareVersionForComponent(ordered[index], ordered[index + 1], python), -1,
+      `expected ${ordered[index]} < ${ordered[index + 1]}`);
+  }
+  assert.equal(compareVersionForComponent('1.0-1', '1.0', python), null);
+});
+
+test('checks SemVer numeric and lexical prerelease identifier precedence', () => {
+  const npm = { purl: 'pkg:npm/example@1.0.0' };
+  const ordered = [
+    '1.0.0-alpha',
+    '1.0.0-alpha.1',
+    '1.0.0-alpha.beta',
+    '1.0.0-beta',
+    '1.0.0-beta.2',
+    '1.0.0-beta.11',
+    '1.0.0-rc.1',
+    '1.0.0'
+  ];
+  for (let index = 0; index < ordered.length - 1; index++) {
+    assert.equal(compareVersionForComponent(ordered[index], ordered[index + 1], npm), -1,
+      `expected ${ordered[index]} < ${ordered[index + 1]}`);
+  }
+  assert.equal(compareVersionForComponent('1.0.0+build.7', '1.0.0+build.8', npm), 0);
+  assert.equal(compareVersionForComponent('1.0.0-01', '1.0.0', npm), null);
+});
+
+test('version comparator results are antisymmetric across representative ecosystem pairs', () => {
+  const cases = [
+    [component('nginx', 'Debian 12'), '1.0~rc1-1', '1.0-1'],
+    [component('openssl', 'RHEL 9'), '1:3.0.7-25.el9', '1:3.0.7-26.el9'],
+    [component('Python', 'PyPI'), '2.0rc1', '2.0'],
+    [{ purl: 'pkg:npm/example@1.0.0' }, '1.0.0-alpha.2', '1.0.0-alpha.10'],
+    [component('Windows Server 2022'), '10.0.20348.2159', '10.0.20348.2160']
+  ];
+  for (const [target, older, newer] of cases) {
+    assert.equal(compareVersionForComponent(older, newer, target), -1);
+    assert.equal(compareVersionForComponent(newer, older, target), 1);
+    assert.equal(compareVersionForComponent(older, older, target), 0);
+  }
+});
