@@ -5,6 +5,11 @@ import { normalizeComponentType, suggestedComponentType } from './componentTypes
 test('known technologies receive their expected component type', () => {
   assert.equal(suggestedComponentType('PHP'), 'runtime');
   assert.equal(suggestedComponentType('OpenSSL'), 'library');
+  for (const name of ['Go', 'Golang', 'Ruby', 'Rust', '.NET', 'dotnet', 'ASP.NET', 'PowerShell']) {
+    assert.equal(suggestedComponentType(name), 'runtime', name);
+  }
+  assert.equal(suggestedComponentType('Caddy'), 'web');
+  assert.equal(suggestedComponentType('Apache Tomcat'), null);
   assert.equal(suggestedComponentType('PHP-FPM'), 'runtime');
   assert.equal(suggestedComponentType('  Apache   HTTP Server  '), 'web');
   assert.equal(suggestedComponentType('Node JS'), 'runtime');

@@ -244,3 +244,19 @@ test('does not attach SPDX source provenance when package identifiers are duplic
   assert.equal(result.components[0].sourcePackage, '');
   assert.equal(result.components[0].sourceRelationship, '');
 });
+
+test('infers common runtime families from CycloneDX package identity', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    components: [
+      { name: 'Go', version: '1.24.0', purl: 'pkg:golang/go@1.24.0' },
+      { name: 'Ruby', version: '3.4.0', purl: 'pkg:gem/ruby@3.4.0' },
+      { name: '.NET Runtime', version: '9.0.0' },
+      { name: 'Rust', version: '1.85.0', purl: 'pkg:cargo/rust@1.85.0' },
+      { name: 'Caddy', version: '2.9.0' }
+    ]
+  }));
+  assert.deepEqual(result.components.map(item => item.type), [
+    'runtime', 'runtime', 'runtime', 'runtime', 'web'
+  ]);
+});

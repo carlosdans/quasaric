@@ -25,7 +25,7 @@ function typeFor(name, ecosystem) {
   const value = (name + ' ' + ecosystem).toLowerCase();
   if (/ubuntu|debian|red hat|rhel|rocky|alma|suse|windows server|linux/.test(value)) return 'os';
   if (/nginx|apache|httpd|iis/.test(value)) return 'web';
-  if (/php|node(js)?|python|java|ruby|\.net|golang/.test(value)) return 'runtime';
+  if (/php|node(js)?|python|java|ruby|rust|dotnet|\.net|asp\.net|powershell|golang|(^|[^a-z])go([^a-z]|$)/.test(value)) return 'runtime';
   if (/wordpress|drupal|joomla/.test(value)) return 'cms';
   if (/postgres|mysql|mariadb|mongodb|redis/.test(value)) return 'database';
   return 'library';
