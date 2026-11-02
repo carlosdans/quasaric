@@ -128,3 +128,23 @@ test('does not create backups that cannot be restored', () => {
   assert.throws(() => createInventoryBackup([{ name: 'nginx', purl: 'not-a-purl' }]), /Invalid component at position 1/);
   assert.throws(() => createInventoryBackup([{ name: 'nginx', type: 'unsupported' }]), /Invalid component at position 1/);
 });
+
+test('validates the serialized representation of object backups', () => {
+  const invalid = {
+    format: 'quasaric-inventory',
+    version: 1,
+    components: [{ name: 'nginx' }],
+    toJSON() {
+      return { format: 'quasaric-inventory', version: 1, components: [{ name: 'nginx', version: 42 }] };
+    }
+  };
+  assert.throws(() => parseInventoryBackup(invalid), /Invalid component/);
+
+  const omitted = {
+    format: 'quasaric-inventory',
+    version: 1,
+    components: [{ name: 'nginx' }],
+    toJSON() { return { format: 'other', version: 1, components: [] }; }
+  };
+  assert.throws(() => parseInventoryBackup(omitted), /Unsupported/);
+});

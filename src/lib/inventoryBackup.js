@@ -46,7 +46,7 @@ export function createInventoryBackup(items, createdAt = new Date().toISOString(
 export function parseInventoryBackup(input) {
   const serialized = assertBackupSize(input);
   let data;
-  try { data = typeof input === 'string' ? JSON.parse(serialized) : input; }
+  try { data = JSON.parse(serialized); }
   catch { throw new Error('Invalid JSON backup.'); }
   if (!data || typeof data !== 'object' || Array.isArray(data) || data.format !== INVENTORY_BACKUP_FORMAT || data.version !== INVENTORY_BACKUP_VERSION || !Array.isArray(data.components)) {
     throw new Error('Unsupported or invalid Quasaric backup.');
