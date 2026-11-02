@@ -5,7 +5,7 @@
 > **Actualizado:** 2 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `4ddffaa8c7d05e97f5798cfa93f5efdf43be04c0`
+> **HEAD de código validado:** `5c695a40160d34f5af675115da506a61748d56bf`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main`. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `4ddffaa8c7d05e97f5798cfa93f5efdf43be04c0`; 363/363 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41496172430](https://github.com/carlosdans/quasaric/actions/runs/41496172430) y despliegue Azure Static Web Apps [41496172649](https://github.com/carlosdans/quasaric/actions/runs/41496172649), ambos satisfactorios para la revisión documental que contiene el código `4ddffaa`.
+**Última validación de código en `main`:** commit `5c695a40160d34f5af675115da506a61748d56bf`; 365/365 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41496679681](https://github.com/carlosdans/quasaric/actions/runs/41496679681) y despliegue Azure Static Web Apps [41496679328](https://github.com/carlosdans/quasaric/actions/runs/41496679328), ambos satisfactorios.
 
 ## 7. Limitaciones y trabajo pendiente
 
@@ -151,6 +151,7 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El parser PURL alinea normalización y codificación con ECMA-427 sin inferir identidades CPE.
 - Cada petición de fuente pública está limitada a 30 segundos, incluida la lectura del cuerpo; la cancelación del usuario sigue siendo explícita y distinta del timeout.
 - El comparador SemVer usa BigInt para ordenar major/minor/patch sin pérdida de precisión en identificadores numéricos grandes.
+- Se añaden fixtures de regresión basados en los rangos CPE publicados por NVD para Log4j CVE-2021-44228: límites inferiores inclusivos, superiores exclusivos y versiones con sufijo de proveedor no ordenables que deben quedar en revisión.
 - La plataforma de interfaz se ha actualizado de React 18/Vite 6 a React 19/Vite 8, junto con `@vitejs/plugin-react` 6; las actualizaciones se integraron juntas para respetar sus dependencias peer. 351/351 tests y build correctos en Node 20 y 22.
 - La navegación incluye un enlace bilingüe para saltar directamente al contenido principal, visible al recibir foco de teclado; se ha añadido prueba de regresión. Validación posterior: 352/352 tests y build correctos en Node 20 y 22.
 - Se han localizado en español los valores de severidad, aplicabilidad, estado candidato y KEV en paneles, resultados e informes; las etiquetas accesibles de copias también cambian con el idioma.
