@@ -499,19 +499,32 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     const key = ecosystem + '::' + sourcePackage;
     if (!ubuntuGroups.has(key)) ubuntuGroups.set(key, { ecosystem, sourcePackage });
   }
-  for (const group of ubuntuGroups.values()) {
-    try {
-      const records = await sourceApi.fetchUbuntuOsvForSourcePackage(group.sourcePackage, group.ecosystem, { signal });
-      for (const record of records) {
-        const existing = ubuntuOsv.get(record.id) || [];
-        existing.push(record);
-        ubuntuOsv.set(record.id, existing);
-      }
-    } catch (error) {
-      if (error.name === 'AbortError') throw error;
-      errors.push({ source: 'Ubuntu OSV', component: group.sourcePackage, message: error.message });
-    }
+  const ubuntuQueue = [...ubuntuGroups.values()].slice(0, 100);
+  if (ubuntuGroups.size > 100) {
+    errors.push({
+      source: 'Ubuntu OSV',
+      component: 'inventory',
+      message: 'Se alcanzó el límite de 100 consultas de paquetes fuente por análisis; los grupos restantes no se han consultado.'
+    });
   }
+  let ubuntuNext = 0;
+  const ubuntuWorker = async () => {
+    while (ubuntuNext < ubuntuQueue.length) {
+      const group = ubuntuQueue[ubuntuNext++];
+      try {
+        const records = await sourceApi.fetchUbuntuOsvForSourcePackage(group.sourcePackage, group.ecosystem, { signal });
+        for (const record of records) {
+          const existing = ubuntuOsv.get(record.id) || [];
+          existing.push(record);
+          ubuntuOsv.set(record.id, existing);
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') throw error;
+        errors.push({ source: 'Ubuntu OSV', component: group.sourcePackage, message: error.message });
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(3, ubuntuQueue.length) }, () => ubuntuWorker()));
   const allCandidates = new Map();
   const limits = [];
   // Components often repeat the same product (for example, several PHP

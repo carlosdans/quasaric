@@ -1059,3 +1059,10 @@ OSV muestra estos ecosistemas en su catálogo público: https://osv.dev/list?eco
 - La identidad compara tipo, proveedor, ecosistema, versión, arquitectura, paquete/versión fuente, PURL y CPE. Así se evitan falsos positivos entre arquitecturas, distribuciones o paquetes distintos.
 - Se mantiene como aviso de posible duplicado, no como eliminación automática. El inventario original nunca se modifica por esta comprobación.
 - Cambio local de lógica y pruebas; sin servicios, dependencias ni recursos Azure nuevos.
+
+
+### 2026-11-02 — límites de consultas Ubuntu OSV
+
+- Las consultas agrupadas por paquete fuente Ubuntu se limitan a 100 grupos por análisis y tres peticiones simultáneas.
+- Si el inventario supera el límite, el análisis marca Ubuntu OSV como parcial e informa de cuántas consultas no se han realizado; no se presenta la cobertura como completa.
+- El cambio evita que un SBOM grande dispare miles de solicitudes secuenciales al servicio público. No añade servicios ni costes.
