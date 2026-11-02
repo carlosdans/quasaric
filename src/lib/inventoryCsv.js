@@ -19,7 +19,11 @@ export function parseInventoryCsv(input) {
     const char = source[i];
     if (quoted) {
       if (char === '"') {
-        if (source[i + 1] === '"') { cell += '"'; i += 1; }
+        if (source[i + 1] === '"') {
+          cell += '"';
+          if (cell.length > MAX_CELL_CHARACTERS) throw new Error('CSV contains a field longer than 16384 characters.');
+          i += 1;
+        }
         else { quoted = false; afterQuote = true; }
       } else {
         cell += char;
