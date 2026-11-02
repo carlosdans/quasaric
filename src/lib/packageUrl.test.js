@@ -16,7 +16,7 @@ test('decodes escaped package coordinates but preserves the input outside the pa
 });
 
 test('rejects malformed, ambiguous, duplicate and oversized PURLs', () => {
-  for (const value of ['', 'pkg:npm', 'pkg:1npm/a@1', 'pkg:npm/a@', 'pkg:npm/a?arch=x&arch=y', 'pkg:npm/a?arch', 'pkg:npm/a?arch=', 'pkg:npm/a?arch=x&ARCH=y', 'pkg:npm/%ZZ', 'pkg:npm/a/../b', 'pkg:npm/org%2Fteam/a@1', 'pkg:npm/a@1#dist/%2Ffile', 'pkg:npm/a@1#', 'pkg:npm/a b@1', 'pkg:npm/a+b@1', 'pkg:npm/' + 'a'.repeat(2049)]) {
+  for (const value of ['', 'pkg:npm', 'pkg:1npm/a@1', 'pkg:npm/a@', 'pkg:npm/a?arch=x&arch=y', 'pkg:npm/a?arch', 'pkg:npm/a?arch=', 'pkg:npm/a?arch=x&ARCH=y', 'pkg:npm/%ZZ', 'pkg:npm/a@%ZZ', 'pkg:npm/a/../b', 'pkg:npm/org%2Fteam/a@1', 'pkg:npm/a@1#dist/%2Ffile', 'pkg:npm/a@1#', 'pkg:npm/a b@1', 'pkg:npm/a+b@1', 'pkg:npm/' + 'a'.repeat(2049)]) {
     assert.equal(parsePackageUrl(value), null, value);
   }
 });
