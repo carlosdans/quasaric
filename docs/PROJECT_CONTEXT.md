@@ -48,7 +48,7 @@ La prioridad es la trazabilidad y la interpretación conservadora. Una coinciden
 - OSV para AlmaLinux, Rocky Linux, SUSE y openSUSE: coincidencia de paquete/ecosistema; erratas oficiales individuales cuando se dispone de identificadores compatibles.
 - Red Hat Security Data: evidencia por CVE y paquete; distingue coincidencia binaria de evidencia indirecta por paquete fuente.
 - SUSE CSAF VEX: correlación por PURL RPM, producto y arquitectura; las relaciones fuente/binario requieren referencias explícitas del documento.
-- Comparadores de versiones: Debian/Ubuntu, RPM EVR, Python PEP 440, npm/Composer SemVer y builds de Windows. Un formato desconocido o un rango no ordenable permanece en revisión.
+- Comparadores de versiones: Debian/Ubuntu, RPM EVR, Python PEP 440, npm/Composer SemVer (identificadores numéricos comparados con enteros de precisión arbitraria) y builds de Windows. Un formato desconocido o un rango no ordenable permanece en revisión.
 - Priorización de hallazgos con señales separadas (CVSS, EPSS, KEV y contexto); la puntuación es una ayuda de triage, no una probabilidad de explotación.
 - Orientación de remediación conservadora: las versiones objetivo son candidatas, no una orden de actualización ni confirmación de parche aplicado.
 
