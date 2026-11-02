@@ -13,7 +13,8 @@ Capacidades implementadas:
 - Comparación inclusiva/exclusiva de límites con estados conservadores: versión afectada candidata, fuera de rango o revisión necesaria. Los formatos desconocidos no se ordenan por aproximación.
 - Señales EPSS de FIRST y presencia en el catálogo CISA KEV.
 - Consulta OSV por paquete y versión para los ecosistemas oficiales AlmaLinux, Rocky Linux, SUSE y openSUSE; adjunta erratas como evidencia del proveedor sin alterar automáticamente la aplicabilidad. Los eventos OSV `fixed` se muestran como versiones corregidas publicadas; `last_affected` se conserva como límite distinto y no se confunde con una versión corregida.
-- Consulta de Red Hat Security Data por CVE para RHEL, con coincidencia exacta de producto/paquete y conservación de estados de paquete y errata (sin asumir que un errata demuestra la versión local corregida).\n- Consulta de SUSE CSAF 2.0 VEX por CVE para SUSE/openSUSE, con coincidencia estricta mediante PURL RPM (namespace, paquete y arquitectura) y conservación de estados VEX/remediaciones como evidencia independiente; no declara el host corregido.
+- Consulta de Red Hat Security Data por CVE para RHEL, con coincidencia exacta de producto/paquete y conservación de estados de paquete y errata (sin asumir que un errata demuestra la versión local corregida).
+- Consulta de SUSE CSAF 2.0 VEX por CVE para SUSE/openSUSE, con coincidencia estricta mediante PURL RPM (namespace, paquete y arquitectura) y conservación de estados VEX/remediaciones como evidencia independiente; no declara el host corregido.
 - Consulta de Ubuntu OSV por paquete fuente y ecosistema/release explícitos.
 - Mapeo de los paquetes binarios instalados mediante `ecosystem_specific.binaries` del aviso Ubuntu OSV.
 - Evaluación separada de versión fuente y versión binaria Debian/Ubuntu, teniendo en cuenta las revisiones y backports.
