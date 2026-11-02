@@ -62,7 +62,13 @@ export function saveInventory(items, storage = globalThis.localStorage) {
   try {
     if (!storage) return false;
     const serialized = JSON.stringify(items);
-    if (!withinByteLimit(serialized)) return false;
+    if (typeof serialized !== 'string' || !withinByteLimit(serialized)) return false;
+    // Validate the exact JSON representation that will be persisted. This
+    // prevents custom toJSON methods or unusual object values from bypassing
+    // the inventory shape checks performed on the original input.
+    const normalized = JSON.parse(serialized);
+    if (!Array.isArray(normalized) || normalized.length > MAX_INVENTORY_COMPONENTS ||
+        !normalized.every(isInventoryItem)) return false;
     storage.setItem(INVENTORY_STORAGE_KEY, serialized);
     return true;
   } catch { return false; }
