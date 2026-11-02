@@ -20,7 +20,7 @@ test('keeps distinct versions and vendors separate',()=>{
   assert.deepEqual(inspectInventory([{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.1'},{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.2'},{name:'OpenSSL',vendor:'Ubuntu',version:'3.0.1'}]).duplicates,[]);
 });
 test('handles empty inventories and missing names',()=>{
-  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],duplicates:[]});
+  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],duplicates:[]});
   assert.deepEqual(inspectInventory([{id:'a',version:'1.0'}]).duplicates,[]);
 });
 test('does not report false duplicates when metadata contains separators',()=>{

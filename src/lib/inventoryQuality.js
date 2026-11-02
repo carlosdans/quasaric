@@ -1,3 +1,4 @@
+import { parsePackageUrl } from './packageUrl.js';
 const normalizeValue = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
 function duplicateIdentity(item) {
@@ -19,10 +20,17 @@ export function inspectInventory(items = []) {
   const duplicates = [];
   const missingVersion = [];
   const missingSourceVersion = [];
+  const invalidPurls = [];
   items.forEach((item, index) => {
     const name = normalizeValue(item?.name);
     if (!normalizeValue(item?.version)) {
       missingVersion.push({ id: item?.id ?? String(index), name: item?.name || '—' });
+    }
+    for (const field of ['purl', 'sourcePurl']) {
+      const value = String(item?.[field] || '').trim();
+      if (value && !parsePackageUrl(value)) {
+        invalidPurls.push({ id: item?.id ?? String(index), name: item?.name || '—', field });
+      }
     }
     if (normalizeValue(item?.sourcePackage) && !normalizeValue(item?.sourceVersion)) {
       missingSourceVersion.push({
@@ -44,5 +52,5 @@ export function inspectInventory(items = []) {
       seen.set(key, index);
     }
   });
-  return { missingVersion, missingSourceVersion, duplicates };
+  return { missingVersion, missingSourceVersion, invalidPurls, duplicates };
 }
