@@ -31,6 +31,7 @@ function cyclone(document) {
   return document.components.map((item,index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Component entry must be a JSON object.', index:index+1 };
     const rawPurl = str(item.purl);
+    if (rawPurl.length > MAX_IDENTIFIER_LENGTH || str(item.cpe).length > MAX_IDENTIFIER_LENGTH) return { error:'PURL and CPE fields must not exceed 2048 characters.', index:index+1 };
     const purl = purlInfo(rawPurl);
     if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
     const name = str(item.name) || purl?.name;
@@ -58,6 +59,8 @@ function spdx(document) {
     const purlRef = refs.find(ref => /purl/i.test(str(ref.referenceType)));
     const cpeRef = refs.find(ref => /cpe/i.test(str(ref.referenceType)));
     const rawPurl = str(purlRef?.referenceLocator);
+    const rawCpe = str(cpeRef?.referenceLocator);
+    if (rawPurl.length > MAX_IDENTIFIER_LENGTH || rawCpe.length > MAX_IDENTIFIER_LENGTH) return { error:'PURL and CPE fields must not exceed 2048 characters.', index:index+1 };
     const purl = purlInfo(rawPurl);
     if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
     const name = str(item.name) || purl?.name;
@@ -66,7 +69,7 @@ function spdx(document) {
       name, version:str(item.versionInfo) || purl?.version || '',
       vendor:str(item.supplier).replace(/^Organization:[ \t]*/i,'') || str(item.originator).replace(/^(Organization|Person):\s*/i,''),
       type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl,
-      cpe:str(cpeRef?.referenceLocator), sourcePackage:'', sourceVersion:'', architecture:''
+      cpe:rawCpe, sourcePackage:'', sourceVersion:'', architecture:''
     };
     const error = validateComponentFields(component);
     return error ? { error, index:index+1 } : component;
