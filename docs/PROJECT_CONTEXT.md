@@ -157,6 +157,7 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El atributo `lang` del documento se sincroniza con el idioma seleccionado para que lectores de pantalla y herramientas del navegador interpreten correctamente el contenido.
 - Validación de esta versión: 358/358 tests y build correctos en Node 20 y 22; despliegue Azure del commit `d2ec0dd` satisfactorio.
 - La vista de análisis traduce los nombres y estados de las fuentes consultadas para que la cobertura y los fallos parciales sean comprensibles en español.
+- La trazabilidad por componente también traduce nombres de fuentes y estados de evidencia del fabricante/CSAF; conserva intactos los identificadores y valores originales usados por el motor.
 - La trazabilidad de componentes traduce también los estados de evidencia de fabricante (afectado, corregido, en investigación, no afectado y revisión), conservando los valores originales en inglés cuando no existe una traducción conocida.
 - Se ha añadido un límite de error React con mensaje de recuperación bilingüe y recarga, para evitar una pantalla vacía ante fallos inesperados de renderizado. El texto de recuperación evita afirmaciones absolutas sobre persistencia o transmisión: indica que los datos se restauran si se guardaron localmente.
 - Validación de la versión anterior: 361/361 tests y build correctos en Node 20 y 22; despliegue Azure del commit `104960b` satisfactorio.
