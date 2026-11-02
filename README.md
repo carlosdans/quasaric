@@ -27,7 +27,7 @@ Capacidades implementadas:
 - Importación, exportación, restauración y comparación local de backups JSON del inventario; validación de campos y PURL conforme a ECMA-427, y preservación de datos recuperables ante almacenamiento local corrupto. El almacenamiento local vuelve a validar los PURL al cargar y guardar para que un backup antiguo o una edición manual no introduzcan identidades de paquete malformadas.
 - Correlación adicional por PURL con OSV público para paquetes con identificador y versión explícitos; avisos sin CVE asociado permanecen en una lista informativa separada y requieren revisión.
 - Límites de recuperación OpenVEX por análisis (100 documentos y hasta cuatro fetches concurrentes). Las consultas OSV limitan los detalles a 200 avisos por consulta y cuatro descargas concurrentes. Las consultas Ubuntu OSV por paquete fuente están limitadas a 100 grupos por análisis y tres peticiones simultáneas; si se supera el límite, el análisis se etiqueta como parcial.
-- Validación visible de PURL en el alta manual y en los flujos de importación/restauración; los errores del alta manual se anuncian dentro del diálogo y no se ocultan en el panel CSV.
+- Validación visible de PURL en el alta manual y en los flujos de importación/restauración; validación estructural CPE 2.3 en el panel de calidad del inventario, sin inferir coincidencias ni rechazar identificadores históricos automáticamente. También detecta versiones de paquete fuente sin nombre de paquete asociado.
 - Invalidación de los hallazgos visibles cuando cambia el inventario, para evitar presentar resultados de una composición anterior como actuales.
 - Cancelación explícita de análisis en curso y aviso cuando el historial no puede persistirse en el almacenamiento local.
 

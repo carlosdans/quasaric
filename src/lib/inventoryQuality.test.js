@@ -20,7 +20,7 @@ test('keeps distinct versions and vendors separate',()=>{
   assert.deepEqual(inspectInventory([{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.1'},{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.2'},{name:'OpenSSL',vendor:'Ubuntu',version:'3.0.1'}]).duplicates,[]);
 });
 test('handles empty inventories and missing names',()=>{
-  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],duplicates:[]});
+  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],invalidCpes:[],sourceVersionWithoutPackage:[],duplicates:[]});
   assert.deepEqual(inspectInventory([{id:'a',version:'1.0'}]).duplicates,[]);
 });
 test('does not report false duplicates when metadata contains separators',()=>{
@@ -61,4 +61,20 @@ test('still detects exact package duplicates when all identity metadata matches'
   assert.deepEqual(result.duplicates, [
     { id: 'b', name: ' OpenSSL-Libs ', firstIndex: 1, row: 2 }
   ]);
+});
+
+test('flags malformed CPEs and source versions without a source package', () => {
+  const result = inspectInventory([
+    { id: 'bad-cpe', name: 'nginx', version: '1.26', cpe: 'cpe:2.3:a:nginx' },
+    { id: 'source-version-only', name: 'openssl-libs', version: '3.0.2', sourceVersion: '3.0.2-1' },
+    { id: 'valid-cpe', name: 'openssl', version: '3.0.2', cpe: 'cpe:2.3:a:openssl:openssl:3.0.2:*:*:*:*:*:*:*' }
+  ]);
+  assert.deepEqual(result.invalidCpes, [{ id: 'bad-cpe', name: 'nginx' }]);
+  assert.deepEqual(result.sourceVersionWithoutPackage, [{ id: 'source-version-only', name: 'openssl-libs' }]);
+});
+
+test('does not warn about absent optional CPE or source metadata', () => {
+  const result = inspectInventory([{ id: 'plain', name: 'nginx', version: '1.26' }]);
+  assert.deepEqual(result.invalidCpes, []);
+  assert.deepEqual(result.sourceVersionWithoutPackage, []);
 });

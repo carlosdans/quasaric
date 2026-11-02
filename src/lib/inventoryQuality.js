@@ -1,4 +1,5 @@
 import { parsePackageUrl } from './packageUrl.js';
+import { parseCpe23 } from './cpe23.js';
 const normalizeValue = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
 function duplicateIdentity(item) {
@@ -21,6 +22,8 @@ export function inspectInventory(items = []) {
   const missingVersion = [];
   const missingSourceVersion = [];
   const invalidPurls = [];
+  const invalidCpes = [];
+  const sourceVersionWithoutPackage = [];
   items.forEach((item, index) => {
     const name = normalizeValue(item?.name);
     if (!normalizeValue(item?.version)) {
@@ -31,6 +34,12 @@ export function inspectInventory(items = []) {
       if (value && !parsePackageUrl(value)) {
         invalidPurls.push({ id: item?.id ?? String(index), name: item?.name || '—', field });
       }
+    }
+    if (item?.cpe && !parseCpe23(item.cpe)) {
+      invalidCpes.push({ id: item?.id ?? String(index), name: item?.name || '—' });
+    }
+    if (normalizeValue(item?.sourceVersion) && !normalizeValue(item?.sourcePackage)) {
+      sourceVersionWithoutPackage.push({ id: item?.id ?? String(index), name: item?.name || '—' });
     }
     if (normalizeValue(item?.sourcePackage) && !normalizeValue(item?.sourceVersion)) {
       missingSourceVersion.push({
@@ -52,5 +61,5 @@ export function inspectInventory(items = []) {
       seen.set(key, index);
     }
   });
-  return { missingVersion, missingSourceVersion, invalidPurls, duplicates };
+  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, sourceVersionWithoutPackage, duplicates };
 }
