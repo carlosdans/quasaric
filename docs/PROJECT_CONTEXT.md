@@ -143,7 +143,7 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La carga de inventario antiguo preserva el JSON original en la clave de recuperación si encuentra filas con PURL inválidos y no incorpora esas filas al inventario activo.
 - En SPDX, `GENERATED_FROM` solo crea una relación cuando los SPDXID del binario y la fuente son únicos. Relaciones múltiples o identificadores duplicados permanecen sin resolver; no se asocia provenance por orden de aparición.
 - Los errores de PURL y almacenamiento en el alta manual se anuncian dentro del propio diálogo. El panel de importación conserva sus errores separados.
-- La navegación móvil y el detalle de vulnerabilidad gestionan Escape, trampa de foco, restauración de foco y bloqueo del scroll; el contenido principal queda inerte mientras la navegación móvil está abierta.
+- La navegación móvil y los diálogos de alta y detalle de vulnerabilidad gestionan Escape, trampa de foco, restauración de foco y bloqueo del scroll; el contenido principal queda inerte mientras la navegación móvil está abierta.
 - La interfaz identifica el espacio como local (sin cuenta ni workspace en la nube).
-- Validación previa a esta actualización documental: 337 tests correctos en Node 20 y Node 22, sin fallos; builds correctos. CI run [41475952854](https://github.com/carlosdans/quasaric/actions/runs/41475952854). El despliegue Azure del mismo commit estaba en curso al redactar esta actualización.
+- Validación previa a esta actualización documental: 338 tests correctos en Node 20 y Node 22, sin fallos; builds correctos. CI run [41476559743](https://github.com/carlosdans/quasaric/actions/runs/41476559743) y Azure run [41476559339](https://github.com/carlosdans/quasaric/actions/runs/41476559339), ambos satisfactorios.
 - Los cambios no añaden backend, servicios externos de pago, recursos Azure ni dependencias; mantienen la arquitectura estática/local-first y el requisito de Azure Static Web Apps Free.
