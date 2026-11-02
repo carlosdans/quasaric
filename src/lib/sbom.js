@@ -82,11 +82,13 @@ function cyclone(document) {
     // explicitly identified as RPM source packages (arch=src), never by name.
     if (!component.sourcePackage) {
       const ancestors = Array.isArray(item.pedigree?.ancestors) ? item.pedigree.ancestors : [];
-      const source = ancestors.find(ancestor => {
+      const sources = ancestors.filter(ancestor => {
         const parsed = purlInfo(str(ancestor?.purl));
         return parsed?.ecosystem === 'rpm' && parsed.qualifiers?.arch === 'src';
       });
-      if (source) {
+      // Multiple source candidates are ambiguous; leave provenance unresolved.
+      if (sources.length === 1) {
+        const source = sources[0];
         const parsed = purlInfo(str(source.purl));
         component.sourcePackage = parsed.name;
         component.sourceVersion = parsed.version;

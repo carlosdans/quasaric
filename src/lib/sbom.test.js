@@ -261,3 +261,22 @@ test('infers common runtime families from CycloneDX package identity', () => {
     'runtime', 'runtime', 'runtime', 'runtime', 'web', 'web'
   ]);
 });
+
+
+test('does not infer CycloneDX source provenance when multiple RPM source ancestors exist', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    components: [{
+      name: 'openssl-libs', version: '3.0.7',
+      pedigree: { ancestors: [
+        { name: 'openssl', version: '3.0.7', purl: 'pkg:rpm/openssl@3.0.7?arch=src' },
+        { name: 'openssl-custom', version: '3.0.7', purl: 'pkg:rpm/openssl-custom@3.0.7?arch=src' }
+      ] }
+    }]
+  }));
+  assert.equal(result.components.length, 1);
+  assert.equal(result.components[0].sourcePackage, '');
+  assert.equal(result.components[0].sourceVersion, '');
+  assert.equal(result.components[0].sourcePurl, '');
+  assert.equal(result.components[0].sourceRelationship, '');
+});
