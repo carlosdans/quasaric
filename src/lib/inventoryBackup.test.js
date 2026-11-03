@@ -178,3 +178,31 @@ test('keeps case-sensitive PURL and SPDX identifiers distinct in inventory compa
   assert.equal(sourceRefDiff.removed.length, 1);
   assert.equal(sourceRefDiff.unchanged.length, 0);
 });
+
+test('restores unique IDs when generated fallbacks would collide with supplied IDs', () => {
+  const backup = {
+    format: 'quasaric-inventory', version: 1,
+    components: [
+      { name: 'missing-id' },
+      { id: 'restored-1', name: 'reserved-id' },
+      { id: 'duplicate', name: 'first-duplicate' },
+      { id: 'duplicate', name: 'second-duplicate' },
+      { id: 'restored-5', name: 'later-reserved-id' },
+      { name: 'another-missing-id' }
+    ]
+  };
+  const restored = parseInventoryBackup(backup).components;
+  const ids = restored.map(item => item.id);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.deepEqual(ids, ['restored-2', 'restored-1', 'duplicate', 'restored-4', 'restored-5', 'restored-6']);
+});
+
+test('rejects duplicate IDs when creating a new backup and malformed optional IDs', () => {
+  assert.throws(() => createInventoryBackup([
+    { id: 'same', name: 'one' }, { id: 'same', name: 'two' }
+  ]), /duplicate component IDs/);
+  assert.throws(() => parseInventoryBackup({
+    format: 'quasaric-inventory', version: 1,
+    components: [{ id: 42, name: 'nginx' }]
+  }), /Invalid component/);
+});

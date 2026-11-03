@@ -15,6 +15,7 @@ function isValidBackupComponent(item) {
     (typeof item[field] === 'string' && item[field].length <= MAX_IDENTIFIER_LENGTH);
   return item !== null && typeof item === 'object' && !Array.isArray(item) &&
     typeof item.name === 'string' && item.name.trim().length > 0 &&
+    (item.id == null || (typeof item.id === 'string' && item.id.trim().length > 0 && item.id.length <= MAX_IDENTIFIER_LENGTH)) &&
     STRING_FIELDS.every(field => item[field] == null ||
       (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) &&
     (item.type == null || (typeof item.type === 'string' && allowedTypes.has(item.type))) &&
@@ -43,6 +44,8 @@ export function createInventoryBackup(items, createdAt = new Date().toISOString(
   }
   const invalidIndex = normalized.components.findIndex(item => !isValidBackupComponent(item));
   if (invalidIndex >= 0) throw new Error('Invalid component at position ' + (invalidIndex + 1) + '.');
+  const ids = normalized.components.map(item => item.id).filter(id => typeof id === 'string' && id.trim());
+  if (new Set(ids).size !== ids.length) throw new Error('Backup contains duplicate component IDs.');
   return normalized;
 }
 
@@ -55,12 +58,28 @@ export function parseInventoryBackup(input) {
     throw new Error('Unsupported or invalid Quasaric backup.');
   }
   if (data.components.length > MAX_COMPONENTS) throw new Error('Backup exceeds the 50000 component limit.');
+  const invalidIndex = data.components.findIndex(item => !isValidBackupComponent(item));
+  if (invalidIndex >= 0) throw new Error('Invalid component at position ' + (invalidIndex + 1) + '.');
+  // Reserve every supplied ID before generating fallbacks, so a missing or
+  // duplicate ID cannot take an identifier belonging to a later component.
+  const reservedIds = new Set(data.components
+    .map(item => typeof item.id === 'string' && item.id.trim() ? item.id : null)
+    .filter(Boolean));
+  const seenIds = new Set();
   const components = data.components.map((item, index) => {
-    if (!isValidBackupComponent(item)) {
-      throw new Error('Invalid component at position ' + (index + 1) + '.');
+    let id = typeof item.id === 'string' && item.id.trim() ? item.id : null;
+    if (id && seenIds.has(id)) id = null;
+    if (!id) {
+      let suffix = index + 1;
+      id = 'restored-' + suffix;
+      while (reservedIds.has(id) || seenIds.has(id)) {
+        suffix += 1;
+        id = 'restored-' + suffix;
+      }
     }
+    seenIds.add(id);
     return {
-      id: typeof item.id === 'string' && item.id ? item.id : 'restored-' + (index + 1),
+      id,
       name: item.name.trim(), type: allowedTypes.has(item.type) ? item.type : 'other',
       version: item.version || '', vendor: item.vendor || '',
       sourcePackage: typeof item.sourcePackage === 'string' ? item.sourcePackage : '',
