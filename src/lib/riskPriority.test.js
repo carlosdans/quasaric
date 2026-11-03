@@ -68,3 +68,14 @@ test('continues accepting finite numeric strings from source adapters', () => {
   assert.equal(result.cvssPoints, 17);
   assert.deepEqual(result.missing, []);
 });
+
+
+test('does not interpret truthy non-boolean KEV values as catalog membership', () => {
+  for (const kev of ['false', '0', 1, {}, []]) {
+    const result = calculateRiskPriority({ kev, epss: 0.5, cvss: 8.5, applicabilityStatus: 'affected' });
+    assert.equal(result.kevPoints, 0, String(kev));
+    assert.equal(result.score, 15 + 17 + 10, String(kev));
+    assert.ok(result.reasons.includes('Not listed in CISA KEV (+0)'));
+  }
+  assert.equal(calculateRiskPriority({ kev: true }).kevPoints, 40);
+});
