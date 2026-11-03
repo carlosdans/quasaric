@@ -20,7 +20,7 @@ test('keeps distinct versions and vendors separate',()=>{
   assert.deepEqual(inspectInventory([{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.1'},{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.2'},{name:'OpenSSL',vendor:'Ubuntu',version:'3.0.1'}]).duplicates,[]);
 });
 test('handles empty inventories and missing names',()=>{
-  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],invalidCpes:[],sourceVersionWithoutPackage:[],identifierConflicts:[],duplicates:[]});
+  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],invalidCpes:[],sourceVersionWithoutPackage:[],purlVersionMismatches:[],sourcePurlVersionMismatches:[],identifierConflicts:[],duplicates:[]});
   assert.deepEqual(inspectInventory([{id:'a',version:'1.0'}]).duplicates,[]);
 });
 test('does not report false duplicates when metadata contains separators',()=>{
@@ -108,4 +108,32 @@ test('does not infer architecture conflicts from missing or equivalent metadata'
     { name: 'nginx', version: '1.26', architecture: 'x86_64', cpe: 'cpe:2.3:a:nginx:nginx:1.26:*:*:*:*:*:amd64:*' }
   ]);
   assert.deepEqual(result.identifierConflicts, []);
+});
+
+
+test('flags declared component and source versions that disagree with valid PURL versions', () => {
+  const result = inspectInventory([
+    { id: 'binary', name: 'openssl', version: '3.0.2-0ubuntu1', purl: 'pkg:deb/ubuntu/openssl@3.0.2-0ubuntu2' },
+    { id: 'source', name: 'openssl-libs', version: '3.0.2', sourcePackage: 'openssl', sourceVersion: '3.0.2-0ubuntu1', sourcePurl: 'pkg:deb/ubuntu/openssl@3.0.2-0ubuntu2' }
+  ]);
+  assert.deepEqual(result.purlVersionMismatches, [
+    { id: 'binary', name: 'openssl', declaredVersion: '3.0.2-0ubuntu1', purlVersion: '3.0.2-0ubuntu2' }
+  ]);
+  assert.deepEqual(result.sourcePurlVersionMismatches, [
+    { id: 'source', name: 'openssl-libs', declaredVersion: '3.0.2-0ubuntu1', purlVersion: '3.0.2-0ubuntu2' }
+  ]);
+});
+
+test('does not infer version mismatches from absent, versionless or malformed PURLs', () => {
+  const result = inspectInventory([
+    { id: 'absent', name: 'nginx', version: '1.26' },
+    { id: 'versionless', name: 'curl', version: '8.0', purl: 'pkg:generic/curl' },
+    { id: 'malformed', name: 'openssl', version: '3.0.2', purl: 'pkg:deb/ubuntu/openssl@' },
+    { id: 'source-versionless', name: 'libx', version: '1', sourceVersion: '2', sourcePackage: 'x', sourcePurl: 'pkg:deb/ubuntu/x' }
+  ]);
+  assert.deepEqual(result.purlVersionMismatches, []);
+  assert.deepEqual(result.sourcePurlVersionMismatches, []);
+  assert.deepEqual(result.invalidPurls, [
+    { id: 'malformed', name: 'openssl', field: 'purl' }
+  ]);
 });

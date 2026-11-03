@@ -34,6 +34,8 @@ export function inspectInventory(items = []) {
   const invalidCpes = [];
   const sourceVersionWithoutPackage = [];
   const identifierConflicts = [];
+  const purlVersionMismatches = [];
+  const sourcePurlVersionMismatches = [];
   items.forEach((item, index) => {
     const name = normalizeValue(item?.name);
     const declaredArchitecture = normalizeArchitecture(item?.architecture);
@@ -55,6 +57,22 @@ export function inspectInventory(items = []) {
       if (value && !parsePackageUrl(value)) {
         invalidPurls.push({ id: item?.id ?? String(index), name: item?.name || '—', field });
       }
+    }
+    const componentPurl = item?.purl ? parsePackageUrl(item.purl) : null;
+    if (componentPurl?.version && normalizeValue(item?.version) &&
+        componentPurl.version.trim() !== String(item.version).trim()) {
+      purlVersionMismatches.push({
+        id: item?.id ?? String(index), name: item?.name || '—',
+        declaredVersion: String(item.version).trim(), purlVersion: componentPurl.version
+      });
+    }
+    const sourcePurl = item?.sourcePurl ? parsePackageUrl(item.sourcePurl) : null;
+    if (sourcePurl?.version && normalizeValue(item?.sourceVersion) &&
+        sourcePurl.version.trim() !== String(item.sourceVersion).trim()) {
+      sourcePurlVersionMismatches.push({
+        id: item?.id ?? String(index), name: item?.name || '—',
+        declaredVersion: String(item.sourceVersion).trim(), purlVersion: sourcePurl.version
+      });
     }
     if (item?.cpe && !parseCpe23(item.cpe)) {
       invalidCpes.push({ id: item?.id ?? String(index), name: item?.name || '—' });
@@ -82,5 +100,5 @@ export function inspectInventory(items = []) {
       seen.set(key, index);
     }
   });
-  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, sourceVersionWithoutPackage, identifierConflicts, duplicates };
+  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, sourceVersionWithoutPackage, purlVersionMismatches, sourcePurlVersionMismatches, identifierConflicts, duplicates };
 }
