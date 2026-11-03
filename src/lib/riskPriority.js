@@ -32,8 +32,11 @@ const PRIORITY_BANDS = [
 export function calculateRiskPriority(finding = {}) {
   const reasons = [];
   const missing = [];
-  const kevPoints = finding.kev ? 40 : 0;
-  if (finding.kev) reasons.push('Listed in CISA KEV (+40)');
+  // KEV is a boolean source signal. Truthy strings such as "false" must
+  // never be promoted to confirmed catalog membership.
+  const isKev = finding.kev === true;
+  const kevPoints = isKev ? 40 : 0;
+  if (isKev) reasons.push('Listed in CISA KEV (+40)');
   else reasons.push('Not listed in CISA KEV (+0)');
 
   let epssPoints = 0;
