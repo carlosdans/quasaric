@@ -40,9 +40,11 @@ export function calculateRiskPriority(finding = {}) {
   else reasons.push('Not listed in CISA KEV (+0)');
 
   let epssPoints = 0;
+  // FIRST EPSS is a probability in [0, 1]. Accept 0–100 percentage
+  // inputs for imported/manual data, but never clamp invalid values into range.
   const epss = numericSignal(finding.epss);
-  if (epss !== null) {
-    const probability = clamp(epss > 1 ? epss / 100 : epss, 0, 1);
+  if (epss !== null && epss >= 0 && epss <= 100) {
+    const probability = epss > 1 ? epss / 100 : epss;
     epssPoints = Math.round(probability * 30);
     reasons.push(`EPSS ${(probability * 100).toFixed(1)}% (+${epssPoints})`);
   } else {
@@ -52,9 +54,9 @@ export function calculateRiskPriority(finding = {}) {
 
   let cvssPoints = 0;
   const cvss = numericSignal(finding.cvss);
-  if (cvss !== null) {
-    cvssPoints = Math.round(clamp(cvss, 0, 10) * 2);
-    reasons.push(`CVSS ${clamp(cvss, 0, 10).toFixed(1)}/10 (+${cvssPoints})`);
+  if (cvss !== null && cvss >= 0 && cvss <= 10) {
+    cvssPoints = Math.round(cvss * 2);
+    reasons.push(`CVSS ${cvss.toFixed(1)}/10 (+${cvssPoints})`);
   } else {
     missing.push('CVSS');
     reasons.push('CVSS unavailable (+0)');
