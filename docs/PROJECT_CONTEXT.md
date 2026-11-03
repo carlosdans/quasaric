@@ -408,3 +408,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se aceptan valores numéricos y cadenas numéricas heredadas; se rechazan booleanos, objetos, cadenas vacías/no numéricas, valores no finitos y puntuaciones fuera de rango.
 - Si el historial local contiene puntuaciones inválidas, se excluyen esos snapshots de la vista activa y se conserva el JSON original en la clave de recuperación.
 - Se añaden pruebas para la creación, carga, recuperación y guardado de snapshots con puntuaciones inválidas.
+
+
+### 2026-11-03 — correcciones tras la primera ejecución completa de CI
+
+- Se corrigió un salto de línea escapado accidentalmente en el resumen de postura, que ocultaba la propiedad KEV y provocaba cuatro fallos de regresión.
+- La paginación NVD ahora rechaza páginas que contienen más registros que el total declarado restante, incluso cuando la página no supera el tamaño máximo solicitado.
+- La prueba de NVD existente se renombra para expresar con precisión la incoherencia detectada.
