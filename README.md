@@ -219,4 +219,4 @@ Quasaric incluye tema oscuro y tema claro. Puedes cambiarlo desde el control de 
 - Los campos de paquete fuente, versión, arquitectura y relación SBOM explícita se conservan en CSV, backups JSON y almacenamiento local del navegador. SPDX GENERATED_FROM se interpreta en su dirección normativa; CycloneDX solo promueve ancestros RPM con arch=src o propiedades quasaric:source* declaradas. No se infieren relaciones por nombres.
 
 
-El contrato de integración del paquete JSON v2 está publicado en [`docs/quasaric-security-audit.schema.json`](docs/quasaric-security-audit.schema.json) (JSON Schema Draft 2020-12). Permite validar la estructura del formato desde herramientas externas sin incorporar dependencias a la aplicación.
+El contrato de integración del paquete JSON v2 está publicado en [`docs/quasaric-security-audit.schema.json`](docs/quasaric-security-audit.schema.json) (JSON Schema Draft 2020-12). La CI comprueba su coherencia con las exportaciones reales. Permite validar la estructura del formato desde herramientas externas sin incorporar dependencias a la aplicación.
