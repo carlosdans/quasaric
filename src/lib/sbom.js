@@ -28,7 +28,7 @@ function typeFor(name, ecosystem, declaredType = '') {
   const declared = str(declaredType).toLowerCase();
   if (declared === 'operating-system') return 'os';
   if (['library', 'framework', 'file'].includes(declared)) return 'library';
-  if (['container', 'device', 'firmware', 'platform', 'device-driver',
+  if (['application', 'container', 'device', 'firmware', 'platform', 'device-driver',
     'machine-learning-model', 'data', 'cryptographic-asset'].includes(declared)) return 'other';
   const value = (name + ' ' + ecosystem).toLowerCase();
   if (/ubuntu|debian|red hat|rhel|rocky|alma|suse|windows server|linux/.test(value)) return 'os';
