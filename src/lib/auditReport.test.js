@@ -93,7 +93,7 @@ test('includes deterministic severity, applicability, priority and source covera
 test('detects tampering and rejects inconsistent package structures', async () => {
   const original = await createAuditReport({ analysis: { findings: [], sources: {}, errors: [], limits: [] } });
   const changed = JSON.parse(original);
-  changed.inventory.push({ name: 'tampered' });
+  changed.methodology.absence = 'tampered';
   await assert.rejects(() => parseAuditReport(JSON.stringify(changed)), /SHA-256 verification/);
   const malformed = JSON.parse(original);
   malformed.scope.findings = 1;
