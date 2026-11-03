@@ -565,3 +565,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Las consultas usan el nombre y versión instalados, y exigen coincidencia exacta de paquete y ecosistema en el aviso OSV. Las versiones corregidas se conservan como evidencia del proveedor, sin cambiar la aplicabilidad NVD ni declarar remediación.
 - Se añaden pruebas para detección por metadatos/PURL, coincidencia exacta y rechazo de namespaces genéricos.
 - Sin dependencias ni infraestructura adicional. Validación final en `a351cbb6f6115b4da873ac4f1f273d61cf70f14b`: 562/562 tests y build correctos en Node 20 y 22, CI [41722041561](https://github.com/carlosdans/quasaric/actions/runs/41722041561). Despliegue Azure del código de aplicación `dd8f4009367caae0cafd91ae6bc449b707ca2bde`: [41721482608](https://github.com/carlosdans/quasaric/actions/runs/41721482608), satisfactorio. `a351cbb` solo ajusta la regresión de aplicabilidad y no cambia el bundle desplegado.
+
+
+### 2026-11-03 — vista previa de duplicados en importación
+
+- La revisión previa de CSV y SBOM calcula y muestra los posibles duplicados frente al inventario actual antes de confirmar.
+- La estimación usa el mismo detector de calidad de inventario que el flujo de confirmación; no elimina ni fusiona filas automáticamente. El usuario conserva el control y puede cancelar.
+- El contador se recalcula si cambia el inventario mientras la vista previa sigue abierta.
+- Validación automatizada añadida para el contrato de vista previa. Sin dependencias ni servicios nuevos.

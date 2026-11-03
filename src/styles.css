@@ -765,3 +765,6 @@ button{touch-action:manipulation}
   .import-review-panel .modal-actions { flex-direction: column-reverse; }
   .import-review-panel .modal-actions button { width: 100%; justify-content: center; }
 }
+
+.import-duplicate-preview { margin: -.35rem 0 1rem; padding: .7rem .85rem; border-left: 3px solid var(--accent, #64748b); border-radius: .35rem; background: var(--surface-soft, #f5f7fa); font-size: .9rem; }
+.import-duplicate-preview strong { font-variant-numeric: tabular-nums; }
