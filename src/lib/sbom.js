@@ -21,7 +21,15 @@ function purlInfo(purl) {
     qualifiers: parsed.qualifiers
   } : null;
 }
-function typeFor(name, ecosystem) {
+function typeFor(name, ecosystem, declaredType = '') {
+  // CycloneDX's component type is explicit inventory metadata. Preserve it
+  // ahead of name-based suggestions, which can misclassify packages such as
+  // an npm library named "nginx" as a web server.
+  const declared = str(declaredType).toLowerCase();
+  if (declared === 'operating-system') return 'os';
+  if (['library', 'framework', 'file'].includes(declared)) return 'library';
+  if (['container', 'device', 'firmware', 'platform', 'device-driver',
+    'machine-learning-model', 'data', 'cryptographic-asset'].includes(declared)) return 'other';
   const value = (name + ' ' + ecosystem).toLowerCase();
   if (/ubuntu|debian|red hat|rhel|rocky|alma|suse|windows server|linux/.test(value)) return 'os';
   if (/nginx|apache|httpd|iis|caddy|tomcat/.test(value)) return 'web';
@@ -89,7 +97,7 @@ function cyclone(document) {
     const component = {
       name, version:str(item.version) || purl?.version || '',
       vendor:str(item.publisher) || str(item.supplier?.name),
-      type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl,
+      type:typeFor(name,purl?.ecosystem || '',item.type), purl:rawPurl,
       cpe:str(item.cpe) || str(cpeRef?.url) || str(cpeRef?.referenceLocator),
       sourcePackage:str(properties.sourcePackage), sourceVersion:str(properties.sourceVersion),
       architecture:str(properties.architecture) || str(purl?.qualifiers?.arch),

@@ -482,7 +482,7 @@ function App() {
     try {
       if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'El SBOM supera el límite de 10 MB.' : 'SBOM exceeds the 10 MB limit.');
       const parsed = parseSbom(await file.text());
-      const imported = parsed.components.map(component => ({ ...normalizeComponentType(component), id: crypto.randomUUID(), createdAt: new Date().toISOString() }));
+      const imported = parsed.components.map(component => ({ ...component, id: crypto.randomUUID(), createdAt: new Date().toISOString() }));
       const previousDuplicateCount = inspectInventory(items).duplicates.length;
       const combined = [...items, ...imported];
       const duplicateCount = Math.max(0, inspectInventory(combined).duplicates.length - previousDuplicateCount);
