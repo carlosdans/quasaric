@@ -23,6 +23,8 @@ function isValidSnapshot(snapshot) {
     snapshot.findings.length <= MAX_FINDINGS_PER_SNAPSHOT &&
     snapshot.findings.every(finding => isRecord(finding) &&
       typeof finding.id === 'string' && finding.id.trim().length > 0 &&
+      // Older snapshots may omit KEV, but a present value must retain its boolean type.
+      (finding.kev === undefined || finding.kev === null || typeof finding.kev === 'boolean') &&
       Array.isArray(finding.components) &&
       finding.components.every(match => isRecord(match) && hasComponentIdentity(match.component)));
 }
