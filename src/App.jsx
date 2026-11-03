@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
 import { toCsv } from './lib/csv.js';
 import { createAnalysisSnapshot, compareAnalysisSnapshots, loadAnalysisHistory, saveAnalysisHistory } from './lib/analysisHistory.js';
+import { createAnalysisHistoryBackup, parseAnalysisHistoryBackup, mergeAnalysisHistory } from './lib/analysisHistoryBackup.js';
 import { suggestedComponentType } from './lib/componentTypes.js';
 import { rankFindingsByRisk } from './lib/riskPriority.js';
 import { buildFindingRemediation } from './lib/remediation.js';
@@ -344,6 +345,8 @@ function App() {
   const [analysisHistoryWarning, setAnalysisHistoryWarning] = useState(false);
   const analysisAbortRef = useRef(null);
   const [analysisHistory, setAnalysisHistory] = useState(() => loadAnalysisHistory());
+  const [historyBackupMessage, setHistoryBackupMessage] = useState('');
+  const [historyBackupError, setHistoryBackupError] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
   const [analysisProgress, setAnalysisProgress] = useState({ completed: 0, total: 0 });
@@ -365,6 +368,39 @@ function App() {
     link.remove();
     // Let the browser begin consuming the blob before releasing its URL.
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const exportAnalysisHistory = () => {
+    try {
+      const backup = createAnalysisHistoryBackup(analysisHistory);
+      triggerCsvDownload(new Blob([backup], { type: 'application/json;charset=utf-8' }), 'quasaric-analysis-history.json');
+      setHistoryBackupError('');
+      setHistoryBackupMessage(lang === 'es' ? 'Copia del historial descargada.' : 'Analysis history backup downloaded.');
+    } catch (error) {
+      setHistoryBackupMessage('');
+      setHistoryBackupError(error.message || (lang === 'es' ? 'No se pudo exportar el historial.' : 'Could not export analysis history.'));
+    }
+  };
+
+  const handleAnalysisHistoryImport = async event => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setHistoryBackupMessage('');
+    setHistoryBackupError('');
+    try {
+      if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'El archivo supera el límite de 10 MB.' : 'The file exceeds the 10 MB limit.');
+      const imported = parseAnalysisHistoryBackup(await file.text());
+      const next = mergeAnalysisHistory(analysisHistory, imported);
+      if (!saveAnalysisHistory(next)) throw new Error(lang === 'es' ? 'No hay espacio disponible para guardar el historial en este navegador.' : 'There is not enough browser storage to save the history.');
+      setAnalysisHistory(next);
+      setAnalysisHistoryWarning(false);
+      setHistoryBackupMessage(lang === 'es'
+        ? `Historial integrado: ${imported.length} análisis importados; ${next.length} conservados en total.`
+        : `History merged: ${imported.length} analyses imported; ${next.length} retained in total.`);
+    } catch (error) {
+      setHistoryBackupError(error.message || (lang === 'es' ? 'No se pudo importar el historial.' : 'Could not import analysis history.'));
+    }
   };
 
   const exportPostureCsv = () => {
@@ -846,6 +882,10 @@ function App() {
             </section>
             <section className="panel report-card"><div className="report-icon"><FileDown size={23}/></div><div><h3>{lang === 'es' ? 'Exportar inventario' : 'Export inventory'}</h3><p>{lang === 'es' ? 'Descarga los componentes que has añadido en formato CSV.' : 'Download your declared components as CSV.'}</p></div><button className="secondary-btn" onClick={exportCsv} disabled={!items.length}><Download size={16}/>{lang === 'es' ? 'Inventario CSV' : 'Inventory CSV'}</button></section>
             <section className="panel report-card"><div className="report-icon"><ShieldAlert size={23}/></div><div><h3>{lang === 'es' ? 'Exportar hallazgos' : 'Export findings'}</h3><p>{lang === 'es' ? 'Descarga los candidatos CVE del último análisis con CVSS, EPSS, KEV y evidencias por fuente.' : 'Download candidate CVEs from the latest analysis with CVSS, EPSS, KEV and source evidence.'}</p></div><button className="secondary-btn" onClick={exportFindingsCsv} disabled={!analysis?.findings?.length}><Download size={16}/>{lang === 'es' ? 'Hallazgos CSV' : 'Findings CSV'}</button></section>
+            <section className="panel report-card"><div className="report-icon"><Database size={23}/></div><div><h3>{lang === 'es' ? 'Historial de análisis' : 'Analysis history'}</h3><p>{lang === 'es' ? 'Exporta tus últimos 10 análisis o integra una copia en este navegador. La importación conserva el historial local, elimina duplicados y mantiene los 10 análisis más recientes.' : 'Export your latest 10 analyses or merge a backup into this browser. Import preserves local history, removes duplicates and keeps the 10 most recent analyses.'}</p></div><div className="heading-actions"><button className="secondary-btn" onClick={exportAnalysisHistory} disabled={!analysisHistory.length}><Download size={16}/>{lang === 'es' ? 'Exportar historial' : 'Export history'}</button><label className="secondary-btn import-file-btn">{lang === 'es' ? 'Importar historial' : 'Import history'}<input type="file" accept=".json,application/json" onChange={handleAnalysisHistoryImport} aria-label={lang === 'es' ? 'Importar copia del historial de análisis' : 'Import analysis history backup'}/></label></div></section>
+            {historyBackupMessage && <div className="notice import-feedback" role="status">{historyBackupMessage}</div>}
+            {historyBackupError && <div className="error-banner" role="alert"><AlertTriangle size={16}/>{historyBackupError}</div>}
+
           </>}
 
           {active === 'settings' && <><div className="page-heading"><div><div className="eyebrow">{t.workspace}</div><h1>{t.settings}</h1><p>{lang === 'es' ? 'Preferencias de idioma, apariencia y datos locales.' : 'Language, appearance, and local data preferences.'}</p></div></div><section className="panel settings-panel"><h3>{t.language}</h3><p>{lang === 'es' ? 'Selecciona el idioma de la interfaz.' : 'Choose the interface language.'}</p><div className="setting-options"><button className={lang === 'es' ? 'selected' : ''} onClick={() => setLang('es')}>Español {lang === 'es' && <Check size={16}/>}</button><button className={lang === 'en' ? 'selected' : ''} onClick={() => setLang('en')}>English {lang === 'en' && <Check size={16}/>}</button></div><div className="settings-divider"/><h3>{lang === 'es' ? 'Apariencia' : 'Appearance'}</h3><p>{lang === 'es' ? 'Elige el tema visual de Quasaric.' : 'Choose the Quasaric interface theme.'}</p><div className="setting-options theme-options"><button className={theme === 'light' ? 'selected' : ''} onClick={() => setTheme('light')}><Sun size={16}/>{lang === 'es' ? 'Claro' : 'Light'} {theme === 'light' && <Check size={16}/>}</button><button className={theme === 'dark' ? 'selected' : ''} onClick={() => setTheme('dark')}><Moon size={16}/>{lang === 'es' ? 'Oscuro' : 'Dark'} {theme === 'dark' && <Check size={16}/>}</button></div><div className="settings-divider"/><h3>{lang === 'es' ? 'Datos del navegador' : 'Browser data'}</h3><p>{lang === 'es' ? 'El inventario se almacena localmente en este navegador.' : 'Your inventory is stored locally in this browser.'}</p><button className="danger-btn" onClick={() => { if (confirm(lang === 'es' ? '¿Eliminar todo el inventario local?' : 'Delete the entire local inventory?')) persist([]); }}><Trash2 size={15}/>{lang === 'es' ? 'Borrar inventario local' : 'Clear local inventory'}</button></section></>}
