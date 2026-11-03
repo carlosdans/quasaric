@@ -379,3 +379,5 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Las entradas individuales malformadas se descartan sin romper el análisis del inventario.
 - Los paquetes fuente siguen siendo evidencia indirecta: no se trasladan estados ni versiones corregidas a un binario instalado.
 - Se añaden pruebas para colecciones inválidas y elementos individuales malformados.
+
+- Corrección de implementación: se verificaron los escapes de las expresiones regulares del normalizador de producto y del parser de SRPM; ambos usan ahora los tokens de espacio y dígito de JavaScript correctamente.
