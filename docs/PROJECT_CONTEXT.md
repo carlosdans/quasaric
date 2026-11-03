@@ -387,3 +387,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 
 - El resumen de postura de seguridad ahora cuenta una CVE como presente en CISA KEV únicamente cuando `finding.kev === true`; valores truthy como cadenas u objetos no se convierten en evidencia positiva.
 - Se cubre el uso directo de `buildSecurityPosture` con snapshots malformados, además de la validación ya aplicada al historial persistido.
+
+
+### 2026-11-03 — preferencias de idioma persistentes
+
+- La aplicación restaura el idioma español/inglés elegido anteriormente desde el almacenamiento local del navegador y guarda los cambios.
+- Si el almacenamiento no está disponible, mantiene el español como idioma predeterminado sin interrumpir la carga.
+- Se añade una prueba de regresión para la restauración y persistencia de la preferencia.
