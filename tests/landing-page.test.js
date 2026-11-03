@@ -44,3 +44,15 @@ test('document exposes search and social metadata with structured software infor
   assert.match(html, /application\/ld\+json/);
   assert.match(html, /"@type": "SoftwareApplication"/);
 });
+
+
+test('public and application footers do not expose email or GitHub links', () => {
+  const landingFooter = landing.match(/<footer className="landing-footer">([\\s\\S]*?)<\\/footer>/)?.[1] || '';
+  const appFooter = app.match(/<footer className="footer">([\\s\\S]*?)<\\/footer>/)?.[1] || '';
+  for (const footer of [landingFooter, appFooter]) {
+    assert.doesNotMatch(footer, /mailto:/i);
+    assert.doesNotMatch(footer, /github\\.com/i);
+  }
+  assert.match(landingFooter, /href="#product"/);
+  assert.match(landingFooter, /href="#trust"/);
+});

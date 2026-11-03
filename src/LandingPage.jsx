@@ -189,7 +189,7 @@ export default function LandingPage({ lang = 'es', onLanguageChange, onOpenApp }
         </section>
       </main>
       <footer className="landing-footer">
-        <div className="landing-footer-main"><div><Brand/><p>{t.footerLine}</p></div><div className="landing-footer-links"><a href="#product">{t.footerProduct}</a><a href="#trust">{t.footerLegal}</a><a href="mailto:contacto@quasaric.com">contacto@quasaric.com</a><a href="https://github.com/carlosdans/quasaric" target="_blank" rel="noreferrer">GitHub <ArrowUpRight size={13}/></a></div></div>
+        <div className="landing-footer-main"><div><Brand/><p>{t.footerLine}</p></div><div className="landing-footer-links"><a href="#product">{t.footerProduct}</a><a href="#trust">{t.footerLegal}</a></div></div>
         <div className="landing-footer-bottom"><span>© {new Date().getFullYear()} Quasaric</span><span>{t.footerDisclaimer}</span></div>
       </footer>
     </div>

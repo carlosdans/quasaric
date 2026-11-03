@@ -807,7 +807,7 @@ function App() {
             <h3>{lang === 'es' ? 'Contacto' : 'Contact'}</h3>
             <p>{lang === 'es' ? 'Para consultas o para comunicar un problema:' : 'For questions or to report an issue:'} <a href="mailto:contacto@quasaric.com">contacto@quasaric.com</a>.</p>
           </section>}
-          <footer className="footer"><span>© {new Date().getFullYear()} Quasaric · {t.footer}</span><a href="mailto:contacto@quasaric.com">contacto@quasaric.com</a></footer>
+          <footer className="footer"><span>© {new Date().getFullYear()} Quasaric · {t.footer}</span></footer>
         </div>
       </main>
 
