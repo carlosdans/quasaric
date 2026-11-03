@@ -192,8 +192,9 @@ function spdx(document) {
     // contains an explicit relationship. Never attach provenance by map order.
     if (packageIdCounts.get(binaryId) !== 1 || packageIdCounts.get(sourceId) !== 1 ||
         !packages.has(binaryId) || !packages.has(sourceId) || binaryId === sourceId) continue;
-    if (!generatedFrom.has(binaryId)) generatedFrom.set(binaryId, []);
-    generatedFrom.get(binaryId).push(sourceId);
+    if (!generatedFrom.has(binaryId)) generatedFrom.set(binaryId, new Set());
+    // Repeated identical SPDX edges are redundant, not competing provenance.
+    generatedFrom.get(binaryId).add(sourceId);
   }
   return document.packages.map((item,index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Package entry must be a JSON object.', index:index+1 };
@@ -222,7 +223,7 @@ function spdx(document) {
     };
     // SPDX GENERATED_FROM is directional: binary (left) is generated from source (right).
     // Multiple source targets are intentionally left unresolved for manual review.
-    const sources = generatedFrom.get(str(item.SPDXID)) || [];
+    const sources = [...(generatedFrom.get(str(item.SPDXID)) || [])];
     if (sources.length === 1) {
       const source = packages.get(sources[0]);
       const sourceRefs = Array.isArray(source.externalRefs) ? source.externalRefs : [];

@@ -229,3 +229,8 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - CI en commit a7a505a0d4c9e897d8de8aca5c5078f8455b3d90: 469 tests correctos y builds correctas en Node 20 y 22; [CI 41600052182](https://github.com/carlosdans/quasaric/actions/runs/41600052182).
 - El código de aplicación quedó desplegado por Azure Static Web Apps en el commit a38a866fa305ac86c2bd2cf2508b9de00af8de05; [despliegue 41599895556](https://github.com/carlosdans/quasaric/actions/runs/41599895556), satisfactorio. El commit posterior solo ajustó la expectativa de una prueba.
 - No se añaden dependencias, backend, servicios externos ni recursos Azure.
+
+
+### 2026-11-03 · Footer y relaciones SPDX repetidas
+- Se retiraron los enlaces de correo y GitHub de los pies de página de la web pública y de la aplicación; la sección de contacto de Acerca de permanece disponible.
+- Las relaciones SPDX `GENERATED_FROM` idénticas repetidas se normalizan como una sola arista. Sólo distintas fuentes relacionadas mantienen la ambigüedad y dejan la procedencia sin resolver.

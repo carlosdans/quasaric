@@ -47,12 +47,14 @@ test('document exposes search and social metadata with structured software infor
 
 
 test('public and application footers do not expose email or GitHub links', () => {
-  const landingFooter = landing.match(/<footer className="landing-footer">([\\s\\S]*?)<\\/footer>/)?.[1] || '';
-  const appFooter = app.match(/<footer className="footer">([\\s\\S]*?)<\\/footer>/)?.[1] || '';
+  const landingStart = landing.indexOf('<footer className="landing-footer">');
+  const landingFooter = landing.slice(landingStart, landing.indexOf('</footer>', landingStart));
+  const appStart = app.indexOf('<footer className="footer">');
+  const appFooter = app.slice(appStart, app.indexOf('</footer>', appStart));
   for (const footer of [landingFooter, appFooter]) {
-    assert.doesNotMatch(footer, /mailto:/i);
-    assert.doesNotMatch(footer, /github\\.com/i);
+    assert.equal(footer.includes('mailto:'), false);
+    assert.equal(footer.includes('github.com'), false);
   }
-  assert.match(landingFooter, /href="#product"/);
-  assert.match(landingFooter, /href="#trust"/);
+  assert.ok(landingFooter.includes('href="#product"'));
+  assert.ok(landingFooter.includes('href="#trust"'));
 });

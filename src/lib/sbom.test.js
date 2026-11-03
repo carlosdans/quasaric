@@ -579,3 +579,22 @@ test('does not collapse a CycloneDX metadata subject onto a same-name component 
     'cpe:2.3:a:vendor_b:service:1.0:*:*:*:*:*:*:*'
   ]);
 });
+
+
+test('deduplicates repeated identical SPDX GENERATED_FROM edges', () => {
+  const result = parseSbom(JSON.stringify({
+    spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0',
+    packages: [
+      { SPDXID: 'SPDXRef-binary', name: 'openssl-libs', versionInfo: '3.0.7-1' },
+      { SPDXID: 'SPDXRef-source', name: 'openssl', versionInfo: '3.0.7-1',
+        externalRefs: [{ referenceType: 'purl', referenceLocator: 'pkg:rpm/openssl@3.0.7-1?arch=src' }] }
+    ],
+    relationships: [
+      { spdxElementId: 'SPDXRef-binary', relationshipType: 'GENERATED_FROM', relatedSpdxElement: 'SPDXRef-source' },
+      { spdxElementId: 'SPDXRef-binary', relationshipType: 'GENERATED_FROM', relatedSpdxElement: 'SPDXRef-source' }
+    ]
+  }));
+  assert.equal(result.components[0].sourcePackage, 'openssl');
+  assert.equal(result.components[0].sourceRelationship, 'spdx_generated_from');
+  assert.equal(result.components[0].sourceRef, 'SPDXRef-source');
+});
