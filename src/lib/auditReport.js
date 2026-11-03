@@ -65,7 +65,7 @@ function validateAuditPayload(report) {
       report.summary.candidateFindings !== report.findings.length ||
       report.summary.queryErrors !== report.analysis.errors.length ||
       report.summary.queryLimits !== report.analysis.limits.length ||
-      report.scope.analysisTimestamp !== (report.analysis.analyzedAt || null) ||
+      (report.version === 2 && report.scope.analysisTimestamp !== (report.analysis.analyzedAt || null)) ||
       report.inventory.some(item => !item || typeof item !== 'object' || Array.isArray(item)) ||
       report.findings.some(item => !item || typeof item !== 'object' || Array.isArray(item)) ||
       report.prioritizedFindings.some(item => !item || typeof item !== 'object' || Array.isArray(item))) {
