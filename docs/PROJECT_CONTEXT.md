@@ -351,3 +351,12 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Las entradas incompletas, identificadores inválidos o repetidos, páginas sobredimensionadas y cambios del total entre páginas abortan la consulta en vez de descartarse silenciosamente o producir un conjunto parcial aparentemente válido.
 - Las búsquedas por palabra clave rechazan términos vacíos o superiores a 200 caracteres antes de realizar peticiones. Se añaden pruebas de regresión para entradas inválidas, tamaño de página y respuesta válida.
 - No se añaden dependencias, backend ni servicios externos. Suite completa y build pendientes de ejecución en CI.
+
+
+### 2026-11-03 — normalización de identificadores CVE en la correlación OSV
+
+- La correlación OSV reconoce el CVE cuando el propio campo `id` del aviso ya es un CVE, además de los campos `aliases` y `upstream`.
+- Los identificadores se recortan y normalizan a mayúsculas antes de validarlos y asociarlos a un hallazgo, evitando que variantes de capitalización creen asociaciones separadas.
+- Se deduplican las rutas de identificación para que un mismo CVE presente en `id`, `aliases` y `upstream` no duplique la evidencia.
+- Los avisos OSV sin ningún CVE válido siguen apareciendo como avisos independientes de revisión; no se inventa una relación CVE.
+- Se añade una prueba de regresión para CVE directo en minúsculas y rutas de alias repetidas.
