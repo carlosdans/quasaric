@@ -554,3 +554,28 @@ test('removes a conflicting SPDX source PURL while preserving explicit source pa
   assert.equal(result.components[0].sourcePurl, '');
   assert.equal(result.warnings.length, 2);
 });
+
+
+test('does not collapse a CycloneDX metadata subject onto a same-name component without stable identifiers', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    metadata: {
+      component: {
+        type: 'application', name: 'service', version: '1.0',
+        publisher: 'Vendor A',
+        cpe: 'cpe:2.3:a:vendor_a:service:1.0:*:*:*:*:*:*:*'
+      }
+    },
+    components: [{
+      type: 'application', name: 'service', version: '1.0',
+      publisher: 'Vendor B',
+      cpe: 'cpe:2.3:a:vendor_b:service:1.0:*:*:*:*:*:*:*'
+    }]
+  }));
+  assert.equal(result.components.length, 2);
+  assert.deepEqual(result.components.map(item => item.vendor), ['Vendor A', 'Vendor B']);
+  assert.deepEqual(result.components.map(item => item.cpe), [
+    'cpe:2.3:a:vendor_a:service:1.0:*:*:*:*:*:*:*',
+    'cpe:2.3:a:vendor_b:service:1.0:*:*:*:*:*:*:*'
+  ]);
+});

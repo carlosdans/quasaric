@@ -77,11 +77,11 @@ function cyclone(document) {
         if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
         if (rootRef) return str(item['bom-ref']) === rootRef;
         const rootPurl = str(root.purl);
-        if (rootPurl) return str(item.purl) === rootPurl;
-        return Boolean(str(root.name)) &&
-          str(item.name) === str(root.name) &&
-          str(item.version) === str(root.version) &&
-          str(item.type) === str(root.type);
+        // Names, versions and component types are descriptive, not unique
+        // identifiers. Without a bom-ref or PURL there is no safe basis for
+        // deduplication: keep the metadata subject rather than risk dropping
+        // a distinct component with coincidentally matching coordinates.
+        return Boolean(rootPurl) && str(item.purl) === rootPurl;
       })
     : -1;
   // The metadata subject is authoritative for shared fields. Retain nested
