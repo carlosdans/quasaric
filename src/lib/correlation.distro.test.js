@@ -166,7 +166,12 @@ test('queries Alpine OSV by exact APK PURL identity and keeps it separate from N
       package: { ecosystem: 'Alpine', name: 'busybox' },
       ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '1.36.1-r3' }] }]
     }],
-    references: [{ type: 'ADVISORY', url: 'https://security.alpinelinux.org/vuln/CVE-2025-67890' }]
+    references: [
+      null,
+      {},
+      { type: 'ADVISORY', url: 'https://security.alpinelinux.org/vuln/CVE-2025-67890' },
+      { type: 'ADVISORY', url: 'https://security.alpinelinux.org/vuln/CVE-2025-67890' }
+    ]
   };
   const result = await analyzeInventory([{
     id: 'busybox-alpine',
@@ -194,6 +199,8 @@ test('queries Alpine OSV by exact APK PURL identity and keeps it separate from N
   assert.equal(evidence.installedVersion, '1.36.1-r2');
   assert.deepEqual(evidence.fixedVersions, ['1.36.1-r3']);
   assert.equal(evidence.status, 'needs_review');
+  assert.deepEqual(evidence.references, ['https://security.alpinelinux.org/vuln/CVE-2025-67890']);
+  assert.deepEqual(finding.references, [{ type: 'ADVISORY', url: 'https://security.alpinelinux.org/vuln/CVE-2025-67890' }]);
   assert.equal(finding.components[0].applicability.status, 'needs_review', 'the unrelated NVD OpenSSL fixture must not be treated as a BusyBox match');
 });
 
