@@ -158,3 +158,19 @@ test('canonicalizes CVE identifier casing without changing non-CVE advisory IDs'
   assert.equal(cve.presentInLatest, true);
   assert.ok(result.dwell.some(item => item.cve === 'Ubuntu-CVE-2025-1234'));
 });
+
+
+test('does not promote truthy non-boolean KEV values in direct posture summaries', () => {
+  for (const kev of ['false', 'true', '0', 1, {}, []]) {
+    const result = buildSecurityPosture([
+      snap('latest', [finding('CVE-2026-1234', [match('a')], { kev })])
+    ]);
+    assert.equal(result.latest.kevCves, 0, String(kev));
+    assert.equal(result.dwell[0].kev, false, String(kev));
+  }
+  const positive = buildSecurityPosture([
+    snap('latest', [finding('CVE-2026-1234', [match('a')], { kev: true })])
+  ]);
+  assert.equal(positive.latest.kevCves, 1);
+  assert.equal(positive.dwell[0].kev, true);
+});
