@@ -152,3 +152,12 @@ test('vendor evidence source names and technical statuses are localized', () => 
   assert.match(app, /\{evidenceStatusLabel\(status\)\}/);
   assert.match(app, /vendor_evidence: lang === 'es' \? 'evidencia del fabricante'/);
 });
+
+
+test('selected interface language is restored and persisted locally', () => {
+  assert.match(app, /const \[lang, setLang\] = useState\(\(\) => \{/);
+  assert.match(app, /localStorage\.getItem\('quasaric-language'\) === 'en' \? 'en' : 'es'/);
+  assert.match(app, /localStorage\.setItem\('quasaric-language', lang\)/);
+  assert.match(app, /\}, \[lang\]\)/);
+  assert.match(app, /catch \{ return 'es'; \}/);
+});
