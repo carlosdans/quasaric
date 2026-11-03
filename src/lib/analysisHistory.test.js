@@ -313,3 +313,41 @@ test('accepts explicit boolean and null KEV values in legacy-compatible snapshot
   const data = new Map([['quasaric-analysis-history', JSON.stringify([withoutKev])]]);
   assert.deepEqual(loadAnalysisHistory({ getItem: key => data.get(key) || null }), [withoutKev]);
 });
+
+
+test('validates CVSS and EPSS ranges when creating analysis snapshots', () => {
+  for (const cvss of [-0.1, 10.1, 'not-a-score', '', NaN, Infinity, true, {}]) {
+    assert.throws(() => createAnalysisSnapshot({
+      findings: [finding('CVE-2026-0201', [match('a')], { cvss })]
+    }), TypeError, String(cvss));
+  }
+  for (const epss of [-0.01, 100.01, 'not-a-score', '', NaN, Infinity, true, {}]) {
+    assert.throws(() => createAnalysisSnapshot({
+      findings: [finding('CVE-2026-0202', [match('a')], { epss })]
+    }), TypeError, String(epss));
+  }
+  const valid = createAnalysisSnapshot({ findings: [
+    finding('CVE-2026-0203', [match('a')], { cvss: '9.8', epss: '0.95' }),
+    finding('CVE-2026-0204', [match('b')], { cvss: 0, epss: 100 }),
+    finding('CVE-2026-0205', [match('c')], { cvss: null, epss: null })
+  ] });
+  assert.equal(valid.findings.length, 3);
+});
+
+test('rejects out-of-range CVSS and EPSS in persisted snapshots and preserves raw history', () => {
+  const valid = { id: 'valid-scores', findings: [finding('CVE-2026-0301', [match('a')])] };
+  const malformed = [
+    { id: 'bad-cvss-low', findings: [finding('CVE-2026-0302', [match('a')], { cvss: -1 })] },
+    { id: 'bad-cvss-high', findings: [finding('CVE-2026-0303', [match('a')], { cvss: 10.01 })] },
+    { id: 'bad-epss-low', findings: [finding('CVE-2026-0304', [match('a')], { epss: -0.01 })] },
+    { id: 'bad-epss-high', findings: [finding('CVE-2026-0305', [match('a')], { epss: 100.01 })] },
+    { id: 'bad-score-type', findings: [finding('CVE-2026-0306', [match('a')], { epss: 'unknown' })] }
+  ];
+  const raw = JSON.stringify([valid, ...malformed]);
+  const data = new Map([['quasaric-analysis-history', raw]]);
+  const storage = { getItem: key => data.get(key) || null, setItem: (key, value) => data.set(key, value) };
+  assert.deepEqual(loadAnalysisHistory(storage), [valid]);
+  assert.equal(data.get('quasaric-analysis-history-recovery'), raw);
+  assert.equal(saveAnalysisHistory(malformed, storage), false);
+  assert.equal(saveAnalysisHistory([valid], storage), true);
+});
