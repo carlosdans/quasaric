@@ -455,7 +455,15 @@ function App() {
     analysisAbortRef.current = controller;
     setAnalyzing(true); setAnalysisError(''); setAnalysisHistoryWarning(false); setAnalysis(null); setAnalysisProgress({ completed: 0, total: items.length });
     try {
-      const result = await analyzeInventory(items, { signal: controller.signal, onProgress: setAnalysisProgress });
+      const result = await analyzeInventory(items, {
+        signal: controller.signal,
+        onProgress: progress => {
+          // Ignore late progress events from an analysis invalidated by edits.
+          if (analysisAbortRef.current === controller && !controller.signal.aborted) {
+            setAnalysisProgress(progress);
+          }
+        }
+      });
       // Inventory edits abort the active analysis. Re-check after await as a
       // final source request may resolve just before its abort is delivered.
       if (controller.signal.aborted || analysisAbortRef.current !== controller) return;
@@ -466,7 +474,11 @@ function App() {
       const historySaved = saveAnalysisHistory(nextHistory);
       setAnalysisHistoryWarning(!historySaved);
     } catch (error) {
-      if (error?.name !== 'AbortError') setAnalysisError(error.message || 'Analysis failed');
+      // Aborted or superseded runs must not surface stale errors over the
+      // current inventory or a subsequent analysis.
+      if (analysisAbortRef.current === controller && !controller.signal.aborted && error?.name !== 'AbortError') {
+        setAnalysisError(error.message || 'Analysis failed');
+      }
     }
     finally {
       // A stale request must never clear the busy state of a newer analysis.
