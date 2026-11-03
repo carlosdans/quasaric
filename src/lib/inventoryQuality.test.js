@@ -78,3 +78,14 @@ test('does not warn about absent optional CPE or source metadata', () => {
   assert.deepEqual(result.invalidCpes, []);
   assert.deepEqual(result.sourceVersionWithoutPackage, []);
 });
+
+
+test('does not collapse case-sensitive package identifiers when checking duplicates', () => {
+  const result = inspectInventory([
+    { id: 'a', name: 'Library', type: 'library', version: '1.0', purl: 'pkg:maven/com.Example/Library@1.0' },
+    { id: 'b', name: 'Library', type: 'library', version: '1.0', purl: 'pkg:maven/com.example/Library@1.0' },
+    { id: 'c', name: 'Library', type: 'library', version: '1.0', sourcePurl: 'pkg:maven/com.Example/source@1.0' },
+    { id: 'd', name: 'Library', type: 'library', version: '1.0', sourcePurl: 'pkg:maven/com.example/source@1.0' }
+  ]);
+  assert.deepEqual(result.duplicates, []);
+});

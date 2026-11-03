@@ -8,11 +8,15 @@ function duplicateIdentity(item) {
   // Without both name and installed version, duplicate detection is too
   // speculative: keep the item visible in the quality warnings instead.
   if (!name || !version) return null;
+  const identifier = value => String(value || '').trim();
   return JSON.stringify([
     name, normalizeValue(item?.type), normalizeValue(item?.vendor),
     normalizeValue(item?.ecosystem), version, normalizeValue(item?.architecture),
     normalizeValue(item?.sourcePackage), normalizeValue(item?.sourceVersion),
-    normalizeValue(item?.purl), normalizeValue(item?.cpe)
+    // PURLs and source references can contain case-sensitive ecosystem IDs.
+    // Keep explicit identifiers intact rather than collapsing distinct packages.
+    identifier(item?.purl), identifier(item?.cpe), identifier(item?.sourcePurl),
+    identifier(item?.sourceRef)
   ]);
 }
 
