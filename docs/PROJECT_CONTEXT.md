@@ -254,3 +254,8 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La correlación indirecta de paquete fuente a binario SUSE ahora exige una relación CSAF estructuralmente completa (incluye `full_product_name.product_id`), de categoría `default_component_of` y con dirección exacta fuente → producto binario. No se interpretan relaciones invertidas ni `installed_with`/`installed_on` como mapeo de compilación fuente-binario.
 - Se añadieron regresiones para la dirección válida, dirección inversa y categorías no equivalentes. La evidencia fuente sigue siendo `needs_review`; no se transfiere estado de afectación ni remediación al binario.
 - Referencia normativa: OASIS CSAF 2.0, sección 3.2.2.4 (relaciones direccionales y categorías), https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.pdf.
+
+
+### 2026-11-03 — normalización PEP 440 de versiones Python
+- El comparador PyPI reconoce el prefijo opcional `v` y la forma heredada de post-release `-N` (por ejemplo, `1.0-1` equivale a `1.0.post1`). Antes, esos identificadores válidos quedaban sin comparar y podían degradar una evaluación de rango a `needs_review`.
+- Se añadieron pruebas de equivalencia, orden post/dev y clasificación de límites. El comparador sigue devolviendo revisión para cadenas no interpretables.

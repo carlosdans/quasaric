@@ -122,14 +122,14 @@ function comparePep440(left, right) {
   // Parse dev separately to keep public and local ordering explicit.
   const parseFull = value => {
     const text = String(value).trim().toLowerCase();
-    const m = /^(?:(\d+)!)?(\d+(?:\.\d+)*)(?:[-_.]?(a|b|rc|alpha|beta|c|pre|preview)[-_.]?(\d*))?(?:[-_.]?(post|rev|r)[-_.]?(\d*))?(?:[-_.]?dev[-_.]?(\d*))?(?:\+([a-z0-9]+(?:[-_.][a-z0-9]+)*))?$/.exec(text);
+    const m = /^v?(?:(\d+)!)?(\d+(?:\.\d+)*)(?:[-_.]?(a|b|rc|alpha|beta|c|pre|preview)[-_.]?(\d*))?(?:-(?:post[-_.]?)?(\d+)|[-_.]?(post|rev|r)[-_.]?(\d*))?(?:[-_.]?dev[-_.]?(\d*))?(?:\+([a-z0-9]+(?:[-_.][a-z0-9]+)*))?$/.exec(text);
     if (!m) return null;
     const preName = m[3] ? ({ alpha: 'a', beta: 'b', c: 'rc', pre: 'rc', preview: 'rc' }[m[3]] || m[3]) : null;
-    const local = m[8] ? m[8].split(/[-_.]/).map(part => /^\d+$/.test(part) ? { n: BigInt(part) } : { s: part }) : [];
+    const local = m[9] ? m[9].split(/[-_.]/).map(part => /^\d+$/.test(part) ? { n: BigInt(part) } : { s: part }) : [];
     return { epoch: m[1] || '0', release: m[2].split('.').map(BigInt),
       pre: preName ? [({ a: 0, b: 1, rc: 2 })[preName], BigInt(m[4] || '0')] : null,
-      post: m[5] ? BigInt(m[6] || '0') : null,
-      devNumber: m[7] !== undefined ? BigInt(m[7] || '0') : null, hasDev: m[7] !== undefined,
+      post: m[5] !== undefined ? BigInt(m[5]) : m[6] ? BigInt(m[7] || '0') : null,
+      devNumber: m[8] !== undefined ? BigInt(m[8] || '0') : null, hasDev: m[8] !== undefined,
       local };
   };
   const a = parseFull(left), b = parseFull(right);

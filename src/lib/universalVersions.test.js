@@ -119,6 +119,15 @@ test('checks RPM segment type ordering and caret placement around release bounda
   assert.equal(compareVersionForComponent('1.0.1', '1.0a', rpm), 1);
 });
 
+test('accepts PEP 440 leading-v and implicit hyphen post-release forms', () => {
+  const python = component('Python', 'PyPI');
+  assert.equal(compareVersionForComponent('v1.0', '1.0', python), 0);
+  assert.equal(compareVersionForComponent('1.0-1', '1.0.post1', python), 0);
+  assert.equal(compareVersionForComponent('1.0-1.dev2', '1.0.post1', python), -1);
+  assert.equal(compareVersionForComponent('1.0-2', '1.0-1', python), 1);
+  assert.equal(classifyVersionRange('1.0-1', { versionEndIncluding: '1.0.post1' }, python).status, 'affected_candidate');
+});
+
 test('checks the PEP 440 public release ordering sequence', () => {
   const python = component('Python', 'PyPI');
   const ordered = [
