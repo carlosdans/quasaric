@@ -18,6 +18,7 @@ function preserveForRecovery(storage, raw) {
 
 function isInventoryItem(item) {
   return item !== null && typeof item === 'object' && !Array.isArray(item) &&
+    (item.id === undefined || (typeof item.id === 'string' && item.id.trim().length > 0 && item.id.length <= MAX_IDENTIFIER_LENGTH)) &&
     typeof item.name === 'string' && item.name.trim().length > 0 &&
     STRING_FIELDS.every(field => item[field] == null ||
       (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) &&
