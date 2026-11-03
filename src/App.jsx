@@ -13,7 +13,7 @@ import { safeExternalUrl } from './lib/externalUrl.js';
 import { parsePackageUrl } from './lib/packageUrl.js';
 import { parseInventoryCsv } from './lib/inventoryCsv.js';
 import { parseSbom } from './lib/sbom.js';
-import { loadInventory, saveInventory } from './lib/inventoryStorage.js';
+import { loadInventory, saveInventory, MAX_INVENTORY_COMPONENTS } from './lib/inventoryStorage.js';
 import { inspectInventory } from './lib/inventoryQuality.js';
 import { createInventoryBackup, parseInventoryBackup, compareInventories } from './lib/inventoryBackup.js';
 import {
@@ -481,6 +481,11 @@ function App() {
       if (file.size > 5 * 1024 * 1024) throw new Error(lang === 'es' ? 'El CSV supera el límite de 5 MB.' : 'CSV exceeds the 5 MB limit.');
       const parsed = parseInventoryCsv(await file.text());
       const currentItems = itemsRef.current;
+      if (currentItems.length + parsed.components.length > MAX_INVENTORY_COMPONENTS) {
+        throw new Error(lang === 'es'
+          ? `La importación superaría el límite de ${MAX_INVENTORY_COMPONENTS.toLocaleString('es-ES')} componentes. No se ha modificado el inventario.`
+          : `Import would exceed the ${MAX_INVENTORY_COMPONENTS.toLocaleString('en-US')} component limit. Inventory was not changed.`);
+      }
       const imported = parsed.components.map(component => ({
         ...component,
         id: crypto.randomUUID(),
@@ -511,6 +516,11 @@ function App() {
       if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'El SBOM supera el límite de 10 MB.' : 'SBOM exceeds the 10 MB limit.');
       const parsed = parseSbom(await file.text());
       const currentItems = itemsRef.current;
+      if (currentItems.length + parsed.components.length > MAX_INVENTORY_COMPONENTS) {
+        throw new Error(lang === 'es'
+          ? `La importación superaría el límite de ${MAX_INVENTORY_COMPONENTS.toLocaleString('es-ES')} componentes. No se ha modificado el inventario.`
+          : `Import would exceed the ${MAX_INVENTORY_COMPONENTS.toLocaleString('en-US')} component limit. Inventory was not changed.`);
+      }
       const imported = parsed.components.map(component => ({ ...component, id: crypto.randomUUID(), createdAt: new Date().toISOString() }));
       const previousDuplicateCount = inspectInventory(currentItems).duplicates.length;
       const combined = [...currentItems, ...imported];
