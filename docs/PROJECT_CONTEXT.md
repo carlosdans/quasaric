@@ -306,3 +306,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La neutralización de fórmulas de hoja de cálculo ahora detecta prefijos de fórmula precedidos por caracteres de control ASCII, controles C1 y BOM, además de los espacios en blanco habituales.
 - Se amplían las regresiones para cubrir esos prefijos invisibles y conservar el formato CSV normal.
 - No se añaden dependencias ni servicios. La suite completa del proyecto y el build siguen pendientes de ejecución en el entorno del repositorio.
+
+
+### 2026-11-03 — validación de metadatos de copias de inventario
+
+- Las copias locales ahora validan el tipo y la longitud de las marcas temporales del propio backup y de cada componente, tanto al crear como al restaurar.
+- Se evita aceptar metadatos malformados que después se descartaban silenciosamente durante la restauración.
+- Se añadieron regresiones para timestamps numéricos, objetos y cadenas excesivamente largas. No se cambia el formato versionado ni se añaden dependencias.
+- La ejecución completa de node --test y vite build sigue pendiente en el entorno del repositorio.
