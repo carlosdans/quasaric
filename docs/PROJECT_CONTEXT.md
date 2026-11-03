@@ -429,3 +429,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El formulario de alta comprueba el límite compartido de 50.000 componentes antes de crear el registro y ofrece una explicación localizada con las acciones posibles.
 - El alta utiliza la referencia actual del inventario para evitar depender de un estado potencialmente obsoleto durante interacciones rápidas.
 - El inventario permanece sin cambios cuando se alcanza el límite.
+
+
+### 2026-11-03 — protección frente a ejecuciones simultáneas de análisis
+
+- El inicio de un análisis comprueba también la referencia síncrona del controlador AbortController, además del estado React, para bloquear dobles activaciones antes del siguiente render.
+- El bloque `finally` solo libera el estado de ejecución si sigue perteneciendo al controlador activo; una ejecución obsoleta no puede marcar como finalizado un análisis posterior.
+- Sin dependencias, backend ni cambios de infraestructura. Validación completa pendiente de CI.
