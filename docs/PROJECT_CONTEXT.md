@@ -381,3 +381,9 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se añaden pruebas para colecciones inválidas y elementos individuales malformados.
 
 - Corrección de implementación: se verificaron los escapes de las expresiones regulares del normalizador de producto y del parser de SRPM; ambos usan ahora los tokens de espacio y dígito de JavaScript correctamente.
+
+
+### 2026-11-03 — consistencia estricta de KEV en postura histórica
+
+- El resumen de postura de seguridad ahora cuenta una CVE como presente en CISA KEV únicamente cuando `finding.kev === true`; valores truthy como cadenas u objetos no se convierten en evidencia positiva.
+- Se cubre el uso directo de `buildSecurityPosture` con snapshots malformados, además de la validación ya aplicada al historial persistido.
