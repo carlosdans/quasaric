@@ -185,3 +185,9 @@ test('uses declared platform metadata when the PURL type is generic or absent', 
   assert.equal(normalizeEcosystem({ purl: 'pkg:generic/openssl@3.0', ecosystem: 'Ubuntu 24.04' }), 'deb');
   assert.equal(normalizeEcosystem({ vendor: 'Red Hat Enterprise Linux 9' }), 'rpm');
 });
+
+
+test('does not infer an ecosystem from an ambiguous package name', () => {
+  assert.equal(normalizeEcosystem({ name: 'python-shell', purl: 'pkg:generic/python-shell@1.0.0' }), 'generic');
+  assert.equal(normalizeEcosystem({ name: 'nodejs-wrapper' }), '');
+});
