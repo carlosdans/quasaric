@@ -605,3 +605,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El panel resume los recuentos y permite desplegar el estado de cada fuente y hasta cinco detalles de errores/límites por categoría.
 - El aviso aclara que las consultas parciales o ausentes no permiten concluir que no existan vulnerabilidades. El paquete JSON sigue conservando el registro completo.
 - Sin cambios en la correlación, sin dependencias ni servicios nuevos; interfaz localizada y adaptable a móvil.
+
+
+### 2026-11-03 — comandos de actualización candidatos para Ubuntu
+
+- En los detalles de hallazgos, una recomendación Ubuntu solo muestra un comando `apt-get` copiable cuando la correlación aporta un único build binario corregido para el paquete y versión instalados exactos.
+- El nombre de paquete y la versión se entrecomillan para el shell; no se generan comandos para revisión manual, otros ecosistemas ni objetivos ausentes.
+- El comando es orientativo, no se ejecuta desde Quasaric. La interfaz pide revisar el aviso oficial y simular el cambio en el entorno antes de ejecutarlo.
+- Pruebas unitarias para elegibilidad y quoting. Sin dependencias, backend ni cambios de infraestructura.

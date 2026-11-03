@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRemediationGuidance, buildFindingRemediation } from './remediation.js';
+import { buildRemediationGuidance, buildFindingRemediation, buildRemediationCommand } from './remediation.js';
 
 const component = {
   name: 'libssl3', version: '3.0.2-0ubuntu1.17',
@@ -79,4 +79,17 @@ test('builds guidance separately for each affected component', () => {
   assert.equal(result.length, 1);
   assert.equal(result[0].component, component);
   assert.equal(result[0].guidance.targetVersion, '3.0.2-0ubuntu1.18');
+});
+
+test('builds a shell-quoted Ubuntu upgrade command only for a concrete candidate', () => {
+  const guidance = buildRemediationGuidance({}, affectedAssessment);
+  assert.equal(buildRemediationCommand(guidance), "sudo apt-get install --only-upgrade -- 'libssl3=3.0.2-0ubuntu1.18'");
+  assert.equal(buildRemediationCommand({ ...guidance, packageName: "pkg' --help" }),
+    "sudo apt-get install --only-upgrade -- 'pkg'\\'' --help=3.0.2-0ubuntu1.18'");
+});
+
+test('does not produce commands for manual review, generic ecosystems or missing targets', () => {
+  assert.equal(buildRemediationCommand({ status: 'manual_review', packageName: 'libssl3', targetVersion: '1.2', ecosystem: 'Ubuntu:24.04' }), null);
+  assert.equal(buildRemediationCommand({ status: 'update_candidate', packageName: 'libssl3', targetVersion: '1.2', ecosystem: 'Debian:12' }), null);
+  assert.equal(buildRemediationCommand({ status: 'update_candidate', packageName: 'libssl3', targetVersion: '1.2' }), null);
 });

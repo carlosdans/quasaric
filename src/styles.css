@@ -825,3 +825,8 @@ button{touch-action:manipulation}
 .source-coverage-details li{overflow-wrap:anywhere}
 .source-coverage-details>p{color:var(--text-muted);font-size:11px}
 @media(max-width:600px){.source-coverage-panel{padding:13px}.source-coverage-stats{grid-template-columns:1fr}.source-coverage-list li{align-items:flex-start;flex-direction:column;gap:3px}.source-coverage-list li strong{text-align:left}}
+
+.app-shell .finding-remediation-command{display:grid;gap:8px;padding:11px;border:1px solid var(--border);border-radius:9px;background:var(--surface)}
+.app-shell .finding-remediation-command code{font-size:11px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text-primary)}
+.app-shell .finding-remediation-command button{justify-self:start}
+.app-shell .finding-remediation-command small{font-size:10px;line-height:1.6;color:var(--text-secondary)}

@@ -59,6 +59,15 @@ export function buildRemediationGuidance(finding = {}, assessment = {}) {
   };
 }
 
+
+/** Return a shell-quoted Ubuntu upgrade command for an exact candidate only. */
+export function buildRemediationCommand(guidance = {}) {
+  if (guidance.status !== 'update_candidate' || !guidance.packageName || !guidance.targetVersion ||
+      !/^Ubuntu(?::|$)/i.test(guidance.ecosystem || '')) return null;
+  const quote = value => "'" + String(value).replace(/'/g, "'\\''") + "'";
+  return `sudo apt-get install --only-upgrade -- ${quote(guidance.packageName + '=' + guidance.targetVersion)}`;
+}
+
 export function buildFindingRemediation(finding = {}) {
   return (finding.components || []).map(assessment => ({
     component: assessment.component,
