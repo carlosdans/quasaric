@@ -1,4 +1,3 @@
-import { normalizeComponentType } from './componentTypes.js';
 import { parsePackageUrl } from './packageUrl.js';
 import { classifyUbuntuOsvSourceVersion } from './ubuntuOsvApplicability.js';
 import { compareDebianVersions } from './debianVersions.js';
@@ -599,7 +598,6 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     ...sourceOverrides
   };
   if (!Array.isArray(components) || components.length === 0) throw new Error('Add at least one component before analysis.');
-  components = components.map(normalizeComponentType);
 
   const errors = [];
   const ubuntuOsv = new Map();
@@ -743,7 +741,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
                 modified: record.modified || null,
                 url: record.id ? `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}` : null,
                 references: (record.references || []).map(reference => reference.url).filter(Boolean),
-                component: { id: component.id, name: component.name, version: component.version || null, purl: group.purl },
+                component: { id: component.id, name: component.name, type: component.type || 'other', version: component.version || null, purl: group.purl },
                 status: 'needs_review'
               });
             }

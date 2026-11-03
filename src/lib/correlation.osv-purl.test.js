@@ -40,6 +40,24 @@ test('retains OSV advisories without CVE aliases as review-only PURL advisories'
   assert.deepEqual(result.purlAdvisories[0].references, ['https://example.org/advisory']);
 });
 
+test('preserves explicitly selected component types throughout vulnerability analysis', async () => {
+  const result = await analyzeInventory([{
+    id: 'python-library',
+    name: 'python',
+    version: '1.0.0',
+    type: 'library',
+    purl: 'pkg:npm/python@1.0.0'
+  }], {
+    sources: sources([{
+      id: 'GHSA-type-preservation',
+      summary: 'Example advisory without a CVE alias'
+    }])
+  });
+
+  assert.equal(result.purlAdvisories.length, 1);
+  assert.equal(result.purlAdvisories[0].component.type, 'library');
+});
+
 test('does not treat withdrawn OSV advisories as active PURL advisories', async () => {
   const result = await analyzeInventory([component()], {
     sources: sources([{ id: 'GHSA-withdrawn', withdrawn: '2025-01-04T00:00:00Z' }])
