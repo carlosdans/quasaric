@@ -81,8 +81,14 @@ export function compareInventories(previous = [], current = []) {
   // inventories may legitimately contain duplicate package rows.
   const key = item => JSON.stringify([
     item.name, item.type, item.vendor, item.version, item.sourcePackage,
-    item.sourceVersion, item.architecture, item.sourceRelationship, item.sourceRef, item.sourcePurl, item.purl, item.cpe
-  ].map(value => String(value || '').trim().toLowerCase()));
+    item.sourceVersion, item.architecture, item.sourceRelationship,
+    // Explicit package identifiers and SPDX references are case-sensitive.
+    // Lowercasing them can collapse distinct Maven/generic PURLs or SPDX IDs.
+    item.sourceRef, item.sourcePurl, item.purl, item.cpe
+  ].map((value, index) => {
+    const normalized = String(value || '').trim();
+    return index >= 8 ? normalized : normalized.toLowerCase();
+  }));
   const available = new Map();
   current.forEach((item, index) => {
     const identity = key(item);
