@@ -314,3 +314,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se evita aceptar metadatos malformados que después se descartaban silenciosamente durante la restauración.
 - Se añadieron regresiones para timestamps numéricos, objetos y cadenas excesivamente largas. No se cambia el formato versionado ni se añaden dependencias.
 - La ejecución completa de node --test y vite build sigue pendiente en el entorno del repositorio.
+
+
+### 2026-11-03 — validación estricta de señal CISA KEV
+
+- La puntuación de riesgo y la creación de snapshots solo reconocen `kev: true` como pertenencia al catálogo CISA KEV. Valores truthy malformados (por ejemplo, la cadena `"false"`, `1` u objetos) ya no pueden sumar 40 puntos ni convertirse en una señal positiva al guardar el historial.
+- Se añaden regresiones tanto para el cálculo de prioridad como para la serialización del historial. Los valores booleanos válidos mantienen el comportamiento anterior.
+- Sin cambios de dependencias, backend o infraestructura. Pendiente de ejecutar la suite completa y el build en el entorno del repositorio.
