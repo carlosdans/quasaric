@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createAnalysisSnapshot, compareAnalysisSnapshots,
-  loadAnalysisHistory, saveAnalysisHistory, ANALYSIS_HISTORY_LIMIT
+  loadAnalysisHistory, saveAnalysisHistory, ANALYSIS_HISTORY_LIMIT, upsertAnalysisSnapshot
 } from './analysisHistory.js';
 
 const match = (id, name = 'openssl', overrides = {}) => ({
@@ -350,4 +350,28 @@ test('rejects out-of-range CVSS and EPSS in persisted snapshots and preserves ra
   assert.equal(data.get('quasaric-analysis-history-recovery'), raw);
   assert.equal(saveAnalysisHistory(malformed, storage), false);
   assert.equal(saveAnalysisHistory([valid], storage), true);
+});
+
+
+test('upserts a completed analysis without losing snapshots imported while it was running', () => {
+  const imported = { id: '2026-11-03T09:00:00.000Z', analyzedAt: '2026-11-03T09:00:00.000Z', findings: [] };
+  const completed = { id: '2026-11-03T10:00:00.000Z', analyzedAt: '2026-11-03T10:00:00.000Z', findings: [] };
+  const next = upsertAnalysisSnapshot([imported], completed);
+  assert.deepEqual(next.map(item => item.id), [completed.id, imported.id]);
+});
+
+test('upsert replaces a duplicate ID and preserves the ten-snapshot limit', () => {
+  const old = { id: 'same', findings: [] };
+  const replacement = { id: 'same', analyzedAt: '2026-11-03T10:00:00.000Z', findings: [] };
+  const history = Array.from({ length: 10 }, (_, index) => ({ id: 'old-' + index, findings: [] }));
+  const next = upsertAnalysisSnapshot([old, ...history], replacement);
+  assert.equal(next.length, ANALYSIS_HISTORY_LIMIT);
+  assert.equal(next[0], replacement);
+  assert.equal(next.includes(old), false);
+});
+
+test('upsert rejects invalid histories and snapshots', () => {
+  assert.throws(() => upsertAnalysisSnapshot([{ id: 'broken', findings: 'invalid' }], { id: 'new', findings: [] }), TypeError);
+  assert.throws(() => upsertAnalysisSnapshot([], { id: 'broken', findings: 'invalid' }), TypeError);
+  assert.throws(() => upsertAnalysisSnapshot([], { findings: [] }), TypeError);
 });

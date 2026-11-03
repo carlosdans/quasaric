@@ -3,7 +3,7 @@ import LandingPage from './LandingPage.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
 import { toCsv } from './lib/csv.js';
-import { createAnalysisSnapshot, compareAnalysisSnapshots, loadAnalysisHistory, saveAnalysisHistory } from './lib/analysisHistory.js';
+import { createAnalysisSnapshot, compareAnalysisSnapshots, loadAnalysisHistory, saveAnalysisHistory, upsertAnalysisSnapshot } from './lib/analysisHistory.js';
 import { createAnalysisHistoryBackup, parseAnalysisHistoryBackup, mergeAnalysisHistory } from './lib/analysisHistoryBackup.js';
 import { suggestedComponentType } from './lib/componentTypes.js';
 import { rankFindingsByRisk } from './lib/riskPriority.js';
@@ -345,6 +345,8 @@ function App() {
   const [analysisHistoryWarning, setAnalysisHistoryWarning] = useState(false);
   const analysisAbortRef = useRef(null);
   const [analysisHistory, setAnalysisHistory] = useState(() => loadAnalysisHistory());
+  // Latest committed value shared by asynchronous imports and analysis completion.
+  const analysisHistoryRef = useRef(analysisHistory);
   const [historyBackupMessage, setHistoryBackupMessage] = useState('');
   const [historyBackupError, setHistoryBackupError] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
@@ -372,7 +374,7 @@ function App() {
 
   const exportAnalysisHistory = () => {
     try {
-      const backup = createAnalysisHistoryBackup(analysisHistory);
+      const backup = createAnalysisHistoryBackup(analysisHistoryRef.current);
       triggerCsvDownload(new Blob([backup], { type: 'application/json;charset=utf-8' }), 'quasaric-analysis-history.json');
       setHistoryBackupError('');
       setHistoryBackupMessage(lang === 'es' ? 'Copia del historial descargada.' : 'Analysis history backup downloaded.');
@@ -391,8 +393,9 @@ function App() {
     try {
       if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'El archivo supera el límite de 10 MB.' : 'The file exceeds the 10 MB limit.');
       const imported = parseAnalysisHistoryBackup(await file.text());
-      const next = mergeAnalysisHistory(analysisHistory, imported);
+      const next = mergeAnalysisHistory(analysisHistoryRef.current, imported);
       if (!saveAnalysisHistory(next)) throw new Error(lang === 'es' ? 'No hay espacio disponible para guardar el historial en este navegador.' : 'There is not enough browser storage to save the history.');
+      analysisHistoryRef.current = next;
       setAnalysisHistory(next);
       setAnalysisHistoryWarning(false);
       setHistoryBackupMessage(lang === 'es'
@@ -505,7 +508,9 @@ function App() {
       if (controller.signal.aborted || analysisAbortRef.current !== controller) return;
       setAnalysis(result);
       const snapshot = createAnalysisSnapshot(result, items);
-      const nextHistory = [snapshot, ...analysisHistory.filter(entry => entry.id !== snapshot.id)].slice(0, 10);
+      // Upsert against the latest value: an import may have completed while this analysis was running.
+      const nextHistory = upsertAnalysisSnapshot(analysisHistoryRef.current, snapshot);
+      analysisHistoryRef.current = nextHistory;
       setAnalysisHistory(nextHistory);
       const historySaved = saveAnalysisHistory(nextHistory);
       setAnalysisHistoryWarning(!historySaved);

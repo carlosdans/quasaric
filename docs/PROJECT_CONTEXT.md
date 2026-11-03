@@ -451,3 +451,12 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La restauración valida el fichero completo (formato, estructura, límites y snapshots) antes de modificar el almacenamiento; no realiza importaciones parciales.
 - La importación integra el backup con el historial local, deduplica por identificador y conserva los diez análisis más recientes. No sustituye el inventario actual ni presenta un snapshot importado como análisis en vivo.
 - Límites: 10 MiB por copia y diez snapshots, coherentes con el almacenamiento local existente. Funciona sin backend ni servicios externos.
+
+
+### 2026-11-03 — concurrencia del historial local
+
+- La interfaz mantiene una referencia síncrona al historial más reciente para evitar que operaciones asíncronas escriban sobre una versión capturada en un render anterior.
+- La importación integra la copia con el historial vigente al terminar la lectura del fichero; si un análisis acaba durante la importación, ambos snapshots se conservan, independientemente del orden de finalización.
+- El alta de un análisis usa un upsert validado: reemplaza el mismo ID, conserva los demás y respeta el máximo de diez snapshots.
+- La exportación lee el historial más reciente y la importación solo actualiza la interfaz tras persistir correctamente.
+- Se añaden pruebas para concurrencia por upsert, deduplicación, límite y rechazo de datos inválidos. Sin dependencias, backend ni servicios nuevos.

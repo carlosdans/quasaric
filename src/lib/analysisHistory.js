@@ -205,3 +205,17 @@ export const ANALYSIS_HISTORY_MAX_BYTES = MAX_HISTORY_BYTES;
 export function isValidAnalysisSnapshot(snapshot) {
   return isValidSnapshot(snapshot);
 }
+
+
+/** Insert or replace one completed analysis without using stale render-time history. */
+export function upsertAnalysisSnapshot(history, snapshot) {
+  if (!Array.isArray(history) || !history.every(isValidSnapshot) || !isValidSnapshot(snapshot)) {
+    throw new TypeError('A valid history and analysis snapshot are required.');
+  }
+  const key = snapshot.id || snapshot.analyzedAt;
+  if (typeof key !== 'string' || !key.trim()) {
+    throw new TypeError('An analysis snapshot must have a stable ID.');
+  }
+  return [snapshot, ...history.filter(entry => (entry.id || entry.analyzedAt) !== key)]
+    .slice(0, HISTORY_LIMIT);
+}
