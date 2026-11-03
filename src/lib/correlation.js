@@ -19,7 +19,7 @@ function extractOsvCveIds(record) {
   return [...new Set(identifiers
     .filter(value => typeof value === 'string')
     .map(value => value.trim().toUpperCase())
-    .filter(value => /^CVE-\d{4}-\d+$/.test(value)))];
+    .filter(isValidCveId))];
 }
 
 function componentQueries(component) {
