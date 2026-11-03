@@ -66,7 +66,7 @@ export function mergeAnalysisHistory(current = [], imported = []) {
     throw new TypeError('Both local and imported histories must contain valid snapshots.');
   }
   const merged = new Map();
-  for (const snapshot of [...imported, ...current]) {
+  for (const snapshot of [...current, ...imported]) {
     const key = snapshotKey(snapshot);
     if (key && !merged.has(key)) merged.set(key, snapshot);
   }
