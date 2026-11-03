@@ -8,6 +8,7 @@ const MAX_FIELD_LENGTH = 16384;
 const STRING_FIELDS = ['name', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'sourceRelationship'];
 const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
 const MAX_COMPONENTS = 50000;
+const MAX_TIMESTAMP_LENGTH = 128;
 
 
 function isValidBackupComponent(item) {
@@ -16,6 +17,7 @@ function isValidBackupComponent(item) {
   return item !== null && typeof item === 'object' && !Array.isArray(item) &&
     typeof item.name === 'string' && item.name.trim().length > 0 &&
     (item.id == null || (typeof item.id === 'string' && item.id.length <= MAX_IDENTIFIER_LENGTH)) &&
+    (item.createdAt == null || (typeof item.createdAt === 'string' && item.createdAt.length <= MAX_TIMESTAMP_LENGTH)) &&
     STRING_FIELDS.every(field => item[field] == null ||
       (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) &&
     (item.type == null || (typeof item.type === 'string' && allowedTypes.has(item.type))) &&
@@ -39,6 +41,9 @@ export function createInventoryBackup(items, createdAt = new Date().toISOString(
   if (items.length > MAX_COMPONENTS) throw new Error('Backup exceeds the 50000 component limit.');
   const backup = { format: INVENTORY_BACKUP_FORMAT, version: INVENTORY_BACKUP_VERSION, createdAt, components: items };
   const normalized = JSON.parse(assertBackupSize(backup));
+  if (normalized.createdAt != null && (typeof normalized.createdAt !== 'string' || normalized.createdAt.length > MAX_TIMESTAMP_LENGTH)) {
+    throw new Error('Backup contains invalid creation timestamp metadata.');
+  }
   if (!Array.isArray(normalized.components) || normalized.components.length > MAX_COMPONENTS) {
     throw new Error('Backup must contain a valid components array.');
   }
@@ -56,6 +61,9 @@ export function parseInventoryBackup(input) {
   catch { throw new Error('Invalid JSON backup.'); }
   if (!data || typeof data !== 'object' || Array.isArray(data) || data.format !== INVENTORY_BACKUP_FORMAT || data.version !== INVENTORY_BACKUP_VERSION || !Array.isArray(data.components)) {
     throw new Error('Unsupported or invalid Quasaric backup.');
+  }
+  if (data.createdAt != null && (typeof data.createdAt !== 'string' || data.createdAt.length > MAX_TIMESTAMP_LENGTH)) {
+    throw new Error('Backup contains invalid creation timestamp metadata.');
   }
   if (data.components.length > MAX_COMPONENTS) throw new Error('Backup exceeds the 50000 component limit.');
   const invalidIndex = data.components.findIndex(item => !isValidBackupComponent(item));
