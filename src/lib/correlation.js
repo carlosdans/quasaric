@@ -777,7 +777,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
                 published: record.published || null,
                 modified: record.modified || null,
                 url: record.id ? `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}` : null,
-                references: (record.references || []).map(reference => reference.url).filter(Boolean)
+                references: (record.references || []).map(reference => reference.url).filter(Boolean),
                 component: { id: component.id, name: component.name, type: component.type || 'other', version: component.version || null, purl: group.purl },
                 status: 'needs_review'
               });
