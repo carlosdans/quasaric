@@ -245,3 +245,8 @@ El control de calidad del inventario compara la versión declarada de cada compo
 ### Coherencia de versiones entre inventario y CPE
 
 El panel de calidad también compara la versión declarada del componente con la versión concreta de su CPE 2.3. Omite versiones CPE con comodines o marcadas como no aplicables. Una discrepancia puede deberse a una revisión de empaquetado de la distribución, por lo que se presenta como advertencia para revisión y nunca como prueba de identidad incorrecta o de vulnerabilidad.
+
+
+### Validación de identificadores CVE
+
+La correlación valida los identificadores con las reglas de longitud del programa CVE: los registros anteriores a 2014 admiten entre uno y cuatro dígitos de secuencia; desde 2014 se exigen al menos cuatro. Los IDs malformados no se convierten en hallazgos ni se envían a fuentes que esperan un CVE canónico. Esta validación comprueba la sintaxis, no la existencia ni la publicación del aviso.

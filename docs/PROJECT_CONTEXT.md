@@ -538,3 +538,12 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La advertencia no reescribe el CPE, no altera el inventario y no cambia la aplicabilidad ni el resultado de correlación.
 - Pruebas añadidas para versiones coincidentes, discrepantes, comodines y metadatos ausentes/malformados.
 - Código integrado en `939ee5b81a245ae10f33a8869d42eea0cff45a8b`; CI de Node 20 y 22 completada correctamente: [41683490410](https://github.com/carlosdans/quasaric/actions/runs/41683490410).
+
+
+### 2026-11-03 — validación canónica de identificadores CVE
+
+- Se centraliza la validación de IDs CVE para las rutas de correlación OSV y las consultas NVD, FIRST EPSS, CISA KEV, Red Hat, SUSE CSAF y Canonical OpenVEX.
+- Aplica las reglas de longitud de secuencia: 1–4 dígitos para años anteriores a 2014 y al menos 4 para 2014 en adelante; rechaza años anteriores al inicio del programa y secuencias cero.
+- Un alias CVE moderno malformado ya no se promueve a hallazgo CVE; el aviso OSV permanece separado como aviso PURL pendiente de revisión.
+- Se añaden pruebas unitarias para IDs históricos/modernos y regresión de correlación OSV. La validación es sintáctica y no certifica que un CVE exista.
+- Implementación: `e2fee2b88803f0f6db05f347c8cc43811155377d`. CI y despliegue de esta revisión pendientes.
