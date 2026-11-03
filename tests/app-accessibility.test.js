@@ -161,3 +161,13 @@ test('selected interface language is restored and persisted locally', () => {
   assert.match(app, /\}, \[lang\]\)/);
   assert.match(app, /catch \{ return 'es'; \}/);
 });
+
+
+test('dashboard metrics, findings tables and exports require explicit boolean KEV evidence', () => {
+  assert.match(app, /findings\.filter\(item => \(item\.kev === true\)\)/);
+  assert.match(app, /state: \(f\.kev === true\) \? 'KEV' : 'Candidate'/);
+  assert.match(app, /\(f\.kev === true\) \? 'yes' : 'no'/);
+  assert.match(app, /\(finding\.kev === true\) \?/);
+  assert.doesNotMatch(app, /f\.kev \?/);
+  assert.doesNotMatch(app, /item\.kev\)\.length/);
+});
