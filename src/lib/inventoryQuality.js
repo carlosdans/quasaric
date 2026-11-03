@@ -1,7 +1,7 @@
 import { parsePackageUrl } from './packageUrl.js';
 import { parseCpe23 } from './cpe23.js';
 function normalizeArchitecture(value) {
-  const normalized = String(value || '').trim().toLowerCase().replace(/[\\s-]+/g, '_');
+  const normalized = String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
   const aliases = { amd64: 'x86_64', x64: 'x86_64', x86_64: 'x86_64', i386: 'x86', i486: 'x86', i586: 'x86', i686: 'x86', x86: 'x86', arm64: 'aarch64', aarch64: 'aarch64', armv7l: 'arm', armhf: 'arm' };
   return aliases[normalized] || normalized;
 }
