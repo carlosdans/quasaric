@@ -47,7 +47,7 @@ test('attaches OSV distro advisory evidence to exact AlmaLinux package without o
   assert.equal(evidence.ecosystem, 'AlmaLinux:9');
   assert.deepEqual(evidence.fixedVersions, ['1:3.0.7-27.el9_4.2']);
   assert.equal(finding.components[0].applicability.status, 'possible', 'vendor fix metadata must not override NVD applicability');
-  assert.equal(finding.components[0].applicability.status, 'possible');
+  assert.equal(finding.components[0].applicability.status, 'needs_review', 'the unrelated NVD OpenSSL fixture must not be treated as a BusyBox match');
 });
 
 
