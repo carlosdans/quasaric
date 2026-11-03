@@ -582,3 +582,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Durante el enriquecimiento se muestra un indicador animado, con alternativa sin animación para usuarios con preferencia de movimiento reducido.
 - El análisis y sus fuentes no cambian; es una corrección de comunicación del progreso para evitar una falsa señal de finalización.
 - Sin dependencias ni servicios nuevos.
+
+## Finding evidence detail (2026-11-03)
+
+- The vulnerability detail dialog now surfaces optional source-provided context (title, reason/description, version boundaries and publication/update dates) instead of showing only a source name and status.
+- Safe external advisory URLs remain individually validated; additional source references are deduplicated and validated before links are rendered.
+- Metadata is rendered only when supplied by the source adapter. Missing fields stay absent rather than being inferred.
+- The layout wraps on narrow screens and remains within the existing static, local-first frontend architecture.

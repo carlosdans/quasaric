@@ -773,3 +773,19 @@ button{touch-action:manipulation}
 .progress-track.is-enriching i{animation:analysis-enrichment 1.5s ease-in-out infinite alternate}
 @keyframes analysis-enrichment{from{transform:translateX(0);opacity:.65}to{transform:translateX(180%);opacity:1}}
 @media(prefers-reduced-motion:reduce){.progress-track.is-enriching i{animation:none;transform:none}}
+
+/* Keep source evidence readable and traceable in the finding detail dialog. */
+.finding-evidence-list { display: grid; gap: 12px; padding-left: 19px; }
+.finding-evidence-list > li { padding-left: 3px; }
+.finding-evidence-source { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 9px; }
+.finding-evidence-context { display: grid; gap: 4px; margin: 7px 0; color: var(--text-secondary); line-height: 1.5; }
+.finding-evidence-metadata { display: flex; flex-wrap: wrap; gap: 7px 16px; margin: 8px 0; }
+.finding-evidence-metadata div { display: flex; gap: 5px; min-width: 0; }
+.finding-evidence-metadata dt { color: var(--text-muted); }
+.finding-evidence-metadata dd { margin: 0; overflow-wrap: anywhere; }
+.finding-evidence-references { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 7px; font-size: 12px; }
+.finding-evidence-references span { color: var(--text-muted); }
+@media (max-width: 600px) {
+  .finding-evidence-metadata { display: grid; grid-template-columns: 1fr 1fr; }
+  .finding-evidence-metadata div { display: grid; gap: 2px; }
+}
