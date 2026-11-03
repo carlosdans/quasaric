@@ -153,7 +153,13 @@ const typeNames = { os: 'OS', web: 'Web', runtime: 'Runtime', cms: 'CMS', databa
 const iconFor = (type) => ({ os: Server, web: Cloud, runtime: Code2, cms: Layers3, database: Database, library: Code2, other: Layers3 }[type] || Layers3);
 
 function App() {
-  const [lang, setLang] = useState('es');
+  const [lang, setLang] = useState(() => {
+    try { return localStorage.getItem('quasaric-language') === 'en' ? 'en' : 'es'; }
+    catch { return 'es'; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('quasaric-language', lang); } catch { /* storage may be unavailable */ }
+  }, [lang]);
   useEffect(() => {
     const english = lang === 'en';
     document.documentElement.lang = lang;
