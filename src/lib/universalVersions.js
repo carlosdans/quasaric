@@ -274,7 +274,8 @@ export function compareVersionForComponent(left, right, component = {}) {
   };
   if (componentName === 'php' && (hasUnknownPhpSuffix(left) || hasUnknownPhpSuffix(right))) return null;
   if (ecosystem === 'deb') return compareDebianVersions(left, right);
-  if (ecosystem === 'rpm') return compareRpm(left, right);\n  if (ecosystem === 'apk') return compareApk(left, right);
+  if (ecosystem === 'rpm') return compareRpm(left, right);
+  if (ecosystem === 'apk') return compareApk(left, right);
   if (ecosystem === 'pypi') return comparePep440(left, right);
   if (ecosystem === 'npm' || ecosystem === 'composer') return compareSemver(left, right);
   if (ecosystem === 'windows') return compareWindows(left, right);
