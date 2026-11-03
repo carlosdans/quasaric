@@ -52,3 +52,10 @@ test('does not infer CPE identity from a PURL', () => {
   assert.equal(parsed.type,'pypi');
   assert.equal(Object.hasOwn(parsed,'cpe'),false);
 });
+
+
+test('accepts dot-only opaque package versions', () => {
+  assert.equal(parsePackageUrl('pkg:generic/package@.').version, '.');
+  assert.equal(parsePackageUrl('pkg:generic/package@..').version, '..');
+  assert.equal(parsePackageUrl('pkg:generic/package@%2E%2E').version, '..');
+});

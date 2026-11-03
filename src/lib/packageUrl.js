@@ -48,11 +48,12 @@ export function parsePackageUrl(value) {
   const name = decode(nameRaw);
   const version = versionRaw ? decode(versionRaw) : '';
   if (versionRaw && version === null) return null;
-  if ([
-    ...namespaceParts,
-    name,
-    ...(version ? [version] : [])
-  ].some(part => part === null || part === '' || part === '.' || part === '..')) return null;
+  // Namespace/name segments participate in URL path structure. Version,
+  // however, is an opaque identifier and may legitimately be "." or "..".
+  if ([...namespaceParts, name].some(part =>
+    part === null || part === '' || part === '.' || part === '..'
+  )) return null;
+  if (versionRaw && (version === null || version === '')) return null;
   if (namespaceParts.some(part => part.includes('/'))) return null;
 
   const qualifiers = {};

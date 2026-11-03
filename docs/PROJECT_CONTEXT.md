@@ -275,3 +275,8 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 ### 2026-11-03 — identidad ambigua del componente raíz CycloneDX
 - La deduplicación de `metadata.component` sólo fusiona el sujeto con un componente cuando su `bom-ref` (o, en su ausencia, su PURL) identifica exactamente una entrada. Si el identificador aparece varias veces, se conserva el sujeto por separado en lugar de elegir arbitrariamente la primera coincidencia.
 - Se añadieron regresiones para referencias `bom-ref` y PURL duplicadas. Esto evita que el orden del documento determine qué componente recibe los metadatos del sujeto.
+
+
+### 2026-11-03 — versiones PURL opacas
+- El parser PURL ya no rechaza versiones cuyo valor literal sea `.` o `..`. ECMA-427 define la versión como una cadena opaca; la protección contra segmentos de ruta punto se mantiene para namespace, nombre y subpath, no se aplica indebidamente a la versión.
+- Se añadió una regresión para versiones literales y percent-encoded. Referencia: https://tc54.org/ecma427/multipage/purl-specification.
