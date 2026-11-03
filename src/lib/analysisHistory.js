@@ -97,8 +97,15 @@ export function compareAnalysisSnapshots(previous, current) {
   const flatten = snapshot => {
     const map = new Map();
     for (const finding of snapshot.findings || []) {
+      // Keep repeated identical inventory rows as separate exposures. Older
+      // snapshots may not have component IDs, and duplicate package rows are
+      // valid inventory entries rather than a reason to silently collapse.
+      const occurrences = new Map();
       for (const match of finding.components || []) {
-        const key = findingComponentKey(finding, match);
+        const identity = componentKey(match.component);
+        const occurrence = occurrences.get(identity) || 0;
+        occurrences.set(identity, occurrence + 1);
+        const key = JSON.stringify([finding.id, identity, occurrence]);
         map.set(key, {
           key, cve: finding.id, description: finding.description,
           severity: finding.severity, cvss: finding.cvss, epss: finding.epss,

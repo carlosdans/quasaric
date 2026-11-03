@@ -248,3 +248,17 @@ test('tracks SPDX source relationship metadata changes in retained exposures', (
     { field: 'component.sourceRef', before: 'SPDXRef-source-a', after: 'SPDXRef-source-b' }
   ]);
 });
+
+test('preserves duplicate component rows when comparing historical exposures', () => {
+  const duplicate = { component: { name: 'openssl', version: '3.0.2' } };
+  const before = snapshot('before', [
+    finding('CVE-2026-0001', [duplicate, { component: { ...duplicate.component } }])
+  ]);
+  const after = snapshot('after', [
+    finding('CVE-2026-0001', [{ component: { ...duplicate.component } }])
+  ]);
+  const result = compareAnalysisSnapshots(before, after);
+  assert.equal(result.counts.retained, 1);
+  assert.equal(result.counts.resolved, 1);
+  assert.equal(result.resolved[0].cve, 'CVE-2026-0001');
+});
