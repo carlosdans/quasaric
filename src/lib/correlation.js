@@ -777,7 +777,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
                 published: record.published || null,
                 modified: record.modified || null,
                 url: record.id ? `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}` : null,
-                references: references.map(reference => reference.url),
+                references: (record.references || []).map(reference => reference.url).filter(Boolean)
                 component: { id: component.id, name: component.name, type: component.type || 'other', version: component.version || null, purl: group.purl },
                 status: 'needs_review'
               });
@@ -1029,7 +1029,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
                 updatedAt: record.modified || null,
                 url: record.officialSource?.url || `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}`,
                 officialSourceStatus: record.officialSource?.status || 'osv_only',
-                references: (record.references || []).map(reference => reference.url).filter(Boolean)
+                references: references.map(reference => reference.url)
               };
               const existing = current.components.find(item => item.component.id === component.id);
               if (existing) existing.distroOsvEvidence = [...(existing.distroOsvEvidence || []), evidence];
