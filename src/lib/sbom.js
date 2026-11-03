@@ -92,7 +92,7 @@ function cyclone(document) {
       ? { ...item, ...root,
           components: Array.isArray(root.components) ? root.components : item?.components }
       : item)
-    : root ? [root, ...nested] : nested;
+    : root ? [...flattenCycloneComponents([root]), ...nested] : nested;
   if (flattened.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
   return flattened.map((item,index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Component entry must be a JSON object.', index:index+1 };
