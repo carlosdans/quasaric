@@ -290,3 +290,12 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Los estilos mantienen la navegación de escritorio y respetan `prefers-reduced-motion`; no se añaden dependencias, servicios ni recursos de pago.
 - Cambios aplicados directamente en `main`: `src/LandingPage.jsx` y `src/landing.css`.
 - Pendiente de validación automatizada y revisión visual en navegador móvil/escritorio; el conector de GitHub no expone en esta sesión una ejecución manual de CI para commits de push.
+
+
+### 2026-11-03 — metadatos multilingües y caché de producción
+
+- El idioma seleccionado ahora actualiza también el título del documento, la descripción SEO, Open Graph, Twitter Cards y la locale Open Graph, además de `html[lang]`.
+- La configuración de Azure Static Web Apps aplica caché inmutable de un año a los assets versionados de Vite, revalidación del shell HTML y caché corta para favicon, sitemap y robots.
+- Se mantienen intactos los encabezados de seguridad existentes, la política CSP, el fallback SPA y la arquitectura estática.
+- Cambios aplicados directamente en `src/App.jsx` y `staticwebapp.config.json`.
+- Validación pendiente: build de Vite, comprobación de rutas/headers en Azure Static Web Apps y revisión SEO con herramientas de navegador. No se ha confirmado un despliegue en producción desde esta sesión.
