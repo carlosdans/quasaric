@@ -9,6 +9,14 @@ function withinByteLimit(value) {
   return new TextEncoder().encode(value).byteLength <= MAX_HISTORY_BYTES;
 }
 
+function isValidRiskSignal(value, min, max) {
+  if (value === undefined || value === null) return true;
+  if (typeof value !== 'number' && typeof value !== 'string') return false;
+  if (typeof value === 'string' && !value.trim()) return false;
+  const numeric = typeof value === 'number' ? value : Number(value.trim());
+  return Number.isFinite(numeric) && numeric >= min && numeric <= max;
+}
+
 function hasComponentIdentity(component) {
   return isRecord(component) &&
     ((typeof component.id === 'string' && component.id.trim().length > 0) ||
@@ -23,6 +31,9 @@ function isValidSnapshot(snapshot) {
     snapshot.findings.length <= MAX_FINDINGS_PER_SNAPSHOT &&
     snapshot.findings.every(finding => isRecord(finding) &&
       typeof finding.id === 'string' && finding.id.trim().length > 0 &&
+      // Older snapshots may omit risk signals, but present scores must remain numeric and in range.
+      isValidRiskSignal(finding.cvss, 0, 10) &&
+      isValidRiskSignal(finding.epss, 0, 100) &&
       // Older snapshots may omit KEV, but a present value must retain its boolean type.
       (finding.kev === undefined || finding.kev === null || typeof finding.kev === 'boolean') &&
       Array.isArray(finding.components) &&
@@ -54,6 +65,7 @@ export function createAnalysisSnapshot(analysis, inventory = []) {
   }
   if (!inventory.every(isRecord) || !analysis.findings.every(finding =>
     isRecord(finding) && typeof finding.id === 'string' && finding.id.trim().length > 0 &&
+    isValidRiskSignal(finding.cvss, 0, 10) && isValidRiskSignal(finding.epss, 0, 100) &&
     Array.isArray(finding.components) &&
     finding.components.every(match => isRecord(match) && hasComponentIdentity(match.component)))) {
     throw new TypeError('Analysis snapshot contains malformed inventory, findings or component matches.');
