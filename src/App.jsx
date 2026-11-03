@@ -448,7 +448,9 @@ function App() {
   }, [analysis, prioritizedFindings, query, severityFilter]);
 
   const runAnalysis = async () => {
-    if (!items.length || analyzing) return;
+    // State updates are asynchronous; the ref also blocks rapid duplicate
+    // activations before React has rendered the analyzing state.
+    if (!items.length || analyzing || analysisAbortRef.current) return;
     const controller = new AbortController();
     analysisAbortRef.current = controller;
     setAnalyzing(true); setAnalysisError(''); setAnalysisHistoryWarning(false); setAnalysis(null); setAnalysisProgress({ completed: 0, total: items.length });
@@ -467,8 +469,11 @@ function App() {
       if (error?.name !== 'AbortError') setAnalysisError(error.message || 'Analysis failed');
     }
     finally {
-      if (analysisAbortRef.current === controller) analysisAbortRef.current = null;
-      setAnalyzing(false);
+      // A stale request must never clear the busy state of a newer analysis.
+      if (analysisAbortRef.current === controller) {
+        analysisAbortRef.current = null;
+        setAnalyzing(false);
+      }
     }
   };
 
