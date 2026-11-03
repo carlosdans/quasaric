@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
 import { toCsv } from './lib/csv.js';
 import { createAnalysisSnapshot, compareAnalysisSnapshots, loadAnalysisHistory, saveAnalysisHistory } from './lib/analysisHistory.js';
-import { suggestedComponentType, normalizeComponentType } from './lib/componentTypes.js';
+import { suggestedComponentType } from './lib/componentTypes.js';
 import { rankFindingsByRisk } from './lib/riskPriority.js';
 import { buildFindingRemediation } from './lib/remediation.js';
 import { buildSecurityPosture } from './lib/securityPosture.js';
