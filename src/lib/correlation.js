@@ -22,7 +22,7 @@ function extractOsvReferences(record) {
     seen.add(url);
     return [{
       url,
-      ...(typeof reference.type === 'string' && reference.type.trim() ? { type: reference.type.trim() } : {})
+      ...(typeof reference?.type === 'string' && reference.type.trim() ? { type: reference.type.trim() } : {})
     }];
   });
 }
