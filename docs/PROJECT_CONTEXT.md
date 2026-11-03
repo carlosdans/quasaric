@@ -363,3 +363,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 
 
 - Ajuste de validación posterior: la expresión regular de CVE usa los escapes de dígito correctos en JavaScript; la prueba de CVE directo cubre este camino de extremo a extremo.
+
+
+### 2026-11-03 — validación de ambigüedad en estados SUSE CSAF VEX
+
+- El matcher SUSE ya no selecciona silenciosamente la primera entrada CSAF cuando un mismo documento contiene varias entradas para el CVE solicitado; devuelve `needs_review` y el número de entradas coincidentes.
+- Comprueba que `product_status` sea un objeto y que las listas de estados conocidas contengan identificadores de producto no vacíos.
+- Las estructuras VEX malformadas se convierten en evidencia pendiente de revisión en lugar de provocar una excepción o una conclusión de aplicabilidad.
+- Se añaden pruebas para CVE duplicados con estados diferentes y para colecciones de estados malformadas.
