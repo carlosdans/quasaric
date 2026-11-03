@@ -739,3 +739,29 @@ button{touch-action:manipulation}
 
 /* Inventory quality summaries can contain several independent checks. */
 .inventory-quality-stats{flex-wrap:wrap}
+
+
+/* Import review: explicit, non-destructive confirmation before inventory changes. */
+.import-review-panel { margin: 0 0 1.25rem; padding: 1.25rem; border: 1px solid var(--border, #d9e0e8); }
+.import-review-panel .comparison-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.import-review-panel .comparison-heading h2 { margin: .2rem 0 .35rem; font-size: 1.15rem; }
+.import-review-panel .comparison-heading p { margin: 0; color: var(--muted, #667085); overflow-wrap: anywhere; }
+.import-review-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin: 1.1rem 0; }
+.import-review-stats > div { display: grid; gap: .2rem; padding: .8rem; border-radius: .7rem; background: var(--surface-soft, #f5f7fa); }
+.import-review-stats strong { font-size: 1.35rem; }
+.import-review-stats span, .import-preview-list span { color: var(--muted, #667085); font-size: .86rem; }
+.import-preview-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.import-preview-list > div { display: grid; gap: .15rem; min-width: 0; padding: .65rem .75rem; border: 1px solid var(--border, #d9e0e8); border-radius: .6rem; }
+.import-preview-list strong, .import-preview-list span { overflow-wrap: anywhere; }
+.import-preview-more { color: var(--muted, #667085); font-size: .86rem; }
+.import-review-details { margin-top: .8rem; }
+.import-review-details summary { cursor: pointer; font-weight: 600; }
+.import-review-details ul { max-height: 12rem; overflow: auto; padding-left: 1.25rem; }
+.import-review-panel .modal-actions { display: flex; justify-content: flex-end; gap: .6rem; margin-top: 1.1rem; }
+@media (max-width: 640px) {
+  .import-review-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .import-preview-list { grid-template-columns: 1fr; }
+  .import-review-panel .comparison-heading { flex-direction: column; }
+  .import-review-panel .modal-actions { flex-direction: column-reverse; }
+  .import-review-panel .modal-actions button { width: 100%; justify-content: center; }
+}
