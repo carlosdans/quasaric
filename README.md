@@ -220,3 +220,8 @@ Quasaric incluye tema oscuro y tema claro. Puedes cambiarlo desde el control de 
 
 
 El contrato de integración del paquete JSON v2 está publicado en [`docs/quasaric-security-audit.schema.json`](docs/quasaric-security-audit.schema.json) (JSON Schema Draft 2020-12). La CI comprueba su coherencia con las exportaciones reales. Permite validar la estructura del formato desde herramientas externas sin incorporar dependencias a la aplicación.
+
+
+### Trazabilidad de evidencias en paquetes de auditoría
+
+El resumen del paquete JSON v2 cuantifica las evidencias conservadas por componente: total de registros, distribución por fuente y número de registros con al menos una referencia HTTPS segura. Los enlaces se evalúan con la misma política de seguridad de la interfaz (HTTPS absoluto, sin credenciales); no se reescriben ni eliminan del registro original. Las referencias HTTP, esquemas activos, URLs malformadas o enlaces con credenciales no cuentan como referencias seguras. Esta métrica evalúa la presencia y seguridad del enlace, no la vigencia, autenticidad ni calidad semántica del aviso.

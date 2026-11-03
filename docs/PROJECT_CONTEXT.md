@@ -495,3 +495,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La validación v2 recalcula el resumen cuantitativo a partir de hallazgos, evaluaciones por componente, prioridades y estados de fuente. Comprueba también la coherencia de marcas temporales y que las colecciones principales contengan registros estructurados; un digest recalculado no permite ocultar un resumen manipulado.
 
 - Se publica `docs/quasaric-security-audit.schema.json` como contrato JSON Schema Draft 2020-12 para integraciones externas del formato v2; la CI comprueba que los campos obligatorios del contrato coincidan con los paquetes v2 generados, incluidos resumen, cobertura, marcas temporales y formato del digest, sin añadir dependencias de validación.
+
+
+### 2026-11-03 — calidad y trazabilidad de evidencias en auditorías
+
+- El resumen del paquete de auditoría v2 cuenta los registros de evidencia por componente, su distribución por fuente y cuántos contienen al menos una referencia HTTPS segura.
+- La validación de enlaces reutiliza la política de enlaces externos de la aplicación: HTTPS absoluto, sin credenciales. Una URL insegura no se contabiliza como referencia segura, pero el registro original se conserva intacto para no alterar la evidencia recibida.
+- El parser recalcula estos contadores desde las evidencias incluidas y rechaza un resumen inconsistente incluso si se vuelve a calcular el digest SHA-256.
+- La métrica no afirma que un enlace esté disponible, que el contenido siga vigente ni que el proveedor haya autenticado el paquete. No se añaden dependencias ni servicios.

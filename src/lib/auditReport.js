@@ -1,3 +1,5 @@
+import { safeExternalUrl } from './externalUrl.js';
+
 const MAX_AUDIT_REPORT_BYTES = 20 * 1024 * 1024;
 
 function countBy(values) {
@@ -9,17 +11,39 @@ function countBy(values) {
   return Object.fromEntries([...counts.entries()].sort(([a], [b]) => a.localeCompare(b)));
 }
 
+function collectEvidence(assessments) {
+  return assessments.flatMap(item =>
+    Array.isArray(item?.evidence) ? item.evidence.filter(evidence =>
+      evidence && typeof evidence === 'object' && !Array.isArray(evidence)
+    ) : []
+  );
+}
+
+function evidenceHasSafeReference(evidence) {
+  if (safeExternalUrl(evidence.url)) return true;
+  return Array.isArray(evidence.references) &&
+    evidence.references.some(reference => safeExternalUrl(
+      typeof reference === 'string' ? reference : reference?.url
+    ));
+}
+
 function buildAuditSummary(analysis, prioritizedFindings) {
   const findings = analysis.findings;
   const assessments = findings.flatMap(finding =>
     Array.isArray(finding?.components) ? finding.components : []
   );
   const priority = Array.isArray(prioritizedFindings) ? prioritizedFindings : [];
+  const evidence = collectEvidence(assessments);
+  const evidenceWithSafeReference = evidence.filter(evidenceHasSafeReference).length;
   const sources = analysis.sources && typeof analysis.sources === 'object' && !Array.isArray(analysis.sources)
     ? analysis.sources : {};
   return {
     candidateFindings: findings.length,
     componentAssessments: assessments.length,
+    evidenceRecords: evidence.length,
+    evidenceWithSafeReference,
+    evidenceWithoutSafeReference: evidence.length - evidenceWithSafeReference,
+    evidenceSources: countBy(evidence.map(item => item.source)),
     kevFindings: findings.filter(finding => finding?.kev === true).length,
     severity: countBy(findings.map(finding => finding?.severity)),
     applicability: countBy(assessments.map(item => item?.applicabilityStatus)),

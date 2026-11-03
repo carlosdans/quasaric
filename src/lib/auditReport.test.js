@@ -80,6 +80,10 @@ test('includes deterministic severity, applicability, priority and source covera
   assert.deepEqual(report.summary, {
     candidateFindings: 3,
     componentAssessments: 3,
+    evidenceRecords: 0,
+    evidenceWithSafeReference: 0,
+    evidenceWithoutSafeReference: 0,
+    evidenceSources: {},
     kevFindings: 1,
     severity: { critical: 1, high: 1, unknown: 1 },
     applicability: { affected: 2, needs_review: 1 },
@@ -161,4 +165,44 @@ test('publishes a JSON Schema contract for v2 audit package integrations', async
   for (const field of ['candidateFindings', 'componentAssessments', 'kevFindings', 'severity', 'applicability', 'priorityBands', 'sourceStatuses', 'sourceCount', 'queryErrors', 'queryLimits']) {
     assert.ok(schema.properties.summary.required.includes(field), 'summary schema must require ' + field);
   }
+});
+
+
+test('summarizes evidence provenance and counts only safe HTTPS references', async () => {
+  const serialized = await createAuditReport({
+    analysis: {
+      findings: [{
+        id: 'CVE-2026-10',
+        components: [{
+          evidence: [
+            { source: 'NVD', url: 'https://nvd.nist.gov/vuln/detail/CVE-2026-10' },
+            { source: 'OSV', references: [{ url: 'https://osv.dev/vulnerability/OSV-1' }] },
+            { source: 'Vendor', url: 'javascript:alert(1)', references: ['http://insecure.test/advisory'] },
+            { url: 'https://user:pass@example.test/advisory' }
+          ]
+        }]
+      }],
+      sources: { nvd: 'queried' }, errors: [], limits: []
+    }
+  });
+  const { report } = await parseAuditReport(serialized);
+  assert.equal(report.summary.evidenceRecords, 4);
+  assert.equal(report.summary.evidenceWithSafeReference, 2);
+  assert.equal(report.summary.evidenceWithoutSafeReference, 2);
+  assert.deepEqual(report.summary.evidenceSources, { nvd: 1, osv: 1, unknown: 2 });
+});
+
+test('rejects a re-hashed audit package with altered evidence quality counts', async () => {
+  const original = await createAuditReport({
+    analysis: {
+      findings: [{ id: 'CVE-2026-11', components: [{ evidence: [{ source: 'NVD', url: 'https://nvd.nist.gov/vuln/detail/CVE-2026-11' }] }] }],
+      sources: {}, errors: [], limits: []
+    }
+  });
+  const changed = JSON.parse(original);
+  changed.summary.evidenceWithSafeReference = 0;
+  const { integrity, ...payload } = changed;
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(payload)));
+  changed.integrity.digest = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  await assert.rejects(() => parseAuditReport(JSON.stringify(changed)), /summary does not match/);
 });

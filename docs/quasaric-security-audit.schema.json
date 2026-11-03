@@ -35,6 +35,10 @@
       "additionalProperties": true,
       "required": [
         "candidateFindings",
+        "evidenceRecords",
+        "evidenceWithSafeReference",
+        "evidenceWithoutSafeReference",
+        "evidenceSources",
         "componentAssessments",
         "kevFindings",
         "severity",
@@ -81,6 +85,21 @@
         "queryLimits": {
           "type": "integer",
           "minimum": 0
+        },
+        "evidenceRecords": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "evidenceWithSafeReference": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "evidenceWithoutSafeReference": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "evidenceSources": {
+          "$ref": "#/$defs/countMap"
         }
       }
     },
