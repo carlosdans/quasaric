@@ -543,6 +543,12 @@ function App() {
     try {
       if (file.size > 5 * 1024 * 1024) throw new Error(lang === 'es' ? 'El CSV supera el límite de 5 MB.' : 'CSV exceeds the 5 MB limit.');
       const parsed = parseInventoryCsv(await file.text());
+      const currentItems = itemsRef.current;
+      const imported = parsed.components;
+      const combined = [...currentItems, ...imported];
+      if (combined.length > MAX_INVENTORY_COMPONENTS) throw new Error(lang === 'es'
+        ? `La importación superaría el límite de ${MAX_INVENTORY_COMPONENTS.toLocaleString('es-ES')} componentes. No se ha modificado el inventario.`
+        : `Import would exceed the ${MAX_INVENTORY_COMPONENTS.toLocaleString('en-US')} component limit. Inventory was not changed.`);
       if (!parsed.components.length) throw new Error(lang === 'es' ? 'El CSV no contiene componentes válidos para importar.' : 'The CSV contains no valid components to import.');
       setPendingInventoryImport({ kind: 'csv', fileName: file.name, format: 'CSV', components: parsed.components, errors: parsed.errors || [], warnings: [] });
     } catch (error) {
@@ -561,6 +567,12 @@ function App() {
     try {
       if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'El SBOM supera el límite de 10 MB.' : 'SBOM exceeds the 10 MB limit.');
       const parsed = parseSbom(await file.text());
+      const currentItems = itemsRef.current;
+      const imported = parsed.components;
+      const combined = [...currentItems, ...imported];
+      if (combined.length > MAX_INVENTORY_COMPONENTS) throw new Error(lang === 'es'
+        ? `La importación superaría el límite de ${MAX_INVENTORY_COMPONENTS.toLocaleString('es-ES')} componentes. No se ha modificado el inventario.`
+        : `Import would exceed the ${MAX_INVENTORY_COMPONENTS.toLocaleString('en-US')} component limit. Inventory was not changed.`);
       if (!parsed.components.length) throw new Error(lang === 'es' ? 'El SBOM no contiene componentes válidos para importar.' : 'The SBOM contains no valid components to import.');
       setPendingInventoryImport({ kind: 'sbom', fileName: file.name, format: parsed.format, components: parsed.components, errors: parsed.errors || [], warnings: parsed.warnings || [] });
     } catch (error) {
