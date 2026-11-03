@@ -19,18 +19,18 @@ const numericCompare = (a, b) => {
 };
 
 function compareSemver(left, right) {
-  const pattern = /^v?(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-([0-9A-Za-z.-]+))?(?:\\+[0-9A-Za-z.-]+)?$/;
+  const pattern = /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/;
   const parse = value => {
     const match = pattern.exec(String(value).trim());
     if (!match) return null;
     const pre = match[4] ? match[4].split('.') : [];
-    if (pre.some(id => !id || (/^\\d+$/.test(id) && id.length > 1 && id.startsWith('0')))) return null;
+    if (pre.some(id => !id || (/^\d+$/.test(id) && id.length > 1 && id.startsWith('0')))) return null;
     return { core: match.slice(1, 4).map(BigInt), pre };
   };
   const a = parse(left), b = parse(right);
   if (!a || !b) {
     // NVD CPE boundaries may use major.minor shorthand while inventory has a patch segment.
-    const shorthand = /^\\d+(?:\\.\\d+){1,3}$/;
+    const shorthand = /^\d+(?:\.\d+){1,3}$/;
     const leftText = String(left).trim(), rightText = String(right).trim();
     const hasShortForm = leftText.split('.').length < 3 || rightText.split('.').length < 3;
     return hasShortForm && shorthand.test(leftText) && shorthand.test(rightText)
@@ -43,7 +43,7 @@ function compareSemver(left, right) {
   for (let i = 0; i < Math.max(a.pre.length, b.pre.length); i++) {
     if (a.pre[i] === undefined) return -1;
     if (b.pre[i] === undefined) return 1;
-    const an = /^\\d+$/.test(a.pre[i]), bn = /^\\d+$/.test(b.pre[i]);
+    const an = /^\d+$/.test(a.pre[i]), bn = /^\d+$/.test(b.pre[i]);
     if (an && bn) {
       const order = numericCompare(a.pre[i], b.pre[i]);
       if (order) return order;
@@ -72,10 +72,10 @@ function rpmvercmp(left, right) {
     while (i < a.length && !/[A-Za-z0-9]/.test(a[i])) i++;
     while (j < b.length && !/[A-Za-z0-9]/.test(b[j])) j++;
     if (i >= a.length || j >= b.length) break;
-    const numericA = /\\d/.test(a[i]), numericB = /\\d/.test(b[j]);
+    const numericA = /\d/.test(a[i]), numericB = /\d/.test(b[j]);
     if (numericA !== numericB) return numericA ? 1 : -1;
     let endA = i, endB = j;
-    const re = numericA ? /\\d/ : /[A-Za-z]/;
+    const re = numericA ? /\d/ : /[A-Za-z]/;
     while (endA < a.length && re.test(a[endA])) endA++;
     while (endB < b.length && re.test(b[endB])) endB++;
     let partA = a.slice(i, endA), partB = b.slice(j, endB);
@@ -100,7 +100,7 @@ function rpmvercmp(left, right) {
 function compareRpm(left, right) {
   const parse = value => {
     const text = String(value).trim();
-    const epochMatch = /^(\\d+):(.*)$/.exec(text);
+    const epochMatch = /^(\d+):(.*)$/.exec(text);
     const body = epochMatch ? epochMatch[2] : text;
     const split = body.lastIndexOf('-');
     const version = split < 0 ? body : body.slice(0, split);
@@ -122,10 +122,10 @@ function comparePep440(left, right) {
   // Parse dev separately to keep public and local ordering explicit.
   const parseFull = value => {
     const text = String(value).trim().toLowerCase();
-    const m = /^(?:(\\d+)!)?(\\d+(?:\\.\\d+)*)(?:[-_.]?(a|b|rc|alpha|beta|c|pre|preview)[-_.]?(\\d*))?(?:[-_.]?(post|rev|r)[-_.]?(\\d*))?(?:[-_.]?dev[-_.]?(\\d*))?(?:\\+([a-z0-9]+(?:[-_.][a-z0-9]+)*))?$/.exec(text);
+    const m = /^(?:(\d+)!)?(\d+(?:\.\d+)*)(?:[-_.]?(a|b|rc|alpha|beta|c|pre|preview)[-_.]?(\d*))?(?:[-_.]?(post|rev|r)[-_.]?(\d*))?(?:[-_.]?dev[-_.]?(\d*))?(?:\+([a-z0-9]+(?:[-_.][a-z0-9]+)*))?$/.exec(text);
     if (!m) return null;
     const preName = m[3] ? ({ alpha: 'a', beta: 'b', c: 'rc', pre: 'rc', preview: 'rc' }[m[3]] || m[3]) : null;
-    const local = m[8] ? m[8].split(/[-_.]/).map(part => /^\\d+$/.test(part) ? { n: BigInt(part) } : { s: part }) : [];
+    const local = m[8] ? m[8].split(/[-_.]/).map(part => /^\d+$/.test(part) ? { n: BigInt(part) } : { s: part }) : [];
     return { epoch: m[1] || '0', release: m[2].split('.').map(BigInt),
       pre: preName ? [({ a: 0, b: 1, rc: 2 })[preName], BigInt(m[4] || '0')] : null,
       post: m[5] ? BigInt(m[6] || '0') : null,
@@ -174,7 +174,7 @@ function comparePep440(left, right) {
 function compareWindows(left, right) {
   const parse = value => {
     const text = String(value).trim();
-    if (!/^\\d+(?:\\.\\d+){1,3}$/.test(text)) return null;
+    if (!/^\d+(?:\.\d+){1,3}$/.test(text)) return null;
     return text.split('.').map(part => BigInt(part));
   };
   const a = parse(left), b = parse(right);
@@ -204,13 +204,13 @@ export function normalizeEcosystem(component = {}) {
 
   // Fall back only to declared platform/runtime metadata, not package names.
   const raw = [component.ecosystem, component.vendor].filter(Boolean).join(' ').toLowerCase();
-  if (/\\b(ubuntu|debian|dpkg)\\b/.test(raw)) return 'deb';
-  if (/\\b(rhel|red hat|rocky|alma ?linux|suse|sles|fedora|rpm)\\b/.test(raw)) return 'rpm';
-  if (/\\b(windows server|windows 10|windows 11|microsoft windows)\\b/.test(raw)) return 'windows';
-  if (/\\b(pypi|python|pip)\\b/.test(raw)) return 'pypi';
-  if (/\\b(npm|node\\.?js|nodejs)\\b/.test(raw)) return 'npm';
-  if (/\\b(composer|php)\\b/.test(raw)) return 'composer';
-  if (/\\b(maven|gradle|java)\\b/.test(raw)) return 'maven';
+  if (/\b(ubuntu|debian|dpkg)\b/.test(raw)) return 'deb';
+  if (/\b(rhel|red hat|rocky|alma ?linux|suse|sles|fedora|rpm)\b/.test(raw)) return 'rpm';
+  if (/\b(windows server|windows 10|windows 11|microsoft windows)\b/.test(raw)) return 'windows';
+  if (/\b(pypi|python|pip)\b/.test(raw)) return 'pypi';
+  if (/\b(npm|node\.?js|nodejs)\b/.test(raw)) return 'npm';
+  if (/\b(composer|php)\b/.test(raw)) return 'composer';
+  if (/\b(maven|gradle|java)\b/.test(raw)) return 'maven';
   return purl?.type || '';
 }
 
@@ -233,7 +233,7 @@ export function compareVersionForComponent(left, right, component = {}) {
   if (ecosystem === 'npm' || ecosystem === 'composer') return compareSemver(left, right);
   if (ecosystem === 'windows') return compareWindows(left, right);
   const a = String(left ?? '').trim(), b = String(right ?? '').trim();
-  if (!/^\\d+(?:\\.\\d+)*$/.test(a) || !/^\\d+(?:\\.\\d+)*$/.test(b)) return null;
+  if (!/^\d+(?:\.\d+)*$/.test(a) || !/^\d+(?:\.\d+)*$/.test(b)) return null;
   return numericCompare(a, b);
 }
 
