@@ -43,6 +43,14 @@ test('CSV neutralizes spreadsheet formulas in untrusted values', () => {
   assert.ok(csv.includes("\"'\n=1+1\""));
 });
 
+test('CSV neutralizes formulas preceded by control characters or a BOM', () => {
+  const values = ['\\u0000=1+1', '\\u001f+1+1', '\\u007f@cmd', '\\u009f-1+2', '\\uFEFF=1+1'];
+  const csv = toCsv([['value'], ...values.map(value => [value])]);
+  for (const value of values) {
+    assert.ok(csv.includes('"' + "'" + value.replaceAll('"', '""') + '"'));
+  }
+});
+
 test('CSV leaves ordinary text and positive numeric values unchanged', () => {
   assert.equal(toCsv([['name', 'value'], ['nginx', '1']]),
     '\uFEFF"name","value"\r\n"nginx","1"');
