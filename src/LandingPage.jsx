@@ -122,7 +122,7 @@ export default function LandingPage({ lang = 'es', onLanguageChange, onOpenApp }
   return (
     <div className="landing-shell" id="top">
       <a className="landing-skip-link" href="#landing-main">{lang === 'es' ? 'Saltar al contenido' : 'Skip to content'}</a>
-      <header className="landing-header">
+      <header className="landing-header" onKeyDown={event => { if (event.key === 'Escape') closeMobileNav(); }}>
         <div className="landing-header-inner">
           <Brand />
           <nav className={'landing-nav' + (mobileNavOpen ? ' is-mobile-open' : '')} id="landing-navigation" aria-label={lang === 'es' ? 'Navegación principal' : 'Main navigation'}>
