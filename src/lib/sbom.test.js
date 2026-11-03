@@ -422,3 +422,30 @@ test('recognizes the SPDX OPERATING_SYSTEM package purpose enum', () => {
   assert.equal(result.components.length, 1);
   assert.equal(result.components[0].type, 'os');
 });
+
+
+test('merges nested metadata subject dependencies when the subject is also in CycloneDX components', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    metadata: {
+      component: {
+        'bom-ref': 'app-ref', type: 'application', name: 'service', version: '1.0',
+        components: [{
+          type: 'library', name: 'metadata-dependency', version: '2.0',
+          components: [{ type: 'library', name: 'metadata-transitive', version: '3.0' }]
+        }]
+      }
+    },
+    components: [
+      {
+        'bom-ref': 'app-ref', type: 'application', name: 'service', version: '1.0',
+        components: [{ type: 'library', name: 'document-dependency', version: '4.0' }]
+      },
+      { type: 'library', name: 'separate-dependency', version: '5.0' }
+    ]
+  }));
+  assert.deepEqual(result.components.map(item => item.name), [
+    'service', 'metadata-dependency', 'metadata-transitive', 'separate-dependency'
+  ]);
+  assert.deepEqual(result.components.map(item => item.version), ['1.0', '2.0', '3.0', '5.0']);
+});
