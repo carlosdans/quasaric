@@ -555,7 +555,13 @@ function App() {
       return;
     }
     setAddFormError('');
-    if (!persist([...items, { ...form, id: crypto.randomUUID(), createdAt: new Date().toISOString() }])) {
+    if (itemsRef.current.length >= MAX_INVENTORY_COMPONENTS) {
+      setAddFormError(lang === 'es'
+        ? `El inventario ha alcanzado el límite de ${MAX_INVENTORY_COMPONENTS.toLocaleString('es-ES')} componentes. Exporta una copia o elimina componentes antes de añadir más.`
+        : `The inventory has reached the ${MAX_INVENTORY_COMPONENTS.toLocaleString('en-US')} component limit. Export a backup or remove components before adding more.`);
+      return;
+    }
+    if (!persist([...itemsRef.current, { ...form, id: crypto.randomUUID(), createdAt: new Date().toISOString() }])) {
       setAddFormError(lang === 'es' ? 'No se pudo guardar el inventario. Comprueba el almacenamiento del navegador; no se ha añadido el componente.' : 'Could not save the inventory. Check browser storage; the component was not added.');
       return;
     }
