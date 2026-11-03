@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ArrowRight, ArrowUpRight, Check, ChevronRight, Database, FileCheck2,
   Fingerprint, Globe2, Layers3, LockKeyhole, Menu, ShieldCheck, SlidersHorizontal,
@@ -118,11 +118,12 @@ function Brand() {
 export default function LandingPage({ lang = 'es', onLanguageChange, onOpenApp }) {
   const t = content[lang] || content.es;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const mobileToggleRef = useRef(null);
   const closeMobileNav = () => setMobileNavOpen(false);
   return (
     <div className="landing-shell" id="top">
       <a className="landing-skip-link" href="#landing-main">{lang === 'es' ? 'Saltar al contenido' : 'Skip to content'}</a>
-      <header className="landing-header" onKeyDown={event => { if (event.key === 'Escape') closeMobileNav(); }}>
+      <header className="landing-header" onKeyDown={event => { if (event.key === 'Escape' && mobileNavOpen) { closeMobileNav(); mobileToggleRef.current?.focus(); } }}>
         <div className="landing-header-inner">
           <Brand />
           <nav className={'landing-nav' + (mobileNavOpen ? ' is-mobile-open' : '')} id="landing-navigation" aria-label={lang === 'es' ? 'Navegación principal' : 'Main navigation'}>
@@ -130,7 +131,7 @@ export default function LandingPage({ lang = 'es', onLanguageChange, onOpenApp }
           </nav>
           <div className="landing-header-actions">
             <button className="landing-language" onClick={() => onLanguageChange?.(lang === 'es' ? 'en' : 'es')} aria-label={lang === 'es' ? 'Switch to English' : 'Cambiar a español'}><Globe2 size={15}/>{lang.toUpperCase()}</button>
-            <button className="landing-mobile-toggle" type="button" aria-controls="landing-navigation" aria-expanded={mobileNavOpen} aria-label={mobileNavOpen ? (lang === 'es' ? 'Cerrar navegación' : 'Close navigation') : (lang === 'es' ? 'Abrir navegación' : 'Open navigation')} onClick={() => setMobileNavOpen(open => !open)}>{mobileNavOpen ? <X size={19}/> : <Menu size={19}/>}</button>
+            <button ref={mobileToggleRef} className="landing-mobile-toggle" type="button" aria-controls="landing-navigation" aria-expanded={mobileNavOpen} aria-label={mobileNavOpen ? (lang === 'es' ? 'Cerrar navegación' : 'Close navigation') : (lang === 'es' ? 'Abrir navegación' : 'Open navigation')} onClick={() => setMobileNavOpen(open => !open)}>{mobileNavOpen ? <X size={19}/> : <Menu size={19}/>}</button>
             <button className="landing-open" onClick={onOpenApp}>{t.open}<ArrowUpRight size={16}/></button>
           </div>
         </div>
