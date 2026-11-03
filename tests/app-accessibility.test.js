@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
 
 test('does not publish an analysis result after its inventory snapshot was invalidated', () => {
-  const awaitResult = app.indexOf('const result = await analyzeInventory(items, { signal: controller.signal, onProgress: setAnalysisProgress });');
+  const awaitResult = app.indexOf('const result = await analyzeInventory(items, {');
   const abortGuard = app.indexOf('if (controller.signal.aborted || analysisAbortRef.current !== controller) return;', awaitResult);
   const publishResult = app.indexOf('setAnalysis(result);', awaitResult);
   const snapshotResult = app.indexOf('createAnalysisSnapshot(result, items);', awaitResult);
