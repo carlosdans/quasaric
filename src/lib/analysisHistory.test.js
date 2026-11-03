@@ -284,3 +284,32 @@ test('does not promote truthy non-boolean KEV metadata when snapshotting finding
   const confirmed = createAnalysisSnapshot({ findings: [finding('CVE-2026-0100', [match('a')], { kev: true })] });
   assert.equal(confirmed.findings[0].kev, true);
 });
+
+
+test('rejects malformed KEV types in stored snapshots and preserves raw history for recovery', () => {
+  const valid = { id: 'valid', findings: [finding('CVE-2026-0001', [match('a')])] };
+  const legacyWithoutKev = { id: 'legacy-no-kev', findings: [{ id: 'CVE-OLD', components: [match('b')] }] };
+  const malformed = ['false', '0', 1, {}, []].map((kev, index) => ({
+    id: 'malformed-' + index,
+    findings: [finding('CVE-2026-000' + (index + 2), [match('c')], { kev })]
+  }));
+  const raw = JSON.stringify([valid, legacyWithoutKev, ...malformed]);
+  const data = new Map([['quasaric-analysis-history', raw]]);
+  const storage = { getItem: key => data.get(key) || null, setItem: (key, value) => data.set(key, value) };
+
+  assert.deepEqual(loadAnalysisHistory(storage), [valid, legacyWithoutKev]);
+  assert.equal(data.get('quasaric-analysis-history-recovery'), raw);
+  assert.equal(saveAnalysisHistory(malformed, storage), false);
+  assert.equal(saveAnalysisHistory([valid, legacyWithoutKev], storage), true);
+});
+
+test('accepts explicit boolean and null KEV values in legacy-compatible snapshots', () => {
+  for (const kev of [true, false, null]) {
+    const item = { id: 'kev-' + String(kev), findings: [finding('CVE-2026-0101', [match('a')], { kev })] };
+    const data = new Map([['quasaric-analysis-history', JSON.stringify([item])]]);
+    assert.deepEqual(loadAnalysisHistory({ getItem: key => data.get(key) || null }), [item]);
+  }
+  const withoutKev = { id: 'missing-kev', findings: [{ id: 'CVE-OLD', components: [match('a')] }] };
+  const data = new Map([['quasaric-analysis-history', JSON.stringify([withoutKev])]]);
+  assert.deepEqual(loadAnalysisHistory({ getItem: key => data.get(key) || null }), [withoutKev]);
+});
