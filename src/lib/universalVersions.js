@@ -129,7 +129,7 @@ function compareApk(left, right) {
     ['', 4], ['cvs', 5], ['svn', 6], ['git', 7], ['hg', 8], ['p', 9]
   ]);
   const parse = value => {
-    const match = /^(?:(\\d+):)?(\\d+(?:\\.\\d+)*)(?:_(alpha|beta|pre|rc|cvs|svn|git|hg|p)(\\d*))?(?:-r(\\d+))?$/.exec(String(value).trim());
+    const match = /^(?:(\d+):)?(\d+(?:\.\d+)*)(?:_(alpha|beta|pre|rc|cvs|svn|git|hg|p)(\d*))?(?:-r(\d+))?$/.exec(String(value).trim());
     if (!match) return null;
     return {
       epoch: match[1] || '0',
