@@ -15,7 +15,7 @@ function isValidBackupComponent(item) {
     (typeof item[field] === 'string' && item[field].length <= MAX_IDENTIFIER_LENGTH);
   return item !== null && typeof item === 'object' && !Array.isArray(item) &&
     typeof item.name === 'string' && item.name.trim().length > 0 &&
-    (item.id == null || (typeof item.id === 'string' && item.id.trim().length > 0 && item.id.length <= MAX_IDENTIFIER_LENGTH)) &&
+    (item.id == null || (typeof item.id === 'string' && item.id.length <= MAX_IDENTIFIER_LENGTH)) &&
     STRING_FIELDS.every(field => item[field] == null ||
       (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) &&
     (item.type == null || (typeof item.type === 'string' && allowedTypes.has(item.type))) &&
