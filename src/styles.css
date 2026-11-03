@@ -789,3 +789,18 @@ button{touch-action:manipulation}
   .finding-evidence-metadata { display: grid; grid-template-columns: 1fr 1fr; }
   .finding-evidence-metadata div { display: grid; gap: 2px; }
 }
+
+/* Make a validated audit package useful for review, not just checksum display. */
+.audit-package-breakdowns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.audit-package-breakdowns section{min-width:0;padding:13px;border:1px solid var(--border);border-radius:10px;background:var(--surface-raised)}
+.audit-package-breakdowns h4{margin:0 0 9px;color:var(--text-primary);font-size:11px}
+.audit-package-breakdowns ul,.audit-package-warnings ul{display:grid;gap:7px;margin:0;padding:0;list-style:none}
+.audit-package-breakdowns li{display:flex;justify-content:space-between;gap:10px;color:var(--text-secondary);font-size:11px}
+.audit-package-breakdowns li span{overflow-wrap:anywhere}
+.audit-package-breakdowns li strong{color:var(--text-primary);font-variant-numeric:tabular-nums}
+.audit-package-warnings{margin:14px 0;padding:13px;border:1px solid rgba(215,165,75,.3);border-radius:10px;background:rgba(215,165,75,.08)}
+.audit-package-warnings>strong{color:var(--text-primary);font-size:12px}
+.audit-package-warnings p,.audit-package-warnings li{color:var(--text-secondary);font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+.audit-package-warnings p{margin:6px 0 9px}
+.audit-package-warnings ul{padding-left:17px;list-style:disc;margin-top:7px}
+@media(max-width:700px){.audit-package-breakdowns{grid-template-columns:1fr}}

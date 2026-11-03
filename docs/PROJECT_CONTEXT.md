@@ -589,3 +589,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Safe external advisory URLs remain individually validated; additional source references are deduplicated and validated before links are rendered.
 - Metadata is rendered only when supplied by the source adapter. Missing fields stay absent rather than being inferred.
 - The layout wraps on narrow screens and remains within the existing static, local-first frontend architecture.
+
+
+### 2026-11-03 — revisión explicativa de paquetes de auditoría
+
+- La validación local de un paquete JSON ahora muestra distribuciones de severidad, aplicabilidad y estado de las fuentes, además de los recuentos básicos.
+- Si el análisis de origen registró errores o límites, el panel lo destaca y muestra hasta cinco detalles de cada tipo para que el lector pueda valorar la cobertura.
+- Se vuelve a explicitar que los hallazgos son candidatos de correlación y que SHA-256 detecta cambios, pero no autentica al emisor.
+- La validación sigue siendo de solo lectura; no importa datos al inventario ni al historial. Diseño adaptable a móvil y sin servicios ni dependencias nuevos.
