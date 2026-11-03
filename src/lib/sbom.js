@@ -158,14 +158,14 @@ function cyclone(document) {
         component.sourceRelationship = 'cyclonedx_pedigree_ancestor_rpm_src';
       }
     }
+    const error = validateComponentFields(component);
+    if (error) return { error, index:index+1 };
     const sourcePurlData = purlInfo(component.sourcePurl);
     if (component.sourcePurl && !sourcePurlData) return { error:'Invalid source Package URL.', index:index+1 };
     if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
       component.sourcePurl = '';
       warnings.push('The declared source package version does not match the version embedded in its source PURL; the source PURL was removed.');
     }
-    const error = validateComponentFields(component);
-    if (error) return { error, index:index+1 };
     return warnings.length ? { ...component, warning: warnings } : component;
   });
 }
@@ -208,6 +208,7 @@ function spdx(document) {
     const declaredVersion = str(item.versionInfo);
     const purlVersionMismatch = Boolean(declaredVersion && purl?.version && declaredVersion !== purl.version);
     const safePurl = purlVersionMismatch ? '' : rawPurl;
+    const safePurlData = purlVersionMismatch ? null : purl;
     const name = str(item.name) || purl?.qualifiedName || purl?.name;
     if (!name) return { error:'Missing package name.', index:index+1 };
     const warnings = [];
@@ -238,14 +239,14 @@ function spdx(document) {
         warnings.push('The declared source package version does not match the version embedded in its source PURL; the source PURL was removed.');
       }
     }
+    const error = validateComponentFields(component);
+    if (error) return { error, index:index+1 };
     const sourcePurlData = purlInfo(component.sourcePurl);
     if (component.sourcePurl && !sourcePurlData) return { error:'Invalid source Package URL.', index:index+1 };
     if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
       component.sourcePurl = '';
       warnings.push('The declared source package version does not match the version embedded in its source PURL; the source PURL was removed.');
     }
-    const error = validateComponentFields(component);
-    if (error) return { error, index:index+1 };
     return warnings.length ? { ...component, warning: warnings } : component;
   });
 }
