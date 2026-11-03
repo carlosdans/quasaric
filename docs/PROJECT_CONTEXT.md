@@ -280,3 +280,13 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 ### 2026-11-03 — versiones PURL opacas
 - El parser PURL ya no rechaza versiones cuyo valor literal sea `.` o `..`. ECMA-427 define la versión como una cadena opaca; la protección contra segmentos de ruta punto se mantiene para namespace, nombre y subpath, no se aplica indebidamente a la versión.
 - Se añadió una regresión para versiones literales y percent-encoded. Referencia: https://tc54.org/ecma427/multipage/purl-specification.
+
+
+### 2026-11-03 — navegación móvil de la web pública
+
+- La navegación principal de la landing ahora dispone de un menú móvil explícito, con estado accesible mediante `aria-expanded` y `aria-controls`; los enlaces cierran el menú al seleccionar una sección.
+- La navegación se puede cerrar con Escape y el control cambia entre iconos de apertura y cierre.
+- Se incorpora un enlace para saltar directamente al contenido principal, visible al recibir foco de teclado, y el destino acepta foco programático sin añadir un contorno visual permanente.
+- Los estilos mantienen la navegación de escritorio y respetan `prefers-reduced-motion`; no se añaden dependencias, servicios ni recursos de pago.
+- Cambios aplicados directamente en `main`: `src/LandingPage.jsx` y `src/landing.css`.
+- Pendiente de validación automatizada y revisión visual en navegador móvil/escritorio; el conector de GitHub no expone en esta sesión una ejecución manual de CI para commits de push.
