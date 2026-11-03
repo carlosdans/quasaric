@@ -299,3 +299,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se mantienen intactos los encabezados de seguridad existentes, la política CSP, el fallback SPA y la arquitectura estática.
 - Cambios aplicados directamente en `src/App.jsx` y `staticwebapp.config.json`.
 - Validación pendiente: build de Vite, comprobación de rutas/headers en Azure Static Web Apps y revisión SEO con herramientas de navegador. No se ha confirmado un despliegue en producción desde esta sesión.
+
+
+### 2026-11-03 — endurecimiento de exportaciones CSV
+
+- La neutralización de fórmulas de hoja de cálculo ahora detecta prefijos de fórmula precedidos por caracteres de control ASCII, controles C1 y BOM, además de los espacios en blanco habituales.
+- Se amplían las regresiones para cubrir esos prefijos invisibles y conservar el formato CSV normal.
+- No se añaden dependencias ni servicios. La suite completa del proyecto y el build siguen pendientes de ejecución en el entorno del repositorio.
