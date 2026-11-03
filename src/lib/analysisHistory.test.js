@@ -274,3 +274,13 @@ test('preserves duplicate component rows when comparing historical exposures', (
   assert.equal(result.counts.resolved, 1);
   assert.equal(result.resolved[0].cve, 'CVE-2026-0001');
 });
+
+
+test('does not promote truthy non-boolean KEV metadata when snapshotting findings', () => {
+  for (const kev of ['false', '0', 1, {}, []]) {
+    const result = createAnalysisSnapshot({ findings: [finding('CVE-2026-0099', [match('a')], { kev })] });
+    assert.equal(result.findings[0].kev, false, String(kev));
+  }
+  const confirmed = createAnalysisSnapshot({ findings: [finding('CVE-2026-0100', [match('a')], { kev: true })] });
+  assert.equal(confirmed.findings[0].kev, true);
+});
