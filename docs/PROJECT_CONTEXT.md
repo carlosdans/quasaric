@@ -236,10 +236,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Las relaciones SPDX `GENERATED_FROM` idénticas repetidas se normalizan como una sola arista. Sólo distintas fuentes relacionadas mantienen la ambigüedad y dejan la procedencia sin resolver.
 
 
-### 2026-11-03 — rangos Ubuntu OSV abiertos
-- El clasificador de versiones fuente Ubuntu OSV interpreta un evento introduced sin un fixed o last_affected posterior como un intervalo abierto cuando el aviso no proporciona una lista explícita de versiones afectadas. Si Canonical enumera versiones exactas, esa lista no se amplía a versiones posteriores por el rango abierto; las versiones no listadas permanecen en revisión.
-- Se cubren intervalos abiertos simples y posteriores a un intervalo ya cerrado, además de versiones anteriores y sufijos no comparables. No se infiere una versión corregida ni se modifica la evaluación de paquetes binarios.
-- Sin dependencias, backend, servicios externos ni cambios de recursos Azure.
+### 2026-11-03 — rangos Ubuntu OSV y versiones fuente enumeradas
+- El clasificador trata el campo versions de Canonical como el conjunto exacto de versiones fuente afectadas: un evento introduced: 0 junto con fixed no convierte versiones intermedias no enumeradas en afectadas. Esas versiones quedan en revisión; las versiones enumeradas siguen siendo afectadas y las versiones en/tras fixed pueden quedar como candidatas a parche.
+- Los rangos abiertos sin lista explícita siguen interpretándose como afectados desde introduced; las versiones no comparables o sin evidencia suficiente permanecen en revisión.
+- Se añadieron regresiones para la lista explícita combinada con límite fixed, además de rangos abiertos simples y posteriores a un intervalo cerrado. Sin dependencias, backend, servicios externos ni cambios de recursos Azure.
 
 
 ### 2026-11-03 — semántica SRPM de Red Hat Security Data

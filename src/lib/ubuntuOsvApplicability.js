@@ -57,7 +57,10 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
               const order = compareDebianVersions(version, String(introduced));
               return order !== null && order >= 0;
             })();
-        if (beforeFixed < 0 && afterIntroduced) insideAffectedRange = true;
+        // Canonical's versions list is the authoritative set of affected
+        // source builds. Its introduced: 0 range plus fixed event must not
+        // make unlisted intermediate builds look affected.
+        if (listedVersions.length === 0 && beforeFixed < 0 && afterIntroduced) insideAffectedRange = true;
         if (beforeFixed >= 0) closedRangeBeforeVersion = true;
       }
       if (event.last_affected !== undefined) {
@@ -72,16 +75,14 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
                 const order = compareDebianVersions(version, String(introduced));
                 return order !== null && order >= 0;
               })();
-          if (lastAffected <= 0 && afterIntroduced) insideAffectedRange = true;
+          if (listedVersions.length === 0 && lastAffected <= 0 && afterIntroduced) insideAffectedRange = true;
           if (lastAffected > 0) closedRangeBeforeVersion = true;
         }
       }
     }
     // OSV ranges ending with an introduced event are open-ended until a
-    // fixed or last_affected event closes the interval.
-    // Canonical Ubuntu OSV records often enumerate exact affected source
-    // builds in versions while leaving a range open for binary metadata.
-    // Do not expand that explicit list to every later source version.
+    // fixed or last_affected event closes the interval. When Canonical
+    // enumerates versions, only those exact source builds are affected.
     if (rangeIsOpen && listedVersions.length === 0) {
       const afterIntroduction = introduced === '0'
         ? 1

@@ -12,9 +12,8 @@ test('classifies an explicitly listed source version as affected', () => {
   assert.equal(classifyUbuntuOsvSourceVersion(base, '3.0.13-0ubuntu3').status, 'affected');
 });
 
-test('classifies source versions before fixed boundary as affected', () => {
-  assert.equal(classifyUbuntuOsvSourceVersion(base, '3.0.13-0ubuntu3').status, 'affected');
-  assert.equal(classifyUbuntuOsvSourceVersion(base, '3.0.13-0ubuntu3.0').status, 'affected');
+test('does not expand Canonical affected versions to unlisted builds below the fixed boundary', () => {
+  assert.equal(classifyUbuntuOsvSourceVersion(base, '3.0.13-0ubuntu3.0').status, 'needs_review');
 });
 
 test('marks source versions at or beyond fixed boundary as patched candidates', () => {
@@ -40,7 +39,6 @@ test('does not infer unaffected when the package or release entry is absent', ()
 test('requires a non-empty source version from the caller', () => {
   assert.equal(classifyUbuntuOsvSourceVersion(base, '').status, 'needs_review');
 });
-
 
 test('does not treat a version between disjoint affected ranges as patched', () => {
   const disjoint = {
