@@ -25,7 +25,7 @@ function typeFor(name, ecosystem, declaredType = '') {
   // CycloneDX's component type is explicit inventory metadata. Preserve it
   // ahead of name-based suggestions, which can misclassify packages such as
   // an npm library named "nginx" as a web server.
-  const declared = str(declaredType).toLowerCase();
+  const declared = str(declaredType).toLowerCase().replaceAll('_', '-');
   if (declared === 'operating-system') return 'os';
   if (['library', 'framework', 'file'].includes(declared)) return 'library';
   if (['application', 'container', 'device', 'firmware', 'platform', 'device-driver',
@@ -92,7 +92,7 @@ function cyclone(document) {
       ? { ...item, ...root,
           components: Array.isArray(root.components) ? root.components : item?.components }
       : item)
-    : root ? [root, ...nested] : nested;
+    : root ? [...flattenCycloneComponents([root]), ...nested] : nested;
   if (flattened.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
   return flattened.map((item,index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Component entry must be a JSON object.', index:index+1 };

@@ -388,3 +388,37 @@ test('preserves explicit CycloneDX component types over ambiguous name heuristic
     'library', 'library', 'os', 'other'
   ]);
 });
+
+
+test('flattens nested dependencies when the CycloneDX metadata subject is not in components', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    metadata: {
+      component: {
+        type: 'application', name: 'service', version: '1.0',
+        components: [{
+          type: 'library', name: 'direct-dependency', version: '2.0',
+          components: [{ type: 'library', name: 'transitive-dependency', version: '3.0' }]
+        }]
+      }
+    },
+    components: [{ type: 'library', name: 'separate-dependency', version: '4.0' }]
+  }));
+  assert.deepEqual(result.components.map(item => item.name), [
+    'service', 'direct-dependency', 'transitive-dependency', 'separate-dependency'
+  ]);
+  assert.deepEqual(result.components.map(item => item.version), ['1.0', '2.0', '3.0', '4.0']);
+});
+
+
+test('recognizes the SPDX OPERATING_SYSTEM package purpose enum', () => {
+  const result = parseSbom(JSON.stringify({
+    spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0',
+    packages: [{
+      SPDXID: 'SPDXRef-os', name: 'custom-appliance-image',
+      primaryPackagePurpose: 'OPERATING_SYSTEM'
+    }]
+  }));
+  assert.equal(result.components.length, 1);
+  assert.equal(result.components[0].type, 'os');
+});
