@@ -67,7 +67,8 @@ export function createAnalysisSnapshot(analysis, inventory = []) {
       severity: finding.severity || 'Unknown',
       cvss: finding.cvss ?? null,
       epss: finding.epss ?? null,
-      kev: Boolean(finding.kev),
+      // Only the source adapter's boolean can establish KEV membership.
+      kev: finding.kev === true,
       applicabilityStatus: finding.applicabilityStatus || 'needs_review',
       components: (finding.components || []).map(match => ({
         component: { ...match.component },
