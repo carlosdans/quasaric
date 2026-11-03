@@ -329,3 +329,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Los snapshots antiguos que omiten KEV y los que guardan null siguen siendo compatibles. Si el historial contiene snapshots inválidos, se conserva el JSON original en la clave local de recuperación mientras se exponen únicamente los snapshots válidos.
 - Se añaden regresiones para carga, recuperación, guardado y compatibilidad heredada. Sin cambios de dependencias, backend ni infraestructura.
 - La ejecución completa de tests y build queda pendiente de validación en CI.
+
+
+### 2026-11-03 — validación de rangos EPSS y CVSS en la prioridad
+
+- El cálculo de prioridad ya no recorta puntuaciones EPSS/CVSS fuera de rango para convertirlas en evidencia válida. EPSS acepta probabilidades 0–1 o porcentajes 0–100; CVSS acepta exclusivamente 0–10. Valores negativos, no finitos o superiores al máximo se marcan como no disponibles y aportan cero puntos.
+- Se conserva la compatibilidad con cadenas numéricas finitas de los adaptadores y con EPSS expresado como porcentaje. Se añaden regresiones para límites y valores fuera de rango.
+- Sin cambios de dependencias, backend o infraestructura. Suite completa y build pendientes de ejecución en CI.
