@@ -247,3 +247,9 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se añadieron regresiones para impedir falsos positivos cuando el nombre del binario coincide casualmente con el SRPM y para conservar el estado del proveedor como evidencia de revisión.
 - Se normaliza también el formato público de `affected_release.package` cuando llega como SRPM NEVRA en una cadena (por ejemplo, `openssl-1:3.0.7-28.el9`), conservando nombre y versión como evidencia fuente; no se trata como nombre binario.
 - Referencia: documentación Red Hat Security Data API 1.0, secciones CVE y campos AffectedRelease/PackageState.
+
+
+### 2026-11-03 — validación direccional de relaciones SUSE CSAF
+- La correlación indirecta de paquete fuente a binario SUSE ahora exige una relación CSAF estructuralmente completa (incluye `full_product_name.product_id`), de categoría `default_component_of` y con dirección exacta fuente → producto binario. No se interpretan relaciones invertidas ni `installed_with`/`installed_on` como mapeo de compilación fuente-binario.
+- Se añadieron regresiones para la dirección válida, dirección inversa y categorías no equivalentes. La evidencia fuente sigue siendo `needs_review`; no se transfiere estado de afectación ni remediación al binario.
+- Referencia normativa: OASIS CSAF 2.0, sección 3.2.2.4 (relaciones direccionales y categorías), https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.pdf.

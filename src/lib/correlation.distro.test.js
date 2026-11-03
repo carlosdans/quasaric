@@ -59,7 +59,12 @@ test('attaches SUSE source-package VEX only as indirect review evidence through 
         { product: { product_id: 'sles-openssl-bin', name: 'openssl binary', product_identification_helper: { purl: 'pkg:rpm/suse/openssl@3.0.0?arch=x86_64' } } },
         { product: { product_id: 'sles-openssl-src', name: 'openssl source', product_identification_helper: { purl: 'pkg:rpm/suse/openssl@3.0.0?arch=src' } } }
       ] }],
-      relationships: [{ category: 'default_component_of', product_reference: 'sles-openssl-src', relates_to_product_reference: 'sles-openssl-bin' }]
+      relationships: [{
+        category: 'default_component_of',
+        product_reference: 'sles-openssl-src',
+        relates_to_product_reference: 'sles-openssl-bin',
+        full_product_name: { product_id: 'sles-openssl-combined', name: 'openssl source component of binary' }
+      }]
     },
     vulnerabilities: [{ cve: 'CVE-2025-67890', product_status: { fixed: ['sles-openssl-src'] } }]
   };

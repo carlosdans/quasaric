@@ -105,3 +105,63 @@ test('does not combine version and architecture evidence from separate SUSE PURL
   assert.equal(result.architectureMatch, 'not_specified');
   assert.equal(result.confidence, 'medium');
 });
+
+function sourceRelationshipDocument(category = 'default_component_of', reverse = false) {
+  const sourceId = 'openssl-source';
+  const binaryId = 'openssl-binary';
+  return {
+    document: { csaf_version: '2.0', category: 'csaf_vex' },
+    product_tree: {
+      branches: [{
+        category: 'vendor', name: 'SUSE',
+        branches: [{
+          category: 'product_version', name: 'openssl',
+          product: { name: 'openssl binary', product_id: binaryId,
+            product_identification_helper: { purl: 'pkg:rpm/suse/openssl@3.0.8-1?arch=x86_64' } }
+        }, {
+          category: 'product_version', name: 'openssl-source',
+          product: { name: 'openssl source', product_id: sourceId,
+            product_identification_helper: { purl: 'pkg:rpm/suse/openssl@3.0.8-1?arch=src' } }
+        }]
+      }],
+      relationships: [{
+        category,
+        product_reference: reverse ? binaryId : sourceId,
+        relates_to_product_reference: reverse ? sourceId : binaryId,
+        full_product_name: { product_id: 'openssl-combined', name: 'openssl component relationship' }
+      }]
+    },
+    vulnerabilities: [{
+      cve: 'CVE-2026-12345',
+      product_status: { known_affected: [sourceId] }
+    }]
+  };
+}
+
+test('accepts source-package VEX only for a directed default_component_of relationship', () => {
+  const result = matchSuseCsafVexComponent(sourceRelationshipDocument(), {
+    ecosystem: 'SUSE Linux Enterprise Server 15 SP6',
+    purl: 'pkg:rpm/suse/openssl@3.0.8-1?arch=x86_64',
+    sourcePackage: 'openssl'
+  }, 'CVE-2026-12345');
+  assert.equal(result.status, 'needs_review');
+  assert.equal(result.evidenceType, 'source_package_relationship');
+  assert.equal(result.sourceRelationship.category, 'default_component_of');
+});
+
+test('does not treat reverse or unrelated CSAF relationships as source-to-binary mappings', () => {
+  for (const document of [
+    sourceRelationshipDocument('default_component_of', true),
+    sourceRelationshipDocument('installed_with', false),
+    sourceRelationshipDocument('installed_on', false)
+  ]) {
+    const result = matchSuseCsafVexComponent(document, {
+      ecosystem: 'SUSE Linux Enterprise Server 15 SP6',
+      purl: 'pkg:rpm/suse/openssl@3.0.8-1?arch=x86_64',
+      sourcePackage: 'openssl'
+    }, 'CVE-2026-12345');
+    assert.equal(result.status, 'needs_review');
+    assert.equal(result.evidenceType, undefined);
+    assert.match(result.reason, /relación explícita|estado VEX/i);
+  }
+});
