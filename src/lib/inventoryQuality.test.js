@@ -20,7 +20,7 @@ test('keeps distinct versions and vendors separate',()=>{
   assert.deepEqual(inspectInventory([{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.1'},{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.2'},{name:'OpenSSL',vendor:'Ubuntu',version:'3.0.1'}]).duplicates,[]);
 });
 test('handles empty inventories and missing names',()=>{
-  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],invalidCpes:[],sourceVersionWithoutPackage:[],purlVersionMismatches:[],sourcePurlVersionMismatches:[],identifierConflicts:[],duplicates:[]});
+  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],invalidCpes:[],sourceVersionWithoutPackage:[],purlVersionMismatches:[],sourcePurlVersionMismatches:[],cpeVersionMismatches:[],identifierConflicts:[],duplicates:[]});
   assert.deepEqual(inspectInventory([{id:'a',version:'1.0'}]).duplicates,[]);
 });
 test('does not report false duplicates when metadata contains separators',()=>{
@@ -136,4 +136,26 @@ test('does not infer version mismatches from absent, versionless or malformed PU
   assert.deepEqual(result.invalidPurls, [
     { id: 'malformed', name: 'openssl', field: 'purl' }
   ]);
+});
+
+
+test('flags concrete CPE versions that differ from the declared inventory version', () => {
+  const result = inspectInventory([
+    { id: 'mismatch', name: 'openssl', version: '3.0.2-1', cpe: 'cpe:2.3:a:openssl:openssl:3.0.2:*:*:*:*:*:*:*' },
+    { id: 'match', name: 'nginx', version: '1.26.2', cpe: 'cpe:2.3:a:nginx:nginx:1.26.2:*:*:*:*:*:*:*' }
+  ]);
+  assert.deepEqual(result.cpeVersionMismatches, [
+    { id: 'mismatch', name: 'openssl', declaredVersion: '3.0.2-1', cpeVersion: '3.0.2' }
+  ]);
+});
+
+test('does not compare wildcard, not-applicable, missing or malformed CPE versions', () => {
+  const result = inspectInventory([
+    { id: 'wildcard', name: 'openssl', version: '3.0.2', cpe: 'cpe:2.3:a:openssl:openssl:3.*:*:*:*:*:*:*:*' },
+    { id: 'question', name: 'nginx', version: '1.26', cpe: 'cpe:2.3:a:nginx:nginx:1.2?:*:*:*:*:*:*:*' },
+    { id: 'not-applicable', name: 'device', version: '1.0', cpe: 'cpe:2.3:h:vendor:device:-:*:*:*:*:*:*:*' },
+    { id: 'missing', name: 'curl', version: '8.0' },
+    { id: 'malformed', name: 'bad', version: '1.0', cpe: 'cpe:2.3:a:bad' }
+  ]);
+  assert.deepEqual(result.cpeVersionMismatches, []);
 });

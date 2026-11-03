@@ -735,3 +735,7 @@ button{touch-action:manipulation}
 /* Empty vulnerability state: keep the next action clear without inventing findings. */
 .vulnerability-empty-state{min-height:320px;padding:28px 24px}
 .vulnerability-empty-state>span{max-width:520px;line-height:1.7}
+
+
+/* Inventory quality summaries can contain several independent checks. */
+.inventory-quality-stats{flex-wrap:wrap}

@@ -36,6 +36,7 @@ export function inspectInventory(items = []) {
   const identifierConflicts = [];
   const purlVersionMismatches = [];
   const sourcePurlVersionMismatches = [];
+  const cpeVersionMismatches = [];
   items.forEach((item, index) => {
     const name = normalizeValue(item?.name);
     const declaredArchitecture = normalizeArchitecture(item?.architecture);
@@ -77,6 +78,17 @@ export function inspectInventory(items = []) {
     if (item?.cpe && !parseCpe23(item.cpe)) {
       invalidCpes.push({ id: item?.id ?? String(index), name: item?.name || '—' });
     }
+    // CPE versions containing wildcards or the not-applicable marker are
+    // patterns, not concrete installed versions; do not compare those.
+    if (cpe?.version && cpe.version !== '-' &&
+        !cpe.version.includes('*') && !cpe.version.includes('?') &&
+        normalizeValue(item?.version) &&
+        cpe.version !== String(item.version).trim()) {
+      cpeVersionMismatches.push({
+        id: item?.id ?? String(index), name: item?.name || '—',
+        declaredVersion: String(item.version).trim(), cpeVersion: cpe.version
+      });
+    }
     if (normalizeValue(item?.sourceVersion) && !normalizeValue(item?.sourcePackage)) {
       sourceVersionWithoutPackage.push({ id: item?.id ?? String(index), name: item?.name || '—' });
     }
@@ -100,5 +112,5 @@ export function inspectInventory(items = []) {
       seen.set(key, index);
     }
   });
-  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, sourceVersionWithoutPackage, purlVersionMismatches, sourcePurlVersionMismatches, identifierConflicts, duplicates };
+  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, sourceVersionWithoutPackage, purlVersionMismatches, sourcePurlVersionMismatches, cpeVersionMismatches, identifierConflicts, duplicates };
 }
