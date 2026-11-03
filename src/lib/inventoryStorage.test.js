@@ -183,3 +183,14 @@ test('does not assign a generated ID that belongs to a later valid row', () => {
   assert.equal(result.items[1].id, 'recovered-2');
   assert.notEqual(result.items[0].id, result.items[1].id);
 });
+
+test('rejects malformed optional inventory IDs before persistence', () => {
+  const storage = memoryStorage();
+  for (const id of [42, {}, [], '', '   ', 'x'.repeat(2049)]) {
+    assert.equal(saveInventory([{ id, name: 'nginx' }], storage), false, String(id).slice(0, 20));
+    assert.equal(storage.getItem(INVENTORY_STORAGE_KEY), null);
+  }
+  assert.equal(saveInventory([{ name: 'legacy package without ID' }], storage), true);
+  assert.equal(saveInventory([{ id: 'valid-id', name: 'nginx' }], storage), true);
+  assert.deepEqual(loadInventory(storage).items, [{ id: 'valid-id', name: 'nginx' }]);
+});
