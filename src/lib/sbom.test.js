@@ -323,3 +323,17 @@ test('merges richer CycloneDX metadata subject fields into its matching componen
   assert.equal(result.components[0].vendor, 'Quasaric Project');
   assert.equal(result.components[0].purl, 'pkg:generic/quasaric-app@2.4.0');
 });
+test('preserves explicit CycloneDX component types over ambiguous name heuristics', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    components: [
+      { type: 'library', name: 'nginx', version: '1.2.3', purl: 'pkg:npm/nginx@1.2.3' },
+      { type: 'library', name: 'python', version: '1.0.0', purl: 'pkg:npm/python@1.0.0' },
+      { type: 'operating-system', name: 'custom-linux-image', version: '1.0' },
+      { type: 'application', name: 'nginx', version: '1.2.3' }
+    ]
+  }));
+  assert.deepEqual(result.components.map(component => component.type), [
+    'library', 'library', 'os', 'web'
+  ]);
+});
