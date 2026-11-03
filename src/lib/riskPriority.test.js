@@ -13,13 +13,26 @@ test('weights KEV, EPSS, CVSS and applicability into a transparent 0-100 score',
   assert.match(result.reasons.join(' '), /CISA KEV/);
 });
 
-test('accepts EPSS percentage values and clamps out-of-range inputs', () => {
-  assert.equal(calculateRiskPriority({
-    epss: 75, cvss: 12, applicabilityStatus: 'possible'
-  }).score, 23 + 20 + 6);
-  assert.equal(calculateRiskPriority({
-    epss: -1, cvss: -2, applicabilityStatus: 'unaffected'
-  }).score, 0);
+test('accepts valid EPSS percentages without clamping invalid CVSS values', () => {
+  const result = calculateRiskPriority({
+    epss: 75, cvss: 10, applicabilityStatus: 'possible'
+  });
+  assert.equal(result.epssPoints, 23);
+  assert.equal(result.cvssPoints, 20);
+  assert.equal(result.score, 23 + 20 + 6);
+  assert.deepEqual(result.missing, []);
+});
+
+test('treats EPSS and CVSS values outside their valid domains as unavailable', () => {
+  for (const [epss, cvss] of [[-0.01, 5], [100.01, 5], [0.5, -0.01], [0.5, 10.01]]) {
+    const result = calculateRiskPriority({ epss, cvss, applicabilityStatus: 'unaffected' });
+    assert.equal(result.epssPoints, epss < 0 || epss > 100 ? 0 : 15);
+    assert.equal(result.cvssPoints, cvss < 0 || cvss > 10 ? 0 : 10);
+    assert.deepEqual(result.missing, [
+      ...(epss < 0 || epss > 100 ? ['EPSS'] : []),
+      ...(cvss < 0 || cvss > 10 ? ['CVSS'] : [])
+    ]);
+  }
 });
 
 test('missing intelligence signals are explicit and never treated as positive evidence', () => {
