@@ -131,3 +131,18 @@ test('normalizes direct OSV CVE identifiers and deduplicates alias paths', async
   assert.equal(result.findings[0].components.length, 1);
   assert.equal(result.findings[0].components[0].evidence.filter(item => item.source === 'OSV (PURL)').length, 1);
 });
+
+
+test('does not promote malformed short modern CVE aliases into CVE findings', async () => {
+  const result = await analyzeInventory([component()], {
+    sources: sources([{
+      id: 'GHSA-abcd-efgh-ijkl',
+      aliases: ['CVE-2025-123'],
+      summary: 'Advisory with a malformed CVE alias'
+    }])
+  });
+
+  assert.equal(result.findings.length, 0);
+  assert.equal(result.purlAdvisories.length, 1);
+  assert.equal(result.purlAdvisories[0].id, 'GHSA-abcd-efgh-ijkl');
+});
