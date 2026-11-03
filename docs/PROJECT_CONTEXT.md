@@ -394,3 +394,9 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La aplicación restaura el idioma español/inglés elegido anteriormente desde el almacenamiento local del navegador y guarda los cambios.
 - Si el almacenamiento no está disponible, mantiene el español como idioma predeterminado sin interrumpir la carga.
 - Se añade una prueba de regresión para la restauración y persistencia de la preferencia.
+
+
+### 2026-11-03 — consistencia de KEV en la interfaz
+
+- Los contadores, etiquetas de hallazgos, detalles y exportaciones CSV de la aplicación exigen `kev === true`; los valores truthy malformados ya no se presentan como pertenencia confirmada al catálogo.
+- Añadida una prueba de regresión sobre los puntos de presentación y exportación.
