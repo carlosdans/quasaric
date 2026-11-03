@@ -27,6 +27,12 @@ test('handles Ubuntu update suffixes and ESM revisions', () => {
   assert.equal(compareDebianVersions('7.0.33-0ubuntu0.16.04.16+esm9', '7.0.33-0ubuntu0.16.04.16+esm10'), -1);
 });
 
+test('compares arbitrarily large numeric runs without locale or precision dependence', () => {
+  assert.equal(compareDebianVersions('1.0-1ubuntu999999999999999999999', '1.0-1ubuntu1000000000000000000000'), -1);
+  assert.equal(compareDebianVersions('999999999999999999999:1.0-1', '1000000000000000000000:0.1-1'), -1);
+  assert.equal(compareDebianVersions('1.0-1ubuntu000000000000000000009', '1.0-1ubuntu9'), 0);
+});
+
 test('returns null for empty or invalid versions', () => {
   assert.equal(compareDebianVersions('', '1.0-1'), null);
   assert.equal(compareDebianVersions('not a version', '1.0-1'), null);
