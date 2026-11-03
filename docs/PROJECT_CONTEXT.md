@@ -400,3 +400,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 
 - Los contadores, etiquetas de hallazgos, detalles y exportaciones CSV de la aplicación exigen `kev === true`; los valores truthy malformados ya no se presentan como pertenencia confirmada al catálogo.
 - Añadida una prueba de regresión sobre los puntos de presentación y exportación.
+
+
+### 2026-11-03 — validación de señales de riesgo en el historial
+
+- Los snapshots nuevos y los ya persistidos validan CVSS en el rango 0–10 y EPSS en el rango 0–100 (admite tanto probabilidad 0–1 como porcentaje).
+- Se aceptan valores numéricos y cadenas numéricas heredadas; se rechazan booleanos, objetos, cadenas vacías/no numéricas, valores no finitos y puntuaciones fuera de rango.
+- Si el historial local contiene puntuaciones inválidas, se excluyen esos snapshots de la vista activa y se conserva el JSON original en la clave de recuperación.
+- Se añaden pruebas para la creación, carga, recuperación y guardado de snapshots con puntuaciones inválidas.
