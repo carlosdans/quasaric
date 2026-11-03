@@ -415,3 +415,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se corrigió un salto de línea escapado accidentalmente en el resumen de postura, que ocultaba la propiedad KEV y provocaba cuatro fallos de regresión.
 - La paginación NVD ahora rechaza páginas que contienen más registros que el total declarado restante, incluso cuando la página no supera el tamaño máximo solicitado.
 - La prueba de NVD existente se renombra para expresar con precisión la incoherencia detectada.
+
+
+### 2026-11-03 — límite de inventario explícito en importaciones
+
+- Las importaciones CSV y SBOM comprueban el total combinado antes de generar identificadores o intentar guardar los componentes.
+- Si la importación superaría el máximo de 50.000 componentes, se muestra un error específico y se conserva intacto el inventario actual, en lugar de presentar el rechazo como un fallo genérico de almacenamiento.
+- Se reutiliza el límite exportado por `inventoryStorage` para mantener una única fuente de verdad.
