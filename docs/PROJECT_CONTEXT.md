@@ -491,3 +491,5 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Informes permite validar paquetes JSON recibidos localmente y muestra su resumen, fecha y huella. Es una operación de solo lectura: no restaura inventario, no integra historial ni altera el análisis activo.
 - Los paquetes v1 se aceptan como formato heredado estructuralmente válido, pero se marcan expresamente como no verificables por carecer de huella. SHA-256 detecta alteraciones, no acredita autoría ni sustituye una firma digital.
 - Sin dependencias, backend, transmisión de datos ni recursos Azure adicionales.
+
+- La validación v2 recalcula el resumen cuantitativo a partir de hallazgos, evaluaciones por componente, prioridades y estados de fuente. Comprueba también la coherencia de marcas temporales y que las colecciones principales contengan registros estructurados; un digest recalculado no permite ocultar un resumen manipulado.

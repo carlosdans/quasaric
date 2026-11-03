@@ -112,3 +112,36 @@ test('accepts structurally valid legacy v1 packages but marks them unverified', 
   assert.equal(parsed.integrity.verified, false);
   assert.equal(parsed.integrity.legacy, true);
 });
+
+test('rejects a re-hashed package whose summary was edited independently of its evidence', async () => {
+  const original = await createAuditReport({
+    analysis: {
+      findings: [{ id: 'CVE-2026-9', severity: 'High', kev: true, components: [{ applicabilityStatus: 'affected' }] }],
+      sources: { nvd: 'queried', kev: 'queried' }, errors: [], limits: []
+    },
+    prioritizedFindings: [{ id: 'CVE-2026-9', riskPriority: { band: 'critical' } }]
+  });
+  const changed = JSON.parse(original);
+  changed.summary.kevFindings = 0;
+  const { integrity, ...payload } = changed;
+  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  changed.integrity.digest = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  await assert.rejects(() => parseAuditReport(JSON.stringify(changed)), /summary does not match/);
+});
+
+test('rejects scope timestamps and malformed collection entries that contradict the package', async () => {
+  const original = await createAuditReport({
+    analysis: { analyzedAt: '2026-11-03T10:00:00.000Z', findings: [], sources: {}, errors: [], limits: [] }
+  });
+  const changed = JSON.parse(original);
+  changed.scope.analysisTimestamp = '2026-11-02T10:00:00.000Z';
+  await assert.rejects(() => parseAuditReport(JSON.stringify(changed)), /invalid or inconsistent structure/);
+  const malformed = JSON.parse(original);
+  malformed.inventory.push(null);
+  malformed.scope.inventoryComponents = malformed.inventory.length;
+  const { integrity, ...payload } = malformed;
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(payload)));
+  malformed.integrity.digest = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  await assert.rejects(() => parseAuditReport(JSON.stringify(malformed)), /invalid or inconsistent structure/);
+});

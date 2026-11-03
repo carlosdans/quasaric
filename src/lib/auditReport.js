@@ -39,6 +39,14 @@ async function sha256(value) {
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
+function stableJson(value) {
+  if (Array.isArray(value)) return '[' + value.map(stableJson).join(',') + ']';
+  if (value && typeof value === 'object') {
+    return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + stableJson(value[key])).join(',') + '}';
+  }
+  return JSON.stringify(value);
+}
+
 function validateAuditPayload(report) {
   if (!report || typeof report !== 'object' || Array.isArray(report) ||
       report.format !== 'quasaric-security-audit' ||
@@ -56,7 +64,11 @@ function validateAuditPayload(report) {
       report.scope.findings !== report.findings.length ||
       report.summary.candidateFindings !== report.findings.length ||
       report.summary.queryErrors !== report.analysis.errors.length ||
-      report.summary.queryLimits !== report.analysis.limits.length) {
+      report.summary.queryLimits !== report.analysis.limits.length ||
+      report.scope.analysisTimestamp !== (report.analysis.analyzedAt || null) ||
+      report.inventory.some(item => !item || typeof item !== 'object' || Array.isArray(item)) ||
+      report.findings.some(item => !item || typeof item !== 'object' || Array.isArray(item)) ||
+      report.prioritizedFindings.some(item => !item || typeof item !== 'object' || Array.isArray(item))) {
     throw new TypeError('The audit package has an invalid or inconsistent structure.');
   }
 }
@@ -134,6 +146,15 @@ export async function parseAuditReport(input) {
   validateAuditPayload(report);
   if (report.version === 1) {
     return { report, integrity: { verified: false, legacy: true } };
+  }
+  const expectedSummary = buildAuditSummary({
+    findings: report.findings,
+    sources: report.analysis.sources,
+    errors: report.analysis.errors,
+    limits: report.analysis.limits
+  }, report.prioritizedFindings);
+  if (stableJson(report.summary) !== stableJson(expectedSummary)) {
+    throw new TypeError('The audit package summary does not match its detailed findings and source data.');
   }
   if (!report.integrity || report.integrity.algorithm !== 'SHA-256' ||
       typeof report.integrity.digest !== 'string' || !/^[a-f0-9]{64}$/.test(report.integrity.digest)) {
