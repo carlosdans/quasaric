@@ -173,6 +173,8 @@ function App() {
   const [active, setActive] = useState('overview');
   const [initialInventory] = useState(() => loadInventory());
   const [items, setItems] = useState(initialInventory.items);
+  // Keep the latest committed inventory available to async file handlers.
+  const itemsRef = useRef(initialInventory.items);
   const [inventoryPage, setInventoryPage] = useState(1);
   const [storageWarning, setStorageWarning] = useState(initialInventory.warning);
   const [showAdd, setShowAdd] = useState(false);
@@ -361,6 +363,7 @@ function App() {
     }
     // Stop any in-flight analysis only after the inventory has been saved.
     analysisAbortRef.current?.abort();
+    itemsRef.current = next;
     setItems(next);
     setInventoryPage(1);
     // Findings belong to the exact inventory snapshot that was analysed.
@@ -457,13 +460,14 @@ function App() {
     try {
       if (file.size > 5 * 1024 * 1024) throw new Error(lang === 'es' ? 'El CSV supera el límite de 5 MB.' : 'CSV exceeds the 5 MB limit.');
       const parsed = parseInventoryCsv(await file.text());
+      const currentItems = itemsRef.current;
       const imported = parsed.components.map(component => ({
         ...component,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString()
       }));
-      const previousDuplicateCount = inspectInventory(items).duplicates.length;
-      const combined = [...items, ...imported];
+      const previousDuplicateCount = inspectInventory(currentItems).duplicates.length;
+      const combined = [...currentItems, ...imported];
       const duplicateCount = Math.max(0, inspectInventory(combined).duplicates.length - previousDuplicateCount);
       if (imported.length && !persist(combined)) throw new Error(lang === 'es' ? 'No se pudo guardar el inventario. No se ha aplicado la importación.' : 'Could not save the inventory. The import was not applied.');
       const summary = lang === 'es'
@@ -486,9 +490,10 @@ function App() {
     try {
       if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'El SBOM supera el límite de 10 MB.' : 'SBOM exceeds the 10 MB limit.');
       const parsed = parseSbom(await file.text());
+      const currentItems = itemsRef.current;
       const imported = parsed.components.map(component => ({ ...component, id: crypto.randomUUID(), createdAt: new Date().toISOString() }));
-      const previousDuplicateCount = inspectInventory(items).duplicates.length;
-      const combined = [...items, ...imported];
+      const previousDuplicateCount = inspectInventory(currentItems).duplicates.length;
+      const combined = [...currentItems, ...imported];
       const duplicateCount = Math.max(0, inspectInventory(combined).duplicates.length - previousDuplicateCount);
       if (imported.length && !persist(combined)) throw new Error(lang === 'es' ? 'No se pudo guardar el inventario. No se ha aplicado la importación.' : 'Could not save the inventory. The import was not applied.');
       const summary = lang === 'es'
@@ -554,7 +559,8 @@ function App() {
       if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'La copia supera el límite de 10 MB.' : 'Backup exceeds the 10 MB limit.');
       const backup = parseInventoryBackup(await file.text());
       const restored = backup.components.map(item => ({ ...item, id: crypto.randomUUID(), createdAt: item.createdAt || new Date().toISOString() }));
-      if (!window.confirm(lang === 'es' ? `Vas a reemplazar los ${items.length} componentes actuales por ${restored.length} de la copia. ¿Continuar?` : `Replace the current ${items.length} components with ${restored.length} from backup?`)) return;
+      const currentItems = itemsRef.current;
+      if (!window.confirm(lang === 'es' ? `Vas a reemplazar los ${currentItems.length} componentes actuales por ${restored.length} de la copia. ¿Continuar?` : `Replace the current ${currentItems.length} components with ${restored.length} from backup?`)) return;
       if (!persist(restored)) throw new Error(lang === 'es' ? 'No se pudo guardar el inventario. La restauración no se ha aplicado.' : 'Could not save the inventory. The restore was not applied.');
       setInventoryComparison(null);
       setImportMessage(lang === 'es' ? `Copia restaurada: ${restored.length} componentes.` : `Backup restored: ${restored.length} components.`);
@@ -567,7 +573,7 @@ function App() {
     try {
       if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'La copia supera el límite de 10 MB.' : 'Backup exceeds the 10 MB limit.');
       const backup = parseInventoryBackup(await file.text());
-      setInventoryComparison(compareInventories(backup.components, items));
+      setInventoryComparison(compareInventories(backup.components, itemsRef.current));
     } catch(error) { setImportError(error.message || 'Could not compare backup.'); }
     finally { event.target.value = ''; }
   };

@@ -14,6 +14,21 @@ test('does not publish an analysis result after its inventory snapshot was inval
   assert.ok(publishResult < snapshotResult);
 });
 
+test('async inventory imports and backup comparisons use the latest committed inventory', () => {
+  assert.match(app, /const itemsRef = useRef\(initialInventory\.items\)/);
+  assert.match(app, /itemsRef\.current = next;[\s\S]*?setItems\(next\)/);
+  for (const handler of ['handleInventoryImport', 'handleSbomImport']) {
+    const start = app.indexOf(`const ${handler}`);
+    const end = app.indexOf('\n  };', start);
+    const body = app.slice(start, end);
+    assert.match(body, /await file\.text\(\)/);
+    assert.match(body, /const currentItems = itemsRef\.current/);
+    assert.match(body, /const combined = \[\.\.\.currentItems, \.\.\.imported\]/);
+  }
+  assert.match(app, /compareInventories\(backup\.components, itemsRef\.current\)/);
+  assert.match(app, /currentItems\.length} componentes actuales/);
+});
+
 test('vulnerability detail dialog traps focus and closes with Escape', () => {
   assert.match(app, /selectedFindingDialogRef/);
   assert.match(app, /openFindingDetails\s*=\s*finding\s*=>/);
