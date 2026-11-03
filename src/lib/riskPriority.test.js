@@ -45,3 +45,26 @@ test('ranks findings by score without mutating the input array', () => {
   assert.deepEqual(ranked.map(item => item.id), ['CVE-1', 'CVE-2']);
   assert.equal(input[0].riskPriority, undefined);
 });
+
+
+test('rejects booleans, arrays, objects and blank strings as numeric intelligence signals', () => {
+  for (const invalid of [true, false, [], [1], {}, '   ', 'not-a-number']) {
+    const result = calculateRiskPriority({
+      epss: invalid, cvss: invalid, applicabilityStatus: 'unaffected'
+    });
+    assert.equal(result.epssPoints, 0);
+    assert.equal(result.cvssPoints, 0);
+    assert.deepEqual(result.missing, ['EPSS', 'CVSS']);
+    assert.ok(result.reasons.includes('EPSS unavailable (+0)'));
+    assert.ok(result.reasons.includes('CVSS unavailable (+0)'));
+  }
+});
+
+test('continues accepting finite numeric strings from source adapters', () => {
+  const result = calculateRiskPriority({
+    epss: '0.5', cvss: '8.5', applicabilityStatus: 'affected'
+  });
+  assert.equal(result.epssPoints, 15);
+  assert.equal(result.cvssPoints, 17);
+  assert.deepEqual(result.missing, []);
+});
