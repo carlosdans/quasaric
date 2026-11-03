@@ -245,4 +245,5 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 ### 2026-11-03 — semántica SRPM de Red Hat Security Data
 - Se ajustó la correlación Red Hat: la documentación oficial define `package_state.package_name` y `affected_release.package` como nombres/versiones de SRPM, no como identidad del binario instalado. Estos campos solo se adjuntan como evidencia indirecta cuando el inventario declara `sourcePackage`; nunca elevan por sí solos la aplicabilidad binaria ni se transfieren versiones corregidas al binario.
 - Se añadieron regresiones para impedir falsos positivos cuando el nombre del binario coincide casualmente con el SRPM y para conservar el estado del proveedor como evidencia de revisión.
+- Se normaliza también el formato público de `affected_release.package` cuando llega como SRPM NEVRA en una cadena (por ejemplo, `openssl-1:3.0.7-28.el9`), conservando nombre y versión como evidencia fuente; no se trata como nombre binario.
 - Referencia: documentación Red Hat Security Data API 1.0, secciones CVE y campos AffectedRelease/PackageState.
