@@ -226,3 +226,22 @@ test('does not infer an ecosystem from an ambiguous package name', () => {
   assert.equal(normalizeEcosystem({ name: 'python-shell', purl: 'pkg:generic/python-shell@1.0.0' }), 'generic');
   assert.equal(normalizeEcosystem({ name: 'nodejs-wrapper' }), '');
 });
+
+
+test('uses Alpine APK ordering for epochs, prerelease suffixes and package revisions', () => {
+  const alpine = { purl: 'pkg:apk/alpine/openssl@3.1.4-r0' };
+  assert.equal(normalizeEcosystem(alpine), 'apk');
+  assert.equal(compareVersionForComponent('3.1.4_rc1-r0', '3.1.4-r0', alpine), -1);
+  assert.equal(compareVersionForComponent('3.1.4-r0', '3.1.4-r1', alpine), -1);
+  assert.equal(compareVersionForComponent('3.1.4_alpha2-r0', '3.1.4_alpha10-r0', alpine), -1);
+  assert.equal(compareVersionForComponent('2:1.0-r0', '1:9.9-r99', alpine), 1);
+  assert.equal(compareVersionForComponent('1.2.3_git20240101-r0', '1.2.3-r0', alpine), 1);
+  assert.equal(compareVersionForComponent('1.2.3-r0', '1.2.3-r0', alpine), 0);
+});
+
+test('does not guess unsupported Alpine APK version syntax', () => {
+  const alpine = { vendor: 'Alpine Linux' };
+  assert.equal(normalizeEcosystem(alpine), 'apk');
+  assert.equal(compareVersionForComponent('1.2.3-custom-r0', '1.2.3-r1', alpine), null);
+  assert.equal(compareVersionForComponent('1.2.3-r', '1.2.3-r1', alpine), null);
+});

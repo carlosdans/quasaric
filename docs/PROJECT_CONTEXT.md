@@ -547,3 +547,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Un alias CVE moderno malformado ya no se promueve a hallazgo CVE; el aviso OSV permanece separado como aviso PURL pendiente de revisión.
 - Se añaden pruebas unitarias para IDs históricos/modernos y regresión de correlación OSV. La validación es sintáctica y no certifica que un CVE exista.
 - Implementación: `e2fee2b88803f0f6db05f347c8cc43811155377d`; corrección del patrón de validación: `2f0b9f6cd8a1ca958d34f0915a53f3fab565b891`. CI de Node 20 y Node 22, suite completa y build de producción: correctos ([run 41687038828](https://github.com/carlosdans/quasaric/actions/runs/41687038828)). Despliegue Azure Static Web Apps del mismo commit iniciado ([run 41687039161](https://github.com/carlosdans/quasaric/actions/runs/41687039161)); pendiente de confirmación final.
+
+
+### 2026-11-03 — comparación conservadora de versiones Alpine APK
+
+- Se incorpora el ecosistema APK al comparador de versiones, detectándolo por PURL `pkg:apk` o por metadatos explícitos de Alpine.
+- Se comparan épocas, tuplas numéricas, sufijos de versión APK conocidos y revisiones de paquete `-rN`; las versiones fuera de la gramática soportada devuelven `null` y permanecen en revisión.
+- Se añaden regresiones para orden de prereleases, sufijos git, revisiones de paquete, épocas, detección de ecosistema y formatos no soportados.
+- No se añaden dependencias, backend ni infraestructura. Validación CI y despliegue pendientes.

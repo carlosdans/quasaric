@@ -118,6 +118,42 @@ function compareRpm(left, right) {
   return version || rpmvercmp(a.release, b.release);
 }
 
+/**
+ * Conservative Alpine APK version ordering. Supports numeric release tuples,
+ * the documented APK suffix families and the -rN package revision. Inputs
+ * outside this grammar return null rather than falling back to lexical order.
+ */
+function compareApk(left, right) {
+  const suffixOrder = new Map([
+    ['alpha', 0], ['beta', 1], ['pre', 2], ['rc', 3],
+    ['', 4], ['cvs', 5], ['svn', 6], ['git', 7], ['hg', 8], ['p', 9]
+  ]);
+  const parse = value => {
+    const match = /^(?:(\\d+):)?(\\d+(?:\\.\\d+)*)(?:_(alpha|beta|pre|rc|cvs|svn|git|hg|p)(\\d*))?(?:-r(\\d+))?$/.exec(String(value).trim());
+    if (!match) return null;
+    return {
+      epoch: match[1] || '0',
+      release: match[2].split('.').map(BigInt),
+      suffix: match[3] || '',
+      suffixNumber: BigInt(match[4] || '0'),
+      revision: BigInt(match[5] || '0')
+    };
+  };
+  const a = parse(left), b = parse(right);
+  if (!a || !b) return null;
+  let order = numericCompare(a.epoch, b.epoch);
+  if (order) return order;
+  for (let i = 0; i < Math.max(a.release.length, b.release.length); i++) {
+    const x = a.release[i] ?? 0n, y = b.release[i] ?? 0n;
+    if (x !== y) return x < y ? -1 : 1;
+  }
+  const suffixA = suffixOrder.get(a.suffix), suffixB = suffixOrder.get(b.suffix);
+  if (suffixA !== suffixB) return suffixA < suffixB ? -1 : 1;
+  if (a.suffixNumber !== b.suffixNumber) return a.suffixNumber < b.suffixNumber ? -1 : 1;
+  if (a.revision !== b.revision) return a.revision < b.revision ? -1 : 1;
+  return 0;
+}
+
 function comparePep440(left, right) {
   // Parse dev separately to keep public and local ordering explicit.
   const parseFull = value => {
@@ -238,7 +274,7 @@ export function compareVersionForComponent(left, right, component = {}) {
   };
   if (componentName === 'php' && (hasUnknownPhpSuffix(left) || hasUnknownPhpSuffix(right))) return null;
   if (ecosystem === 'deb') return compareDebianVersions(left, right);
-  if (ecosystem === 'rpm') return compareRpm(left, right);
+  if (ecosystem === 'rpm') return compareRpm(left, right);\n  if (ecosystem === 'apk') return compareApk(left, right);
   if (ecosystem === 'pypi') return comparePep440(left, right);
   if (ecosystem === 'npm' || ecosystem === 'composer') return compareSemver(left, right);
   if (ecosystem === 'windows') return compareWindows(left, right);

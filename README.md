@@ -250,3 +250,8 @@ El panel de calidad también compara la versión declarada del componente con la
 ### Validación de identificadores CVE
 
 La correlación valida los identificadores con las reglas de longitud del programa CVE: los registros anteriores a 2014 admiten entre uno y cuatro dígitos de secuencia; desde 2014 se exigen al menos cuatro. Los IDs malformados no se convierten en hallazgos ni se envían a fuentes que esperan un CVE canónico. Esta validación comprueba la sintaxis, no la existencia ni la publicación del aviso.
+
+
+### Comparación de versiones de Alpine Linux
+
+La correlación reconoce el ecosistema APK de Alpine a través del tipo PURL `pkg:apk` o de metadatos de plataforma. Compara épocas, versiones numéricas, sufijos APK conocidos (alpha, beta, pre, rc, cvs, svn, git, hg y p) y revisiones `-rN`. Si una versión usa una sintaxis que no puede interpretar con seguridad, la comparación queda pendiente de revisión; no se reutiliza el orden de Debian, RPM o SemVer.
