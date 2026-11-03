@@ -5,7 +5,7 @@ function isRecord(value) {
 }
 
 function exposureEntries(snapshot = {}) {
-  const entries = [];
+  const entries = new Map();
   for (const finding of snapshot.findings || []) {
     for (const match of finding.components || []) {
       const component = match.component || {};
@@ -17,18 +17,33 @@ function exposureEntries(snapshot = {}) {
           component.architecture ?? null, component.ecosystem ?? null,
           component.purl ?? null, component.cpe ?? null, component.sourcePurl ?? null
         ]);
-      entries.push({
-        key: JSON.stringify([String(finding.id).trim(), componentId]),
-        cve: String(finding.id).trim(),
+      const cve = String(finding.id).trim();
+      const key = JSON.stringify([cve, componentId]);
+      const candidate = {
+        key,
+        cve,
         severity: finding.severity || 'Unknown',
         kev: Boolean(finding.kev),
         riskScore: calculateRiskPriority(finding).score,
         componentId,
         componentName: component.name || componentId
-      });
+      };
+      const existing = entries.get(key);
+      if (!existing) {
+        entries.set(key, candidate);
+        continue;
+      }
+
+      // A CVE/component pair is one exposure even if malformed or legacy
+      // input repeats the same match. Preserve the strongest available signals.
+      existing.kev ||= candidate.kev;
+      existing.riskScore = Math.max(existing.riskScore, candidate.riskScore);
+      if (severityRank(candidate.severity) > severityRank(existing.severity)) {
+        existing.severity = candidate.severity;
+      }
     }
   }
-  return entries;
+  return [...entries.values()];
 }
 
 /**
