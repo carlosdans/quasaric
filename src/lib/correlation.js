@@ -13,20 +13,6 @@ const unique = values => [...new Set(values)];
 
 // OSV can identify one advisory with a CVE ID directly or link it through
 // aliases/upstream. Canonicalize all three paths before joining CVE findings.
-function extractOsvReferences(record) {
-  if (!Array.isArray(record?.references)) return [];
-  const seen = new Set();
-  return record.references.flatMap(reference => {
-    const url = typeof reference?.url === 'string' ? reference.url.trim() : '';
-    if (!url || seen.has(url)) return [];
-    seen.add(url);
-    return [{
-      url,
-      ...(typeof reference?.type === 'string' && reference.type.trim() ? { type: reference.type.trim() } : {})
-    }];
-  });
-}
-
 function extractOsvCveIds(record) {
   const identifiers = [record?.id, ...(Array.isArray(record?.aliases) ? record.aliases : []),
     ...(Array.isArray(record?.upstream) ? record.upstream : [])];
@@ -799,7 +785,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
                 publishedAt: record.published || null,
                 updatedAt: record.modified || null,
                 url: record.id ? `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}` : null,
-                references: references.map(reference => reference.url),
+                references: (record.references || []).map(reference => reference.url).filter(Boolean),
                 packageUrl: group.purl
               };
               if (existing) existing.osvPurlEvidence = [...(existing.osvPurlEvidence || []), evidence];
@@ -1002,10 +988,9 @@ export async function analyzeInventory(components, { signal, onProgress, sources
           const cveIds = extractOsvCveIds(record);
           if (!cveIds.length) continue;
           for (const cveId of cveIds) {
-            const references = extractOsvReferences(record);
             const current = allCandidates.get(cveId) || {
               cve: { id: cveId, descriptions: [{ lang: 'en', value: record.summary || record.details || 'OSV distribution advisory; review vendor record.' }],
-                published: record.published, lastModified: record.modified, references, metrics: {}, weaknesses: [] },
+                published: record.published, lastModified: record.modified, references: record.references || [], metrics: {}, weaknesses: [] },
               components: []
             };
             for (const component of group.components) {
@@ -1029,7 +1014,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
                 updatedAt: record.modified || null,
                 url: record.officialSource?.url || `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}`,
                 officialSourceStatus: record.officialSource?.status || 'osv_only',
-                references: references.map(reference => reference.url),
+                references: (record.references || []).map(reference => reference.url).filter(Boolean)
               };
               const existing = current.components.find(item => item.component.id === component.id);
               if (existing) existing.distroOsvEvidence = [...(existing.distroOsvEvidence || []), evidence];
