@@ -69,9 +69,20 @@ function cyclone(document) {
   const root = document.metadata?.component;
   const rootRef = str(root?.['bom-ref']);
   // metadata.component is the BOM subject and can be the only component in
-  // otherwise valid BOMs. Avoid importing it twice when listed by bom-ref.
-  const rootIndex = root && typeof root === 'object' && rootRef
-    ? nested.findIndex(item => str(item?.['bom-ref']) === rootRef)
+  // otherwise valid BOMs. Prefer its stable bom-ref; CycloneDX also permits
+  // components without one, so use an exact PURL or complete name/version/type
+  // identity as a conservative fallback to avoid importing the subject twice.
+  const rootIndex = root && typeof root === 'object'
+    ? nested.findIndex(item => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+        if (rootRef) return str(item['bom-ref']) === rootRef;
+        const rootPurl = str(root.purl);
+        if (rootPurl) return str(item.purl) === rootPurl;
+        return Boolean(str(root.name)) &&
+          str(item.name) === str(root.name) &&
+          str(item.version) === str(root.version) &&
+          str(item.type) === str(root.type);
+      })
     : -1;
   // The metadata subject is authoritative for shared fields. Retain nested
   // relationships/collections when the subject omits them, rather than
