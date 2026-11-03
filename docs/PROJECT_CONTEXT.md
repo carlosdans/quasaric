@@ -436,3 +436,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El inicio de un análisis comprueba también la referencia síncrona del controlador AbortController, además del estado React, para bloquear dobles activaciones antes del siguiente render.
 - El bloque `finally` solo libera el estado de ejecución si sigue perteneciendo al controlador activo; una ejecución obsoleta no puede marcar como finalizado un análisis posterior.
 - Sin dependencias, backend ni cambios de infraestructura. Validación completa pendiente de CI.
+
+
+### 2026-11-03 — aislamiento de progreso y errores de análisis obsoletos
+
+- Los eventos tardíos de progreso solo actualizan la interfaz si pertenecen al controlador de análisis que sigue activo.
+- Los errores de peticiones abortadas o de ejecuciones sustituidas no se muestran sobre el inventario actualizado ni sobre un análisis posterior.
+- Complementa la protección frente a ejecuciones simultáneas y evita estados visuales obsoletos tras editar el inventario. Validación CI pendiente.
