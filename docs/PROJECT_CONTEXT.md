@@ -218,3 +218,14 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 
 
 - La primera compilación del bloque de estados vacíos detectó un cierre JSX prematuro en la vista de vulnerabilidades. Los 461 tests pasaron; se corrigió la frontera del fragmento antes de aceptar el despliegue y se repite CI/build en Node 20 y 22.
+
+### 2026-11-03 — coherencia de PURL y versiones en SBOM
+
+- La revisión de un ejemplo SPDX 2.3 publicado por spdx/spdx-examples detectó componentes cuyo versionInfo no coincide con la versión embebida en su PURL. El motor OSV ya rechazaba esa combinación durante el análisis, pero la importación no avisaba y conservaba el identificador inconsistente.
+- CycloneDX y SPDX ahora comparan la versión explícita del componente con la versión del PURL. Si discrepan, se conserva el componente y su versión declarada, se retira el PURL incoherente y se emite una advertencia por entrada; no se descarta silenciosamente la fila ni se lanza una consulta OSV con identidad contradictoria.
+- Se aplica la misma regla a sourcePurl frente a sourceVersion. Los metadatos derivados de un PURL inconsistente (por ejemplo, arquitectura) no se reutilizan como si pertenecieran al componente.
+- La importación muestra el número y el detalle de advertencias en español o inglés. Los errores de fila siguen diferenciados de las advertencias que permiten conservar el componente.
+- Se añadieron pruebas para SPDX 2.3, CycloneDX 1.6, PURL de paquete fuente y conservación de PURL cuando las versiones coinciden o no hay versión explícita.
+- CI en commit a7a505a0d4c9e897d8de8aca5c5078f8455b3d90: 469 tests correctos y builds correctas en Node 20 y 22; [CI 41600052182](https://github.com/carlosdans/quasaric/actions/runs/41600052182).
+- El código de aplicación quedó desplegado por Azure Static Web Apps en el commit a38a866fa305ac86c2bd2cf2508b9de00af8de05; [despliegue 41599895556](https://github.com/carlosdans/quasaric/actions/runs/41599895556), satisfactorio. El commit posterior solo ajustó la expectativa de una prueba.
+- No se añaden dependencias, backend, servicios externos ni recursos Azure.
