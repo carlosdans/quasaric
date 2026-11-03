@@ -128,6 +128,32 @@ test('accepts PEP 440 leading-v and implicit hyphen post-release forms', () => {
   assert.equal(classifyVersionRange('1.0-1', { versionEndIncluding: '1.0.post1' }, python).status, 'affected_candidate');
 });
 
+test('covers upstream RPM separator, tilde and caret ordering cases', () => {
+  const rpm = component('kernel', 'Fedora');
+  const equalPairs = [
+    ['1.0', '1+0'],
+    ['1.0', '1+.+0'],
+    ['1.0^', '1.0^'],
+    ['1.0~rc1^git1', '1.0~rc1^git1']
+  ];
+  for (const [left, right] of equalPairs) {
+    assert.equal(compareVersionForComponent(left, right, rpm), 0, `${left} == ${right}`);
+  }
+  const orderedPairs = [
+    ['1.0^', '1.0'],
+    ['1.0^git1', '1.0'],
+    ['1.0^git1', '1.0.1'],
+    ['1.0~rc1', '1.0~rc2'],
+    ['1.0~rc1', '1.0'],
+    ['1.0~rc1', '1.0~rc1^git1'],
+    ['1.0^git1~pre', '1.0^git1']
+  ];
+  for (const [older, newer] of orderedPairs) {
+    assert.equal(compareVersionForComponent(older, newer, rpm), -1, `${older} < ${newer}`);
+    assert.equal(compareVersionForComponent(newer, older, rpm), 1, `${newer} > ${older}`);
+  }
+});
+
 test('checks the PEP 440 public release ordering sequence', () => {
   const python = component('Python', 'PyPI');
   const ordered = [

@@ -259,3 +259,8 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 ### 2026-11-03 — normalización PEP 440 de versiones Python
 - El comparador PyPI reconoce el prefijo opcional `v` y la forma heredada de post-release `-N` (por ejemplo, `1.0-1` equivale a `1.0.post1`). Antes, esos identificadores válidos quedaban sin comparar y podían degradar una evaluación de rango a `needs_review`.
 - Se añadieron pruebas de equivalencia, orden post/dev y clasificación de límites. El comparador sigue devolviendo revisión para cadenas no interpretables.
+
+
+### 2026-11-03 — regresiones de ordenación RPM
+- Se amplió la batería de comparación RPM con casos del conjunto de pruebas upstream de rpm-software-management: separadores equivalentes, tilde de prerelease y caret para snapshots posteriores a release. No se modificó la lógica de comparación.
+- Referencias: https://github.com/rpm-software-management/rpm/blob/master/tests/rpmvercmp.at y https://rpm-software-management.github.io/rpm/man/rpm-version.7.
