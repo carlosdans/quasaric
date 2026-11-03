@@ -336,3 +336,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El cálculo de prioridad ya no recorta puntuaciones EPSS/CVSS fuera de rango para convertirlas en evidencia válida. EPSS acepta probabilidades 0–1 o porcentajes 0–100; CVSS acepta exclusivamente 0–10. Valores negativos, no finitos o superiores al máximo se marcan como no disponibles y aportan cero puntos.
 - Se conserva la compatibilidad con cadenas numéricas finitas de los adaptadores y con EPSS expresado como porcentaje. Se añaden regresiones para límites y valores fuera de rango.
 - Sin cambios de dependencias, backend o infraestructura. Suite completa y build pendientes de ejecución en CI.
+
+
+### 2026-11-03 — selección de métricas CVSS de NVD
+
+- La extracción de CVSS prefiere la generación más reciente disponible (4.0, 3.1, 3.0 y 2.0); dentro de cada generación selecciona una evaluación marcada como `Primary` antes que una `Secondary`.
+- Se descartan puntuaciones no numéricas, no finitas o fuera de 0–10. Si la métrica más reciente no contiene una puntuación válida, se intenta la siguiente generación; si ninguna es válida, CVSS queda sin dato.
+- Se añaden pruebas para prioridad entre versiones, preferencia Primary, fallback y métricas inválidas. No se añaden dependencias, backend ni servicios externos. La ejecución de la suite y el build queda pendiente de CI.
