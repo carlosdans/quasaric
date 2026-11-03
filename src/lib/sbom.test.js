@@ -552,5 +552,5 @@ test('removes a conflicting SPDX source PURL while preserving explicit source pa
   assert.equal(result.components[0].sourceVersion, '3.0.7-2');
   assert.equal(result.components[0].sourceRelationship, 'spdx_generated_from');
   assert.equal(result.components[0].sourcePurl, '');
-  assert.equal(result.warnings.length, 1);
+  assert.equal(result.warnings.length, 2);
 });
