@@ -230,3 +230,8 @@ El resumen del paquete JSON v2 cuantifica las evidencias conservadas por compone
 ### Coherencia de versiones entre inventario y PURL
 
 El panel de calidad del inventario detecta cuando la versión declarada del componente o del paquete fuente contradice la versión incluida en su PURL. La advertencia no modifica ni elimina los datos: permite corregir la versión o el identificador antes de consultar OSV, evitando que el inventario describa dos identidades distintas para el mismo paquete.
+
+
+### 2026-11-03 — coherencia de arquitectura en el inventario
+
+El control de calidad detecta discrepancias entre la arquitectura declarada del componente, el calificador `arch` del PURL y el campo `targetHw` del CPE. Normaliza alias habituales (por ejemplo, `amd64`/`x86_64` y `arm64`/`aarch64`) y omite comodines CPE. Es una advertencia de coherencia, no reescribe identificadores ni cambia la correlación.

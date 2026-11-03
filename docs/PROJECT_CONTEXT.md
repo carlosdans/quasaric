@@ -510,3 +510,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El panel de calidad detecta por separado discrepancias entre la versión binaria declarada y la versión del PURL, y entre la versión fuente declarada y la del PURL fuente.
 - Solo compara cuando el PURL es válido y contiene una versión explícita; los PURL sin versión no generan advertencias artificiales.
 - La comprobación es de solo lectura: no corrige ni elimina metadatos automáticamente. Añade pruebas para coincidencias, discrepancias, PURL sin versión y PURL malformados.
+
+
+### 2026-11-03 — validación cruzada de arquitectura de componentes
+
+- El control de calidad compara arquitectura declarada, calificador `arch` del PURL y `targetHw` del CPE cuando están disponibles.
+- Normaliza alias habituales (amd64/x86_64, arm64/aarch64 y familias x86) y no interpreta comodines CPE como afirmaciones.
+- Las discrepancias se muestran como advertencias de inventario; no se reescriben PURL/CPE ni se altera la correlación. No añade dependencias ni servicios.

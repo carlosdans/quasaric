@@ -1,5 +1,10 @@
 import { parsePackageUrl } from './packageUrl.js';
 import { parseCpe23 } from './cpe23.js';
+function normalizeArchitecture(value) {
+  const normalized = String(value || '').trim().toLowerCase().replace(/[\\s-]+/g, '_');
+  const aliases = { amd64: 'x86_64', x64: 'x86_64', x86_64: 'x86_64', i386: 'x86', i486: 'x86', i586: 'x86', i686: 'x86', x86: 'x86', arm64: 'aarch64', aarch64: 'aarch64', armv7l: 'arm', armhf: 'arm' };
+  return aliases[normalized] || normalized;
+}
 const normalizeValue = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 
 function duplicateIdentity(item) {
@@ -27,29 +32,28 @@ export function inspectInventory(items = []) {
   const missingSourceVersion = [];
   const invalidPurls = [];
   const invalidCpes = [];
-  const purlVersionMismatches = [];
-  const sourcePurlVersionMismatches = [];
   const sourceVersionWithoutPackage = [];
+  const identifierConflicts = [];
   items.forEach((item, index) => {
     const name = normalizeValue(item?.name);
+    const declaredArchitecture = normalizeArchitecture(item?.architecture);
+    const purl = item?.purl ? parsePackageUrl(item.purl) : null;
+    const cpe = item?.cpe ? parseCpe23(item.cpe) : null;
+    const architectureClaims = [
+      declaredArchitecture && { source: 'inventory', value: declaredArchitecture },
+      purl?.qualifiers?.arch && { source: 'PURL', value: normalizeArchitecture(purl.qualifiers.arch) },
+      cpe?.targetHw && !['*', '-'].includes(cpe.targetHw) && { source: 'CPE targetHw', value: normalizeArchitecture(cpe.targetHw) }
+    ].filter(Boolean);
+    if (new Set(architectureClaims.map(claim => claim.value)).size > 1) {
+      identifierConflicts.push({ id: item?.id ?? String(index), name: item?.name || '—', claims: architectureClaims });
+    }
     if (!normalizeValue(item?.version)) {
       missingVersion.push({ id: item?.id ?? String(index), name: item?.name || '—' });
     }
     for (const field of ['purl', 'sourcePurl']) {
       const value = String(item?.[field] || '').trim();
-      if (!value) continue;
-      const parsed = parsePackageUrl(value);
-      if (!parsed) {
+      if (value && !parsePackageUrl(value)) {
         invalidPurls.push({ id: item?.id ?? String(index), name: item?.name || '—', field });
-        continue;
-      }
-      const declaredVersion = String(item?.[field === 'purl' ? 'version' : 'sourceVersion'] || '').trim();
-      if (parsed.version && declaredVersion && parsed.version !== declaredVersion) {
-        const entry = {
-          id: item?.id ?? String(index), name: item?.name || '—',
-          purlVersion: parsed.version, declaredVersion
-        };
-        (field === 'purl' ? purlVersionMismatches : sourcePurlVersionMismatches).push(entry);
       }
     }
     if (item?.cpe && !parseCpe23(item.cpe)) {
@@ -78,5 +82,5 @@ export function inspectInventory(items = []) {
       seen.set(key, index);
     }
   });
-  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, purlVersionMismatches, sourcePurlVersionMismatches, sourceVersionWithoutPackage, duplicates };
+  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, sourceVersionWithoutPackage, identifierConflicts, duplicates };
 }
