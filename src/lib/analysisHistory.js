@@ -201,3 +201,7 @@ export function saveAnalysisHistory(history, storage) {
 }
 
 export const ANALYSIS_HISTORY_LIMIT = HISTORY_LIMIT;
+export const ANALYSIS_HISTORY_MAX_BYTES = MAX_HISTORY_BYTES;
+export function isValidAnalysisSnapshot(snapshot) {
+  return isValidSnapshot(snapshot);
+}
