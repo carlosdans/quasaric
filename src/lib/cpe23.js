@@ -1,3 +1,8 @@
+const ESCAPABLE_CPE_CHARACTERS = new Set([
+  '\\', '?', '*', '!', '"', '#', '$', '%', '&', "'", '(', ')', '+', ',', '/', ':', ';',
+  '<', '=', '>', '@', '[', ']', '^', String.fromCharCode(96), '{', '|', '}', '~'
+]);
+
 const ATTRIBUTE_NAMES = [
   'part', 'vendor', 'product', 'version', 'update', 'edition',
   'language', 'swEdition', 'targetSw', 'targetHw', 'other'
@@ -9,7 +14,8 @@ function splitFormattedString(value) {
   let escaped = false;
   for (const character of value) {
     if (escaped) {
-      if (character.charCodeAt(0) < 0x20 || character.charCodeAt(0) > 0x7e) return null;
+      if (character.charCodeAt(0) < 0x20 || character.charCodeAt(0) > 0x7e ||
+          !ESCAPABLE_CPE_CHARACTERS.has(character)) return null;
       field += character;
       escaped = false;
     } else if (character === '\\') {
