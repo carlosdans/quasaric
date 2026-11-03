@@ -4,6 +4,16 @@ import { readFile } from 'node:fs/promises';
 
 const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
 
+test('does not publish an analysis result after its inventory snapshot was invalidated', () => {
+  const awaitResult = app.indexOf('const result = await analyzeInventory(items, { signal: controller.signal, onProgress: setAnalysisProgress });');
+  const abortGuard = app.indexOf('if (controller.signal.aborted || analysisAbortRef.current !== controller) return;', awaitResult);
+  const publishResult = app.indexOf('setAnalysis(result);', awaitResult);
+  const snapshotResult = app.indexOf('createAnalysisSnapshot(result, items);', awaitResult);
+  assert.ok(awaitResult >= 0);
+  assert.ok(abortGuard > awaitResult && abortGuard < publishResult);
+  assert.ok(publishResult < snapshotResult);
+});
+
 test('vulnerability detail dialog traps focus and closes with Escape', () => {
   assert.match(app, /selectedFindingDialogRef/);
   assert.match(app, /openFindingDetails\s*=\s*finding\s*=>/);

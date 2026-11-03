@@ -431,6 +431,9 @@ function App() {
     setAnalyzing(true); setAnalysisError(''); setAnalysisHistoryWarning(false); setAnalysis(null); setAnalysisProgress({ completed: 0, total: items.length });
     try {
       const result = await analyzeInventory(items, { signal: controller.signal, onProgress: setAnalysisProgress });
+      // Inventory edits abort the active analysis. Re-check after await as a
+      // final source request may resolve just before its abort is delivered.
+      if (controller.signal.aborted || analysisAbortRef.current !== controller) return;
       setAnalysis(result);
       const snapshot = createAnalysisSnapshot(result, items);
       const nextHistory = [snapshot, ...analysisHistory.filter(entry => entry.id !== snapshot.id)].slice(0, 10);
