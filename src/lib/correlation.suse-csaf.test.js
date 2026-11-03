@@ -165,3 +165,37 @@ test('does not treat reverse or unrelated CSAF relationships as source-to-binary
     assert.match(result.reason, /relación explícita|estado VEX/i);
   }
 });
+
+
+test('rejects duplicate CSAF entries for the same CVE instead of selecting the first VEX state', () => {
+  const duplicated = structuredClone(vex);
+  duplicated.vulnerabilities.push({
+    cve: ' cve-2026-12345 ',
+    product_status: { fixed: ['openssl-sles15-x86_64'] }
+  });
+  const result = matchSuseCsafVexComponent(duplicated, {
+    ecosystem: 'SUSE Linux Enterprise Server 15 SP6',
+    purl: 'pkg:rpm/suse/openssl?arch=x86_64'
+  }, 'CVE-2026-12345');
+  assert.equal(result.status, 'needs_review');
+  assert.equal(result.duplicateCveEntries, 2);
+  assert.match(result.reason, /varias entradas para el mismo CVE/i);
+});
+
+test('fails closed when CSAF product_status has malformed status collections', () => {
+  for (const product_status of [
+    null,
+    [],
+    { fixed: 'openssl-sles15-x86_64' },
+    { known_affected: [null] }
+  ]) {
+    const malformed = structuredClone(vex);
+    malformed.vulnerabilities[0].product_status = product_status;
+    const result = matchSuseCsafVexComponent(malformed, {
+      ecosystem: 'SUSE Linux Enterprise Server 15 SP6',
+      purl: 'pkg:rpm/suse/openssl?arch=x86_64'
+    }, 'CVE-2026-12345');
+    assert.equal(result.status, 'needs_review');
+    assert.match(result.reason, /product_status|listas de estados VEX/i);
+  }
+});
