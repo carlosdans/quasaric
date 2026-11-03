@@ -443,3 +443,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Los eventos tardíos de progreso solo actualizan la interfaz si pertenecen al controlador de análisis que sigue activo.
 - Los errores de peticiones abortadas o de ejecuciones sustituidas no se muestran sobre el inventario actualizado ni sobre un análisis posterior.
 - Complementa la protección frente a ejecuciones simultáneas y evita estados visuales obsoletos tras editar el inventario. Validación CI pendiente.
+
+
+### 2026-11-03 — copias portables del historial de análisis
+
+- Informes permite exportar los últimos diez análisis como JSON versionado (quasaric-analysis-history, versión 1), incluyendo inventario de cada snapshot, hallazgos y evidencias almacenadas.
+- La restauración valida el fichero completo (formato, estructura, límites y snapshots) antes de modificar el almacenamiento; no realiza importaciones parciales.
+- La importación integra el backup con el historial local, deduplica por identificador y conserva los diez análisis más recientes. No sustituye el inventario actual ni presenta un snapshot importado como análisis en vivo.
+- Límites: 10 MiB por copia y diez snapshots, coherentes con el almacenamiento local existente. Funciona sin backend ni servicios externos.
