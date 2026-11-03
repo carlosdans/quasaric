@@ -305,14 +305,17 @@ export function cpeMatchesComponent(criteria, component) {
     if (declaredFields.length !== 13 || declaredFields[0] !== 'cpe' || declaredFields[1] !== '2.3') return false;
   }
   const knownOs = component.type === 'os' || ['ubuntu', 'debian', 'windows server', 'windows server 2019', 'windows server 2022', 'windows server 2025', 'red hat enterprise linux', 'rhel', 'fedora', 'alpine linux', 'almalinux', 'rocky linux', 'suse linux enterprise server', 'sles'].includes(name);
-  const knownType = Boolean(String(component.type || '').trim()) || knownOs;
-  const expectedPart = knownOs ? 'o' : 'a';
   if (cpe.part !== '*') {
-    if (knownType && cpe.part !== expectedPart) return false;
-    // For an otherwise unclassified custom component, use its valid declared
-    // CPE part instead of silently assuming it is an application.
-    if (!knownType && declaredFields && declaredFields[2] !== '*' && cpe.part !== declaredFields[2]) return false;
-    if (!knownType && (!declaredFields || declaredFields[2] === '*')) return false;
+    if (knownOs && cpe.part !== 'o') return false;
+    if (!knownOs && component.type && cpe.part !== 'a') return false;
+    // A custom component without a declared type may use its explicit CPE
+    // part. Legacy rows without a CPE retain the conservative app default;
+    // unsupported names still fail the vendor/product allow-list below.
+    if (!knownOs && !component.type) {
+      const declaredPart = declaredFields?.[2];
+      const expectedPart = declaredPart && declaredPart !== '*' ? declaredPart : 'a';
+      if (cpe.part !== expectedPart) return false;
+    }
   }
   // NVD CPEs can constrain update, edition, language, software edition,
   // target software, hardware or other attributes. Known mismatches are
