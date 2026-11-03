@@ -32,8 +32,9 @@ function comparePart(left, right) {
     const aLength = aEnd - a;
     const bLength = bEnd - b;
     if (aLength !== bLength) return aLength < bLength ? -1 : 1;
-    const numericDifference = left.slice(a, aEnd).localeCompare(right.slice(b, bEnd));
-    if (numericDifference) return numericDifference < 0 ? -1 : 1;
+    const aDigits = left.slice(a, aEnd);
+    const bDigits = right.slice(b, bEnd);
+    if (aDigits !== bDigits) return aDigits < bDigits ? -1 : 1;
     a = aEnd;
     b = bEnd;
   }
