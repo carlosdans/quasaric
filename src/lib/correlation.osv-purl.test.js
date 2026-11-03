@@ -113,3 +113,21 @@ test('propagates OSV cancellation instead of returning an empty result', async (
 
   await assert.rejects(resultPromise, error => error?.name === 'AbortError');
 });
+
+
+test('normalizes direct OSV CVE identifiers and deduplicates alias paths', async () => {
+  const result = await analyzeInventory([component()], {
+    sources: sources([{
+      id: 'cve-2025-12345',
+      aliases: ['CVE-2025-12345', 'CVE-2025-12345'],
+      upstream: ['cve-2025-12345'],
+      summary: 'Advisory identified directly by its CVE'
+    }])
+  });
+
+  assert.equal(result.purlAdvisories.length, 0);
+  assert.equal(result.findings.length, 1);
+  assert.equal(result.findings[0].id, 'CVE-2025-12345');
+  assert.equal(result.findings[0].components.length, 1);
+  assert.equal(result.findings[0].components[0].evidence.filter(item => item.source === 'OSV (PURL)').length, 1);
+});
