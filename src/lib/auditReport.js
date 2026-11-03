@@ -1,5 +1,36 @@
 const MAX_AUDIT_REPORT_BYTES = 20 * 1024 * 1024;
 
+function countBy(values) {
+  const counts = new Map();
+  for (const value of values) {
+    const key = String(value || 'unknown').trim().toLowerCase() || 'unknown';
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return Object.fromEntries([...counts.entries()].sort(([a], [b]) => a.localeCompare(b)));
+}
+
+function buildAuditSummary(analysis, prioritizedFindings) {
+  const findings = analysis.findings;
+  const assessments = findings.flatMap(finding =>
+    Array.isArray(finding?.components) ? finding.components : []
+  );
+  const priority = Array.isArray(prioritizedFindings) ? prioritizedFindings : [];
+  const sources = analysis.sources && typeof analysis.sources === 'object' && !Array.isArray(analysis.sources)
+    ? analysis.sources : {};
+  return {
+    candidateFindings: findings.length,
+    componentAssessments: assessments.length,
+    kevFindings: findings.filter(finding => finding?.kev === true).length,
+    severity: countBy(findings.map(finding => finding?.severity)),
+    applicability: countBy(assessments.map(item => item?.applicabilityStatus)),
+    priorityBands: countBy(priority.map(finding => finding?.riskPriority?.band)),
+    sourceStatuses: countBy(Object.values(sources)),
+    sourceCount: Object.keys(sources).length,
+    queryErrors: Array.isArray(analysis.errors) ? analysis.errors.length : 0,
+    queryLimits: Array.isArray(analysis.limits) ? analysis.limits.length : 0
+  };
+}
+
 /**
  * Build a portable audit package from the latest local assessment.
  * Source outcomes, errors, limits and raw per-component evidence are retained
@@ -23,6 +54,7 @@ export function createAuditReport({
     format: 'quasaric-security-audit',
     version: 1,
     exportedAt,
+    summary: buildAuditSummary(analysis, prioritizedFindings),
     scope: {
       inventoryComponents: inventory.length,
       findings: analysis.findings.length,

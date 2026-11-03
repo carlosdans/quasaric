@@ -53,3 +53,35 @@ test('rejects circular and oversized reports instead of creating a partial expor
   const huge = 'x'.repeat(MAX_AUDIT_REPORT_BYTES);
   assert.throws(() => createAuditReport({ analysis: { findings: [{ huge }] } }), RangeError);
 });
+
+
+test('includes deterministic severity, applicability, priority and source coverage summaries', () => {
+  const output = JSON.parse(createAuditReport({
+    analysis: {
+      findings: [
+        { id: 'CVE-1', severity: 'Critical', kev: true, components: [{ applicabilityStatus: 'affected' }, { applicabilityStatus: 'needs_review' }] },
+        { id: 'CVE-2', severity: 'High', kev: 'true', components: [{ applicabilityStatus: 'affected' }] },
+        { id: 'CVE-3', components: [] }
+      ],
+      sources: { nvd: 'queried', epss: 'unavailable', kev: 'queried' },
+      errors: [{ source: 'NVD' }], limits: [{ source: 'NVD' }]
+    },
+    prioritizedFindings: [
+      { id: 'CVE-1', riskPriority: { band: 'critical' } },
+      { id: 'CVE-2', riskPriority: { band: 'high' } },
+      { id: 'CVE-3', riskPriority: { band: 'high' } }
+    ]
+  }));
+  assert.deepEqual(output.summary, {
+    candidateFindings: 3,
+    componentAssessments: 3,
+    kevFindings: 1,
+    severity: { critical: 1, high: 1, unknown: 1 },
+    applicability: { affected: 2, needs_review: 1 },
+    priorityBands: { critical: 1, high: 2 },
+    sourceStatuses: { queried: 2, unavailable: 1 },
+    sourceCount: 3,
+    queryErrors: 1,
+    queryLimits: 1
+  });
+});

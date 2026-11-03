@@ -476,3 +476,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El informe HTML/impresión/PDF ahora incluye una matriz con el estado de consulta de cada fuente, además de los errores y límites alcanzados durante el análisis.
 - Añade el descargo metodológico original para conservar el contexto cuando se comparte el PDF fuera de Quasaric.
 - Se prueba que la plantilla imprimible incluye los tres elementos de trazabilidad y mantiene las etiquetas localizadas.
+
+
+### 2026-11-03 — resumen cuantitativo del paquete de auditoría
+
+- El paquete JSON añade un resumen calculado de hallazgos candidatos, evaluaciones por componente, KEV estricto, severidades, aplicabilidad, bandas de prioridad, estados de fuentes, errores y límites.
+- Los recuentos se derivan de los mismos datos exportados; los valores ausentes quedan como `unknown` en lugar de imputarse.
+- Se mantiene KEV como señal booleana estricta (`true` únicamente) y las bandas como clasificación de triage, no como confirmación.
