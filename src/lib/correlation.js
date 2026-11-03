@@ -730,6 +730,11 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     onProgress?.({ completed: done, total: components.length });
   }
 
+  // NVD product queries are only the first analysis phase. Signal the UI
+  // before OSV, VEX and distribution enrichment so it never presents NVD's
+  // completed component count as completion of the entire analysis.
+  onProgress?.({ completed: components.length, total: components.length, phase: 'enrichment' });
+
   // Query OSV only for explicit PURLs supplied by the inventory/SBOM. Keep
   // requests deduplicated and bounded; generic OSV matches are review evidence,
   // never an automatic affected/not-affected decision.

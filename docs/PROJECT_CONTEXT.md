@@ -573,3 +573,12 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La estimación usa el mismo detector de calidad de inventario que el flujo de confirmación; no elimina ni fusiona filas automáticamente. El usuario conserva el control y puede cancelar.
 - El contador se recalcula si cambia el inventario mientras la vista previa sigue abierta.
 - Validación automatizada añadida para el contrato de vista previa. Sin dependencias ni servicios nuevos.
+
+
+### 2026-11-03 — progreso de análisis por fases
+
+- La barra de progreso ya no presenta el final de las consultas NVD como si hubiera terminado todo el análisis.
+- La interfaz distingue las consultas de producto NVD de la fase posterior de enriquecimiento OSV, VEX y avisos de distribución.
+- Durante el enriquecimiento se muestra un indicador animado, con alternativa sin animación para usuarios con preferencia de movimiento reducido.
+- El análisis y sus fuentes no cambian; es una corrección de comunicación del progreso para evitar una falsa señal de finalización.
+- Sin dependencias ni servicios nuevos.

@@ -768,3 +768,8 @@ button{touch-action:manipulation}
 
 .import-duplicate-preview { margin: -.35rem 0 1rem; padding: .7rem .85rem; border-left: 3px solid var(--accent, #64748b); border-radius: .35rem; background: var(--surface-soft, #f5f7fa); font-size: .9rem; }
 .import-duplicate-preview strong { font-variant-numeric: tabular-nums; }
+
+/* NVD is complete while vendor and distribution evidence is still being enriched. */
+.progress-track.is-enriching i{animation:analysis-enrichment 1.5s ease-in-out infinite alternate}
+@keyframes analysis-enrichment{from{transform:translateX(0);opacity:.65}to{transform:translateX(180%);opacity:1}}
+@media(prefers-reduced-motion:reduce){.progress-track.is-enriching i{animation:none;transform:none}}
