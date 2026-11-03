@@ -29,3 +29,19 @@
 @media(max-width:900px){.landing-hero-grid{gap:35px}.landing-hero h1{font-size:52px}.landing-nav{gap:17px}.landing-feature-grid{grid-template-columns:repeat(2,1fr)}.landing-visual{min-height:370px}.landing-node{font-size:8px;padding:9px}.landing-section{padding:80px 0}}
 @media(max-width:700px){.landing-header{height:auto;min-height:66px}.landing-header-inner{width:calc(100% - 32px);min-height:66px;gap:12px}.landing-nav{display:none}.landing-header-actions{margin-left:auto}.landing-open{height:38px;padding:0 10px;font-size:11px}.landing-hero{width:calc(100% - 34px);padding:65px 0 25px}.landing-hero-grid{grid-template-columns:1fr;gap:35px;min-height:0}.landing-hero h1{font-size:clamp(42px,11vw,58px);letter-spacing:-2.5px;margin:20px 0 16px}.landing-lead{font-size:14px;line-height:1.75}.landing-hero-actions{gap:15px;flex-wrap:wrap;margin-top:24px}.landing-primary{height:46px;font-size:12px}.landing-note{align-items:flex-start;line-height:1.5}.landing-visual{min-height:320px}.orbit-a{width:250px;height:155px}.orbit-b{width:190px;height:250px}.landing-visual-core{width:86px;height:86px;border-radius:24px}.landing-node{font-size:8px;gap:6px;padding:8px}.node-one{left:3%;top:26%}.node-two{right:3%;top:29%}.node-three{bottom:20%}.landing-proof{grid-template-columns:1fr;gap:18px;margin-top:48px;padding:22px 0}.landing-section{width:calc(100% - 34px);padding:70px 0}.landing-section-heading{margin-bottom:27px}.landing-section-heading h2{font-size:32px;letter-spacing:-1.2px}.landing-section-heading>p{font-size:13px}.landing-feature-grid,.landing-source-grid{grid-template-columns:1fr}.landing-feature{min-height:0;padding:20px}.landing-steps{grid-template-columns:1fr}.landing-step{min-height:0;padding:22px}.landing-step+.landing-step{border-left:0;border-top:1px solid #21334b}.landing-step h3{margin:18px 0 8px}.landing-step-arrow{display:none}.landing-trust-grid{grid-template-columns:1fr;gap:0}.landing-trust-item{padding:19px 0}.landing-faq-list summary{font-size:12px;line-height:1.5;padding:14px 0}.landing-faq-list details>p{padding-right:0}.landing-final{width:calc(100% - 34px);margin-bottom:65px;padding:27px 22px;align-items:flex-start;flex-direction:column}.landing-final h2{font-size:31px}.landing-footer{padding:30px 17px 20px}.landing-footer-main{flex-direction:column}.landing-footer-links{gap:14px 18px}.landing-footer-bottom{flex-direction:column;gap:8px}}
 @media(prefers-reduced-motion:reduce){.landing-shell *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* Accessible mobile navigation and skip link for the public website. */
+.landing-skip-link{position:fixed;top:10px;left:10px;z-index:1000;transform:translateY(-160%);padding:11px 15px;border:2px solid #9dbaff;border-radius:8px;background:#101b2c;color:#fff!important;font-size:12px;font-weight:750;box-shadow:0 6px 24px #0008}
+.landing-skip-link:focus{transform:translateY(0);outline:3px solid #fff;outline-offset:3px}
+.landing-mobile-toggle{display:none;width:40px;height:40px;align-items:center;justify-content:center;border:1px solid #334967;border-radius:8px;background:#0d1929;color:#dce7f8;cursor:pointer}
+.landing-mobile-toggle:focus-visible{outline:2px solid #9dbaff;outline-offset:3px}
+#landing-main:focus{outline:none}
+@media(max-width:700px){
+  .landing-header-inner{position:relative;flex-wrap:wrap}
+  .landing-mobile-toggle{display:inline-flex}
+  .landing-nav.is-mobile-open{order:3;display:flex;flex:0 0 100%;align-items:stretch;flex-direction:column;gap:0;margin:0;padding:5px 0 12px;border-top:1px solid #26374e}
+  .landing-nav.is-mobile-open a{padding:12px 4px;border-bottom:1px solid #1b2a3e;font-size:13px}
+  .landing-header-inner:has(.landing-nav.is-mobile-open){padding-bottom:2px}
+}
+@media(prefers-reduced-motion:reduce){.landing-skip-link{transition:none!important}}
