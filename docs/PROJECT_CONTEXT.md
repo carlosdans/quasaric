@@ -360,3 +360,6 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se deduplican las rutas de identificación para que un mismo CVE presente en `id`, `aliases` y `upstream` no duplique la evidencia.
 - Los avisos OSV sin ningún CVE válido siguen apareciendo como avisos independientes de revisión; no se inventa una relación CVE.
 - Se añade una prueba de regresión para CVE directo en minúsculas y rutas de alias repetidas.
+
+
+- Ajuste de validación posterior: la expresión regular de CVE usa los escapes de dígito correctos en JavaScript; la prueba de CVE directo cubre este camino de extremo a extremo.
