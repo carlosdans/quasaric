@@ -29,6 +29,15 @@ test('async inventory imports and backup comparisons use the latest committed in
   assert.match(app, /currentItems\.length} componentes actuales/);
 });
 
+test('JSON backup restore preserves component IDs for historical continuity', () => {
+  const start = app.indexOf('const handleJsonRestore');
+  const end = app.indexOf('\n  };', start);
+  const handler = app.slice(start, end);
+  assert.match(handler, /parseInventoryBackup\(await file\.text\(\)\)/);
+  assert.match(handler, /const restored = backup\.components\.map\(item => \(\{ \.\.\.item, createdAt:/);
+  assert.doesNotMatch(handler, /id:\s*crypto\.randomUUID\(\)/);
+});
+
 test('vulnerability detail dialog traps focus and closes with Escape', () => {
   assert.match(app, /selectedFindingDialogRef/);
   assert.match(app, /openFindingDetails\s*=\s*finding\s*=>/);

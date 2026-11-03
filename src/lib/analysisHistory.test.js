@@ -249,6 +249,18 @@ test('tracks SPDX source relationship metadata changes in retained exposures', (
   ]);
 });
 
+test('preserves component identity when a previously exported backup is restored', async () => {
+  const { createInventoryBackup, parseInventoryBackup } = await import('./inventoryBackup.js');
+  const component = { id: 'stable-component-id', name: 'openssl', version: '3.0.2' };
+  const restored = parseInventoryBackup(createInventoryBackup([component])).components;
+  const before = snapshot('before', [finding('CVE-2026-0001', [match(component.id)])]);
+  const after = snapshot('after', [finding('CVE-2026-0001', [match(restored[0].id)])]);
+  const result = compareAnalysisSnapshots(before, after);
+  assert.equal(result.counts.added, 0);
+  assert.equal(result.counts.resolved, 0);
+  assert.equal(result.counts.retained, 1);
+});
+
 test('preserves duplicate component rows when comparing historical exposures', () => {
   const duplicate = { component: { name: 'openssl', version: '3.0.2' } };
   const before = snapshot('before', [
