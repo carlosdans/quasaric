@@ -295,8 +295,6 @@ export function cpeMatchesComponent(criteria, component) {
   const vendor = normalize(cpe.vendor);
   const product = normalize(cpe.product);
   const name = normalize(component.name);
-  const expectedPart = component.type === 'os' || ['ubuntu', 'debian', 'windows server', 'windows server 2019', 'windows server 2022', 'windows server 2025', 'red hat enterprise linux', 'rhel', 'fedora', 'alpine linux', 'almalinux', 'rocky linux', 'suse linux enterprise server', 'sles'].includes(name) ? 'o' : 'a';
-  if (cpe.part !== '*' && cpe.part !== expectedPart) return false;
   // A user-supplied CPE is an explicit product identity for otherwise
   // unsupported labels. It is only an identity hint: NVD version ranges
   // remain authoritative, and malformed/incomplete CPEs fail closed.
@@ -305,6 +303,16 @@ export function cpeMatchesComponent(criteria, component) {
   if (declaredCpe) {
     declaredFields = splitCpe23(declaredCpe);
     if (declaredFields.length !== 13 || declaredFields[0] !== 'cpe' || declaredFields[1] !== '2.3') return false;
+  }
+  const knownOs = component.type === 'os' || ['ubuntu', 'debian', 'windows server', 'windows server 2019', 'windows server 2022', 'windows server 2025', 'red hat enterprise linux', 'rhel', 'fedora', 'alpine linux', 'almalinux', 'rocky linux', 'suse linux enterprise server', 'sles'].includes(name);
+  const knownType = Boolean(String(component.type || '').trim()) || knownOs;
+  const expectedPart = knownOs ? 'o' : 'a';
+  if (cpe.part !== '*') {
+    if (knownType && cpe.part !== expectedPart) return false;
+    // For an otherwise unclassified custom component, use its valid declared
+    // CPE part instead of silently assuming it is an application.
+    if (!knownType && declaredFields && declaredFields[2] !== '*' && cpe.part !== declaredFields[2]) return false;
+    if (!knownType && (!declaredFields || declaredFields[2] === '*')) return false;
   }
   // NVD CPEs can constrain update, edition, language, software edition,
   // target software, hardware or other attributes. Known mismatches are

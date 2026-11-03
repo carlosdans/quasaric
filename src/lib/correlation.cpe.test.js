@@ -208,3 +208,34 @@ test('does not turn an unbounded wildcard CPE into an affected verdict', () => {
   assert.notEqual(result.status, 'possible');
   assert.notEqual(result.status, 'affected');
 });
+
+
+test('uses the part of an explicit CPE for otherwise unclassified custom components', () => {
+  const customOs = {
+    name: 'Acme Secure Appliance',
+    cpe: 'cpe:2.3:o:acme:secure_appliance:*:*:*:*:*:*:*:*'
+  };
+  assert.equal(
+    cpeMatchesComponent('cpe:2.3:o:acme:secure_appliance:4.2:*:*:*:*:*:*:*', customOs),
+    true
+  );
+  assert.equal(
+    cpeMatchesComponent('cpe:2.3:a:acme:secure_appliance:4.2:*:*:*:*:*:*:*', customOs),
+    false
+  );
+  assert.equal(
+    cpeMatchesComponent('cpe:2.3:o:acme:secure_appliance:4.2:*:*:*:*:*:*:*', {
+      name: 'Acme Secure Appliance'
+    }),
+    false,
+    'an unknown component without an explicit CPE must not acquire an OS identity'
+  );
+  assert.equal(
+    cpeMatchesComponent('cpe:2.3:o:acme:secure_appliance:4.2:*:*:*:*:*:*:*', {
+      ...customOs,
+      type: 'web'
+    }),
+    false,
+    'an explicit application type must not be overridden by an OS CPE'
+  );
+});
