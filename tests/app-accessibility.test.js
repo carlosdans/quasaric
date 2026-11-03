@@ -171,3 +171,12 @@ test('dashboard metrics, findings tables and exports require explicit boolean KE
   assert.doesNotMatch(app, /f\.kev \?/);
   assert.doesNotMatch(app, /item\.kev\)\.length/);
 });
+
+
+test('inventory quality UI exposes CPE version mismatches in both languages', () => {
+  assert.match(app, /inventoryQuality\.cpeVersionMismatches/);
+  assert.match(app, /versión \/ CPE discrepante/);
+  assert.match(app, /version \/ CPE mismatch/);
+  assert.match(app, /puede ser una diferencia de empaquetado/);
+  assert.match(app, /may be a packaging-version difference/);
+});

@@ -528,3 +528,13 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se añadieron pruebas para discrepancias binarias/fuente y para PURL ausentes, sin versión o malformados.
 - Código validado en `636831dc5fe429e4328c71f3acb6c68ddcf5203a`: tests y build correctos en Node 20 y Node 22; CI [41678699374](https://github.com/carlosdans/quasaric/actions/runs/41678699374).
 - Despliegue Azure Static Web Apps del mismo commit completado satisfactoriamente: [41678699645](https://github.com/carlosdans/quasaric/actions/runs/41678699645).
+
+
+### 2026-11-03 — coherencia de versiones declaradas y CPE
+
+- El control de calidad compara la versión declarada del componente con la versión explícita del CPE 2.3.
+- Omite CPE inválidos, sin versión, con comodines `*`/ `?` o con versión no aplicable `-`.
+- Las discrepancias se muestran en el panel de inventario en español e inglés, con una nota de que pueden deberse a revisiones de empaquetado.
+- La advertencia no reescribe el CPE, no altera el inventario y no cambia la aplicabilidad ni el resultado de correlación.
+- Pruebas añadidas para versiones coincidentes, discrepantes, comodines y metadatos ausentes/malformados.
+- Código integrado en `939ee5b81a245ae10f33a8869d42eea0cff45a8b`; CI de Node 20 y 22 completada correctamente: [41683490410](https://github.com/carlosdans/quasaric/actions/runs/41683490410).

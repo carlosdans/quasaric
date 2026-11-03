@@ -240,3 +240,8 @@ El control de calidad detecta discrepancias entre la arquitectura declarada del 
 ### Coherencia de versiones entre inventario y PURL
 
 El control de calidad del inventario compara la versión declarada de cada componente con la versión explícita de su PURL. También contrasta la versión declarada del paquete fuente con la versión de su PURL fuente. Las discrepancias se muestran como advertencias antes del análisis, sin reescribir identificadores ni asumir equivalencias entre formatos de versión. Los PURL inválidos o sin versión explícita no producen comparaciones artificiales.
+
+
+### Coherencia de versiones entre inventario y CPE
+
+El panel de calidad también compara la versión declarada del componente con la versión concreta de su CPE 2.3. Omite versiones CPE con comodines o marcadas como no aplicables. Una discrepancia puede deberse a una revisión de empaquetado de la distribución, por lo que se presenta como advertencia para revisión y nunca como prueba de identidad incorrecta o de vulnerabilidad.
