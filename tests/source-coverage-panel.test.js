@@ -11,7 +11,7 @@ test('dashboard and vulnerability workspace expose incomplete source coverage', 
   assert.match(source, /SourceCoveragePanel analysis=\{analysis\}/);
   assert.match(source, /Cobertura de las fuentes/);
   assert.match(source, /Source coverage/);
-  assert.match(source, /missing results do not mean that vulnerabilities are absent/);
+  assert.match(source, /missing results do not mean that vulnerabilities are absent/i);
   assert.match(source, /la ausencia de resultados no equivale a ausencia de vulnerabilidades/i);
   assert.match(source, /Se muestran hasta cinco detalles por categoría/);
 });
