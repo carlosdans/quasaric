@@ -213,3 +213,6 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Tras un análisis sin candidatos, la interfaz aclara que la ausencia de resultados no demuestra que los componentes estén libres de vulnerabilidades.
 - La lista y los filtros de vulnerabilidades quedan vacíos hasta disponer de un análisis real; no se fabrican resultados.
 - Se añadieron pruebas de regresión para impedir que vuelvan a aparecer CVE de ejemplo como resultados. Sin dependencias, servicios externos ni cambios de backend.
+
+
+- La primera compilación del bloque de estados vacíos detectó un cierre JSX prematuro en la vista de vulnerabilidades. Los 461 tests pasaron; se corrigió la frontera del fragmento antes de aceptar el despliegue y se repite CI/build en Node 20 y 22.
