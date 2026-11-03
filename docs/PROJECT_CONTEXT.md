@@ -5,7 +5,7 @@
 > **Actualizado:** 3 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `d2100b00412620edef907e87043712be669b7194`
+> **HEAD de código validado:** `636831dc5fe429e4328c71f3acb6c68ddcf5203a`
 
 ## 1. Objetivo y límites
 
@@ -517,3 +517,14 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El control de calidad compara arquitectura declarada, calificador `arch` del PURL y `targetHw` del CPE cuando están disponibles.
 - Normaliza alias habituales (amd64/x86_64, arm64/aarch64 y familias x86) y no interpreta comodines CPE como afirmaciones.
 - Las discrepancias se muestran como advertencias de inventario; no se reescriben PURL/CPE ni se altera la correlación. No añade dependencias ni servicios.
+
+
+### 2026-11-03 — coherencia de versiones declaradas y PURL
+
+- El control de calidad compara la versión binaria declarada con la versión explícita del PURL del componente.
+- Compara por separado la versión del paquete fuente con la versión de su PURL fuente.
+- Solo compara PURL válidos con versión explícita y versiones declaradas no vacías; no infiere diferencias cuando faltan datos.
+- Las advertencias son de solo lectura: no modifican el inventario ni alteran la correlación.
+- Se añadieron pruebas para discrepancias binarias/fuente y para PURL ausentes, sin versión o malformados.
+- Código validado en `636831dc5fe429e4328c71f3acb6c68ddcf5203a`: tests y build correctos en Node 20 y Node 22; CI [41678699374](https://github.com/carlosdans/quasaric/actions/runs/41678699374).
+- Despliegue Azure Static Web Apps del mismo commit: [41678699645](https://github.com/carlosdans/quasaric/actions/runs/41678699645); comprobar su conclusión antes de considerar publicada esta versión.

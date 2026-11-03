@@ -235,3 +235,8 @@ El panel de calidad del inventario detecta cuando la versión declarada del comp
 ### 2026-11-03 — coherencia de arquitectura en el inventario
 
 El control de calidad detecta discrepancias entre la arquitectura declarada del componente, el calificador `arch` del PURL y el campo `targetHw` del CPE. Normaliza alias habituales (por ejemplo, `amd64`/`x86_64` y `arm64`/`aarch64`) y omite comodines CPE. Es una advertencia de coherencia, no reescribe identificadores ni cambia la correlación.
+
+
+### Coherencia de versiones entre inventario y PURL
+
+El control de calidad del inventario compara la versión declarada de cada componente con la versión explícita de su PURL. También contrasta la versión declarada del paquete fuente con la versión de su PURL fuente. Las discrepancias se muestran como advertencias antes del análisis, sin reescribir identificadores ni asumir equivalencias entre formatos de versión. Los PURL inválidos o sin versión explícita no producen comparaciones artificiales.
