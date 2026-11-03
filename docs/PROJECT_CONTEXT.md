@@ -527,4 +527,4 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Las advertencias son de solo lectura: no modifican el inventario ni alteran la correlación.
 - Se añadieron pruebas para discrepancias binarias/fuente y para PURL ausentes, sin versión o malformados.
 - Código validado en `636831dc5fe429e4328c71f3acb6c68ddcf5203a`: tests y build correctos en Node 20 y Node 22; CI [41678699374](https://github.com/carlosdans/quasaric/actions/runs/41678699374).
-- Despliegue Azure Static Web Apps del mismo commit: [41678699645](https://github.com/carlosdans/quasaric/actions/runs/41678699645); comprobar su conclusión antes de considerar publicada esta versión.
+- Despliegue Azure Static Web Apps del mismo commit completado satisfactoriamente: [41678699645](https://github.com/carlosdans/quasaric/actions/runs/41678699645).
