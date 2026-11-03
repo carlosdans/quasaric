@@ -799,7 +799,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
                 publishedAt: record.published || null,
                 updatedAt: record.modified || null,
                 url: record.id ? `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}` : null,
-                references: (record.references || []).map(reference => reference.url).filter(Boolean),
+                references: references.map(reference => reference.url),
                 packageUrl: group.purl
               };
               if (existing) existing.osvPurlEvidence = [...(existing.osvPurlEvidence || []), evidence];
