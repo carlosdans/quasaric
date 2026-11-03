@@ -189,7 +189,7 @@ test('summarizes evidence provenance and counts only safe HTTPS references', asy
   assert.equal(report.summary.evidenceRecords, 4);
   assert.equal(report.summary.evidenceWithSafeReference, 2);
   assert.equal(report.summary.evidenceWithoutSafeReference, 2);
-  assert.deepEqual(report.summary.evidenceSources, { nvd: 1, osv: 1, unknown: 2 });
+  assert.deepEqual(report.summary.evidenceSources, { nvd: 1, osv: 1, unknown: 1, vendor: 1 });
 });
 
 test('rejects a re-hashed audit package with altered evidence quality counts', async () => {
