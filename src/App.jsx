@@ -454,7 +454,7 @@ function App() {
       if (file.size > 5 * 1024 * 1024) throw new Error(lang === 'es' ? 'El CSV supera el límite de 5 MB.' : 'CSV exceeds the 5 MB limit.');
       const parsed = parseInventoryCsv(await file.text());
       const imported = parsed.components.map(component => ({
-        ...normalizeComponentType(component),
+        ...component,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString()
       }));
