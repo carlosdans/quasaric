@@ -87,12 +87,30 @@ function cyclone(document) {
   // The metadata subject is authoritative for shared fields. Retain nested
   // relationships/collections when the subject omits them, rather than
   // silently losing richer root metadata or importing the same ref twice.
-  const flattened = rootIndex >= 0
-    ? nested.map((item, index) => index === rootIndex
-      ? { ...item, ...root,
-          components: Array.isArray(root.components) ? root.components : item?.components }
-      : item)
-    : root ? [...flattenCycloneComponents([root]), ...nested] : nested;
+  let flattened;
+  if (rootIndex >= 0) {
+    const matched = nested[rootIndex];
+    // Replace the matched subject's descendant subtree with the metadata
+    // subject's subtree when supplied. Otherwise retain the document subtree.
+    // This keeps richer metadata.component dependencies without duplicating
+    // descendants already flattened from document.components.
+    const previousDescendants = new Set(flattenCycloneComponents(
+      Array.isArray(matched?.components) ? matched.components : []
+    ));
+    const mergedRoot = {
+      ...matched,
+      ...root,
+      components: Array.isArray(root.components) ? root.components : matched?.components
+    };
+    const replacementTree = flattenCycloneComponents([mergedRoot]);
+    flattened = [];
+    nested.forEach((item, index) => {
+      if (index === rootIndex) flattened.push(...replacementTree);
+      else if (!previousDescendants.has(item)) flattened.push(item);
+    });
+  } else {
+    flattened = root ? [...flattenCycloneComponents([root]), ...nested] : nested;
+  }
   if (flattened.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
   return flattened.map((item,index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Component entry must be a JSON object.', index:index+1 };
