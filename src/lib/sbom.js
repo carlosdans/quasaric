@@ -97,7 +97,7 @@ function cyclone(document) {
     const component = {
       name, version:str(item.version) || purl?.version || '',
       vendor:str(item.publisher) || str(item.supplier?.name),
-      type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl,
+      type:typeFor(name,purl?.ecosystem || '',item.type), purl:rawPurl,
       cpe:str(item.cpe) || str(cpeRef?.url) || str(cpeRef?.referenceLocator),
       sourcePackage:str(properties.sourcePackage), sourceVersion:str(properties.sourceVersion),
       architecture:str(properties.architecture) || str(purl?.qualifiers?.arch),
