@@ -17,9 +17,20 @@ test('accepts escaped delimiters without splitting CPE attributes', () => {
   assert.equal(parsed.version, '1.0');
 });
 
-test('accepts escaped spaces but rejects unescaped spaces', () => {
-  const parsed = parseCpe23('cpe:2.3:a:vendor:product\\ edition:1.0:*:*:*:*:*:*:*');
-  assert.equal(parsed.product, 'product edition');
+test('accepts the CPE formatted-string escaped punctuation set', () => {
+  const parsed = parseCpe23('cpe:2.3:a:vendor:product\\?edition:1.0:*:*:*:*:*:*:*');
+  assert.equal(parsed.product, 'product?edition');
+  assert.equal(parseCpe23('cpe:2.3:a:vendor:product\\\\edition:1.0:*:*:*:*:*:*:*').product, 'product\\edition');
+});
+
+test('rejects escaped characters that are not valid in CPE formatted strings', () => {
+  for (const escaped of [' ', 'a', '.', '-', '_']) {
+    assert.equal(
+      parseCpe23('cpe:2.3:a:vendor:product\\' + escaped + 'edition:1.0:*:*:*:*:*:*:*'),
+      null,
+      JSON.stringify(escaped)
+    );
+  }
   assert.equal(parseCpe23('cpe:2.3:a:vendor:product edition:1.0:*:*:*:*:*:*:*'), null);
 });
 
