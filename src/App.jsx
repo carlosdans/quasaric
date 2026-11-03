@@ -157,9 +157,12 @@ function App() {
   useEffect(() => {
     const english = lang === 'en';
     document.documentElement.lang = lang;
-    document.title = english
+    const pageTitle = english
       ? 'Quasaric — Vulnerability Intelligence'
       : 'Quasaric — Inteligencia de vulnerabilidades';
+    document.title = pageTitle;
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', pageTitle);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', pageTitle);
     const description = english
       ? 'Correlate your technology inventory with known vulnerabilities and public risk signals. Local-first analysis, traceable evidence and a transparent methodology.'
       : 'Relaciona tu inventario tecnológico con vulnerabilidades conocidas y señales públicas de riesgo. Análisis local-first, evidencias trazables y metodología transparente.';
