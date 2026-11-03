@@ -237,6 +237,6 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 
 
 ### 2026-11-03 — rangos Ubuntu OSV abiertos
-- El clasificador de versiones fuente Ubuntu OSV interpreta un evento introduced sin un fixed o last_affected posterior como un intervalo abierto. Las versiones comparables desde la introducción se clasifican como afectadas; versiones no comparables permanecen en revisión.
+- El clasificador de versiones fuente Ubuntu OSV interpreta un evento introduced sin un fixed o last_affected posterior como un intervalo abierto cuando el aviso no proporciona una lista explícita de versiones afectadas. Si Canonical enumera versiones exactas, esa lista no se amplía a versiones posteriores por el rango abierto; las versiones no listadas permanecen en revisión.
 - Se cubren intervalos abiertos simples y posteriores a un intervalo ya cerrado, además de versiones anteriores y sufijos no comparables. No se infiere una versión corregida ni se modifica la evaluación de paquetes binarios.
 - Sin dependencias, backend, servicios externos ni cambios de recursos Azure.

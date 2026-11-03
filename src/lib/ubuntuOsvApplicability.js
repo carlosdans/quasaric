@@ -79,7 +79,10 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
     }
     // OSV ranges ending with an introduced event are open-ended until a
     // fixed or last_affected event closes the interval.
-    if (rangeIsOpen) {
+    // Canonical Ubuntu OSV records often enumerate exact affected source
+    // builds in versions while leaving a range open for binary metadata.
+    // Do not expand that explicit list to every later source version.
+    if (rangeIsOpen && listedVersions.length === 0) {
       const afterIntroduction = introduced === '0'
         ? 1
         : compareDebianVersions(version, String(introduced));

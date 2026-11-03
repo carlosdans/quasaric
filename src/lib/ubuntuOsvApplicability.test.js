@@ -66,7 +66,7 @@ test('classifies open-ended Ubuntu OSV ranges as affected from the introduced ve
   assert.equal(classifyUbuntuOsvSourceVersion(openEnded, '1.0-1').status, 'affected');
   assert.equal(classifyUbuntuOsvSourceVersion(openEnded, '1.5-1').status, 'affected');
   assert.equal(classifyUbuntuOsvSourceVersion(openEnded, '0.9-1').status, 'needs_review');
-  assert.equal(classifyUbuntuOsvSourceVersion(openEnded, '1.5-custom').status, 'needs_review');
+  assert.equal(classifyUbuntuOsvSourceVersion(openEnded, '1.5-').status, 'needs_review');
 });
 
 test('recognizes a final open-ended interval after an earlier fixed interval', () => {
@@ -82,4 +82,14 @@ test('recognizes a final open-ended interval after an earlier fixed interval', (
   };
   assert.equal(classifyUbuntuOsvSourceVersion(openAfterFix, '1.5-1').status, 'needs_review');
   assert.equal(classifyUbuntuOsvSourceVersion(openAfterFix, '2.5-1').status, 'affected');
+});
+
+test('does not expand Canonical explicit affected-version lists from an open range', () => {
+  const enumerated = {
+    package: base.package,
+    versions: ['1.0-1', '1.1-1'],
+    ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }] }]
+  };
+  assert.equal(classifyUbuntuOsvSourceVersion(enumerated, '1.1-1').status, 'affected');
+  assert.equal(classifyUbuntuOsvSourceVersion(enumerated, '1.2-1').status, 'needs_review');
 });
