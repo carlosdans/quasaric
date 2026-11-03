@@ -67,6 +67,7 @@ test('merges imported and local history, deduplicates IDs and retains newest ten
 });
 
 test('merge validates both histories instead of silently discarding malformed entries', () => {
-  assert.throws(() => mergeAnalysisHistory([{ id: 'bad', findings: [] }], []));
-  assert.throws(() => mergeAnalysisHistory([], [{ id: 'bad', findings: 'invalid' }]));
+  const malformed = { id: 'bad', findings: [{ id: 'CVE-1', components: [{ component: {} }] }] };
+  assert.throws(() => mergeAnalysisHistory([malformed], []));
+  assert.throws(() => mergeAnalysisHistory([], [malformed]));
 });
