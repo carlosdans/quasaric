@@ -193,3 +193,14 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Validación en `main`, commit `c9a20e6e70dfceed913d42cdd266b3b8c39a09d0`: 377/377 tests correctos en Node 20 y 22; build de producción correcta en ambas versiones. CI [41508498115](https://github.com/carlosdans/quasaric/actions/runs/41508498115) y despliegue Azure [41508498377](https://github.com/carlosdans/quasaric/actions/runs/41508498377), satisfactorios.
 - El build emite advertencias `MODULE_LEVEL_DIRECTIVE` procedentes de `lucide-react` sobre la directiva `use client`; no impiden la compilación ni las pruebas. No se modifica la dependencia por esta advertencia aislada.
 - No se añaden dependencias, backend, servicios externos ni recursos Azure.
+
+
+## 10. Web pública de presentación — 2026-11-03
+
+- La ruta raíz presenta una web pública bilingüe (español/inglés); el acceso a la aplicación se realiza mediante el fragmento #app, sin añadir backend ni router.
+- La web describe el inventario local, la correlación conservadora, las señales CVSS/EPSS/KEV, las evidencias, la remediación candidata, el historial y los informes.
+- Incluye explicación de privacidad, consultas a fuentes públicas, límites metodológicos y preguntas frecuentes. No presenta Quasaric como escáner ni promete detección exhaustiva.
+- La aplicación existente se conserva y añade un enlace para volver a la web pública. Los datos locales y las funciones existentes no cambian.
+- La página incluye estructura semántica, navegación por anclas, FAQ nativa accesible, diseño responsive y respeto por movimiento reducido.
+- Se amplían metadatos SEO/sociales y datos estructurados SoftwareApplication. No se añade analítica, fuente tipográfica externa ni servicio de pago.
+- Pendiente tras integrar: verificar CI Node 20/22, build, ejecución del workflow de Azure del commit y revisión manual en navegador móvil/escritorio.

@@ -2,6 +2,10 @@
 
 **Security Intelligence Platform** — plataforma estática de inteligencia de vulnerabilidades para inventarios tecnológicos declarados por el usuario.
 
+## Web pública
+
+La URL raíz presenta la web pública bilingüe de Quasaric. Desde ella se accede a la aplicación mediante el botón Abrir la plataforma; también se puede abrir directamente https://quasaric.com/#app. La aplicación conserva su inventario local y sus funciones existentes. La web explica el producto, el flujo de análisis, las fuentes públicas, la privacidad y los límites metodológicos sin prometer detección exhaustiva.
+
 ## Estado del proyecto
 
 Quasaric es una versión funcional en evolución, con alcance deliberadamente limitado. La aplicación usa React + Vite, ofrece interfaz bilingüe (español/inglés), mantiene el inventario local en el navegador y consulta fuentes públicas de vulnerabilidades desde el cliente. Los límites de importación y consulta se aplican por formato y fuente; no debe interpretarse el inventario como limitado a 10 componentes.

@@ -1,4 +1,5 @@
 import React from 'react';
+import LandingPage from './LandingPage.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
 import { toCsv } from './lib/csv.js';
@@ -162,6 +163,12 @@ function App() {
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
+  const [showLanding, setShowLanding] = useState(() => window.location.hash !== '#app');
+  useEffect(() => {
+    const syncRoute = () => setShowLanding(window.location.hash !== '#app');
+    window.addEventListener('hashchange', syncRoute);
+    return () => window.removeEventListener('hashchange', syncRoute);
+  }, []);
   const [theme, setTheme] = useState(() => {
     try { return localStorage.getItem('quasaric-theme') === 'light' ? 'light' : 'dark'; }
     catch { return 'dark'; }
@@ -582,6 +589,10 @@ function App() {
     { id: 'help', label: lang === 'es' ? 'Guía de versiones' : 'Version guide', icon: CircleHelp }
   ];
 
+  if (showLanding) {
+    return <LandingPage lang={lang} onLanguageChange={setLang} onOpenApp={() => { window.location.hash = 'app'; setShowLanding(false); }} />;
+  }
+
   return (
     <div className="app-shell" data-theme={theme}>
       <a className="skip-link" href="#main-content">{lang === 'es' ? 'Saltar al contenido principal' : 'Skip to main content'}</a>
@@ -609,6 +620,7 @@ function App() {
           <div className="breadcrumb"><span>Quasaric</span><ChevronRight size={14}/><strong>{active === 'overview' ? t.overview : active === 'inventory' ? t.inventory : active === 'vulnerabilities' ? t.vulnerabilities : active === 'posture' ? t.posture : active === 'reports' ? t.reports : active === 'help' ? (lang === 'es' ? 'Guía de versiones' : 'Version guide') : t.settings}</strong></div>
           <div className="top-actions">
             <span className={`status-pill${storageWarning ? " status-warning" : ""}`} role={storageWarning ? "alert" : "status"}><span className="status-dot"/> {storageWarning ? t.storageWarning : t.localSaved}</span>
+            <button className="language-btn site-home-btn" onClick={() => { window.location.hash = ''; setShowLanding(true); }}>{lang === 'es' ? 'Web pública' : 'Public site'}</button>
             <button className="language-btn" onClick={() => setLang(lang === 'es' ? 'en' : 'es')} aria-label={t.language}><Globe2 size={15}/><span>{lang.toUpperCase()}</span></button>
             <button className="language-btn theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={lang === 'es' ? (theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro') : (theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme')} title={lang === 'es' ? (theme === 'dark' ? 'Tema claro' : 'Tema oscuro') : (theme === 'dark' ? 'Light theme' : 'Dark theme')}>{theme === 'dark' ? <Sun size={15}/> : <Moon size={15}/>}</button>
             <button className="icon-btn" onClick={() => setActive('help')} aria-label={lang === 'es' ? 'Abrir guía de versiones' : 'Open version guide'} title={lang === 'es' ? 'Guía de versiones' : 'Version guide'}><CircleHelp size={18}/></button>
