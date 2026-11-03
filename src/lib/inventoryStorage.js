@@ -52,7 +52,7 @@ export function loadInventory(storage) {
       preserveForRecovery(target, raw);
       return { items: [], warning: true };
     }
-    const validItems = parsed.filter(isInventoryItem);
+    const validItems = parsed.filter(item => isInventoryItem(item));
     const items = [];
     const seenIds = new Set();
     // Reserve every original ID before generating replacements so a missing
