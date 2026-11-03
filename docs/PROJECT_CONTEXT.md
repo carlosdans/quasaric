@@ -371,3 +371,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Comprueba que `product_status` sea un objeto y que las listas de estados conocidas contengan identificadores de producto no vacíos.
 - Las estructuras VEX malformadas se convierten en evidencia pendiente de revisión en lugar de provocar una excepción o una conclusión de aplicabilidad.
 - Se añaden pruebas para CVE duplicados con estados diferentes y para colecciones de estados malformadas.
+
+
+### 2026-11-03 — validación defensiva de evidencias de Red Hat
+
+- El matcher de Red Hat comprueba que `package_state` y `affected_release` sean colecciones cuando están presentes; las respuestas con estructuras incorrectas quedan en `needs_review`.
+- Las entradas individuales malformadas se descartan sin romper el análisis del inventario.
+- Los paquetes fuente siguen siendo evidencia indirecta: no se trasladan estados ni versiones corregidas a un binario instalado.
+- Se añaden pruebas para colecciones inválidas y elementos individuales malformados.
