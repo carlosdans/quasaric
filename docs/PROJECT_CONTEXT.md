@@ -343,3 +343,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La extracción de CVSS prefiere la generación más reciente disponible (4.0, 3.1, 3.0 y 2.0); dentro de cada generación selecciona una evaluación marcada como `Primary` antes que una `Secondary`.
 - Se descartan puntuaciones no numéricas, no finitas o fuera de 0–10. Si la métrica más reciente no contiene una puntuación válida, se intenta la siguiente generación; si ninguna es válida, CVSS queda sin dato.
 - Se añaden pruebas para prioridad entre versiones, preferencia Primary, fallback y métricas inválidas. No se añaden dependencias, backend ni servicios externos. La ejecución de la suite y el build queda pendiente de CI.
+
+
+### 2026-11-03 — integridad de paginación de NVD
+
+- Las consultas NVD por CPE y palabra clave comparten ahora un validador de páginas. Se comprueban el tamaño de página, los índices y metadatos de paginación cuando están presentes, y la estructura e identidad CVE de cada entrada.
+- Las entradas incompletas, identificadores inválidos o repetidos, páginas sobredimensionadas y cambios del total entre páginas abortan la consulta en vez de descartarse silenciosamente o producir un conjunto parcial aparentemente válido.
+- Las búsquedas por palabra clave rechazan términos vacíos o superiores a 200 caracteres antes de realizar peticiones. Se añaden pruebas de regresión para entradas inválidas, tamaño de página y respuesta válida.
+- No se añaden dependencias, backend ni servicios externos. Suite completa y build pendientes de ejecución en CI.
