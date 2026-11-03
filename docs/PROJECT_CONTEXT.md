@@ -422,3 +422,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Las importaciones CSV y SBOM comprueban el total combinado antes de generar identificadores o intentar guardar los componentes.
 - Si la importación superaría el máximo de 50.000 componentes, se muestra un error específico y se conserva intacto el inventario actual, en lugar de presentar el rechazo como un fallo genérico de almacenamiento.
 - Se reutiliza el límite exportado por `inventoryStorage` para mantener una única fuente de verdad.
+
+
+### 2026-11-03 — límite de inventario al añadir componentes manualmente
+
+- El formulario de alta comprueba el límite compartido de 50.000 componentes antes de crear el registro y ofrece una explicación localizada con las acciones posibles.
+- El alta utiliza la referencia actual del inventario para evitar depender de un estado potencialmente obsoleto durante interacciones rápidas.
+- El inventario permanece sin cambios cuando se alcanza el límite.
