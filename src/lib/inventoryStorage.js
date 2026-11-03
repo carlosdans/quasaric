@@ -16,9 +16,9 @@ function preserveForRecovery(storage, raw) {
   try { storage?.setItem(INVENTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
 }
 
-function isInventoryItem(item) {
+function isInventoryItem(item, validateId = false) {
   return item !== null && typeof item === 'object' && !Array.isArray(item) &&
-    (item.id === undefined || (typeof item.id === 'string' && item.id.trim().length > 0 && item.id.length <= MAX_IDENTIFIER_LENGTH)) &&
+    (!validateId || item.id === undefined || (typeof item.id === 'string' && item.id.trim().length > 0 && item.id.length <= MAX_IDENTIFIER_LENGTH)) &&
     typeof item.name === 'string' && item.name.trim().length > 0 &&
     STRING_FIELDS.every(field => item[field] == null ||
       (typeof item[field] === 'string' && item[field].length <= MAX_FIELD_LENGTH)) &&
@@ -52,7 +52,7 @@ export function loadInventory(storage) {
       preserveForRecovery(target, raw);
       return { items: [], warning: true };
     }
-    const validItems = parsed.filter(isInventoryItem);
+    const validItems = parsed.filter(item => isInventoryItem(item));
     const items = [];
     const seenIds = new Set();
     // Reserve every original ID before generating replacements so a missing
@@ -89,7 +89,7 @@ export function loadInventory(storage) {
 }
 
 export function saveInventory(items, storage) {
-  if (!Array.isArray(items) || !items.every(isInventoryItem)) return false;
+  if (!Array.isArray(items) || !items.every(item => isInventoryItem(item, true))) return false;
   if (items.length > MAX_INVENTORY_COMPONENTS) return false;
   try {
     const target = storage === undefined ? globalThis.localStorage : storage;
@@ -101,7 +101,7 @@ export function saveInventory(items, storage) {
     // the inventory shape checks performed on the original input.
     const normalized = JSON.parse(serialized);
     if (!Array.isArray(normalized) || normalized.length > MAX_INVENTORY_COMPONENTS ||
-        !normalized.every(isInventoryItem)) return false;
+        !normalized.every(item => isInventoryItem(item, true))) return false;
     const ids = normalized.map(item => item.id).filter(id => typeof id === 'string' && id.trim());
     if (new Set(ids).size !== ids.length) return false;
     target.setItem(INVENTORY_STORAGE_KEY, serialized);
