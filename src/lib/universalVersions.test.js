@@ -242,6 +242,7 @@ test('uses Alpine APK ordering for epochs, prerelease suffixes and package revis
 test('does not guess unsupported Alpine APK version syntax', () => {
   const alpine = { vendor: 'Alpine Linux' };
   assert.equal(normalizeEcosystem(alpine), 'apk');
+  assert.equal(normalizeEcosystem({ purl: 'pkg:apk/alpine/busybox@1.36.1-r2' }), 'apk');
   assert.equal(compareVersionForComponent('1.2.3-custom-r0', '1.2.3-r1', alpine), null);
   assert.equal(compareVersionForComponent('1.2.3-r', '1.2.3-r1', alpine), null);
 });

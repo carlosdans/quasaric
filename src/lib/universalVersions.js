@@ -225,6 +225,7 @@ function compareWindows(left, right) {
 const PURL_ECOSYSTEMS = Object.freeze({
   deb: 'deb',
   rpm: 'rpm',
+  apk: 'apk',
   pypi: 'pypi',
   npm: 'npm',
   composer: 'composer',
@@ -240,6 +241,7 @@ export function normalizeEcosystem(component = {}) {
 
   // Prefer declared platform/runtime metadata when no authoritative PURL type exists.
   const declared = [component.ecosystem, component.vendor].filter(Boolean).join(' ').toLowerCase();
+  if (/\b(alpine|apk)\b/.test(declared)) return 'apk';
   if (/\b(ubuntu|debian|dpkg)\b/.test(declared)) return 'deb';
   if (/\b(rhel|red hat|rocky|alma ?linux|suse|sles|fedora|rpm)\b/.test(declared)) return 'rpm';
   if (/\b(windows server|windows 10|windows 11|microsoft windows)\b/.test(declared)) return 'windows';
