@@ -234,3 +234,9 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 ### 2026-11-03 · Footer y relaciones SPDX repetidas
 - Se retiraron los enlaces de correo y GitHub de los pies de página de la web pública y de la aplicación; la sección de contacto de Acerca de permanece disponible.
 - Las relaciones SPDX `GENERATED_FROM` idénticas repetidas se normalizan como una sola arista. Sólo distintas fuentes relacionadas mantienen la ambigüedad y dejan la procedencia sin resolver.
+
+
+### 2026-11-03 — rangos Ubuntu OSV abiertos
+- El clasificador de versiones fuente Ubuntu OSV interpreta un evento introduced sin un fixed o last_affected posterior como un intervalo abierto. Las versiones comparables desde la introducción se clasifican como afectadas; versiones no comparables permanecen en revisión.
+- Se cubren intervalos abiertos simples y posteriores a un intervalo ya cerrado, además de versiones anteriores y sufijos no comparables. No se infiere una versión corregida ni se modifica la evaluación de paquetes binarios.
+- Sin dependencias, backend, servicios externos ni cambios de recursos Azure.

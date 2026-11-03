@@ -57,3 +57,29 @@ test('does not treat a version between disjoint affected ranges as patched', () 
   assert.equal(classifyUbuntuOsvSourceVersion(disjoint, '2.5-1').status, 'affected');
   assert.equal(classifyUbuntuOsvSourceVersion(disjoint, '3.5-1').status, 'patched_candidate');
 });
+
+test('classifies open-ended Ubuntu OSV ranges as affected from the introduced version onward', () => {
+  const openEnded = {
+    package: base.package,
+    ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '1.0-1' }] }]
+  };
+  assert.equal(classifyUbuntuOsvSourceVersion(openEnded, '1.0-1').status, 'affected');
+  assert.equal(classifyUbuntuOsvSourceVersion(openEnded, '1.5-1').status, 'affected');
+  assert.equal(classifyUbuntuOsvSourceVersion(openEnded, '0.9-1').status, 'needs_review');
+  assert.equal(classifyUbuntuOsvSourceVersion(openEnded, '1.5-custom').status, 'needs_review');
+});
+
+test('recognizes a final open-ended interval after an earlier fixed interval', () => {
+  const openAfterFix = {
+    package: base.package,
+    ranges: [{
+      type: 'ECOSYSTEM',
+      events: [
+        { introduced: '0' }, { fixed: '1.0-1' },
+        { introduced: '2.0-1' }
+      ]
+    }]
+  };
+  assert.equal(classifyUbuntuOsvSourceVersion(openAfterFix, '1.5-1').status, 'needs_review');
+  assert.equal(classifyUbuntuOsvSourceVersion(openAfterFix, '2.5-1').status, 'affected');
+});

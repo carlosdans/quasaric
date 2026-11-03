@@ -31,10 +31,12 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
   for (const range of affectedEntry.ranges || []) {
     if (range.type !== 'ECOSYSTEM') continue;
     let introduced = null;
+    let rangeIsOpen = false;
     let closedRangeBeforeVersion = false;
     for (const event of range.events || []) {
       if (event.introduced !== undefined) {
         introduced = event.introduced;
+        rangeIsOpen = true;
         const afterIntroduction = introduced === '0'
           ? true
           : compareDebianVersions(version, String(introduced));
@@ -45,6 +47,7 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
       if (event.fixed !== undefined) {
         const fixed = String(event.fixed);
         const beforeFixed = compareDebianVersions(version, fixed);
+        rangeIsOpen = false;
         if (beforeFixed === null) continue;
         sawComparableRange = true;
         fixedVersions.push(fixed);
@@ -60,6 +63,7 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
       if (event.last_affected !== undefined) {
         const last = String(event.last_affected);
         const lastAffected = compareDebianVersions(version, last);
+        rangeIsOpen = false;
         if (lastAffected !== null) {
           sawComparableRange = true;
           const afterIntroduced = introduced === null || introduced === '0'
@@ -71,6 +75,17 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
           if (lastAffected <= 0 && afterIntroduced) insideAffectedRange = true;
           if (lastAffected > 0) closedRangeBeforeVersion = true;
         }
+      }
+    }
+    // OSV ranges ending with an introduced event are open-ended until a
+    // fixed or last_affected event closes the interval.
+    if (rangeIsOpen) {
+      const afterIntroduction = introduced === '0'
+        ? 1
+        : compareDebianVersions(version, String(introduced));
+      if (afterIntroduction !== null) {
+        sawComparableRange = true;
+        if (afterIntroduction >= 0) insideAffectedRange = true;
       }
     }
   }
