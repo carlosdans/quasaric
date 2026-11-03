@@ -114,3 +114,25 @@ test('keeps fallback posture identities distinct when explicit PURLs differ', ()
   assert.equal(result.latest.exposures, 2);
   assert.equal(result.dwell.length, 2);
 });
+
+test('counts duplicate CVE/component matches once per snapshot and keeps the strongest signals', () => {
+  const result = buildSecurityPosture([snap('latest', [
+    finding('CVE-1', [match('a'), match('a')], {
+      severity: 'High', cvss: 7.0, epss: 0.1
+    }),
+    finding('CVE-1', [match('a')], {
+      severity: 'Critical', cvss: 9.8, epss: 0.9, kev: true
+    })
+  ])]);
+
+  assert.equal(result.latest.uniqueCves, 1);
+  assert.equal(result.latest.exposures, 1);
+  assert.equal(result.latest.components, 1);
+  assert.equal(result.latest.criticalCves, 1);
+  assert.equal(result.latest.kevCves, 1);
+  assert.equal(result.latest.riskScore, 40 + 27 + 20 + 6);
+  assert.equal(result.dwell.length, 1);
+  assert.equal(result.dwell[0].snapshotsSeen, 1);
+  assert.equal(result.dwell[0].lastSeverity, 'Critical');
+  assert.equal(result.dwell[0].kev, true);
+});
