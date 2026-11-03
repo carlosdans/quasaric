@@ -91,3 +91,24 @@ test('does not expand Canonical explicit affected-version lists from an open ran
   assert.equal(classifyUbuntuOsvSourceVersion(enumerated, '1.1-1').status, 'affected');
   assert.equal(classifyUbuntuOsvSourceVersion(enumerated, '1.2-1').status, 'needs_review');
 });
+
+
+test('matches Canonical Ubuntu trailing family wildcards without broadening adjacent families', () => {
+  const kernelEntry = {
+    package: { name: 'linux-hwe-edge', ecosystem: 'Ubuntu:16.04:LTS' },
+    versions: ['4.*', '4.15.0-23.25~16.04.1'],
+    ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }] }]
+  };
+  assert.equal(classifyUbuntuOsvSourceVersion(kernelEntry, '4.15.0-23.25~16.04.1').status, 'affected');
+  assert.equal(classifyUbuntuOsvSourceVersion(kernelEntry, '4.15.0-24.26~16.04.1').status, 'affected');
+  assert.equal(classifyUbuntuOsvSourceVersion(kernelEntry, '5.4.0-100.113~16.04.1').status, 'needs_review');
+});
+
+test('does not interpret unsupported or non-terminal wildcard syntax as an affected version', () => {
+  const entry = {
+    package: base.package,
+    versions: ['3.*.13', '*ubuntu3'],
+    ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }] }]
+  };
+  assert.equal(classifyUbuntuOsvSourceVersion(entry, '3.0.13-0ubuntu3').status, 'needs_review');
+});

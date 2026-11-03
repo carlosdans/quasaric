@@ -239,7 +239,8 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 ### 2026-11-03 — rangos Ubuntu OSV y versiones fuente enumeradas
 - El clasificador trata el campo versions de Canonical como el conjunto exacto de versiones fuente afectadas: un evento introduced: 0 junto con fixed no convierte versiones intermedias no enumeradas en afectadas. Esas versiones quedan en revisión; las versiones enumeradas siguen siendo afectadas y las versiones en/tras fixed pueden quedar como candidatas a parche.
 - Los rangos abiertos sin lista explícita siguen interpretándose como afectados desde introduced; las versiones no comparables o sin evidencia suficiente permanecen en revisión.
-- Se añadieron regresiones para la lista explícita combinada con límite fixed, además de rangos abiertos simples y posteriores a un intervalo cerrado. Sin dependencias, backend, servicios externos ni cambios de recursos Azure.
+- Se reconocen entradas de familia publicadas por Canonical con comodín final `.*` (por ejemplo, `4.*` y `6.*`) como prefijos de versión. Otras formas de comodín no se interpretan y quedan en revisión.
+- Se añadieron regresiones para listas exactas y familias `.*`, lista explícita combinada con límite fixed, y rangos abiertos simples y posteriores a un intervalo cerrado. Sin dependencias, backend, servicios externos ni cambios de recursos Azure.
 
 
 ### 2026-11-03 — semántica SRPM de Red Hat Security Data

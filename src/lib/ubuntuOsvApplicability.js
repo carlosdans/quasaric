@@ -2,6 +2,15 @@ import { compareDebianVersions } from './debianVersions.js';
 
 const normalizeStatus = value => String(value || '').trim().toLowerCase().replaceAll('_', '-');
 
+// Canonical Ubuntu records sometimes enumerate a version family (for example
+// "4.*" or "6.*") alongside individual source builds. Only the documented
+// trailing .*-family form is interpreted; unknown wildcard syntax fails closed.
+function matchesUbuntuAffectedVersion(pattern, version) {
+  if (pattern === version) return true;
+  if (typeof pattern !== 'string' || !/^[^*?]+\.\*$/.test(pattern)) return false;
+  return version.startsWith(pattern.slice(0, -1));
+}
+
 /**
  * Classify an Ubuntu OSV affected entry against the exact source-package
  * version reported by dpkg. This never compares a binary version to source
@@ -20,7 +29,7 @@ export function classifyUbuntuOsvSourceVersion(affectedEntry, sourceVersion) {
   }
 
   const listedVersions = Array.isArray(affectedEntry.versions) ? affectedEntry.versions : [];
-  if (listedVersions.includes(version)) {
+  if (listedVersions.some(pattern => matchesUbuntuAffectedVersion(pattern, version))) {
     return { status: 'affected', confidence: 'high', reason: 'The exact source-package version is explicitly listed in Ubuntu OSV affected versions.' };
   }
 
