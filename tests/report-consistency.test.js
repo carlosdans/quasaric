@@ -15,3 +15,13 @@ test('the printable report localizes applicability and evidence source labels', 
   assert.match(app, /applicabilityLabel\(finding\.applicabilityStatus\)/);
   assert.match(app, /sources\.map\(sourceNameLabel\)\.join\(', '\)/);
 });
+
+
+test('the printable report includes source coverage, errors and query limits', () => {
+  assert.match(app, /Cobertura y calidad de las fuentes/);
+  assert.match(app, /Source coverage and quality/);
+  assert.match(app, /Object\.entries\(analysis\.sources\)/);
+  assert.match(app, /analysis\.errors\?\.length/);
+  assert.match(app, /analysis\.limits\?\.length/);
+  assert.match(app, /sourceStatusLabel\(status\)/);
+});

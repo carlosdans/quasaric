@@ -469,3 +469,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Incluye metodología y advertencias explícitas: ausencia de candidatos no demuestra ausencia de vulnerabilidades, los estados son candidatos y el score es triage, no probabilidad de explotación.
 - Se limita a 20 MB y falla de forma explícita ante datos circulares/no serializables o entradas inválidas; no crea exportaciones parciales.
 - La exportación es local, no envía los datos a un servicio. No añade backend ni dependencias.
+
+
+### 2026-11-03 — cobertura de fuentes en el informe imprimible
+
+- El informe HTML/impresión/PDF ahora incluye una matriz con el estado de consulta de cada fuente, además de los errores y límites alcanzados durante el análisis.
+- Añade el descargo metodológico original para conservar el contexto cuando se comparte el PDF fuera de Quasaric.
+- Se prueba que la plantilla imprimible incluye los tres elementos de trazabilidad y mantiene las etiquetas localizadas.

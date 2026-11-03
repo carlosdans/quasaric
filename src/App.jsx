@@ -882,6 +882,16 @@ function App() {
               </header>
               <p className="print-report-notice">{t.reportPrivacy}</p>
               {analysis?.findings?.length > 0 && <p className="print-report-notice">{t.riskMethod}</p>}
+              {analysis && <section className="print-report-section">
+                <h3>{lang === 'es' ? 'Cobertura y calidad de las fuentes' : 'Source coverage and quality'}</h3>
+                <p className="print-report-notice">{lang === 'es' ? 'El estado indica el resultado de la consulta, no que la fuente cubra todos los productos o vulnerabilidades.' : 'Status describes the query outcome; it does not mean the source covers every product or vulnerability.'}</p>
+                {Object.keys(analysis.sources || {}).length > 0
+                  ? <div className="print-report-table-wrap" role="region" tabIndex={0} aria-label={lang === 'es' ? 'Cobertura de fuentes' : 'Source coverage'}><table className="print-report-table"><thead><tr><th>{lang === 'es' ? 'Fuente' : 'Source'}</th><th>{lang === 'es' ? 'Estado de consulta' : 'Query status'}</th></tr></thead><tbody>{Object.entries(analysis.sources).map(([source, status]) => <tr key={source}><td>{sourceNameLabel(source)}</td><td>{sourceStatusLabel(status)}</td></tr>)}</tbody></table></div>
+                  : <p className="print-report-empty">{lang === 'es' ? 'No hay metadatos de cobertura disponibles.' : 'No source coverage metadata is available.'}</p>}
+                {analysis.errors?.length > 0 && <><h4>{lang === 'es' ? 'Errores de consulta' : 'Query errors'} ({analysis.errors.length})</h4><ul>{analysis.errors.map((error, index) => <li key={(error.source || 'source') + '-' + index}><strong>{error.source || (lang === 'es' ? 'Fuente' : 'Source')}</strong>{error.component ? ' · ' + error.component : ''}: {error.message || (lang === 'es' ? 'Error sin detalle' : 'Unspecified error')}</li>)}</ul></>}
+                {analysis.limits?.length > 0 && <><h4>{lang === 'es' ? 'Límites alcanzados' : 'Reached limits'} ({analysis.limits.length})</h4><ul>{analysis.limits.map((limit, index) => <li key={(limit.source || 'source') + '-' + index}>{limit.source || 'Source'}{limit.component ? ' · ' + limit.component : ''}: {lang === 'es' ? 'límite de resultados alcanzado' : 'result cap reached'}{limit.totalResults != null ? ' (' + limit.totalResults + ')' : ''}</li>)}</ul></>}
+                {analysis.disclaimer && <p className="print-report-notice">{analysis.disclaimer}</p>}
+              </section>}
               <section className="print-report-section">
                 <h3>{t.reportInventory} ({items.length})</h3>
                 {items.length ? <div className="print-report-table-wrap" role="region" tabIndex={0} aria-label={lang === 'es' ? 'Tabla del informe desplazable' : 'Scrollable report table'}><table className="print-report-table"><thead><tr><th>{t.component}</th><th>{t.reportType}</th><th>{t.reportVersion}</th><th>{t.reportVendor}</th></tr></thead><tbody>{items.map(item => <tr key={item.id}><td>{item.name}</td><td>{item.type}</td><td>{item.version || '—'}</td><td>{item.vendor || '—'}</td></tr>)}</tbody></table></div> : <p className="print-report-empty">{t.reportNoComponents}</p>}
