@@ -123,6 +123,20 @@ test('rejects malformed component and source PURLs in restored backups', () => {
   assert.equal(restored.components.length, 1);
 });
 
+test('rejects malformed or oversized backup creation timestamps', () => {
+  const base = { format: 'quasaric-inventory', version: 1, components: [{ name: 'nginx' }] };
+  for (const createdAt of [42, {}, 'x'.repeat(129)]) {
+    assert.throws(() => parseInventoryBackup({ ...base, createdAt }), /creation timestamp/);
+    assert.throws(() => createInventoryBackup([{ name: 'nginx' }], createdAt), /creation timestamp/);
+  }
+  for (const createdAt of [42, 'x'.repeat(129)]) {
+    assert.throws(() => parseInventoryBackup({
+      ...base, components: [{ name: 'nginx', createdAt }]
+    }), /Invalid component/);
+    assert.throws(() => createInventoryBackup([{ name: 'nginx', createdAt }]), /Invalid component/);
+  }
+});
+
 test('does not create backups that cannot be restored', () => {
   assert.throws(() => createInventoryBackup([{ name: '' }]), /Invalid component at position 1/);
   assert.throws(() => createInventoryBackup([{ name: 'nginx', purl: 'not-a-purl' }]), /Invalid component at position 1/);
