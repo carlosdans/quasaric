@@ -167,3 +167,27 @@ test('version comparator results are antisymmetric across representative ecosyst
     assert.equal(compareVersionForComponent(older, older, target), 0);
   }
 });
+
+
+test('prefers explicit PURL package type over unrelated package-name keywords', () => {
+  const npmPythonNamed = { name: 'python-shell', purl: 'pkg:npm/python-shell@1.0.0' };
+  const pypiNodeNamed = { name: 'nodejs', purl: 'pkg:pypi/nodejs@1.0.0' };
+  const debPythonNamed = { name: 'python3', purl: 'pkg:deb/debian/python3@3.12.0' };
+
+  assert.equal(normalizeEcosystem(npmPythonNamed), 'npm');
+  assert.equal(normalizeEcosystem(pypiNodeNamed), 'pypi');
+  assert.equal(normalizeEcosystem(debPythonNamed), 'deb');
+  assert.equal(compareVersionForComponent('1.0.0-rc.1', '1.0.0', npmPythonNamed), -1);
+  assert.equal(compareVersionForComponent('1.0rc1', '1.0', pypiNodeNamed), -1);
+});
+
+test('uses declared platform metadata when the PURL type is generic or absent', () => {
+  assert.equal(normalizeEcosystem({ purl: 'pkg:generic/openssl@3.0', ecosystem: 'Ubuntu 24.04' }), 'deb');
+  assert.equal(normalizeEcosystem({ vendor: 'Red Hat Enterprise Linux 9' }), 'rpm');
+});
+
+
+test('does not infer an ecosystem from an ambiguous package name', () => {
+  assert.equal(normalizeEcosystem({ name: 'python-shell', purl: 'pkg:generic/python-shell@1.0.0' }), 'generic');
+  assert.equal(normalizeEcosystem({ name: 'nodejs-wrapper' }), '');
+});
