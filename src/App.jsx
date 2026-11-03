@@ -18,7 +18,7 @@ import { inspectInventory } from './lib/inventoryQuality.js';
 import { createInventoryBackup, parseInventoryBackup, compareInventories } from './lib/inventoryBackup.js';
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, Bell, BookOpen,
-  Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Cloud,
+  Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Cloud, Copy,
   Code2, Database, Download, FileDown, FileText, Filter, Globe2, Layers3,
   LockKeyhole, Menu, Moon, Plus, Search, Server, Settings2, Shield, ShieldAlert,
   ShieldCheck, SlidersHorizontal, Sun, Trash2, X
