@@ -25,7 +25,7 @@ function typeFor(name, ecosystem, declaredType = '') {
   // CycloneDX's component type is explicit inventory metadata. Preserve it
   // ahead of name-based suggestions, which can misclassify packages such as
   // an npm library named "nginx" as a web server.
-  const declared = str(declaredType).toLowerCase();
+  const declared = str(declaredType).toLowerCase().replaceAll('_', '-');
   if (declared === 'operating-system') return 'os';
   if (['library', 'framework', 'file'].includes(declared)) return 'library';
   if (['application', 'container', 'device', 'firmware', 'platform', 'device-driver',
