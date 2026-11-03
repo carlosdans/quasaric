@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ArrowRight, ArrowUpRight, Check, ChevronRight, Database, FileCheck2,
-  Fingerprint, Globe2, Layers3, LockKeyhole, ShieldCheck, SlidersHorizontal,
-  Sparkles, Workflow
+  Fingerprint, Globe2, Layers3, LockKeyhole, Menu, ShieldCheck, SlidersHorizontal,
+  Sparkles, Workflow, X
 } from 'lucide-react';
 import './landing.css';
 
@@ -117,21 +117,25 @@ function Brand() {
 
 export default function LandingPage({ lang = 'es', onLanguageChange, onOpenApp }) {
   const t = content[lang] || content.es;
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const closeMobileNav = () => setMobileNavOpen(false);
   return (
     <div className="landing-shell" id="top">
+      <a className="landing-skip-link" href="#landing-main">{lang === 'es' ? 'Saltar al contenido' : 'Skip to content'}</a>
       <header className="landing-header">
         <div className="landing-header-inner">
           <Brand />
-          <nav className="landing-nav" aria-label={lang === 'es' ? 'Navegación principal' : 'Main navigation'}>
-            {t.nav.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
+          <nav className={'landing-nav' + (mobileNavOpen ? ' is-mobile-open' : '')} id="landing-navigation" aria-label={lang === 'es' ? 'Navegación principal' : 'Main navigation'}>
+            {t.nav.map(([href, label]) => <a key={href} href={href} onClick={closeMobileNav}>{label}</a>)}
           </nav>
           <div className="landing-header-actions">
             <button className="landing-language" onClick={() => onLanguageChange?.(lang === 'es' ? 'en' : 'es')} aria-label={lang === 'es' ? 'Switch to English' : 'Cambiar a español'}><Globe2 size={15}/>{lang.toUpperCase()}</button>
+            <button className="landing-mobile-toggle" type="button" aria-controls="landing-navigation" aria-expanded={mobileNavOpen} aria-label={mobileNavOpen ? (lang === 'es' ? 'Cerrar navegación' : 'Close navigation') : (lang === 'es' ? 'Abrir navegación' : 'Open navigation')} onClick={() => setMobileNavOpen(open => !open)}>{mobileNavOpen ? <X size={19}/> : <Menu size={19}/>}</button>
             <button className="landing-open" onClick={onOpenApp}>{t.open}<ArrowUpRight size={16}/></button>
           </div>
         </div>
       </header>
-      <main>
+      <main id="landing-main" tabIndex={-1}>
         <section className="landing-hero">
           <div className="landing-hero-grid">
             <div className="landing-hero-copy">
