@@ -140,8 +140,8 @@ test('covers upstream RPM separator, tilde and caret ordering cases', () => {
     assert.equal(compareVersionForComponent(left, right, rpm), 0, `${left} == ${right}`);
   }
   const orderedPairs = [
-    ['1.0^', '1.0'],
-    ['1.0^git1', '1.0'],
+    ['1.0', '1.0^'],
+    ['1.0', '1.0^git1'],
     ['1.0^git1', '1.0.1'],
     ['1.0~rc1', '1.0~rc2'],
     ['1.0~rc1', '1.0'],
