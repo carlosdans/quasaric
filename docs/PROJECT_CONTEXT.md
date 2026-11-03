@@ -264,3 +264,9 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 ### 2026-11-03 — regresiones de ordenación RPM
 - Se amplió la batería de comparación RPM con casos del conjunto de pruebas upstream de rpm-software-management: separadores equivalentes, tilde de prerelease y caret para snapshots posteriores a release. No se modificó la lógica de comparación.
 - Referencias: https://github.com/rpm-software-management/rpm/blob/master/tests/rpmvercmp.at y https://rpm-software-management.github.io/rpm/man/rpm-version.7.
+
+
+### 2026-11-03 — propiedades CycloneDX contradictorias
+- La importación CycloneDX ya no aplica una política implícita de «último valor gana» a propiedades personalizadas `quasaric:`. Los valores repetidos idénticos se deduplican; si un mismo nombre de propiedad contiene valores distintos, se omite ese metadato y se emite una advertencia por propiedad conflictiva.
+- Una propiedad `sourcePackage` contradictoria no se resuelve mediante inferencia automática alternativa desde pedigree; la procedencia queda sin resolver para revisión. Se evita así asociar un binario al paquete fuente equivocado por el orden de las propiedades del documento.
+- Se añadieron regresiones para conflictos en sourcePackage/sourceVersion/sourcePurl, pedigree concurrente y duplicados idénticos. Sin dependencias, backend, servicios externos ni cambios de recursos Azure.

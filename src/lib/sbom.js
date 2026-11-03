@@ -39,12 +39,22 @@ function typeFor(name, ecosystem, declaredType = '') {
   return 'library';
 }
 function propertiesFor(item) {
-  const result = {};
+  const values = new Map();
+  const conflicts = new Set();
   for (const property of Array.isArray(item.properties) ? item.properties : []) {
     const key = str(property?.name);
-    if (key.startsWith('quasaric:') && typeof property.value === 'string') result[key.slice(9)] = property.value.trim();
+    if (!key.startsWith('quasaric:') || typeof property.value !== 'string') continue;
+    const name = key.slice(9);
+    const value = property.value.trim();
+    if (!values.has(name)) values.set(name, value);
+    else if (values.get(name) !== value) conflicts.add(name);
   }
-  return result;
+  // Identical duplicate properties are harmless; conflicting values must not
+  // silently become last-write-wins provenance or platform metadata.
+  return {
+    values: Object.fromEntries([...values].filter(([name]) => !conflicts.has(name))),
+    conflicts: [...conflicts]
+  };
 }
 function flattenCycloneComponents(components) {
   const pending = [...components].reverse();
@@ -126,8 +136,11 @@ function cyclone(document) {
     if (!name) return { error:'Missing component name.', index:index+1 };
     const refs = Array.isArray(item.externalReferences) ? item.externalReferences : [];
     const cpeRef = refs.find(ref => /cpe/i.test(str(ref.type) + ' ' + str(ref.referenceType)));
-    const properties = propertiesFor(item);
-    const warnings = [];
+    const propertyData = propertiesFor(item);
+    const properties = propertyData.values;
+    const warnings = propertyData.conflicts.map(name =>
+      `Conflicting CycloneDX quasaric:${name} properties were omitted to avoid ambiguous component metadata.`
+    );
     if (purlVersionMismatch) warnings.push('The declared component version does not match the version embedded in its PURL; the PURL was removed to prevent an incorrect OSV query.');
     const component = {
       name, version:declaredVersion || purl?.version || '',
@@ -141,7 +154,7 @@ function cyclone(document) {
     };
     // CycloneDX pedigree ancestors describe provenance. Promote only ancestors
     // explicitly identified as RPM source packages (arch=src), never by name.
-    if (!component.sourcePackage) {
+    if (!component.sourcePackage && !propertyData.conflicts.includes('sourcePackage')) {
       const ancestors = Array.isArray(item.pedigree?.ancestors) ? item.pedigree.ancestors : [];
       const sources = ancestors.filter(ancestor => {
         const parsed = purlInfo(str(ancestor?.purl));

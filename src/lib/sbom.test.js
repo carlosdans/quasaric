@@ -598,3 +598,51 @@ test('deduplicates repeated identical SPDX GENERATED_FROM edges', () => {
   assert.equal(result.components[0].sourceRelationship, 'spdx_generated_from');
   assert.equal(result.components[0].sourceRef, 'SPDXRef-source');
 });
+
+
+test('does not choose last-write-wins values from conflicting CycloneDX provenance properties', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    components: [{
+      name: 'openssl-libs', version: '3.0.7',
+      pedigree: { ancestors: [
+        { name: 'openssl', version: '3.0.7', purl: 'pkg:rpm/openssl@3.0.7?arch=src' }
+      ] },
+      properties: [
+        { name: 'quasaric:sourcePackage', value: 'openssl' },
+        { name: 'quasaric:sourcePackage', value: 'unrelated-source' },
+        { name: 'quasaric:sourceVersion', value: '3.0.7' },
+        { name: 'quasaric:sourceVersion', value: '3.0.8' },
+        { name: 'quasaric:sourcePurl', value: 'pkg:rpm/openssl@3.0.7?arch=src' },
+        { name: 'quasaric:sourcePurl', value: 'pkg:rpm/unrelated-source@3.0.8?arch=src' }
+      ]
+    }]
+  }));
+  assert.equal(result.components.length, 1);
+  assert.equal(result.components[0].sourcePackage, '');
+  assert.equal(result.components[0].sourceVersion, '');
+  assert.equal(result.components[0].sourcePurl, '');
+  assert.equal(result.components[0].sourceRelationship, '');
+  assert.equal(result.warnings.length, 3);
+  for (const field of ['sourcePackage', 'sourceVersion', 'sourcePurl']) {
+    assert.ok(result.warnings.some(item => item.message.includes(field)));
+  }
+});
+
+test('deduplicates identical CycloneDX custom properties without warnings', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    components: [{
+      name: 'curl', version: '8.0',
+      properties: [
+        { name: 'quasaric:sourcePackage', value: 'curl' },
+        { name: 'quasaric:sourcePackage', value: 'curl' },
+        { name: 'quasaric:sourceVersion', value: '8.0-1' },
+        { name: 'quasaric:sourceVersion', value: '8.0-1' }
+      ]
+    }]
+  }));
+  assert.equal(result.components[0].sourcePackage, 'curl');
+  assert.equal(result.components[0].sourceVersion, '8.0-1');
+  assert.deepEqual(result.warnings, []);
+});
