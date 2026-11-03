@@ -5,7 +5,7 @@
  */
 export function isValidCveId(value) {
   if (typeof value !== 'string') return false;
-  const match = /^CVE-(\\d{4})-(\\d+)$/.exec(value);
+  const match = /^CVE-(\d{4})-(\d+)$/.exec(value);
   if (!match) return false;
   const year = Number(match[1]);
   const sequence = match[2];
