@@ -23,8 +23,15 @@ test('accepts the CPE formatted-string escaped punctuation set', () => {
   assert.equal(parseCpe23('cpe:2.3:a:vendor:product\\\\edition:1.0:*:*:*:*:*:*:*').product, 'product\\edition');
 });
 
-test('rejects escaped characters that are not valid in CPE formatted strings', () => {
-  for (const escaped of [' ', 'a', '.', '-', '_']) {
+test('accepts escaped hyphen, dot and underscore', () => {
+  for (const escaped of ['-', '.', '_']) {
+    const parsed = parseCpe23('cpe:2.3:a:vendor:product\\' + escaped + 'edition:1.0:*:*:*:*:*:*:*');
+    assert.equal(parsed.product, 'product' + escaped + 'edition');
+  }
+});
+
+test('rejects escaped spaces and alphanumeric characters', () => {
+  for (const escaped of [' ', 'a', 'z', '0']) {
     assert.equal(
       parseCpe23('cpe:2.3:a:vendor:product\\' + escaped + 'edition:1.0:*:*:*:*:*:*:*'),
       null,
