@@ -240,3 +240,9 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El clasificador de versiones fuente Ubuntu OSV interpreta un evento introduced sin un fixed o last_affected posterior como un intervalo abierto cuando el aviso no proporciona una lista explícita de versiones afectadas. Si Canonical enumera versiones exactas, esa lista no se amplía a versiones posteriores por el rango abierto; las versiones no listadas permanecen en revisión.
 - Se cubren intervalos abiertos simples y posteriores a un intervalo ya cerrado, además de versiones anteriores y sufijos no comparables. No se infiere una versión corregida ni se modifica la evaluación de paquetes binarios.
 - Sin dependencias, backend, servicios externos ni cambios de recursos Azure.
+
+
+### 2026-11-03 — semántica SRPM de Red Hat Security Data
+- Se ajustó la correlación Red Hat: la documentación oficial define `package_state.package_name` y `affected_release.package` como nombres/versiones de SRPM, no como identidad del binario instalado. Estos campos solo se adjuntan como evidencia indirecta cuando el inventario declara `sourcePackage`; nunca elevan por sí solos la aplicabilidad binaria ni se transfieren versiones corregidas al binario.
+- Se añadieron regresiones para impedir falsos positivos cuando el nombre del binario coincide casualmente con el SRPM y para conservar el estado del proveedor como evidencia de revisión.
+- Referencia: documentación Red Hat Security Data API 1.0, secciones CVE y campos AffectedRelease/PackageState.
