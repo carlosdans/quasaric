@@ -186,7 +186,7 @@ test('does not assign a generated ID that belongs to a later valid row', () => {
 
 test('rejects malformed optional inventory IDs before persistence', () => {
   const storage = memoryStorage();
-  for (const id of [42, {}, [], '', '   ', 'x'.repeat(2049)]) {
+  for (const id of [null, 42, {}, [], '', '   ', 'x'.repeat(2049)]) {
     assert.equal(saveInventory([{ id, name: 'nginx' }], storage), false, String(id).slice(0, 20));
     assert.equal(storage.getItem(INVENTORY_STORAGE_KEY), null);
   }
