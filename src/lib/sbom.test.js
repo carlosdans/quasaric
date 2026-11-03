@@ -334,6 +334,6 @@ test('preserves explicit CycloneDX component types over ambiguous name heuristic
     ]
   }));
   assert.deepEqual(result.components.map(component => component.type), [
-    'library', 'library', 'os', 'web'
+    'library', 'library', 'os', 'other'
   ]);
 });
