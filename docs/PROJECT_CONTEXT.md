@@ -493,3 +493,5 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Sin dependencias, backend, transmisión de datos ni recursos Azure adicionales.
 
 - La validación v2 recalcula el resumen cuantitativo a partir de hallazgos, evaluaciones por componente, prioridades y estados de fuente. Comprueba también la coherencia de marcas temporales y que las colecciones principales contengan registros estructurados; un digest recalculado no permite ocultar un resumen manipulado.
+
+- Se publica `docs/quasaric-security-audit.schema.json` como contrato JSON Schema Draft 2020-12 para integraciones externas del formato v2; la CI comprueba los campos obligatorios, el resumen y el formato del digest sin añadir dependencias de validación.

@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Quasaric Security Audit Package v2",
+  "description": "Portable Quasaric security audit export. The SHA-256 digest is calculated over the JSON serialization of the complete package payload with the integrity property omitted; it detects changes but does not authenticate the sender.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "format",
+    "version",
+    "exportedAt",
+    "summary",
+    "scope",
+    "methodology",
+    "analysis",
+    "inventory",
+    "findings",
+    "prioritizedFindings",
+    "posture",
+    "comparison",
+    "integrity"
+  ],
+  "properties": {
+    "format": {
+      "const": "quasaric-security-audit"
+    },
+    "version": {
+      "const": 2
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "candidateFindings",
+        "componentAssessments",
+        "kevFindings",
+        "severity",
+        "applicability",
+        "priorityBands",
+        "sourceStatuses",
+        "sourceCount",
+        "queryErrors",
+        "queryLimits"
+      ],
+      "properties": {
+        "candidateFindings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "componentAssessments": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kevFindings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "severity": {
+          "$ref": "#/$defs/countMap"
+        },
+        "applicability": {
+          "$ref": "#/$defs/countMap"
+        },
+        "priorityBands": {
+          "$ref": "#/$defs/countMap"
+        },
+        "sourceStatuses": {
+          "$ref": "#/$defs/countMap"
+        },
+        "sourceCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "queryErrors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "queryLimits": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "inventoryComponents",
+        "findings",
+        "analysisTimestamp"
+      ],
+      "properties": {
+        "inventoryComponents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "findings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "analysisTimestamp": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "methodology": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "analyzedAt",
+        "sources",
+        "errors",
+        "limits",
+        "disclaimer",
+        "purlAdvisories"
+      ],
+      "properties": {
+        "analyzedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sources": {
+          "type": "object"
+        },
+        "errors": {
+          "type": "array"
+        },
+        "limits": {
+          "type": "array"
+        },
+        "disclaimer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "purlAdvisories": {
+          "type": "array"
+        }
+      }
+    },
+    "inventory": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "prioritizedFindings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "posture": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "comparison": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "digest"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "SHA-256"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "countMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    }
+  }
+}

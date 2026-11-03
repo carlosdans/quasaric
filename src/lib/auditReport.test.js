@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { createAuditReport, parseAuditReport, MAX_AUDIT_REPORT_BYTES } from './auditReport.js';
 
 test('exports source coverage, errors, limits and full component evidence with verified integrity', async () => {
@@ -144,4 +145,20 @@ test('rejects scope timestamps and malformed collection entries that contradict 
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(payload)));
   malformed.integrity.digest = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
   await assert.rejects(() => parseAuditReport(JSON.stringify(malformed)), /invalid or inconsistent structure/);
+});
+
+test('publishes a JSON Schema contract for v2 audit package integrations', async () => {
+  const schemaText = await readFile(new URL('../../docs/quasaric-security-audit.schema.json', import.meta.url), 'utf8');
+  const schema = JSON.parse(schemaText);
+  assert.equal(schema.$schema, 'https://json-schema.org/draft/2020-12/schema');
+  assert.equal(schema.properties.format.const, 'quasaric-security-audit');
+  assert.equal(schema.properties.version.const, 2);
+  for (const field of ['format', 'version', 'exportedAt', 'summary', 'scope', 'methodology', 'analysis', 'inventory', 'findings', 'prioritizedFindings', 'posture', 'comparison', 'integrity']) {
+    assert.ok(schema.required.includes(field), 'schema must require ' + field);
+  }
+  assert.deepEqual(schema.properties.integrity.properties.algorithm, { const: 'SHA-256' });
+  assert.match(schema.properties.integrity.properties.digest.pattern, /64/);
+  for (const field of ['candidateFindings', 'componentAssessments', 'kevFindings', 'severity', 'applicability', 'priorityBands', 'sourceStatuses', 'sourceCount', 'queryErrors', 'queryLimits']) {
+    assert.ok(schema.properties.summary.required.includes(field), 'summary schema must require ' + field);
+  }
 });
