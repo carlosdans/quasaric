@@ -10,6 +10,17 @@ const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9.+
 
 const unique = values => [...new Set(values)];
 
+// OSV can identify one advisory with a CVE ID directly or link it through
+// aliases/upstream. Canonicalize all three paths before joining CVE findings.
+function extractOsvCveIds(record) {
+  const identifiers = [record?.id, ...(Array.isArray(record?.aliases) ? record.aliases : []),
+    ...(Array.isArray(record?.upstream) ? record.upstream : [])];
+  return [...new Set(identifiers
+    .filter(value => typeof value === 'string')
+    .map(value => value.trim().toUpperCase())
+    .filter(value => /^CVE-\\d{4}-\\d+$/.test(value)))];
+}
+
 function componentQueries(component) {
   const aliases = { apache: 'apache http server', 'apache http server': 'apache http server', apache2: 'apache http server', httpd: 'apache http server', node: 'node.js', nodejs: 'node.js', 'node js': 'node.js', 'php-fpm': 'php', iis: 'internet information services', 'microsoft iis': 'internet information services' };
   const name = normalize(component.name);
@@ -742,7 +753,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
         const records = await sourceApi.fetchOsvForPurl(group.purl, group.version, { signal });
         for (const record of records) {
           if (record.withdrawn) continue;
-          const cveIds = [...new Set([...(record.aliases || []), ...(record.upstream || [])].filter(id => /^CVE-[0-9]{4}-[0-9]+$/.test(id)))];
+          const cveIds = extractOsvCveIds(record);
           if (!cveIds.length) {
             for (const component of group.components) {
               purlAdvisories.push({
@@ -971,8 +982,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
           distroErrors.push({ source: 'Official distro advisory', component: group.packageName, message: `${officialError.advisoryId ? officialError.advisoryId + ': ' : ''}${officialError.message}` });
         }
         for (const record of records) {
-          const cveIds = [...new Set([...(record.aliases || []), ...(record.upstream || [])]
-            .filter(id => /^CVE-[0-9]{4}-[0-9]+$/.test(id)))];
+          const cveIds = extractOsvCveIds(record);
           if (!cveIds.length) continue;
           for (const cveId of cveIds) {
             const current = allCandidates.get(cveId) || {
