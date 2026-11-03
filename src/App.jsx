@@ -155,7 +155,18 @@ const iconFor = (type) => ({ os: Server, web: Cloud, runtime: Code2, cms: Layers
 function App() {
   const [lang, setLang] = useState('es');
   useEffect(() => {
+    const english = lang === 'en';
     document.documentElement.lang = lang;
+    document.title = english
+      ? 'Quasaric — Vulnerability Intelligence'
+      : 'Quasaric — Inteligencia de vulnerabilidades';
+    const description = english
+      ? 'Correlate your technology inventory with known vulnerabilities and public risk signals. Local-first analysis, traceable evidence and a transparent methodology.'
+      : 'Relaciona tu inventario tecnológico con vulnerabilidades conocidas y señales públicas de riesgo. Análisis local-first, evidencias trazables y metodología transparente.';
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
+    document.querySelector('meta[property="og:locale"]')?.setAttribute('content', english ? 'en_US' : 'es_ES');
   }, [lang]);
   const [showLanding, setShowLanding] = useState(() => window.location.hash !== '#app');
   useEffect(() => {
