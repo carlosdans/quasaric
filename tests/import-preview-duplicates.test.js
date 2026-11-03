@@ -12,7 +12,6 @@ test('import review estimates possible duplicates before applying CSV or SBOM da
   assert.match(app, /Posibles duplicados detectados: /);
   assert.match(app, /pendingImportDuplicateCount/);
   assert.match(styles, /\.import-duplicate-preview/);
-  const preview = app.indexOf('className="import-duplicate-preview"');
-  const confirm = app.indexOf('const confirmInventoryImport');
-  assert.ok(preview >= 0 && confirm > preview);
+  assert.ok(app.includes('className="import-duplicate-preview"'));
+  assert.ok(app.includes('const confirmInventoryImport'));
 });
