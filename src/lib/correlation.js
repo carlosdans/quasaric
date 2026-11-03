@@ -1029,7 +1029,7 @@ export async function analyzeInventory(components, { signal, onProgress, sources
                 updatedAt: record.modified || null,
                 url: record.officialSource?.url || `https://osv.dev/vulnerability/${encodeURIComponent(record.id)}`,
                 officialSourceStatus: record.officialSource?.status || 'osv_only',
-                references: references.map(reference => reference.url)
+                references: references.map(reference => reference.url),
               };
               const existing = current.components.find(item => item.component.id === component.id);
               if (existing) existing.distroOsvEvidence = [...(existing.distroOsvEvidence || []), evidence];
