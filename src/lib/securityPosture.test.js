@@ -136,3 +136,25 @@ test('counts duplicate CVE/component matches once per snapshot and keeps the str
   assert.equal(result.dwell[0].lastSeverity, 'Critical');
   assert.equal(result.dwell[0].kev, true);
 });
+
+test('canonicalizes CVE identifier casing without changing non-CVE advisory IDs', () => {
+  const result = buildSecurityPosture([
+    snap('latest', [
+      finding('cve-2025-1234', [match('a')]),
+      finding('CVE-2025-1234', [match('a')]),
+      finding('Ubuntu-CVE-2025-1234', [match('a')])
+    ]),
+    snap('earlier', [
+      finding('CVE-2025-1234', [match('a')])
+    ])
+  ]);
+
+  assert.equal(result.latest.uniqueCves, 2);
+  assert.equal(result.latest.exposures, 2);
+  assert.equal(result.dwell.length, 2);
+  const cve = result.dwell.find(item => item.cve === 'CVE-2025-1234');
+  assert.ok(cve);
+  assert.equal(cve.snapshotsSeen, 2);
+  assert.equal(cve.presentInLatest, true);
+  assert.ok(result.dwell.some(item => item.cve === 'Ubuntu-CVE-2025-1234'));
+});

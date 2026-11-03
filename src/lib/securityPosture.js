@@ -4,6 +4,11 @@ function isRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function canonicalFindingId(value) {
+  const id = String(value || '').trim();
+  return /^CVE-\d{4}-\d+$/i.test(id) ? id.toUpperCase() : id;
+}
+
 function exposureEntries(snapshot = {}) {
   const entries = new Map();
   for (const finding of snapshot.findings || []) {
@@ -17,7 +22,7 @@ function exposureEntries(snapshot = {}) {
           component.architecture ?? null, component.ecosystem ?? null,
           component.purl ?? null, component.cpe ?? null, component.sourcePurl ?? null
         ]);
-      const cve = String(finding.id).trim();
+      const cve = canonicalFindingId(finding.id);
       const key = JSON.stringify([cve, componentId]);
       const candidate = {
         key,
