@@ -804,3 +804,24 @@ button{touch-action:manipulation}
 .audit-package-warnings p{margin:6px 0 9px}
 .audit-package-warnings ul{padding-left:17px;list-style:disc;margin-top:7px}
 @media(max-width:700px){.audit-package-breakdowns{grid-template-columns:1fr}}
+
+/* Surface partial source coverage next to findings, not only in exported reports. */
+.source-coverage-panel{margin:0 0 18px;padding:16px 18px}
+.source-coverage-heading{display:flex;align-items:flex-start;gap:11px}
+.source-coverage-heading>svg{flex:0 0 auto;margin-top:2px;color:var(--warning,#b7791f)}
+.source-coverage-heading h2{margin:0;font-size:14px}
+.source-coverage-heading p{margin:5px 0 0;color:var(--text-secondary);font-size:12px;line-height:1.55}
+.source-coverage-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0}
+.source-coverage-stats>div{display:grid;gap:3px;padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface-raised)}
+.source-coverage-stats strong{font-size:18px;font-variant-numeric:tabular-nums}
+.source-coverage-stats span{color:var(--text-secondary);font-size:11px}
+.source-coverage-details{border-top:1px solid var(--border);padding-top:10px}
+.source-coverage-details summary{cursor:pointer;color:var(--text-primary);font-size:12px;font-weight:600}
+.source-coverage-details h3{margin:12px 0 5px;font-size:12px}
+.source-coverage-list{display:grid;gap:6px;margin:10px 0;padding:0;list-style:none}
+.source-coverage-list li{display:flex;justify-content:space-between;gap:12px;padding:7px 9px;border-radius:7px;background:var(--surface-soft);font-size:11px}
+.source-coverage-list li strong{text-align:right;color:var(--text-secondary)}
+.source-coverage-details ul:not(.source-coverage-list){padding-left:18px;color:var(--text-secondary);font-size:11px;line-height:1.55}
+.source-coverage-details li{overflow-wrap:anywhere}
+.source-coverage-details>p{color:var(--text-muted);font-size:11px}
+@media(max-width:600px){.source-coverage-panel{padding:13px}.source-coverage-stats{grid-template-columns:1fr}.source-coverage-list li{align-items:flex-start;flex-direction:column;gap:3px}.source-coverage-list li strong{text-align:left}}

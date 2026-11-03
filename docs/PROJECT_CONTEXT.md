@@ -597,3 +597,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Si el análisis de origen registró errores o límites, el panel lo destaca y muestra hasta cinco detalles de cada tipo para que el lector pueda valorar la cobertura.
 - Se vuelve a explicitar que los hallazgos son candidatos de correlación y que SHA-256 detecta cambios, pero no autentica al emisor.
 - La validación sigue siendo de solo lectura; no importa datos al inventario ni al historial. Diseño adaptable a móvil y sin servicios ni dependencias nuevos.
+
+
+### 2026-11-03 — visibilidad de cobertura durante el análisis
+
+- El resumen y la vista de vulnerabilidades muestran ahora un panel cuando alguna fuente no quedó en estado `queried`, o el análisis registró errores o límites.
+- El panel resume los recuentos y permite desplegar el estado de cada fuente y hasta cinco detalles de errores/límites por categoría.
+- El aviso aclara que las consultas parciales o ausentes no permiten concluir que no existan vulnerabilidades. El paquete JSON sigue conservando el registro completo.
+- Sin cambios en la correlación, sin dependencias ni servicios nuevos; interfaz localizada y adaptable a móvil.
