@@ -28,7 +28,7 @@ function exposureEntries(snapshot = {}) {
         key,
         cve,
         severity: finding.severity || 'Unknown',
-        kev: Boolean(finding.kev),
+        // Treat KEV as source evidence only when the value is explicitly boolean true.\n        kev: finding.kev === true,
         riskScore: calculateRiskPriority(finding).score,
         componentId,
         componentName: component.name || componentId
