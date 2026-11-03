@@ -2,10 +2,10 @@
 
 > Documento de continuidad. Esta sección describe el estado real del código de `main`; no sustituye las limitaciones que muestra la aplicación.
 >
-> **Actualizado:** 2 de noviembre de 2026  
+> **Actualizado:** 3 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `c9a20e6e70dfceed913d42cdd266b3b8c39a09d0`
+> **HEAD de código validado:** `d2100b00412620edef907e87043712be669b7194`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main` y omite despliegues cuando el cambio solo afecta a documentación, pruebas o workflows; si el mismo commit incluye código de aplicación, el despliegue sigue ejecutándose. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `c9a20e6e70dfceed913d42cdd266b3b8c39a09d0`; 377/377 tests correctos en Node 20 y Node 22, sin fallos; build correcta en ambas versiones con React 19 y Vite 8. CI run [41508498115](https://github.com/carlosdans/quasaric/actions/runs/41508498115) y despliegue Azure Static Web Apps [41508498377](https://github.com/carlosdans/quasaric/actions/runs/41508498377), ambos satisfactorios.
+**Última validación de código en `main`:** commit `d2100b00412620edef907e87043712be669b7194`; tests y build correctos en Node 20 y Node 22 con React 19 y Vite 8. CI run [41597463540](https://github.com/carlosdans/quasaric/actions/runs/41597463540) y despliegue Azure Static Web Apps [41597463458](https://github.com/carlosdans/quasaric/actions/runs/41597463458), ambos satisfactorios. El despliegue corresponde exactamente a ese commit.
 
 ## 7. Limitaciones y trabajo pendiente
 
@@ -112,10 +112,12 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 
 ## 8. Registro de cambios recientes
 
-- `b2d8bdb`: corrección CSP para permitir el conector Red Hat; prueba de regresión de cabeceras.
-- `4c55f7d`: detección de duplicados de inventario sensible a arquitectura, ecosistema, PURL/CPE y metadatos fuente.
-- `c4c3337`: límite y concurrencia controlada para consultas Ubuntu OSV por paquete fuente.
-- Los tres cambios son locales al frontend; no añaden dependencias, backend, servicios ni recursos Azure.
+- `2adafb6`: web pública bilingüe con diseño responsive, descripción de producto y límites, navegación hacia la aplicación, metadatos SEO/Open Graph y datos estructurados.
+- `9cf66e3`: retirada de CVE de demostración predefinidas que podían confundirse con hallazgos reales; estados vacíos distintos para inventario sin analizar y análisis sin candidatos.
+- `1f519b2`: corrección de la estructura JSX del estado vacío de vulnerabilidades.
+- `d2100b0`: importación del icono `Copy` usado en la guía de versiones y prueba de regresión para evitar un error en tiempo de ejecución.
+- Los cambios son locales al frontend; no añaden dependencias, backend, servicios ni recursos Azure.
+- CI Node 20/22 y despliegue Azure del commit `d2100b0` verificados como satisfactorios el 3 de noviembre de 2026.
 
 ## 9. Instrucciones para continuar
 
