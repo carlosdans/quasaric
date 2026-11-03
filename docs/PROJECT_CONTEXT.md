@@ -546,4 +546,4 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Aplica las reglas de longitud de secuencia: 1–4 dígitos para años anteriores a 2014 y al menos 4 para 2014 en adelante; rechaza años anteriores al inicio del programa y secuencias cero.
 - Un alias CVE moderno malformado ya no se promueve a hallazgo CVE; el aviso OSV permanece separado como aviso PURL pendiente de revisión.
 - Se añaden pruebas unitarias para IDs históricos/modernos y regresión de correlación OSV. La validación es sintáctica y no certifica que un CVE exista.
-- Implementación: `e2fee2b88803f0f6db05f347c8cc43811155377d`. CI y despliegue de esta revisión pendientes.
+- Implementación: `e2fee2b88803f0f6db05f347c8cc43811155377d`; corrección del patrón de validación: `2f0b9f6cd8a1ca958d34f0915a53f3fab565b891`. CI de Node 20 y Node 22, suite completa y build de producción: correctos ([run 41687038828](https://github.com/carlosdans/quasaric/actions/runs/41687038828)). Despliegue Azure Static Web Apps del mismo commit iniciado ([run 41687039161](https://github.com/carlosdans/quasaric/actions/runs/41687039161)); pendiente de confirmación final.
