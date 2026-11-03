@@ -194,3 +194,18 @@ test('rejects malformed optional inventory IDs before persistence', () => {
   assert.equal(saveInventory([{ id: 'valid-id', name: 'nginx' }], storage), true);
   assert.deepEqual(loadInventory(storage).items, [{ id: 'valid-id', name: 'nginx' }]);
 });
+
+test('repairs malformed stored IDs instead of dropping otherwise valid inventory rows', () => {
+  const raw = JSON.stringify([
+    { id: null, name: 'nginx' },
+    { id: 42, name: 'curl' },
+    { id: {}, name: 'openssl' }
+  ]);
+  const storage = memoryStorage([[INVENTORY_STORAGE_KEY, raw]]);
+  const result = loadInventory(storage);
+  assert.equal(result.warning, true);
+  assert.deepEqual(result.items.map(item => item.name), ['nginx', 'curl', 'openssl']);
+  assert.equal(new Set(result.items.map(item => item.id)).size, 3);
+  assert.ok(result.items.every(item => typeof item.id === 'string' && item.id.length > 0));
+  assert.equal(storage.getItem(INVENTORY_RECOVERY_KEY), raw);
+});
