@@ -156,3 +156,25 @@ test('validates serialized component values before creating a backup', () => {
   };
   assert.throws(() => createInventoryBackup([item]), /Invalid component at position 1/);
 });
+
+
+test('keeps case-sensitive PURL and SPDX identifiers distinct in inventory comparisons', () => {
+  const previous = [
+    { name: 'Library', version: '1', purl: 'pkg:maven/com.Example/Library@1', sourceRef: 'SPDXRef-SourceA' }
+  ];
+  const current = [
+    { name: 'Library', version: '1', purl: 'pkg:maven/com.example/Library@1', sourceRef: 'SPDXRef-SourceA' }
+  ];
+  const purlDiff = compareInventories(previous, current);
+  assert.equal(purlDiff.added.length, 1);
+  assert.equal(purlDiff.removed.length, 1);
+  assert.equal(purlDiff.unchanged.length, 0);
+
+  const sourceRefDiff = compareInventories(
+    [{ name: 'openssl', sourceRef: 'SPDXRef-SourceA' }],
+    [{ name: 'openssl', sourceRef: 'SPDXRef-sourcea' }]
+  );
+  assert.equal(sourceRefDiff.added.length, 1);
+  assert.equal(sourceRefDiff.removed.length, 1);
+  assert.equal(sourceRefDiff.unchanged.length, 0);
+});
