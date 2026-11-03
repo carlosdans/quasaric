@@ -409,3 +409,16 @@ test('flattens nested dependencies when the CycloneDX metadata subject is not in
   ]);
   assert.deepEqual(result.components.map(item => item.version), ['1.0', '2.0', '3.0', '4.0']);
 });
+
+
+test('recognizes the SPDX OPERATING_SYSTEM package purpose enum', () => {
+  const result = parseSbom(JSON.stringify({
+    spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0',
+    packages: [{
+      SPDXID: 'SPDXRef-os', name: 'custom-appliance-image',
+      primaryPackagePurpose: 'OPERATING_SYSTEM'
+    }]
+  }));
+  assert.equal(result.components.length, 1);
+  assert.equal(result.components[0].type, 'os');
+});
