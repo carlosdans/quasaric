@@ -489,9 +489,13 @@ function App() {
       const duplicateCount = Math.max(0, inspectInventory(combined).duplicates.length - previousDuplicateCount);
       if (imported.length && !persist(combined)) throw new Error(lang === 'es' ? 'No se pudo guardar el inventario. No se ha aplicado la importación.' : 'Could not save the inventory. The import was not applied.');
       const summary = lang === 'es'
-        ? `SBOM ${parsed.format}: importados ${imported.length}. Posibles duplicados: ${duplicateCount} (se conservan). Entradas omitidas: ${parsed.errors.length}.`
-        : `SBOM ${parsed.format}: imported ${imported.length}. Possible duplicates: ${duplicateCount} (kept). Skipped entries: ${parsed.errors.length}.`;
-      setImportMessage(summary + (parsed.errors.length ? ' ' + parsed.errors.slice(0, 8).map(error => `${lang === 'es' ? 'Entrada' : 'Entry'} ${error.index}: ${error.message}`).join(' ') : ''));
+        ? `SBOM ${parsed.format}: importados ${imported.length}. Posibles duplicados: ${duplicateCount} (se conservan). Entradas omitidas: ${parsed.errors.length}. Advertencias de identificador: ${parsed.warnings.length}.`
+        : `SBOM ${parsed.format}: imported ${imported.length}. Possible duplicates: ${duplicateCount} (kept). Skipped entries: ${parsed.errors.length}. Identifier warnings: ${parsed.warnings.length}.`;
+      const details = [
+        ...parsed.errors.slice(0, 8).map(error => `${lang === 'es' ? 'Entrada' : 'Entry'} ${error.index}: ${error.message}`),
+        ...parsed.warnings.slice(0, 8).map(warning => `${lang === 'es' ? 'Advertencia en entrada' : 'Warning in entry'} ${warning.index}: ${warning.message}`)
+      ];
+      setImportMessage(summary + (details.length ? ' ' + details.join(' ') : ''));
     } catch (error) {
       setImportError(error.message || (lang === 'es' ? 'No se pudo importar el SBOM.' : 'Could not import SBOM.'));
     } finally { event.target.value = ''; }

@@ -118,15 +118,20 @@ function cyclone(document) {
     if (rawPurl.length > MAX_IDENTIFIER_LENGTH || str(item.cpe).length > MAX_IDENTIFIER_LENGTH) return { error:'PURL and CPE fields must not exceed 2048 characters.', index:index+1 };
     const purl = purlInfo(rawPurl);
     if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
+    const declaredVersion = str(item.version);
+    const purlVersionMismatch = Boolean(declaredVersion && purl?.version && declaredVersion !== purl.version);
+    const safePurl = purlVersionMismatch ? '' : rawPurl;
     const name = str(item.name) || purl?.qualifiedName || purl?.name;
     if (!name) return { error:'Missing component name.', index:index+1 };
     const refs = Array.isArray(item.externalReferences) ? item.externalReferences : [];
     const cpeRef = refs.find(ref => /cpe/i.test(str(ref.type) + ' ' + str(ref.referenceType)));
     const properties = propertiesFor(item);
+    const warnings = [];
+    if (purlVersionMismatch) warnings.push('The declared component version does not match the version embedded in its PURL; the PURL was removed to prevent an incorrect OSV query.');
     const component = {
-      name, version:str(item.version) || purl?.version || '',
+      name, version:declaredVersion || purl?.version || '',
       vendor:str(item.publisher) || str(item.supplier?.name),
-      type:typeFor(name,purl?.ecosystem || '',item.type), purl:rawPurl,
+      type:typeFor(name,purl?.ecosystem || '',item.type), purl:safePurl,
       cpe:str(item.cpe) || str(cpeRef?.url) || str(cpeRef?.referenceLocator),
       sourcePackage:str(properties.sourcePackage), sourceVersion:str(properties.sourceVersion),
       architecture:str(properties.architecture) || str(purl?.qualifiers?.arch),
@@ -152,10 +157,15 @@ function cyclone(document) {
         component.sourceRelationship = 'cyclonedx_pedigree_ancestor_rpm_src';
       }
     }
+    const sourcePurlData = purlInfo(component.sourcePurl);
+    if (component.sourcePurl && !sourcePurlData) return { error:'Invalid source Package URL.', index:index+1 };
+    if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
+      component.sourcePurl = '';
+      warnings.push('The declared source package version does not match the version embedded in its source PURL; the source PURL was removed.');
+    }
     const error = validateComponentFields(component);
     if (error) return { error, index:index+1 };
-    if (component.sourcePurl && !purlInfo(component.sourcePurl)) return { error:'Invalid source Package URL.', index:index+1 };
-    return component;
+    return warnings.length ? { ...component, warning: warnings } : component;
   });
 }
 function spdx(document) {
@@ -194,12 +204,17 @@ function spdx(document) {
     if (rawPurl.length > MAX_IDENTIFIER_LENGTH || rawCpe.length > MAX_IDENTIFIER_LENGTH) return { error:'PURL and CPE fields must not exceed 2048 characters.', index:index+1 };
     const purl = purlInfo(rawPurl);
     if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
+    const declaredVersion = str(item.versionInfo);
+    const purlVersionMismatch = Boolean(declaredVersion && purl?.version && declaredVersion !== purl.version);
+    const safePurl = purlVersionMismatch ? '' : rawPurl;
     const name = str(item.name) || purl?.qualifiedName || purl?.name;
     if (!name) return { error:'Missing package name.', index:index+1 };
+    const warnings = [];
+    if (purlVersionMismatch) warnings.push('The declared package version does not match the version embedded in its PURL; the PURL was removed to prevent an incorrect OSV query.');
     const component = {
-      name, version:str(item.versionInfo) || purl?.version || '',
+      name, version:declaredVersion || purl?.version || '',
       vendor:str(item.supplier).replace(/^Organization:[ \t]*/i,'') || str(item.originator).replace(/^(Organization|Person):\s*/i,''),
-      type:typeFor(name,purl?.ecosystem || '',item.primaryPackagePurpose), purl:rawPurl, cpe:rawCpe,
+      type:typeFor(name,purl?.ecosystem || '',item.primaryPackagePurpose), purl:safePurl, cpe:rawCpe,
       sourcePackage:'', sourceVersion:'', architecture:str(purl?.qualifiers?.arch),
       sourceRelationship:'', sourceRef:'', sourcePurl:''
     };
@@ -217,11 +232,20 @@ function spdx(document) {
       component.sourceRef = str(source.SPDXID);
       component.sourcePurl = sourcePurl;
       component.sourceRelationship = 'spdx_generated_from';
+      if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
+        component.sourcePurl = '';
+        warnings.push('The declared source package version does not match the version embedded in its source PURL; the source PURL was removed.');
+      }
+    }
+    const sourcePurlData = purlInfo(component.sourcePurl);
+    if (component.sourcePurl && !sourcePurlData) return { error:'Invalid source Package URL.', index:index+1 };
+    if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
+      component.sourcePurl = '';
+      warnings.push('The declared source package version does not match the version embedded in its source PURL; the source PURL was removed.');
     }
     const error = validateComponentFields(component);
     if (error) return { error, index:index+1 };
-    if (component.sourcePurl && !purlInfo(component.sourcePurl)) return { error:'Invalid source Package URL.', index:index+1 };
-    return component;
+    return warnings.length ? { ...component, warning: warnings } : component;
   });
 }
 export function parseSbom(input) {
@@ -236,10 +260,14 @@ export function parseSbom(input) {
   else if (typeof document.spdxVersion === 'string') { format='SPDX'; records=spdx(document); }
   else throw new Error('Unrecognised SBOM. Expected CycloneDX or SPDX JSON.');
   if (records.length > MAX_COMPONENTS) throw new Error('SBOM exceeds the 50000 component limit.');
-  const components=[], errors=[];
+  const components=[], errors=[], warnings=[];
   records.forEach((record,index) => {
     if (record.error) errors.push({index:record.index || index+1,message:record.error});
-    else components.push(record);
+    else {
+      const { warning, ...component } = record;
+      components.push(component);
+      for (const message of warning || []) warnings.push({index:index+1,message});
+    }
   });
-  return {format,components,errors};
+  return {format,components,errors,warnings};
 }
