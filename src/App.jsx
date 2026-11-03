@@ -493,7 +493,15 @@ function App() {
         : `SBOM ${parsed.format}: imported ${imported.length}. Possible duplicates: ${duplicateCount} (kept). Skipped entries: ${parsed.errors.length}. Identifier warnings: ${parsed.warnings.length}.`;
       const details = [
         ...parsed.errors.slice(0, 8).map(error => `${lang === 'es' ? 'Entrada' : 'Entry'} ${error.index}: ${error.message}`),
-        ...parsed.warnings.slice(0, 8).map(warning => `${lang === 'es' ? 'Advertencia en entrada' : 'Warning in entry'} ${warning.index}: ${warning.message}`)
+        ...parsed.warnings.slice(0, 8).map(warning => {
+          const source = warning.message.includes('source package');
+          const message = lang === 'es'
+            ? (source
+              ? 'La versión del paquete fuente no coincide con la versión de su PURL; se ha retirado ese PURL.'
+              : 'La versión del componente no coincide con la versión de su PURL; se ha retirado ese PURL.')
+            : warning.message;
+          return `${lang === 'es' ? 'Advertencia en entrada' : 'Warning in entry'} ${warning.index}: ${message}`;
+        })
       ];
       setImportMessage(summary + (details.length ? ' ' + details.join(' ') : ''));
     } catch (error) {

@@ -121,6 +121,7 @@ function cyclone(document) {
     const declaredVersion = str(item.version);
     const purlVersionMismatch = Boolean(declaredVersion && purl?.version && declaredVersion !== purl.version);
     const safePurl = purlVersionMismatch ? '' : rawPurl;
+    const safePurlData = purlVersionMismatch ? null : purl;
     const name = str(item.name) || purl?.qualifiedName || purl?.name;
     if (!name) return { error:'Missing component name.', index:index+1 };
     const refs = Array.isArray(item.externalReferences) ? item.externalReferences : [];
@@ -131,10 +132,10 @@ function cyclone(document) {
     const component = {
       name, version:declaredVersion || purl?.version || '',
       vendor:str(item.publisher) || str(item.supplier?.name),
-      type:typeFor(name,purl?.ecosystem || '',item.type), purl:safePurl,
+      type:typeFor(name,safePurlData?.ecosystem || '',item.type), purl:safePurl,
       cpe:str(item.cpe) || str(cpeRef?.url) || str(cpeRef?.referenceLocator),
       sourcePackage:str(properties.sourcePackage), sourceVersion:str(properties.sourceVersion),
-      architecture:str(properties.architecture) || str(purl?.qualifiers?.arch),
+      architecture:str(properties.architecture) || str(safePurlData?.qualifiers?.arch),
       sourceRelationship:str(properties.sourceRelationship), sourceRef:str(properties.sourceRef),
       sourcePurl:str(properties.sourcePurl)
     };
@@ -214,8 +215,8 @@ function spdx(document) {
     const component = {
       name, version:declaredVersion || purl?.version || '',
       vendor:str(item.supplier).replace(/^Organization:[ \t]*/i,'') || str(item.originator).replace(/^(Organization|Person):\s*/i,''),
-      type:typeFor(name,purl?.ecosystem || '',item.primaryPackagePurpose), purl:safePurl, cpe:rawCpe,
-      sourcePackage:'', sourceVersion:'', architecture:str(purl?.qualifiers?.arch),
+      type:typeFor(name,safePurlData?.ecosystem || '',item.primaryPackagePurpose), purl:safePurl, cpe:rawCpe,
+      sourcePackage:'', sourceVersion:'', architecture:str(safePurlData?.qualifiers?.arch),
       sourceRelationship:'', sourceRef:'', sourcePurl:''
     };
     // SPDX GENERATED_FROM is directional: binary (left) is generated from source (right).

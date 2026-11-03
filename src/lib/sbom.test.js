@@ -512,3 +512,45 @@ test('retains PURLs when the explicit version agrees or the SBOM version is abse
   ]);
   assert.deepEqual(result.warnings, []);
 });
+
+
+test('does not reuse ecosystem or architecture qualifiers from a conflicting component PURL', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    components: [{
+      type: 'library', name: 'openssl-libs', version: '3.0.7-2',
+      purl: 'pkg:rpm/openssl-libs@3.0.7-1?arch=x86_64'
+    }]
+  }));
+  assert.equal(result.components[0].purl, '');
+  assert.equal(result.components[0].type, 'library');
+  assert.equal(result.components[0].architecture, '');
+  assert.equal(result.warnings.length, 1);
+});
+
+test('removes a conflicting SPDX source PURL while preserving explicit source package metadata', () => {
+  const result = parseSbom(JSON.stringify({
+    spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0',
+    packages: [
+      { SPDXID: 'SPDXRef-binary', name: 'openssl-libs', versionInfo: '3.0.7-2' },
+      {
+        SPDXID: 'SPDXRef-source', name: 'openssl', versionInfo: '3.0.7-2',
+        externalRefs: [{
+          referenceCategory: 'PACKAGE-MANAGER',
+          referenceLocator: 'pkg:rpm/openssl@3.0.7-1?arch=src',
+          referenceType: 'purl'
+        }]
+      }
+    ],
+    relationships: [{
+      spdxElementId: 'SPDXRef-binary',
+      relationshipType: 'GENERATED_FROM',
+      relatedSpdxElement: 'SPDXRef-source'
+    }]
+  }));
+  assert.equal(result.components[0].sourcePackage, 'openssl');
+  assert.equal(result.components[0].sourceVersion, '3.0.7-2');
+  assert.equal(result.components[0].sourceRelationship, 'spdx_generated_from');
+  assert.equal(result.components[0].sourcePurl, '');
+  assert.equal(result.warnings.length, 1);
+});
