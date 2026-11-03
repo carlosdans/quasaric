@@ -537,7 +537,7 @@ function App() {
     try {
       if (file.size > 10 * 1024 * 1024) throw new Error(lang === 'es' ? 'La copia supera el límite de 10 MB.' : 'Backup exceeds the 10 MB limit.');
       const backup = parseInventoryBackup(await file.text());
-      const restored = backup.components.map(item => ({ ...normalizeComponentType(item), id: crypto.randomUUID(), createdAt: item.createdAt || new Date().toISOString() }));
+      const restored = backup.components.map(item => ({ ...item, id: crypto.randomUUID(), createdAt: item.createdAt || new Date().toISOString() }));
       if (!window.confirm(lang === 'es' ? `Vas a reemplazar los ${items.length} componentes actuales por ${restored.length} de la copia. ¿Continuar?` : `Replace the current ${items.length} components with ${restored.length} from backup?`)) return;
       if (!persist(restored)) throw new Error(lang === 'es' ? 'No se pudo guardar el inventario. La restauración no se ha aplicado.' : 'Could not save the inventory. The restore was not applied.');
       setInventoryComparison(null);
