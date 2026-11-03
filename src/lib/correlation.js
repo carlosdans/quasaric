@@ -957,7 +957,9 @@ export async function analyzeInventory(components, { signal, onProgress, sources
     distroGroups.get(key).components.push(component);
   };
   for (const component of components) {
-    const ecosystem = resolveOsvDistroEcosystem(component.ecosystem || component.vendor);
+    const packageUrl = parsePackageUrl(component.purl);
+    const ecosystem = resolveOsvDistroEcosystem(component.ecosystem || component.vendor) ||
+      (packageUrl?.type === 'apk' && packageUrl.namespace.toLowerCase().split('/')[0] === 'alpine' ? 'Alpine' : null);
     // Query binary identity only from the declared installed package name.
     // A sourcePackage fallback would mislabel source evidence as binary.
     addDistroGroup(component, ecosystem, component.name, component.version, 'binary_package');

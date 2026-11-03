@@ -152,3 +152,66 @@ test('does not query distro source package without an explicit source version', 
   });
   assert.deepEqual(calls, [['openssl-libs', 'Rocky Linux', '3.0.7-1.el9', { signal: undefined }]]);
 });
+
+
+test('queries Alpine OSV by exact APK PURL identity and keeps it separate from NVD applicability', async () => {
+  const calls = [];
+  const alpineAdvisory = {
+    id: 'ALPINE-CVE-2025-67890',
+    aliases: ['CVE-2025-67890'],
+    summary: 'BusyBox security update',
+    published: '2025-02-01T00:00:00Z',
+    modified: '2025-02-02T00:00:00Z',
+    affected: [{
+      package: { ecosystem: 'Alpine', name: 'busybox' },
+      ranges: [{ type: 'ECOSYSTEM', events: [{ introduced: '0' }, { fixed: '1.36.1-r3' }] }]
+    }],
+    references: [{ type: 'ADVISORY', url: 'https://security.alpinelinux.org/vuln/CVE-2025-67890' }]
+  };
+  const result = await analyzeInventory([{
+    id: 'busybox-alpine',
+    name: 'busybox',
+    version: '1.36.1-r2',
+    purl: 'pkg:apk/alpine/busybox@1.36.1-r2',
+    type: 'library'
+  }], {
+    sources: {
+      fetchNvdByKeyword: async () => [cve],
+      fetchOsvForDistroPackage: async (name, ecosystem, version) => {
+        calls.push({ name, ecosystem, version });
+        return [alpineAdvisory];
+      },
+      fetchEpssScores: async () => new Map(),
+      fetchKevCatalog: async () => new Map()
+    }
+  });
+  assert.deepEqual(calls, [{ name: 'busybox', ecosystem: 'Alpine', version: '1.36.1-r2' }]);
+  const finding = result.findings.find(item => item.id === 'CVE-2025-67890');
+  assert.ok(finding);
+  const evidence = finding.components[0].evidence.find(item => item.source === 'OSV (Linux distributions)');
+  assert.ok(evidence);
+  assert.equal(evidence.ecosystem, 'Alpine');
+  assert.equal(evidence.installedVersion, '1.36.1-r2');
+  assert.deepEqual(evidence.fixedVersions, ['1.36.1-r3']);
+  assert.equal(evidence.status, 'needs_review');
+  assert.equal(finding.components[0].applicability.status, 'possible');
+});
+
+test('does not infer Alpine OSV from a generic APK PURL with a non-Alpine namespace', async () => {
+  const calls = [];
+  await analyzeInventory([{
+    id: 'busybox-other',
+    name: 'busybox',
+    version: '1.36.1-r2',
+    purl: 'pkg:apk/custom/busybox@1.36.1-r2',
+    type: 'library'
+  }], {
+    sources: {
+      fetchNvdByKeyword: async () => [],
+      fetchOsvForDistroPackage: async (...args) => { calls.push(args); return []; },
+      fetchEpssScores: async () => new Map(),
+      fetchKevCatalog: async () => new Map()
+    }
+  });
+  assert.deepEqual(calls, []);
+});

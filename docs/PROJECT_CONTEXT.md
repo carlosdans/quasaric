@@ -5,7 +5,7 @@
 > **Actualizado:** 3 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `636831dc5fe429e4328c71f3acb6c68ddcf5203a`
+> **HEAD de código validado:** `76ba6349ea139bc009dda0ebc9a826fe5bbafff6`
 
 ## 1. Objetivo y límites
 
@@ -555,3 +555,12 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se comparan épocas, tuplas numéricas, sufijos de versión APK conocidos y revisiones de paquete `-rN`; las versiones fuera de la gramática soportada devuelven `null` y permanecen en revisión.
 - Se añaden regresiones para orden de prereleases, sufijos git, revisiones de paquete, épocas, detección de ecosistema y formatos no soportados.
 - No se añaden dependencias, backend ni infraestructura. Validación CI y despliegue pendientes.
+
+
+### 2026-11-03 — consultas OSV para Alpine Linux
+
+- Se amplía la consulta de avisos OSV de distribuciones para reconocer el ecosistema oficial `Alpine` a partir de metadatos explícitos de Alpine Linux.
+- Cuando no hay metadatos de distribución, solo se infiere Alpine desde un PURL APK cuyo namespace inicial sea exactamente `alpine`; otros namespaces APK no activan esa consulta.
+- Las consultas usan el nombre y versión instalados, y exigen coincidencia exacta de paquete y ecosistema en el aviso OSV. Las versiones corregidas se conservan como evidencia del proveedor, sin cambiar la aplicabilidad NVD ni declarar remediación.
+- Se añaden pruebas para detección por metadatos/PURL, coincidencia exacta y rechazo de namespaces genéricos.
+- Sin dependencias ni infraestructura adicional; validación CI y despliegue pendientes.
