@@ -119,7 +119,7 @@ export function compareAnalysisSnapshots(previous, current) {
     const differences = ['severity', 'cvss', 'epss', 'kev', 'applicabilityStatus']
       .filter(field => old[field] !== item[field])
       .map(field => ({ field, before: old[field] ?? null, after: item[field] ?? null }));
-    for (const field of ['name', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'ecosystem', 'purl', 'cpe', 'sourcePurl']) {
+    for (const field of ['name', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'sourceRelationship', 'sourceRef', 'ecosystem', 'purl', 'cpe', 'sourcePurl']) {
       if ((old.component?.[field] ?? null) !== (item.component?.[field] ?? null)) {
         differences.push({
           field: 'component.' + field,
