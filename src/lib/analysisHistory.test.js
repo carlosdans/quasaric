@@ -229,3 +229,22 @@ test('uses PURL and CPE in fallback identity when legacy component IDs are missi
   assert.equal(result.counts.retained, 1);
   assert.equal(result.counts.resolved, 1);
 });
+
+
+test('tracks SPDX source relationship metadata changes in retained exposures', () => {
+  const before = snapshot('before', [finding('CVE-2026-0001', [match('a', 'openssl', {
+    sourcePackage: 'openssl', sourceVersion: '3.0.2-1',
+    sourceRelationship: 'spdx_generated_from', sourceRef: 'SPDXRef-source-a'
+  })])]);
+  const after = snapshot('after', [finding('CVE-2026-0001', [match('a', 'openssl', {
+    sourcePackage: 'openssl', sourceVersion: '3.0.2-1',
+    sourceRelationship: 'spdx_contains', sourceRef: 'SPDXRef-source-b'
+  })])]);
+  const result = compareAnalysisSnapshots(before, after);
+  assert.equal(result.counts.retained, 1);
+  assert.equal(result.counts.changed, 1);
+  assert.deepEqual(result.changed[0].differences, [
+    { field: 'component.sourceRelationship', before: 'spdx_generated_from', after: 'spdx_contains' },
+    { field: 'component.sourceRef', before: 'SPDXRef-source-a', after: 'SPDXRef-source-b' }
+  ]);
+});
