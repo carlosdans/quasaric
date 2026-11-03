@@ -321,3 +321,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La puntuación de riesgo y la creación de snapshots solo reconocen `kev: true` como pertenencia al catálogo CISA KEV. Valores truthy malformados (por ejemplo, la cadena `"false"`, `1` u objetos) ya no pueden sumar 40 puntos ni convertirse en una señal positiva al guardar el historial.
 - Se añaden regresiones tanto para el cálculo de prioridad como para la serialización del historial. Los valores booleanos válidos mantienen el comportamiento anterior.
 - Sin cambios de dependencias, backend o infraestructura. Pendiente de ejecutar la suite completa y el build en el entorno del repositorio.
+
+
+### 2026-11-03 — validación de tipo KEV en el historial
+
+- La carga, comparación y persistencia del historial ahora exigen que cualquier señal KEV presente sea booleana (true o false). Valores malformados como cadenas, números u objetos invalidan el snapshot en lugar de propagarse como evidencia ambigua.
+- Los snapshots antiguos que omiten KEV y los que guardan null siguen siendo compatibles. Si el historial contiene snapshots inválidos, se conserva el JSON original en la clave local de recuperación mientras se exponen únicamente los snapshots válidos.
+- Se añaden regresiones para carga, recuperación, guardado y compatibilidad heredada. Sin cambios de dependencias, backend ni infraestructura.
+- La ejecución completa de tests y build queda pendiente de validación en CI.
