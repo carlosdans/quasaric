@@ -204,3 +204,12 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La página incluye estructura semántica, navegación por anclas, FAQ nativa accesible, diseño responsive y respeto por movimiento reducido.
 - Se amplían metadatos SEO/sociales y datos estructurados SoftwareApplication. No se añade analítica, fuente tipográfica externa ni servicio de pago.
 - Pendiente tras integrar: verificar CI Node 20/22, build, ejecución del workflow de Azure del commit y revisión manual en navegador móvil/escritorio.
+
+
+### 2026-11-03 — eliminar hallazgos de demostración de la aplicación
+
+- Se retiraron CVE codificadas como ejemplos del resumen y de la sección de vulnerabilidades. Aunque estaban etiquetadas como demostración, podían confundirse con hallazgos del inventario real.
+- Antes del primer análisis, ambas vistas muestran estados vacíos explícitos y una acción directa para añadir el primer componente.
+- Tras un análisis sin candidatos, la interfaz aclara que la ausencia de resultados no demuestra que los componentes estén libres de vulnerabilidades.
+- La lista y los filtros de vulnerabilidades quedan vacíos hasta disponer de un análisis real; no se fabrican resultados.
+- Se añadieron pruebas de regresión para impedir que vuelvan a aparecer CVE de ejemplo como resultados. Sin dependencias, servicios externos ni cambios de backend.
