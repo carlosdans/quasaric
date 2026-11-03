@@ -82,18 +82,21 @@ function cyclone(document) {
   // otherwise valid BOMs. Prefer its stable bom-ref; CycloneDX also permits
   // components without one, so use an exact PURL or complete name/version/type
   // identity as a conservative fallback to avoid importing the subject twice.
-  const rootIndex = root && typeof root === 'object'
-    ? nested.findIndex(item => {
-        if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
-        if (rootRef) return str(item['bom-ref']) === rootRef;
+  const rootMatches = root && typeof root === 'object'
+    ? nested.flatMap((item, index) => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) return [];
+        if (rootRef) return str(item['bom-ref']) === rootRef ? [index] : [];
         const rootPurl = str(root.purl);
         // Names, versions and component types are descriptive, not unique
         // identifiers. Without a bom-ref or PURL there is no safe basis for
         // deduplication: keep the metadata subject rather than risk dropping
         // a distinct component with coincidentally matching coordinates.
-        return Boolean(rootPurl) && str(item.purl) === rootPurl;
+        return Boolean(rootPurl) && str(item.purl) === rootPurl ? [index] : [];
       })
-    : -1;
+    : [];
+  // A duplicated bom-ref or PURL is ambiguous. Do not merge the metadata
+  // subject into an arbitrary matching component based on document order.
+  const rootIndex = rootMatches.length === 1 ? rootMatches[0] : -1;
   // The metadata subject is authoritative for shared fields. Retain nested
   // relationships/collections when the subject omits them, rather than
   // silently losing richer root metadata or importing the same ref twice.

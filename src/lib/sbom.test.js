@@ -646,3 +646,35 @@ test('deduplicates identical CycloneDX custom properties without warnings', () =
   assert.equal(result.components[0].sourceVersion, '8.0-1');
   assert.deepEqual(result.warnings, []);
 });
+
+
+test('does not merge CycloneDX metadata subject into an ambiguous duplicate bom-ref', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    metadata: { component: {
+      'bom-ref': 'duplicate-ref', type: 'application', name: 'service', version: '1.0'
+    } },
+    components: [
+      { 'bom-ref': 'duplicate-ref', type: 'application', name: 'service-a', version: '1.0' },
+      { 'bom-ref': 'duplicate-ref', type: 'application', name: 'service-b', version: '2.0' }
+    ]
+  }));
+  assert.equal(result.components.length, 3);
+  assert.deepEqual(result.components.map(item => item.name), ['service', 'service-a', 'service-b']);
+});
+
+test('does not merge CycloneDX metadata subject into an ambiguous duplicate PURL', () => {
+  const sharedPurl = 'pkg:generic/service@1.0';
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    metadata: { component: {
+      type: 'application', name: 'service', version: '1.0', purl: sharedPurl
+    } },
+    components: [
+      { type: 'application', name: 'service-a', version: '1.0', purl: sharedPurl },
+      { type: 'application', name: 'service-b', version: '2.0', purl: sharedPurl }
+    ]
+  }));
+  assert.equal(result.components.length, 3);
+  assert.deepEqual(result.components.map(item => item.name), ['service', 'service-a', 'service-b']);
+});

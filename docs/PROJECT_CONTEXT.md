@@ -270,3 +270,8 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La importación CycloneDX ya no aplica una política implícita de «último valor gana» a propiedades personalizadas `quasaric:`. Los valores repetidos idénticos se deduplican; si un mismo nombre de propiedad contiene valores distintos, se omite ese metadato y se emite una advertencia por propiedad conflictiva.
 - Una propiedad `sourcePackage` contradictoria no se resuelve mediante inferencia automática alternativa desde pedigree; la procedencia queda sin resolver para revisión. Se evita así asociar un binario al paquete fuente equivocado por el orden de las propiedades del documento.
 - Se añadieron regresiones para conflictos en sourcePackage/sourceVersion/sourcePurl, pedigree concurrente y duplicados idénticos. Sin dependencias, backend, servicios externos ni cambios de recursos Azure.
+
+
+### 2026-11-03 — identidad ambigua del componente raíz CycloneDX
+- La deduplicación de `metadata.component` sólo fusiona el sujeto con un componente cuando su `bom-ref` (o, en su ausencia, su PURL) identifica exactamente una entrada. Si el identificador aparece varias veces, se conserva el sujeto por separado en lugar de elegir arbitrariamente la primera coincidencia.
+- Se añadieron regresiones para referencias `bom-ref` y PURL duplicadas. Esto evita que el orden del documento determine qué componente recibe los metadatos del sujeto.
