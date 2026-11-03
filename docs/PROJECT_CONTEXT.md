@@ -460,3 +460,12 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El alta de un análisis usa un upsert validado: reemplaza el mismo ID, conserva los demás y respeta el máximo de diez snapshots.
 - La exportación lee el historial más reciente y la importación solo actualiza la interfaz tras persistir correctamente.
 - Se añaden pruebas para concurrencia por upsert, deduplicación, límite y rechazo de datos inválidos. Sin dependencias, backend ni servicios nuevos.
+
+
+### 2026-11-03 — paquete portable de auditoría
+
+- Se añade una exportación JSON versionada `quasaric-security-audit` (versión 1) para compartir un análisis completo sin depender de la vista HTML o de un CSV.
+- El paquete conserva inventario, hallazgos originales y priorizados, evidencia por componente, referencias, señales, cobertura por fuente, errores, límites de consulta, postura histórica y comparación disponible.
+- Incluye metodología y advertencias explícitas: ausencia de candidatos no demuestra ausencia de vulnerabilidades, los estados son candidatos y el score es triage, no probabilidad de explotación.
+- Se limita a 20 MB y falla de forma explícita ante datos circulares/no serializables o entradas inválidas; no crea exportaciones parciales.
+- La exportación es local, no envía los datos a un servicio. No añade backend ni dependencias.
