@@ -1,5 +1,12 @@
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
+function numericSignal(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const parsed = Number(value.trim());
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 const APPLICABILITY_POINTS = {
   affected: 10,
   possible: 6,
@@ -30,9 +37,8 @@ export function calculateRiskPriority(finding = {}) {
   else reasons.push('Not listed in CISA KEV (+0)');
 
   let epssPoints = 0;
-  const epss = Number(finding.epss);
-  if (finding.epss !== null && finding.epss !== undefined &&
-      finding.epss !== '' && Number.isFinite(epss)) {
+  const epss = numericSignal(finding.epss);
+  if (epss !== null) {
     const probability = clamp(epss > 1 ? epss / 100 : epss, 0, 1);
     epssPoints = Math.round(probability * 30);
     reasons.push(`EPSS ${(probability * 100).toFixed(1)}% (+${epssPoints})`);
@@ -42,9 +48,8 @@ export function calculateRiskPriority(finding = {}) {
   }
 
   let cvssPoints = 0;
-  const cvss = Number(finding.cvss);
-  if (finding.cvss !== null && finding.cvss !== undefined &&
-      finding.cvss !== '' && Number.isFinite(cvss)) {
+  const cvss = numericSignal(finding.cvss);
+  if (cvss !== null) {
     cvssPoints = Math.round(clamp(cvss, 0, 10) * 2);
     reasons.push(`CVSS ${clamp(cvss, 0, 10).toFixed(1)}/10 (+${cvssPoints})`);
   } else {
