@@ -202,15 +202,25 @@ export function normalizeEcosystem(component = {}) {
   const purlEcosystem = PURL_ECOSYSTEMS[purl?.type];
   if (purlEcosystem) return purlEcosystem;
 
-  // Fall back only to declared platform/runtime metadata, not package names.
-  const raw = [component.ecosystem, component.vendor].filter(Boolean).join(' ').toLowerCase();
-  if (/\b(ubuntu|debian|dpkg)\b/.test(raw)) return 'deb';
-  if (/\b(rhel|red hat|rocky|alma ?linux|suse|sles|fedora|rpm)\b/.test(raw)) return 'rpm';
-  if (/\b(windows server|windows 10|windows 11|microsoft windows)\b/.test(raw)) return 'windows';
-  if (/\b(pypi|python|pip)\b/.test(raw)) return 'pypi';
-  if (/\b(npm|node\.?js|nodejs)\b/.test(raw)) return 'npm';
-  if (/\b(composer|php)\b/.test(raw)) return 'composer';
-  if (/\b(maven|gradle|java)\b/.test(raw)) return 'maven';
+  // Prefer declared platform/runtime metadata when no authoritative PURL type exists.
+  const declared = [component.ecosystem, component.vendor].filter(Boolean).join(' ').toLowerCase();
+  if (/\b(ubuntu|debian|dpkg)\b/.test(declared)) return 'deb';
+  if (/\b(rhel|red hat|rocky|alma ?linux|suse|sles|fedora|rpm)\b/.test(declared)) return 'rpm';
+  if (/\b(windows server|windows 10|windows 11|microsoft windows)\b/.test(declared)) return 'windows';
+  if (/\b(pypi|python|pip)\b/.test(declared)) return 'pypi';
+  if (/\b(npm|node\.?js|nodejs)\b/.test(declared)) return 'npm';
+  if (/\b(composer|php)\b/.test(declared)) return 'composer';
+  if (/\b(maven|gradle|java)\b/.test(declared)) return 'maven';
+
+  // Retain only canonical platform/runtime labels for legacy inventory rows.
+  // Do not scan arbitrary package names: names like "python-shell" are ambiguous.
+  const label = String(component.name || '').trim().toLowerCase();
+  if (/^(?:debian|ubuntu)(?: linux)?(?: \d+(?:\.\d+)*)?$/.test(label)) return 'deb';
+  if (/^(?:windows(?: server)?(?: \d{2,4})?|microsoft windows)$/.test(label)) return 'windows';
+  if (/^(?:python|python 3|pypi|pip)$/.test(label)) return 'pypi';
+  if (/^(?:node(?:\.js)?|nodejs|npm)$/.test(label)) return 'npm';
+  if (/^(?:php|composer)$/.test(label)) return 'composer';
+  if (/^(?:java|maven|gradle)$/.test(label)) return 'maven';
   return purl?.type || '';
 }
 
