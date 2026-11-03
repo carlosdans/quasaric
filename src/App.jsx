@@ -67,6 +67,7 @@ const copy = {
     reportFindings: 'Hallazgos del último análisis',
     reportNoComponents: 'No hay componentes en el inventario.',
     reportNoAnalysis: 'Todavía no hay resultados. Ejecuta un análisis para incluir hallazgos.',
+    reportNoFindings: 'El análisis terminó sin candidatos CVE en las fuentes consultadas. Esto no demuestra que los componentes estén libres de vulnerabilidades.',
     reportPrivacy: 'Informe generado en este navegador. El inventario y los resultados no se envían a un servidor.',
     reportType: 'Tipo', reportVersion: 'Versión', reportVendor: 'Fabricante / distribución',
     reportCve: 'CVE', reportDescription: 'Descripción', reportSeverity: 'Severidad',
@@ -126,6 +127,7 @@ const copy = {
     reportFindings: 'Findings from the latest analysis',
     reportNoComponents: 'There are no components in the inventory.',
     reportNoAnalysis: 'No results yet. Run an analysis to include findings.',
+    reportNoFindings: 'The analysis completed without CVE candidates in the queried sources. This does not prove that the components are vulnerability-free.',
     reportPrivacy: 'Report generated in this browser. Inventory and results are not sent to a server.',
     reportType: 'Type', reportVersion: 'Version', reportVendor: 'Vendor / distribution',
     reportCve: 'CVE', reportDescription: 'Description', reportSeverity: 'Severity',
@@ -751,8 +753,8 @@ function App() {
                 <h3>{t.reportFindings} ({analysis?.findings?.length || 0})</h3>
                 {analysis?.findings?.length ? <div className="print-report-table-wrap" role="region" tabIndex={0} aria-label={lang === 'es' ? 'Tabla del informe desplazable' : 'Scrollable report table'}><table className="print-report-table"><thead><tr><th>{t.reportCve}</th><th>{t.reportDescription}</th><th>{t.reportSeverity}</th><th>{t.reportScore}</th><th>{t.reportEpss}</th><th>{t.reportKev}</th><th>{t.reportApplicability}</th><th>{t.riskScore}</th><th>{t.reportComponents}</th><th>{t.remediation}</th><th>{t.reportSources}</th></tr></thead><tbody>{prioritizedFindings.map(finding => {
                   const sources = [...new Set(finding.components.flatMap(component => (component.evidence || []).map(evidence => evidence.source).filter(Boolean)))];
-                  return <tr key={finding.id}><td className="print-report-cve">{finding.id}</td><td>{finding.description || '—'}</td><td>{severityLabel(finding.severity)}</td><td>{finding.cvss ?? '—'}</td><td>{finding.epss ?? '—'}</td><td>{finding.kev ? (lang === 'es' ? 'Sí' : 'Yes') : (lang === 'es' ? 'No' : 'No')}</td><td>{finding.applicabilityStatus || '—'}</td><td>{finding.riskPriority.score}/100 · {riskBandLabel(finding.riskPriority.band)}</td><td>{finding.components.map(component => component.component.name + ' ' + (component.component.version || '')).join('; ')}</td><td>{finding.remediation.map(item => item.component.name + ': ' + (item.guidance.targetVersion ? t.updateTo + ' ' + item.guidance.targetVersion : item.guidance.status === 'fix_candidate_present' ? t.fixCandidate : t.reviewVendor)).join('; ')}</td><td>{sources.join(', ') || '—'}</td></tr>;
-                })}</tbody></table></div> : <p className="print-report-empty">{t.reportNoAnalysis}</p>}
+                  return <tr key={finding.id}><td className="print-report-cve">{finding.id}</td><td>{finding.description || '—'}</td><td>{severityLabel(finding.severity)}</td><td>{finding.cvss ?? '—'}</td><td>{finding.epss ?? '—'}</td><td>{finding.kev ? (lang === 'es' ? 'Sí' : 'Yes') : (lang === 'es' ? 'No' : 'No')}</td><td>{applicabilityLabel(finding.applicabilityStatus) || '—'}</td><td>{finding.riskPriority.score}/100 · {riskBandLabel(finding.riskPriority.band)}</td><td>{finding.components.map(component => component.component.name + ' ' + (component.component.version || '')).join('; ')}</td><td>{finding.remediation.map(item => item.component.name + ': ' + (item.guidance.targetVersion ? t.updateTo + ' ' + item.guidance.targetVersion : item.guidance.status === 'fix_candidate_present' ? t.fixCandidate : t.reviewVendor)).join('; ')}</td><td>{sources.map(sourceNameLabel).join(', ') || '—'}</td></tr>;
+                })}</tbody></table></div> : <p className="print-report-empty">{analysis ? t.reportNoFindings : t.reportNoAnalysis}</p>}
               </section>
               {latestComparison && <section className="print-report-section"><h3>{t.comparePrint}</h3><p className="print-report-empty">{t.compareAdded}: {latestComparison.counts.added} · {t.compareResolved}: {latestComparison.counts.resolved} · {t.compareRetained}: {latestComparison.counts.retained} · {t.compareChanged}: {latestComparison.counts.changed}</p></section>}
               {posture.snapshotCount > 0 && <section className="print-report-section">
