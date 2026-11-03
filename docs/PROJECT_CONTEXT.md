@@ -5,7 +5,7 @@
 > **Actualizado:** 3 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `76ba6349ea139bc009dda0ebc9a826fe5bbafff6`
+> **HEAD de código validado:** `a351cbb6f6115b4da873ac4f1f273d61cf70f14b`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main` y omite despliegues cuando el cambio solo afecta a documentación, pruebas o workflows; si el mismo commit incluye código de aplicación, el despliegue sigue ejecutándose. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `d2100b00412620edef907e87043712be669b7194`; tests y build correctos en Node 20 y Node 22 con React 19 y Vite 8. CI run [41597463540](https://github.com/carlosdans/quasaric/actions/runs/41597463540) y despliegue Azure Static Web Apps [41597463458](https://github.com/carlosdans/quasaric/actions/runs/41597463458), ambos satisfactorios. El despliegue corresponde exactamente a ese commit.
+**Última validación de código en `main`:** commit `a351cbb6f6115b4da873ac4f1f273d61cf70f14b`; 562/562 tests y build de producción correctos en Node 20 y Node 22. CI [41722041561](https://github.com/carlosdans/quasaric/actions/runs/41722041561), satisfactoria. El código de aplicación de este bloque está desplegado desde `dd8f4009367caae0cafd91ae6bc449b707ca2bde` mediante Azure Static Web Apps [41721482608](https://github.com/carlosdans/quasaric/actions/runs/41721482608), satisfactoria; el commit posterior `a351cbb` solo ajusta expectativas de regresión.
 
 ## 7. Limitaciones y trabajo pendiente
 
@@ -554,7 +554,8 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Se incorpora el ecosistema APK al comparador de versiones, detectándolo por PURL `pkg:apk` o por metadatos explícitos de Alpine.
 - Se comparan épocas, tuplas numéricas, sufijos de versión APK conocidos y revisiones de paquete `-rN`; las versiones fuera de la gramática soportada devuelven `null` y permanecen en revisión.
 - Se añaden regresiones para orden de prereleases, sufijos git, revisiones de paquete, épocas, detección de ecosistema y formatos no soportados.
-- No se añaden dependencias, backend ni infraestructura. Validación CI y despliegue pendientes.
+- Validado en commit `76ba6349ea139bc009dda0ebc9a826fe5bbafff6`: CI Node 20/22 [41711832726](https://github.com/carlosdans/quasaric/actions/runs/41711832726) y despliegue Azure [41711832552](https://github.com/carlosdans/quasaric/actions/runs/41711832552), ambos satisfactorios.
+- No se añaden dependencias, backend ni infraestructura.
 
 
 ### 2026-11-03 — consultas OSV para Alpine Linux
@@ -563,4 +564,4 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Cuando no hay metadatos de distribución, solo se infiere Alpine desde un PURL APK cuyo namespace inicial sea exactamente `alpine`; otros namespaces APK no activan esa consulta.
 - Las consultas usan el nombre y versión instalados, y exigen coincidencia exacta de paquete y ecosistema en el aviso OSV. Las versiones corregidas se conservan como evidencia del proveedor, sin cambiar la aplicabilidad NVD ni declarar remediación.
 - Se añaden pruebas para detección por metadatos/PURL, coincidencia exacta y rechazo de namespaces genéricos.
-- Sin dependencias ni infraestructura adicional; validación CI y despliegue pendientes.
+- Sin dependencias ni infraestructura adicional. Validación final en `a351cbb6f6115b4da873ac4f1f273d61cf70f14b`: 562/562 tests y build correctos en Node 20 y 22, CI [41722041561](https://github.com/carlosdans/quasaric/actions/runs/41722041561). Despliegue Azure del código de aplicación `dd8f4009367caae0cafd91ae6bc449b707ca2bde`: [41721482608](https://github.com/carlosdans/quasaric/actions/runs/41721482608), satisfactorio. `a351cbb` solo ajusta la regresión de aplicabilidad y no cambia el bundle desplegado.
