@@ -10,7 +10,7 @@ import { rankFindingsByRisk } from './lib/riskPriority.js';
 import { buildFindingRemediation } from './lib/remediation.js';
 import { buildSecurityPosture } from './lib/securityPosture.js';
 import { buildSecurityPostureCsv } from './lib/securityPostureCsv.js';
-import { createAuditReport } from './lib/auditReport.js';
+import { createAuditReport, parseAuditReport } from './lib/auditReport.js';
 import { safeExternalUrl } from './lib/externalUrl.js';
 import { parsePackageUrl } from './lib/packageUrl.js';
 import { parseInventoryCsv } from './lib/inventoryCsv.js';
@@ -350,6 +350,8 @@ function App() {
   const analysisHistoryRef = useRef(analysisHistory);
   const [historyBackupMessage, setHistoryBackupMessage] = useState('');
   const [historyBackupError, setHistoryBackupError] = useState('');
+  const [auditPackagePreview, setAuditPackagePreview] = useState(null);
+  const [auditPackageError, setAuditPackageError] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState('');
   const [analysisProgress, setAnalysisProgress] = useState({ completed: 0, total: 0 });
@@ -692,10 +694,10 @@ function App() {
     downloadCsv(rows, 'quasaric-findings.csv');
   };
 
-  const exportAuditReport = () => {
+  const exportAuditReport = async () => {
     if (!analysis) return;
     try {
-      const report = createAuditReport({
+      const report = await createAuditReport({
         analysis,
         inventory: items,
         prioritizedFindings,
@@ -708,6 +710,21 @@ function App() {
       );
     } catch (error) {
       setAnalysisError(error.message || (lang === 'es' ? 'No se pudo generar el informe de auditoría.' : 'Could not generate the audit report.'));
+    }
+  };
+
+  const handleAuditPackageValidation = async event => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setAuditPackagePreview(null);
+    setAuditPackageError('');
+    try {
+      if (file.size > 20 * 1024 * 1024) throw new Error(lang === 'es' ? 'El paquete supera el límite de 20 MB.' : 'The package exceeds the 20 MB limit.');
+      const parsed = await parseAuditReport(await file.text());
+      setAuditPackagePreview({ ...parsed, fileName: file.name });
+    } catch (error) {
+      setAuditPackageError(error.message || (lang === 'es' ? 'No se pudo validar el paquete.' : 'Could not validate the package.'));
     }
   };
 
@@ -917,7 +934,10 @@ function App() {
             </section>
             <section className="panel report-card"><div className="report-icon"><FileDown size={23}/></div><div><h3>{lang === 'es' ? 'Exportar inventario' : 'Export inventory'}</h3><p>{lang === 'es' ? 'Descarga los componentes que has añadido en formato CSV.' : 'Download your declared components as CSV.'}</p></div><button className="secondary-btn" onClick={exportCsv} disabled={!items.length}><Download size={16}/>{lang === 'es' ? 'Inventario CSV' : 'Inventory CSV'}</button></section>
             <section className="panel report-card"><div className="report-icon"><ShieldAlert size={23}/></div><div><h3>{lang === 'es' ? 'Exportar hallazgos' : 'Export findings'}</h3><p>{lang === 'es' ? 'Descarga los candidatos CVE del último análisis con CVSS, EPSS, KEV y evidencias por fuente.' : 'Download candidate CVEs from the latest analysis with CVSS, EPSS, KEV and source evidence.'}</p></div><button className="secondary-btn" onClick={exportFindingsCsv} disabled={!analysis?.findings?.length}><Download size={16}/>{lang === 'es' ? 'Hallazgos CSV' : 'Findings CSV'}</button></section>
-            <section className="panel report-card"><div className="report-icon"><ShieldCheck size={23}/></div><div><h3>{lang === 'es' ? 'Paquete de auditoría (JSON)' : 'Audit package (JSON)'}</h3><p>{lang === 'es' ? 'Exporta inventario, hallazgos, evidencias completas por componente, estado de cada fuente, errores, límites de consulta, prioridad, postura y comparación. Útil para revisión técnica e integración externa.' : 'Export inventory, findings, full per-component evidence, each source status, errors, query limits, triage priority, posture and comparison for technical review or external processing.'}</p></div><button className="secondary-btn" onClick={exportAuditReport} disabled={!analysis}><Download size={16}/>{lang === 'es' ? 'Informe JSON' : 'Audit JSON'}</button></section>
+            <section className="panel report-card"><div className="report-icon"><ShieldCheck size={23}/></div><div><h3>{lang === 'es' ? 'Paquete de auditoría (JSON)' : 'Audit package (JSON)'}</h3><p>{lang === 'es' ? 'Exporta inventario, hallazgos, evidencias completas por componente, estado de cada fuente, errores, límites de consulta, prioridad, postura y comparación. Incluye huella SHA-256 para detectar cambios accidentales.' : 'Export inventory, findings, full per-component evidence, source status, errors, query limits, triage priority, posture and comparison. Includes a SHA-256 digest to detect accidental changes.'}</p></div><button className="secondary-btn" onClick={exportAuditReport} disabled={!analysis}><Download size={16}/>{lang === 'es' ? 'Informe JSON' : 'Audit JSON'}</button></section>
+            <section className="panel report-card"><div className="report-icon"><ShieldCheck size={23}/></div><div><h3>{lang === 'es' ? 'Verificar paquete recibido' : 'Verify received package'}</h3><p>{lang === 'es' ? 'Comprueba estructura, coherencia y huella SHA-256 de un paquete externo. La validación es local y de solo lectura: no modifica inventario ni historial.' : 'Check the structure, consistency and SHA-256 digest of an external package. Validation is local and read-only: it does not change inventory or history.'}</p></div><label className="secondary-btn import-file-btn">{lang === 'es' ? 'Validar JSON' : 'Validate JSON'}<input type="file" accept=".json,application/json" onChange={handleAuditPackageValidation} aria-label={lang === 'es' ? 'Validar paquete de auditoría JSON' : 'Validate JSON audit package'}/></label></section>
+            {auditPackageError && <div className="error-banner" role="alert"><AlertTriangle size={16}/>{auditPackageError}</div>}
+            {auditPackagePreview && <section className="panel comparison-panel" aria-live="polite"><div className="comparison-heading"><div><h3>{lang === 'es' ? 'Paquete validado' : 'Package validated'}</h3><p>{auditPackagePreview.fileName}</p></div><button className="icon-btn" onClick={() => setAuditPackagePreview(null)} aria-label={lang === 'es' ? 'Cerrar validación' : 'Close validation'}><X size={16}/></button></div><p className="notice import-feedback">{auditPackagePreview.integrity.verified ? (lang === 'es' ? 'Huella SHA-256 correcta. El contenido coincide con el resumen criptográfico del fichero.' : 'SHA-256 digest verified. The contents match the file integrity digest.') : (lang === 'es' ? 'Paquete heredado v1: estructura válida, pero no incluye huella criptográfica y no se puede verificar su integridad.' : 'Legacy v1 package: structure is valid, but it has no cryptographic digest and its integrity cannot be verified.')}</p><div className="comparison-stats"><div><strong>{auditPackagePreview.report.summary.candidateFindings}</strong><span>{lang === 'es' ? 'Hallazgos candidatos' : 'Candidate findings'}</span></div><div><strong>{auditPackagePreview.report.scope.inventoryComponents}</strong><span>{lang === 'es' ? 'Componentes' : 'Components'}</span></div><div><strong>{auditPackagePreview.report.summary.sourceCount}</strong><span>{lang === 'es' ? 'Fuentes' : 'Sources'}</span></div></div><p>{lang === 'es' ? 'Fecha de exportación: ' : 'Exported: '}{new Date(auditPackagePreview.report.exportedAt).toLocaleString(lang === 'es' ? 'es-ES' : 'en-US')}</p>{auditPackagePreview.integrity.verified && <p className="import-help">SHA-256: <code>{auditPackagePreview.integrity.digest}</code></p>}<p className="import-help">{lang === 'es' ? 'La huella detecta cambios, pero no es una firma digital ni acredita la identidad del emisor.' : 'The digest detects changes but is not a digital signature and does not authenticate the sender.'}</p></section>}
             <section className="panel report-card"><div className="report-icon"><Database size={23}/></div><div><h3>{lang === 'es' ? 'Historial de análisis' : 'Analysis history'}</h3><p>{lang === 'es' ? 'Exporta tus últimos 10 análisis o integra una copia en este navegador. La importación conserva el historial local, elimina duplicados y mantiene los 10 análisis más recientes.' : 'Export your latest 10 analyses or merge a backup into this browser. Import preserves local history, removes duplicates and keeps the 10 most recent analyses.'}</p></div><div className="heading-actions"><button className="secondary-btn" onClick={exportAnalysisHistory} disabled={!analysisHistory.length}><Download size={16}/>{lang === 'es' ? 'Exportar historial' : 'Export history'}</button><label className="secondary-btn import-file-btn">{lang === 'es' ? 'Importar historial' : 'Import history'}<input type="file" accept=".json,application/json" onChange={handleAnalysisHistoryImport} aria-label={lang === 'es' ? 'Importar copia del historial de análisis' : 'Import analysis history backup'}/></label></div></section>
             {historyBackupMessage && <div className="notice import-feedback" role="status">{historyBackupMessage}</div>}
             {historyBackupError && <div className="error-banner" role="alert"><AlertTriangle size={16}/>{historyBackupError}</div>}

@@ -483,3 +483,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El paquete JSON añade un resumen calculado de hallazgos candidatos, evaluaciones por componente, KEV estricto, severidades, aplicabilidad, bandas de prioridad, estados de fuentes, errores y límites.
 - Los recuentos se derivan de los mismos datos exportados; los valores ausentes quedan como `unknown` en lugar de imputarse.
 - Se mantiene KEV como señal booleana estricta (`true` únicamente) y las bandas como clasificación de triage, no como confirmación.
+
+
+### 2026-11-03 — integridad y validación de paquetes de auditoría
+
+- Los nuevos paquetes de auditoría usan la versión 2 e incorporan un digest SHA-256 del contenido serializado; la validación comprueba el digest, el formato, la estructura y la coherencia entre inventario, hallazgos y contadores.
+- Informes permite validar paquetes JSON recibidos localmente y muestra su resumen, fecha y huella. Es una operación de solo lectura: no restaura inventario, no integra historial ni altera el análisis activo.
+- Los paquetes v1 se aceptan como formato heredado estructuralmente válido, pero se marcan expresamente como no verificables por carecer de huella. SHA-256 detecta alteraciones, no acredita autoría ni sustituye una firma digital.
+- Sin dependencias, backend, transmisión de datos ni recursos Azure adicionales.

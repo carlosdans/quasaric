@@ -31,12 +31,37 @@ function buildAuditSummary(analysis, prioritizedFindings) {
   };
 }
 
-/**
- * Build a portable audit package from the latest local assessment.
- * Source outcomes, errors, limits and raw per-component evidence are retained
- * so an empty result can be distinguished from incomplete source coverage.
- */
-export function createAuditReport({
+async function sha256(value) {
+  if (!globalThis.crypto?.subtle || typeof TextEncoder === 'undefined') {
+    throw new Error('SHA-256 verification is not supported in this browser context.');
+  }
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function validateAuditPayload(report) {
+  if (!report || typeof report !== 'object' || Array.isArray(report) ||
+      report.format !== 'quasaric-security-audit' ||
+      ![1, 2].includes(report.version) ||
+      typeof report.exportedAt !== 'string' || !Number.isFinite(Date.parse(report.exportedAt)) ||
+      !report.analysis || typeof report.analysis !== 'object' || Array.isArray(report.analysis) ||
+      !report.summary || typeof report.summary !== 'object' || Array.isArray(report.summary) ||
+      !report.scope || typeof report.scope !== 'object' || Array.isArray(report.scope) ||
+      !Array.isArray(report.inventory) || !Array.isArray(report.findings) ||
+      !Array.isArray(report.prioritizedFindings) ||
+      !report.analysis.sources || typeof report.analysis.sources !== 'object' || Array.isArray(report.analysis.sources) ||
+      !Array.isArray(report.analysis.errors) || !Array.isArray(report.analysis.limits) ||
+      !Array.isArray(report.analysis.purlAdvisories) ||
+      report.scope.inventoryComponents !== report.inventory.length ||
+      report.scope.findings !== report.findings.length ||
+      report.summary.candidateFindings !== report.findings.length ||
+      report.summary.queryErrors !== report.analysis.errors.length ||
+      report.summary.queryLimits !== report.analysis.limits.length) {
+    throw new TypeError('The audit package has an invalid or inconsistent structure.');
+  }
+}
+
+export async function createAuditReport({
   analysis,
   inventory = [],
   prioritizedFindings = [],
@@ -52,7 +77,7 @@ export function createAuditReport({
   }
   const report = {
     format: 'quasaric-security-audit',
-    version: 1,
+    version: 2,
     exportedAt,
     summary: buildAuditSummary(analysis, prioritizedFindings),
     scope: {
@@ -65,7 +90,8 @@ export function createAuditReport({
       riskScore: 'KEV 40 + EPSS 30 + CVSS 20 + applicability 10; triage score, not exploitation probability.',
       applicability: 'Candidate status requires verification against exact vendor advisory, release, package revision, architecture and installed build.',
       absence: 'No candidate in queried sources does not prove that a component is vulnerability-free.',
-      history: 'Posture and comparison reflect only snapshots retained in this browser; absence does not prove remediation.'
+      history: 'Posture and comparison reflect only snapshots retained in this browser; absence does not prove remediation.',
+      integrity: 'SHA-256 detects accidental changes after export; it is not a digital signature and does not prove who created the package.'
     },
     analysis: {
       analyzedAt: analysis.analyzedAt || null,
@@ -81,16 +107,44 @@ export function createAuditReport({
     posture,
     comparison
   };
-  let serialized;
+  let canonical;
   try {
-    serialized = JSON.stringify(report, null, 2);
+    canonical = JSON.stringify(report);
   } catch {
     throw new TypeError('The assessment contains data that cannot be exported as JSON.');
   }
+  const serialized = JSON.stringify({
+    ...report,
+    integrity: { algorithm: 'SHA-256', digest: await sha256(canonical) }
+  }, null, 2);
   if (new TextEncoder().encode(serialized).byteLength > MAX_AUDIT_REPORT_BYTES) {
     throw new RangeError('The audit report exceeds the 20 MB export limit.');
   }
   return serialized;
+}
+
+export async function parseAuditReport(input) {
+  if (typeof input !== 'string') throw new TypeError('The audit package must be JSON text.');
+  if (new TextEncoder().encode(input).byteLength > MAX_AUDIT_REPORT_BYTES) {
+    throw new RangeError('The audit report exceeds the 20 MB limit.');
+  }
+  let report;
+  try { report = JSON.parse(input); }
+  catch { throw new TypeError('The audit package is not valid JSON.'); }
+  validateAuditPayload(report);
+  if (report.version === 1) {
+    return { report, integrity: { verified: false, legacy: true } };
+  }
+  if (!report.integrity || report.integrity.algorithm !== 'SHA-256' ||
+      typeof report.integrity.digest !== 'string' || !/^[a-f0-9]{64}$/.test(report.integrity.digest)) {
+    throw new TypeError('The audit package has no valid SHA-256 integrity record.');
+  }
+  const { integrity, ...payload } = report;
+  const actual = await sha256(JSON.stringify(payload));
+  if (actual !== integrity.digest) {
+    throw new Error('The audit package failed SHA-256 verification; its contents may have changed or been corrupted.');
+  }
+  return { report, integrity: { verified: true, legacy: false, algorithm: integrity.algorithm, digest: integrity.digest } };
 }
 
 export { MAX_AUDIT_REPORT_BYTES };
