@@ -323,6 +323,26 @@ test('merges richer CycloneDX metadata subject fields into its matching componen
   assert.equal(result.components[0].vendor, 'Quasaric Project');
   assert.equal(result.components[0].purl, 'pkg:generic/quasaric-app@2.4.0');
 });
+test('does not duplicate CycloneDX metadata subject when bom-ref is omitted', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.7',
+    metadata: { component: {
+      type: 'application', name: 'quasaric-app', version: '2.4.0',
+      publisher: 'Quasaric Project', purl: 'pkg:generic/quasaric-app@2.4.0'
+    } },
+    components: [
+      { type: 'application', name: 'quasaric-app', version: '2.4.0',
+        purl: 'pkg:generic/quasaric-app@2.4.0' },
+      { type: 'library', name: 'react', version: '19.0.0' }
+    ]
+  }));
+  assert.equal(result.components.length, 2);
+  assert.equal(result.components[0].name, 'quasaric-app');
+  assert.equal(result.components[0].vendor, 'Quasaric Project');
+  assert.equal(result.components[0].purl, 'pkg:generic/quasaric-app@2.4.0');
+  assert.equal(result.components[1].name, 'react');
+});
+
 test('preserves explicit CycloneDX component types over ambiguous name heuristics', () => {
   const result = parseSbom(JSON.stringify({
     bomFormat: 'CycloneDX', specVersion: '1.7',
