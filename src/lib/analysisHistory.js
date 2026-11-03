@@ -43,10 +43,6 @@ function componentKey(component) {
     ]);
 }
 
-function findingComponentKey(finding, match) {
-  return JSON.stringify([finding.id, componentKey(match.component)]);
-}
-
 export function createAnalysisSnapshot(analysis, inventory = []) {
   if (!analysis || !Array.isArray(analysis.findings) || !Array.isArray(inventory)) {
     throw new TypeError('A completed analysis with findings and an inventory array is required.');
