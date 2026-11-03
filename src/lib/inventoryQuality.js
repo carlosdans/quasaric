@@ -27,6 +27,8 @@ export function inspectInventory(items = []) {
   const missingSourceVersion = [];
   const invalidPurls = [];
   const invalidCpes = [];
+  const purlVersionMismatches = [];
+  const sourcePurlVersionMismatches = [];
   const sourceVersionWithoutPackage = [];
   items.forEach((item, index) => {
     const name = normalizeValue(item?.name);
@@ -35,8 +37,19 @@ export function inspectInventory(items = []) {
     }
     for (const field of ['purl', 'sourcePurl']) {
       const value = String(item?.[field] || '').trim();
-      if (value && !parsePackageUrl(value)) {
+      if (!value) continue;
+      const parsed = parsePackageUrl(value);
+      if (!parsed) {
         invalidPurls.push({ id: item?.id ?? String(index), name: item?.name || '—', field });
+        continue;
+      }
+      const declaredVersion = String(item?.[field === 'purl' ? 'version' : 'sourceVersion'] || '').trim();
+      if (parsed.version && declaredVersion && parsed.version !== declaredVersion) {
+        const entry = {
+          id: item?.id ?? String(index), name: item?.name || '—',
+          purlVersion: parsed.version, declaredVersion
+        };
+        (field === 'purl' ? purlVersionMismatches : sourcePurlVersionMismatches).push(entry);
       }
     }
     if (item?.cpe && !parseCpe23(item.cpe)) {
@@ -65,5 +78,5 @@ export function inspectInventory(items = []) {
       seen.set(key, index);
     }
   });
-  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, sourceVersionWithoutPackage, duplicates };
+  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, purlVersionMismatches, sourcePurlVersionMismatches, sourceVersionWithoutPackage, duplicates };
 }

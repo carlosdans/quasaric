@@ -503,3 +503,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La validación de enlaces reutiliza la política de enlaces externos de la aplicación: HTTPS absoluto, sin credenciales. Una URL insegura no se contabiliza como referencia segura, pero el registro original se conserva intacto para no alterar la evidencia recibida.
 - El parser recalcula estos contadores desde las evidencias incluidas y rechaza un resumen inconsistente incluso si se vuelve a calcular el digest SHA-256.
 - La métrica no afirma que un enlace esté disponible, que el contenido siga vigente ni que el proveedor haya autenticado el paquete. No se añaden dependencias ni servicios.
+
+
+### 2026-11-03 — coherencia de versiones declaradas y PURL
+
+- El panel de calidad detecta por separado discrepancias entre la versión binaria declarada y la versión del PURL, y entre la versión fuente declarada y la del PURL fuente.
+- Solo compara cuando el PURL es válido y contiene una versión explícita; los PURL sin versión no generan advertencias artificiales.
+- La comprobación es de solo lectura: no corrige ni elimina metadatos automáticamente. Añade pruebas para coincidencias, discrepancias, PURL sin versión y PURL malformados.

@@ -20,7 +20,7 @@ test('keeps distinct versions and vendors separate',()=>{
   assert.deepEqual(inspectInventory([{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.1'},{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.2'},{name:'OpenSSL',vendor:'Ubuntu',version:'3.0.1'}]).duplicates,[]);
 });
 test('handles empty inventories and missing names',()=>{
-  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],invalidCpes:[],sourceVersionWithoutPackage:[],duplicates:[]});
+  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],invalidCpes:[],purlVersionMismatches:[],sourcePurlVersionMismatches:[],sourceVersionWithoutPackage:[],duplicates:[]});
   assert.deepEqual(inspectInventory([{id:'a',version:'1.0'}]).duplicates,[]);
 });
 test('does not report false duplicates when metadata contains separators',()=>{
@@ -88,4 +88,29 @@ test('does not collapse case-sensitive package identifiers when checking duplica
     { id: 'd', name: 'Library', type: 'library', version: '1.0', sourcePurl: 'pkg:maven/com.example/source@1.0' }
   ]);
   assert.deepEqual(result.duplicates, []);
+});
+
+
+test('flags declared binary and source versions that contradict their PURL versions', () => {
+  const result = inspectInventory([
+    { id: 'binary', name: 'openssl', version: '3.0.2-1', purl: 'pkg:deb/ubuntu/openssl@3.0.2-2' },
+    { id: 'source', name: 'openssl-libs', version: '3.0.2-1', sourcePackage: 'openssl', sourceVersion: '3.0.2-1', sourcePurl: 'pkg:deb/ubuntu/openssl@3.0.2-3' },
+    { id: 'match', name: 'curl', version: '8.5.0', purl: 'pkg:deb/ubuntu/curl@8.5.0' },
+    { id: 'no-version', name: 'nginx', version: '1.26', purl: 'pkg:generic/nginx' }
+  ]);
+  assert.deepEqual(result.purlVersionMismatches, [
+    { id: 'binary', name: 'openssl', purlVersion: '3.0.2-2', declaredVersion: '3.0.2-1' }
+  ]);
+  assert.deepEqual(result.sourcePurlVersionMismatches, [
+    { id: 'source', name: 'openssl-libs', purlVersion: '3.0.2-3', declaredVersion: '3.0.2-1' }
+  ]);
+});
+
+test('does not compare absent versions or malformed PURLs as version mismatches', () => {
+  const result = inspectInventory([
+    { id: 'bad', name: 'bad', version: '1.0', purl: 'not-a-purl' },
+    { id: 'empty', name: 'empty', version: '1.0', purl: '' }
+  ]);
+  assert.deepEqual(result.purlVersionMismatches, []);
+  assert.deepEqual(result.sourcePurlVersionMismatches, []);
 });

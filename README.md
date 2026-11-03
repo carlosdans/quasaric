@@ -225,3 +225,8 @@ El contrato de integración del paquete JSON v2 está publicado en [`docs/quasar
 ### Trazabilidad de evidencias en paquetes de auditoría
 
 El resumen del paquete JSON v2 cuantifica las evidencias conservadas por componente: total de registros, distribución por fuente y número de registros con al menos una referencia HTTPS segura. Los enlaces se evalúan con la misma política de seguridad de la interfaz (HTTPS absoluto, sin credenciales); no se reescriben ni eliminan del registro original. Las referencias HTTP, esquemas activos, URLs malformadas o enlaces con credenciales no cuentan como referencias seguras. Esta métrica evalúa la presencia y seguridad del enlace, no la vigencia, autenticidad ni calidad semántica del aviso.
+
+
+### Coherencia de versiones entre inventario y PURL
+
+El panel de calidad del inventario detecta cuando la versión declarada del componente o del paquete fuente contradice la versión incluida en su PURL. La advertencia no modifica ni elimina los datos: permite corregir la versión o el identificador antes de consultar OSV, evitando que el inventario describa dos identidades distintas para el mismo paquete.
