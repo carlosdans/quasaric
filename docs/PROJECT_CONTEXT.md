@@ -613,3 +613,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El nombre de paquete y la versión se entrecomillan para el shell; no se generan comandos para revisión manual, otros ecosistemas ni objetivos ausentes.
 - El comando es orientativo, no se ejecuta desde Quasaric. La interfaz pide revisar el aviso oficial y simular el cambio en el entorno antes de ejecutarlo.
 - Pruebas unitarias para elegibilidad y quoting. Sin dependencias, backend ni cambios de infraestructura.
+
+
+### 2026-11-03 — comandos de remediación Ubuntu visibles en resultados
+
+- La tabla de vulnerabilidades muestra el comando `apt-get` solo cuando `buildRemediationCommand` valida una recomendación Ubuntu exacta y no ambigua.
+- El comando se puede copiar desde la propia fila; se conserva el aviso de que es una propuesta que debe revisarse antes de ejecutarla.
+- Los casos sin una versión binaria corregida inequívoca siguen mostrando revisión manual y no reciben comandos.
+- Cambio limitado al frontend; sin nuevas dependencias, backend ni recursos Azure.
