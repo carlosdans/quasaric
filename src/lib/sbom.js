@@ -29,7 +29,7 @@ function typeFor(name, ecosystem, declaredType = '') {
   if (declared === 'operating-system') return 'os';
   if (['library', 'framework', 'file'].includes(declared)) return 'library';
   if (['application', 'container', 'device', 'firmware', 'platform', 'device-driver',
-    'machine-learning-model', 'data', 'cryptographic-asset'].includes(declared)) return 'other';
+    'machine-learning-model', 'data', 'cryptographic-asset', 'install', 'source', 'archive', 'other'].includes(declared)) return 'other';
   const value = (name + ' ' + ecosystem).toLowerCase();
   if (/ubuntu|debian|red hat|rhel|rocky|alma|suse|windows server|linux/.test(value)) return 'os';
   if (/nginx|apache|httpd|iis|caddy|tomcat/.test(value)) return 'web';
@@ -181,7 +181,7 @@ function spdx(document) {
     const component = {
       name, version:str(item.versionInfo) || purl?.version || '',
       vendor:str(item.supplier).replace(/^Organization:[ \t]*/i,'') || str(item.originator).replace(/^(Organization|Person):\s*/i,''),
-      type:typeFor(name,purl?.ecosystem || ''), purl:rawPurl, cpe:rawCpe,
+      type:typeFor(name,purl?.ecosystem || '',item.primaryPackagePurpose), purl:rawPurl, cpe:rawCpe,
       sourcePackage:'', sourceVersion:'', architecture:str(purl?.qualifiers?.arch),
       sourceRelationship:'', sourceRef:'', sourcePurl:''
     };

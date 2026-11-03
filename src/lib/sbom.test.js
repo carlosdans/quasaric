@@ -294,6 +294,37 @@ test('imports the CycloneDX metadata component when it is the BOM subject', () =
   assert.equal(result.components[0].purl, 'pkg:generic/quasaric-app@2.4.0');
 });
 
+test('preserves explicit SPDX primary package purpose over name heuristics', () => {
+  const result = parseSbom(JSON.stringify({
+    spdxVersion: 'SPDX-2.3',
+    dataLicense: 'CC0-1.0',
+    packages: [
+      {
+        SPDXID: 'SPDXRef-framework',
+        name: 'python',
+        versionInfo: '1.0.0',
+        primaryPackagePurpose: 'FRAMEWORK',
+        externalRefs: [{ referenceType: 'purl', referenceLocator: 'pkg:npm/python@1.0.0' }]
+      },
+      {
+        SPDXID: 'SPDXRef-application',
+        name: 'nginx',
+        versionInfo: '1.0.0',
+        primaryPackagePurpose: 'APPLICATION',
+        externalRefs: [{ referenceType: 'purl', referenceLocator: 'pkg:npm/nginx@1.0.0' }]
+      },
+      {
+        SPDXID: 'SPDXRef-os',
+        name: 'custom-linux-image',
+        primaryPackagePurpose: 'OPERATING-SYSTEM'
+      }
+    ]
+  }));
+  assert.deepEqual(result.components.map(component => component.type), [
+    'library', 'other', 'os'
+  ]);
+});
+
 test('does not duplicate CycloneDX metadata component when its bom-ref is in components', () => {
   const root = { 'bom-ref': 'app-ref', type: 'application', name: 'quasaric-app', version: '2.4.0' };
   const result = parseSbom(JSON.stringify({
