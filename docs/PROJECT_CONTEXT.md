@@ -635,3 +635,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El inventario permite filtrar localmente por nombre, versión, tipo, fabricante/ecosistema, PURL, CPE, paquete fuente, arquitectura y referencias de procedencia.
 - La paginación opera sobre los resultados filtrados y vuelve a la primera página al cambiar la búsqueda; limpiar el campo restaura el inventario completo.
 - No se envían los términos de búsqueda a fuentes externas ni se modifica el inventario persistido.
+
+
+### 2026-11-04 — filtro de aplicabilidad en vulnerabilidades
+
+- La lista de hallazgos permite filtrar por el estado agregado de aplicabilidad: afectado, parche candidato, posible, requiere revisión, no afectado o desconocido.
+- El filtro se combina con la búsqueda de texto y la severidad/KEV, sin modificar ni recalcular los hallazgos.
+- Los valores ausentes se agrupan como desconocidos; la interfaz está localizada en español e inglés.
+- La operación es local y de solo lectura; no añade dependencias, backend ni servicios externos.
