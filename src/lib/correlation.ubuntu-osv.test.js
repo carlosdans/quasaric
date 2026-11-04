@@ -200,3 +200,27 @@ test('an explicitly affected source version can remain a candidate when no fixed
   const result = classifyUbuntuOsvComponent(noFixedBoundary, component());
   assert.equal(result.status, 'affected');
 });
+
+test('does not let an explicit not-affected entry override an incomplete source assessment', () => {
+  const mixedEvidence = {
+    ...record,
+    affected: [
+      {
+        ...record.affected[0],
+        ecosystem_specific: {
+          ...record.affected[0].ecosystem_specific,
+          status: 'not-affected'
+        }
+      },
+      {
+        package: { name: 'openssl', ecosystem: 'Ubuntu:24.04:LTS' },
+        ecosystem_specific: { binaries: [
+          { binary_name: 'libssl3t64', binary_version: '3.0.13-0ubuntu3.2' }
+        ] }
+      }
+    ]
+  };
+  const result = classifyUbuntuOsvComponent(mixedEvidence, component());
+  assert.equal(result.status, 'needs_review');
+  assert.match(result.reason, /conflicting or incomplete/i);
+});

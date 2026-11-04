@@ -152,14 +152,16 @@ export function classifyUbuntuOsvComponent(record, component) {
     classifyUbuntuOsvSourceVersion(entry, component?.sourceVersion)
   );
   const sourceStatuses = new Set(sourceAssessments.map(item => item.status));
-  const contradictorySourceStatuses =
+  const hasIncompleteSourceAssessment = sourceStatuses.has('needs_review') &&
+    [...sourceStatuses].some(status => status !== 'needs_review');
+  const contradictorySourceStatuses = hasIncompleteSourceAssessment ||
     (sourceStatuses.has('affected') && (sourceStatuses.has('unaffected') || sourceStatuses.has('patched_candidate'))) ||
     (sourceStatuses.has('unaffected') && sourceStatuses.has('patched_candidate'));
   let sourceClassification;
   if (contradictorySourceStatuses) {
     sourceClassification = {
       status: 'needs_review',
-      reason: 'Ubuntu OSV contains conflicting source-version assessments across multiple entries for this package and release.'
+      reason: 'Ubuntu OSV contains conflicting or incomplete source-version assessments across multiple entries for this package and release.'
     };
   } else if (sourceStatuses.has('affected')) {
     sourceClassification = sourceAssessments.find(item => item.status === 'affected');
