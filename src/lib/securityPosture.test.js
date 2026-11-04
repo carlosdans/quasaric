@@ -174,3 +174,18 @@ test('does not promote truthy non-boolean KEV values in direct posture summaries
   assert.equal(positive.latest.kevCves, 1);
   assert.equal(positive.dwell[0].kev, true);
 });
+
+
+test('scales posture aggregation across large snapshots without losing dwell identity', () => {
+  const findings = Array.from({ length: 1000 }, (_, index) =>
+    finding(`CVE-2026-${index + 1}`, [match(`component-${index}`)]));
+  const result = buildSecurityPosture([
+    snap('latest', findings),
+    snap('earlier', findings)
+  ]);
+  assert.equal(result.latest.uniqueCves, 1000);
+  assert.equal(result.latest.exposures, 1000);
+  assert.equal(result.latest.components, 1000);
+  assert.equal(result.dwell.length, 1000);
+  assert.ok(result.dwell.every(item => item.snapshotsSeen === 2 && item.presentInLatest));
+});

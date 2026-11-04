@@ -66,8 +66,10 @@ export function buildSecurityPosture(history = []) {
           ((typeof match.component.id === 'string' && match.component.id.trim().length > 0) ||
            (typeof match.component.name === 'string' && match.component.name.trim().length > 0)))))
     .slice(0, 10).reverse();
-  const timeline = chronological.map(snapshot => {
-    const entries = exposureEntries(snapshot);
+  // Reuse each snapshot's deduplicated exposure set for all posture views.
+  const entriesBySnapshot = chronological.map(exposureEntries);
+  const timeline = chronological.map((snapshot, index) => {
+    const entries = entriesBySnapshot[index];
     const cves = new Map();
     for (const item of entries) {
       const current = cves.get(item.cve) || {
@@ -93,7 +95,7 @@ export function buildSecurityPosture(history = []) {
 
   const observations = new Map();
   chronological.forEach((snapshot, index) => {
-    for (const item of exposureEntries(snapshot)) {
+    for (const item of entriesBySnapshot[index]) {
       const record = observations.get(item.key) || {
         key: item.key, cve: item.cve, componentName: item.componentName,
         firstObservedAt: snapshot.analyzedAt || snapshot.id || '',
@@ -110,8 +112,8 @@ export function buildSecurityPosture(history = []) {
     }
   });
 
-  const latestKeys = new Set(chronological.length
-    ? exposureEntries(chronological[chronological.length - 1]).map(item => item.key) : []);
+  const latestKeys = new Set(entriesBySnapshot.length
+    ? entriesBySnapshot[entriesBySnapshot.length - 1].map(item => item.key) : []);
   const dwell = [...observations.values()].map(({ lastSeenIndex, ...item }) => ({
     ...item, presentInLatest: latestKeys.has(item.key)
   })).sort((a, b) => Number(b.presentInLatest) - Number(a.presentInLatest) ||
