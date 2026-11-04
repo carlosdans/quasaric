@@ -31,3 +31,16 @@ test('removing a component requires confirmation and announces its identity acce
   assert.match(app, /'Eliminar ' : 'Remove '\)/);
   assert.match(app, /lang === 'es' \? 'Eliminar componente' : 'Remove component'/);
 });
+
+
+test('backup comparison bounds rendered change previews while preserving full counts', () => {
+  const comparisonStart = app.indexOf('{inventoryComparison && <section');
+  const comparisonEnd = app.indexOf('</section>}', comparisonStart);
+  const comparison = app.slice(comparisonStart, comparisonEnd);
+  assert.match(comparison, /inventoryComparison\.added\.slice\(0,20\)\.map/);
+  assert.match(comparison, /inventoryComparison\.removed\.slice\(0,20\)\.map/);
+  assert.match(comparison, /inventoryComparison\.added\.length-20/);
+  assert.match(comparison, /inventoryComparison\.removed\.length-20/);
+  assert.match(comparison, /inventoryComparison\.added\.length/);
+  assert.match(comparison, /inventoryComparison\.removed\.length/);
+});
