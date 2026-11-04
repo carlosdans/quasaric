@@ -185,6 +185,9 @@ test('does not infer SPDX relationships from names or ambiguous source edges', (
   }));
   assert.equal(result.components[0].sourcePackage,'');
   assert.equal(result.components[0].sourceRelationship,'');
+}  assert.equal(result.warnings.length, 1);
+  assert.equal(result.warnings[0].index, 1);
+  assert.match(result.warnings[0].message, /Multiple SPDX GENERATED_FROM source packages/);
 });
 test('imports CycloneDX quasaric source properties and RPM arch=src pedigree only', () => {
   const result=parseSbom(JSON.stringify({

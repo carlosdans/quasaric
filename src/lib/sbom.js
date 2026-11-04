@@ -246,6 +246,9 @@ function spdx(document) {
     // SPDX GENERATED_FROM is directional: binary (left) is generated from source (right).
     // Multiple source targets are intentionally left unresolved for manual review.
     const sources = [...(generatedFrom.get(str(item.SPDXID)) || [])];
+    if (sources.length > 1) {
+      warnings.push('Multiple SPDX GENERATED_FROM source packages are linked to this binary; source-package applicability cannot be resolved automatically.');
+    }
     if (sources.length === 1) {
       const source = packages.get(sources[0]);
       const sourceRefs = Array.isArray(source.externalRefs) ? source.externalRefs : [];
