@@ -177,6 +177,7 @@ const copy = {
 
 const INVENTORY_PAGE_SIZE = 100;
 const FINDING_PAGE_SIZE = 25;
+const POSTURE_DWELL_PAGE_SIZE = 25;
 const types = ['os', 'web', 'runtime', 'cms', 'database', 'library', 'other'];
 const typeNames = { os: 'OS', web: 'Web', runtime: 'Runtime', cms: 'CMS', database: 'DB', library: 'Lib', other: 'Other' };
 const iconFor = (type) => ({ os: Server, web: Cloud, runtime: Code2, cms: Layers3, database: Database, library: Code2, other: Layers3 }[type] || Layers3);
@@ -226,6 +227,7 @@ function App() {
   // Keep the latest committed inventory available to async file handlers.
   const itemsRef = useRef(initialInventory.items);
   const [inventoryPage, setInventoryPage] = useState(1);
+  const [postureDwellPage, setPostureDwellPage] = useState(1);
   const [inventoryQuery, setInventoryQuery] = useState('');
   const [storageWarning, setStorageWarning] = useState(initialInventory.warning);
   const [showAdd, setShowAdd] = useState(false);
@@ -532,6 +534,15 @@ function App() {
   }, [filteredInventoryItems, inventoryPage]);
   const inventoryQuality = useMemo(() => inspectInventory(items), [items]);
   const posture = useMemo(() => buildSecurityPosture(analysisHistory), [analysisHistory]);
+  const postureDwellPageCount = Math.max(1, Math.ceil(posture.dwell.length / POSTURE_DWELL_PAGE_SIZE));
+  const visiblePostureDwell = posture.dwell.slice(
+    (postureDwellPage - 1) * POSTURE_DWELL_PAGE_SIZE,
+    postureDwellPage * POSTURE_DWELL_PAGE_SIZE
+  );
+  useEffect(() => { setPostureDwellPage(1); }, [analysisHistory]);
+  useEffect(() => {
+    setPostureDwellPage(page => Math.min(page, postureDwellPageCount));
+  }, [postureDwellPageCount]);
   const latestComparison = useMemo(() => analysisHistory.length >= 2
     ? compareAnalysisSnapshots(analysisHistory[1], analysisHistory[0])
     : null, [analysisHistory]);
@@ -1000,7 +1011,7 @@ function App() {
               </section>
               <section className="panel comparison-panel">
                 <div className="comparison-heading"><div><h3>{t.postureDwell}</h3><p>{t.postureDwellHelp}</p></div></div>
-                {posture.dwell.length ? <div className="table-wrap" role="region" tabIndex={0} aria-label={lang === 'es' ? 'Tabla desplazable' : 'Scrollable table'}><table><thead><tr><th>CVE</th><th>{t.component}</th><th>{t.postureFirst}</th><th>{t.postureLast}</th><th>{t.postureSnapshots}</th><th>{t.status}</th></tr></thead><tbody>{posture.dwell.map(item => <tr key={item.key}><td><strong className="cve-id">{item.cve}</strong>{(item.kev === true) && <span className="tag tag-red">KEV</span>}</td><td>{item.componentName}</td><td>{new Date(item.firstObservedAt).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US')}</td><td>{new Date(item.lastObservedAt).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US')}</td><td>{item.snapshotsSeen}</td><td><span className={'tag ' + (item.presentInLatest ? 'tag-amber' : 'tag-neutral')}>{item.presentInLatest ? t.posturePresent : t.postureAbsent}</span></td></tr>)}</tbody></table></div> : <p className="print-report-empty">{t.postureNoDwell}</p>}
+                {posture.dwell.length ? <div className="table-wrap" role="region" tabIndex={0} aria-label={lang === 'es' ? 'Tabla desplazable' : 'Scrollable table'}><table><thead><tr><th>CVE</th><th>{t.component}</th><th>{t.postureFirst}</th><th>{t.postureLast}</th><th>{t.postureSnapshots}</th><th>{t.status}</th></tr></thead><tbody>{visiblePostureDwell.map(item => <tr key={item.key}><td><strong className="cve-id">{item.cve}</strong>{(item.kev === true) && <span className="tag tag-red">KEV</span>}</td><td>{item.componentName}</td><td>{new Date(item.firstObservedAt).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US')}</td><td>{new Date(item.lastObservedAt).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US')}</td><td>{item.snapshotsSeen}</td><td><span className={'tag ' + (item.presentInLatest ? 'tag-amber' : 'tag-neutral')}>{item.presentInLatest ? t.posturePresent : t.postureAbsent}</span></td></tr>)}</tbody></table></div>{posture.dwell.length > POSTURE_DWELL_PAGE_SIZE && <div className="inventory-pagination" aria-label={lang === 'es' ? 'Paginación de permanencia' : 'Exposure history pagination'}><span>{lang === 'es' ? `Mostrando ${(postureDwellPage - 1) * POSTURE_DWELL_PAGE_SIZE + 1}–${Math.min(postureDwellPage * POSTURE_DWELL_PAGE_SIZE, posture.dwell.length)} de ${posture.dwell.length} exposiciones` : `Showing ${(postureDwellPage - 1) * POSTURE_DWELL_PAGE_SIZE + 1}–${Math.min(postureDwellPage * POSTURE_DWELL_PAGE_SIZE, posture.dwell.length)} of ${posture.dwell.length} exposures`}</span><div><button type="button" className="secondary-btn" onClick={() => setPostureDwellPage(page => Math.max(1, page - 1))} disabled={postureDwellPage <= 1}>{lang === 'es' ? 'Anterior' : 'Previous'}</button><span>{postureDwellPage} / {postureDwellPageCount}</span><button type="button" className="secondary-btn" onClick={() => setPostureDwellPage(page => Math.min(postureDwellPageCount, page + 1))} disabled={postureDwellPage >= postureDwellPageCount}>{lang === 'es' ? 'Siguiente' : 'Next'}</button></div></div>} : <p className="print-report-empty">{t.postureNoDwell}</p>}
               </section>
             </>}
           </>}
