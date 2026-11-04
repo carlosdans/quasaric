@@ -219,13 +219,17 @@ test('rejects oversized source relationship metadata', () => {
 });
 
 
-test('rejects malformed explicit source PURLs instead of retaining invalid provenance', () => {
+test('removes malformed explicit source PURLs but preserves the binary component', () => {
   const result = parseSbom(JSON.stringify({
     bomFormat: 'CycloneDX', specVersion: '1.6',
-    components: [{ name: 'nginx', properties: [{ name: 'quasaric:sourcePurl', value: 'pkg:rpm/%ZZ' }] }]
+    components: [{ name: 'nginx', version: '1.26.0', properties: [{ name: 'quasaric:sourcePurl', value: 'pkg:rpm/%ZZ' }] }]
   }));
-  assert.equal(result.components.length, 0);
-  assert.equal(result.errors[0].message, 'Invalid source Package URL.');
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.components.length, 1);
+  assert.equal(result.components[0].name, 'nginx');
+  assert.equal(result.components[0].version, '1.26.0');
+  assert.equal(result.components[0].sourcePurl, '');
+  assert.match(result.warnings[0].message, /source Package URL is invalid/);
 });
 
 
@@ -762,11 +766,11 @@ test('preserves SPDX binary components when related source PURLs are invalid', (
     ],
     relationships: [{ spdxElementId: 'SPDXRef-binary', relationshipType: 'GENERATED_FROM', relatedSpdxElement: 'SPDXRef-source' }]
   }));
-  assert.equal(result.errors.length, 0);
-  assert.equal(result.components.length, 2);
+  assert.equal(result.errors.length, 1); // The malformed PURL still invalidates the source package's own record.
+  assert.equal(result.components.length, 1);
   assert.equal(result.components[0].name, 'openssl-libs');
   assert.equal(result.components[0].sourcePackage, 'openssl');
   assert.equal(result.components[0].sourceVersion, '3.0.7-2');
   assert.equal(result.components[0].sourcePurl, '');
-  assert.match(result.warnings[0].message, /source Package URL is invalid/);
+  assert.ok(result.warnings.some(item => /source Package URL is invalid/.test(item.message)));
 });
