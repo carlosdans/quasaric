@@ -664,3 +664,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La persistencia rechaza nuevos inventarios con tipos fuera del catálogo soportado (`os`, `web`, `runtime`, `cms`, `database`, `library`, `other`).
 - Los inventarios antiguos con tipos desconocidos conservan sus componentes: se normaliza ese campo a `other`, se activa el aviso y se mantiene una copia intacta del JSON original para recuperación.
 - Prueba de regresión para rechazo al guardar, migración sin pérdida de filas y preservación de la copia original.
+
+
+### 2026-11-04 — descarga de recuperación del historial de análisis
+
+- Cuando el historial local está dañado o contiene snapshots inválidos, Quasaric conserva el JSON original en una clave de recuperación separada.
+- La sección de historial ofrece descargar esa copia original en texto plano sin reinterpretarla, sobrescribirla ni modificar el historial.
+- La lectura falla de forma segura si el almacenamiento está bloqueado; incluye pruebas de contenido intacto, ausencia de copia y errores de acceso.
+- Los datos permanecen en el navegador y la descarga no utiliza servicios externos.

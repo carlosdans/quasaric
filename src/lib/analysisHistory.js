@@ -5,6 +5,15 @@ const MAX_FINDINGS_PER_SNAPSHOT = 50000;
 const MAX_INVENTORY_COMPONENTS = 50000;
 const HISTORY_RECOVERY_KEY = 'quasaric-analysis-history-recovery';
 
+/** Read the untouched local recovery copy without changing either history key. */
+export function readAnalysisHistoryRecovery(storage) {
+  try {
+    const target = storage === undefined ? globalThis.localStorage : storage;
+    const raw = target?.getItem(HISTORY_RECOVERY_KEY);
+    return typeof raw === 'string' && raw.length ? raw : null;
+  } catch { return null; }
+}
+
 function withinByteLimit(value) {
   return new TextEncoder().encode(value).byteLength <= MAX_HISTORY_BYTES;
 }

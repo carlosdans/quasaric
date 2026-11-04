@@ -375,3 +375,17 @@ test('upsert rejects invalid histories and snapshots', () => {
   assert.throws(() => upsertAnalysisSnapshot([], { id: 'broken', findings: 'invalid' }), TypeError);
   assert.throws(() => upsertAnalysisSnapshot([], { findings: [] }), TypeError);
 });
+
+
+test('reads the preserved analysis history recovery copy without modifying it', async () => {
+  const { readAnalysisHistoryRecovery } = await import('./analysisHistory.js');
+  const raw = '[{malformed history';
+  const data = new Map([['quasaric-analysis-history-recovery', raw]]);
+  const storage = { getItem: key => data.has(key) ? data.get(key) : null };
+  assert.equal(readAnalysisHistoryRecovery(storage), raw);
+  assert.equal(data.get('quasaric-analysis-history-recovery'), raw);
+  assert.equal(readAnalysisHistoryRecovery({ getItem: () => '' }), null);
+  assert.equal(readAnalysisHistoryRecovery({ getItem: () => null }), null);
+  assert.equal(readAnalysisHistoryRecovery(null), null);
+  assert.equal(readAnalysisHistoryRecovery({ getItem() { throw new Error('storage blocked'); } }), null);
+});

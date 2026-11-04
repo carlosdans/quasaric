@@ -3,7 +3,7 @@ import LandingPage from './LandingPage.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
 import { toCsv } from './lib/csv.js';
-import { createAnalysisSnapshot, compareAnalysisSnapshots, loadAnalysisHistory, saveAnalysisHistory, upsertAnalysisSnapshot } from './lib/analysisHistory.js';
+import { createAnalysisSnapshot, compareAnalysisSnapshots, loadAnalysisHistory, saveAnalysisHistory, upsertAnalysisSnapshot, readAnalysisHistoryRecovery } from './lib/analysisHistory.js';
 import { createAnalysisHistoryBackup, parseAnalysisHistoryBackup, mergeAnalysisHistory } from './lib/analysisHistoryBackup.js';
 import { suggestedComponentType } from './lib/componentTypes.js';
 import { rankFindingsByRisk } from './lib/riskPriority.js';
@@ -376,6 +376,7 @@ function App() {
   const [analysisHistoryWarning, setAnalysisHistoryWarning] = useState(false);
   const analysisAbortRef = useRef(null);
   const [analysisHistory, setAnalysisHistory] = useState(() => loadAnalysisHistory());
+  const [historyRecoveryAvailable, setHistoryRecoveryAvailable] = useState(() => Boolean(readAnalysisHistoryRecovery()));
   // Latest committed value shared by asynchronous imports and analysis completion.
   const analysisHistoryRef = useRef(analysisHistory);
   const [historyBackupMessage, setHistoryBackupMessage] = useState('');
@@ -416,6 +417,21 @@ function App() {
       setHistoryBackupMessage('');
       setHistoryBackupError(error.message || (lang === 'es' ? 'No se pudo exportar el historial.' : 'Could not export analysis history.'));
     }
+  };
+
+  const exportAnalysisHistoryRecovery = () => {
+    const raw = readAnalysisHistoryRecovery();
+    if (raw === null) {
+      setHistoryRecoveryAvailable(false);
+      setHistoryBackupMessage('');
+      setHistoryBackupError(lang === 'es' ? 'No hay una copia de recuperación del historial disponible en este navegador.' : 'No analysis history recovery copy is available in this browser.');
+      return;
+    }
+    triggerCsvDownload(new Blob([raw], { type: 'text/plain;charset=utf-8' }), 'quasaric-analysis-history-recovery.txt');
+    setHistoryBackupError('');
+    setHistoryBackupMessage(lang === 'es'
+      ? 'Copia de recuperación del historial descargada sin modificar los datos originales.'
+      : 'Analysis history recovery copy downloaded without modifying the original data.');
   };
 
   const handleAnalysisHistoryImport = async event => {
@@ -1015,7 +1031,7 @@ function App() {
               {auditPackagePreview.integrity.verified && <p className="import-help">SHA-256: <code>{auditPackagePreview.integrity.digest}</code></p>}
               <p className="import-help">{lang === 'es' ? 'La huella detecta cambios, pero no es una firma digital ni acredita la identidad del emisor. Los hallazgos son candidatos de correlación, no confirmaciones de explotación.' : 'The digest detects changes but does not authenticate the sender. Findings are correlation candidates, not proof of exploitation.'}</p>
             </section>}
-            <section className="panel report-card"><div className="report-icon"><Database size={23}/></div><div><h3>{lang === 'es' ? 'Historial de análisis' : 'Analysis history'}</h3><p>{lang === 'es' ? 'Exporta tus últimos 10 análisis o integra una copia en este navegador. La importación conserva el historial local, elimina duplicados y mantiene los 10 análisis más recientes.' : 'Export your latest 10 analyses or merge a backup into this browser. Import preserves local history, removes duplicates and keeps the 10 most recent analyses.'}</p></div><div className="heading-actions"><button className="secondary-btn" onClick={exportAnalysisHistory} disabled={!analysisHistory.length}><Download size={16}/>{lang === 'es' ? 'Exportar historial' : 'Export history'}</button><label className="secondary-btn import-file-btn">{lang === 'es' ? 'Importar historial' : 'Import history'}<input type="file" accept=".json,application/json" onChange={handleAnalysisHistoryImport} aria-label={lang === 'es' ? 'Importar copia del historial de análisis' : 'Import analysis history backup'}/></label></div></section>
+            <section className="panel report-card"><div className="report-icon"><Database size={23}/></div><div><h3>{lang === 'es' ? 'Historial de análisis' : 'Analysis history'}</h3><p>{lang === 'es' ? 'Exporta tus últimos 10 análisis o integra una copia en este navegador. La importación conserva el historial local, elimina duplicados y mantiene los 10 análisis más recientes.' : 'Export your latest 10 analyses or merge a backup into this browser. Import preserves local history, removes duplicates and keeps the 10 most recent analyses.'}</p></div><div className="heading-actions"><button className="secondary-btn" onClick={exportAnalysisHistory} disabled={!analysisHistory.length}><Download size={16}/>{lang === 'es' ? 'Exportar historial' : 'Export history'}</button>{historyRecoveryAvailable && <button className="secondary-btn" onClick={exportAnalysisHistoryRecovery}><Download size={16}/>{lang === 'es' ? 'Descargar recuperación' : 'Download recovery copy'}</button>}<label className="secondary-btn import-file-btn">{lang === 'es' ? 'Importar historial' : 'Import history'}<input type="file" accept=".json,application/json" onChange={handleAnalysisHistoryImport} aria-label={lang === 'es' ? 'Importar copia del historial de análisis' : 'Import analysis history backup'}/></label></div></section>
             {historyBackupMessage && <div className="notice import-feedback" role="status">{historyBackupMessage}</div>}
             {historyBackupError && <div className="error-banner" role="alert"><AlertTriangle size={16}/>{historyBackupError}</div>}
 
