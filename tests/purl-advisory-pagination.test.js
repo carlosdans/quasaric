@@ -13,5 +13,5 @@ test('OSV advisories without CVE are shown once and paginated without losing the
   assert.match(source, /setPurlAdvisoryPage\(1\); \}, \[analysis\]\)/);
   assert.equal((source.match(/analysis\.purlAdvisories\.map\(/g) || []).length, 0);
   assert.equal((source.match(/visiblePurlAdvisories\.map\(/g) || []).length, 1);
-  assert.equal((source.match(/className="source-advisory-list"/g) || []).length, 0);
+  assert.equal((source.match(/className="source-advisory-list"/g) || []).length, 1);
 });
