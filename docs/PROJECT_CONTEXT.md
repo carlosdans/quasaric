@@ -649,3 +649,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 
 - El contador de resultados en español ahora utiliza el total filtrado, igual que el inglés.
 - El rango mostrado y el total corresponden a la búsqueda activa, no al inventario completo.
+
+
+### 2026-11-04 — exportación de copias de recuperación del inventario
+
+- Cuando Quasaric detecta datos locales dañados o parcialmente recuperables, conserva una copia intacta en la clave de recuperación del navegador.
+- La pantalla de inventario ofrece descargar esa copia en bruto como archivo de texto, sin sobrescribirla ni intentar reinterpretar los datos dañados.
+- La lectura de recuperación falla de forma segura si el almacenamiento está bloqueado; incluye pruebas de lectura, ausencia y errores de acceso.
+- La recuperación no envía datos a ningún servicio y no sustituye la copia JSON normal del inventario.

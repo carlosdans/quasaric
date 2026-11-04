@@ -209,3 +209,16 @@ test('repairs malformed stored IDs instead of dropping otherwise valid inventory
   assert.ok(result.items.every(item => typeof item.id === 'string' && item.id.length > 0));
   assert.equal(storage.getItem(INVENTORY_RECOVERY_KEY), raw);
 });
+
+
+test('reads the preserved recovery copy without modifying it', async () => {
+  const { readInventoryRecovery } = await import('./inventoryStorage.js');
+  const raw = '{malformed inventory data';
+  const storage = memoryStorage([[INVENTORY_RECOVERY_KEY, raw]]);
+  assert.equal(readInventoryRecovery(storage), raw);
+  assert.equal(storage.getItem(INVENTORY_RECOVERY_KEY), raw);
+  assert.equal(readInventoryRecovery(memoryStorage()), null);
+  assert.equal(readInventoryRecovery(null), null);
+  const blocked = { getItem() { throw new Error('storage blocked'); } };
+  assert.equal(readInventoryRecovery(blocked), null);
+});

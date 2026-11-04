@@ -4,6 +4,15 @@ export const INVENTORY_STORAGE_KEY = 'quasaric-inventory';
 export const INVENTORY_RECOVERY_KEY = 'quasaric-inventory-recovery';
 export const MAX_INVENTORY_BYTES = 10 * 1024 * 1024;
 export const MAX_INVENTORY_COMPONENTS = 50000;
+
+/** Read the untouched local recovery copy without changing either storage key. */
+export function readInventoryRecovery(storage) {
+  try {
+    const target = storage === undefined ? globalThis.localStorage : storage;
+    const raw = target?.getItem(INVENTORY_RECOVERY_KEY);
+    return typeof raw === 'string' && raw.length ? raw : null;
+  } catch { return null; }
+}
 const MAX_IDENTIFIER_LENGTH = 2048;
 const MAX_FIELD_LENGTH = 16384;
 const STRING_FIELDS = ['name', 'type', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'sourceRelationship'];
