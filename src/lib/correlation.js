@@ -152,16 +152,20 @@ export function classifyUbuntuOsvComponent(record, component) {
     classifyUbuntuOsvSourceVersion(entry, component?.sourceVersion)
   );
   const sourceStatuses = new Set(sourceAssessments.map(item => item.status));
-  const hasIncompleteSourceAssessment = sourceStatuses.has('needs_review') &&
-    [...sourceStatuses].some(status => status !== 'needs_review');
-  const contradictorySourceStatuses = hasIncompleteSourceAssessment ||
+  const hasIncompleteNotAffectedAssessment =
+    sourceStatuses.has('needs_review') && sourceStatuses.has('unaffected');
+  const hasConflictingSourceAssessments =
     (sourceStatuses.has('affected') && (sourceStatuses.has('unaffected') || sourceStatuses.has('patched_candidate'))) ||
     (sourceStatuses.has('unaffected') && sourceStatuses.has('patched_candidate'));
+  const contradictorySourceStatuses =
+    hasIncompleteNotAffectedAssessment || hasConflictingSourceAssessments;
   let sourceClassification;
   if (contradictorySourceStatuses) {
     sourceClassification = {
       status: 'needs_review',
-      reason: 'Ubuntu OSV contains conflicting or incomplete source-version assessments across multiple entries for this package and release.'
+      reason: hasIncompleteNotAffectedAssessment
+        ? 'Ubuntu OSV contains an explicit not-affected entry alongside incomplete source-version evidence for this package and release.'
+        : 'Ubuntu OSV contains conflicting source-version assessments across multiple entries for this package and release.'
     };
   } else if (sourceStatuses.has('affected')) {
     sourceClassification = sourceAssessments.find(item => item.status === 'affected');

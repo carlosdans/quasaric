@@ -222,5 +222,5 @@ test('does not let an explicit not-affected entry override an incomplete source 
   };
   const result = classifyUbuntuOsvComponent(mixedEvidence, component());
   assert.equal(result.status, 'needs_review');
-  assert.match(result.reason, /conflicting or incomplete/i);
+  assert.match(result.reason, /explicit not-affected entry alongside incomplete/i);
 });
