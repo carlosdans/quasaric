@@ -621,3 +621,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El comando se puede copiar desde la propia fila; se conserva el aviso de que es una propuesta que debe revisarse antes de ejecutarla.
 - Los casos sin una versión binaria corregida inequívoca siguen mostrando revisión manual y no reciben comandos.
 - Cambio limitado al frontend; sin nuevas dependencias, backend ni recursos Azure.
+
+
+### 2026-11-04 — portapapeles robusto para comandos
+
+- Las acciones de copiar comandos de remediación y de la guía de versiones usan ahora un helper común.
+- Prioriza la Clipboard API y recurre a `execCommand('copy')` cuando el navegador bloquea o no expone el portapapeles moderno.
+- Devuelve un resultado explícito y falla de forma segura si el navegador no ofrece ningún mecanismo; no añade dependencias ni servicios.
