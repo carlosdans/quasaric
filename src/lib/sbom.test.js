@@ -711,3 +711,20 @@ test('preserves explicit CycloneDX source coordinates over source PURL fallbacks
   assert.equal(result.components[0].sourcePackage, 'openssl-custom');
   assert.equal(result.components[0].sourceVersion, '3.0.7-1');
 });
+
+
+test('uses the RPM package name rather than its PURL namespace for source identity', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    components: [{
+      name: 'openssl-libs', version: '3.0.7-1',
+      properties: [{
+        name: 'quasaric:sourcePurl',
+        value: 'pkg:rpm/redhat/openssl@3.0.7-1?arch=src'
+      }]
+    }]
+  }));
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.components[0].sourcePackage, 'openssl');
+  assert.equal(result.components[0].sourceVersion, '3.0.7-1');
+});

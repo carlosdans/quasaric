@@ -185,7 +185,7 @@ function cyclone(document) {
       // A validated source PURL is itself an explicit provenance identifier.
       // Fill omitted coordinates from it so distro advisory lookups can use
       // the source package/version just as they do for SPDX GENERATED_FROM.
-      if (!component.sourcePackage) component.sourcePackage = sourcePurlData.qualifiedName;
+      if (!component.sourcePackage) component.sourcePackage = sourcePurlData.name;
       if (!component.sourceVersion) component.sourceVersion = sourcePurlData.version;
     }
     return warnings.length ? { ...component, warning: warnings } : component;
