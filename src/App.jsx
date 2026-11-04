@@ -560,7 +560,7 @@ function App() {
     if (!items.length || analyzing || analysisAbortRef.current) return;
     const controller = new AbortController();
     analysisAbortRef.current = controller;
-    setAnalyzing(true); setAnalysisError(''); setAnalysisHistoryWarning(false); setAnalysis(null); setAnalysisProgress({ completed: 0, total: items.length, phase: 'nvd' });
+    setAnalyzing(true); setAnalysisError(''); setAnalysis(null); setAnalysisProgress({ completed: 0, total: items.length, phase: 'nvd' });
     try {
       const result = await analyzeInventory(items, {
         signal: controller.signal,

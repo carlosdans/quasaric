@@ -679,3 +679,9 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El estado de fallo de guardado del historial, que antes se calculaba pero no se mostraba, ahora aparece como alerta accesible cuando un análisis termina sin poder persistirse.
 - Si existe una copia original de recuperación, la sección explica por qué está disponible y recomienda descargarla antes de reemplazar o limpiar los datos locales.
 - Pruebas de regresión para ambos mensajes y sus roles accesibles.
+
+
+### 2026-11-04 — persistencia del aviso de historial no guardado
+
+- Un análisis nuevo ya no borra el aviso de un historial que previamente no pudo persistirse. El aviso solo se limpia cuando una importación o un análisis consigue guardar el historial correctamente.
+- Prueba de regresión para evitar que el inicio de una ejecución oculte una pérdida de persistencia todavía no resuelta.

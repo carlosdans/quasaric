@@ -16,3 +16,9 @@ test('explains why a preserved history recovery copy is available', () => {
   assert.match(app, /copia original de recuperación del historial/);
   assert.match(app, /exportAnalysisHistoryRecovery/);
 });
+
+test('does not clear an unsaved-history warning when a new analysis starts', () => {
+  const runStart = app.slice(app.indexOf('const runAnalysis = async () => {'), app.indexOf('const handleInventoryImport = async'));
+  assert.doesNotMatch(runStart, /setAnalysisHistoryWarning\(false\)/);
+  assert.match(runStart, /setAnalysisHistoryWarning\(!historySaved\)/);
+});
