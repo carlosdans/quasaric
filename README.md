@@ -255,3 +255,11 @@ La correlación valida los identificadores con las reglas de longitud del progra
 ### Comparación de versiones de Alpine Linux
 
 La correlación reconoce el ecosistema APK de Alpine a través del tipo PURL `pkg:apk` o de metadatos de plataforma. Compara épocas, versiones numéricas, sufijos APK conocidos (alpha, beta, pre, rc, cvs, svn, git, hg y p) y revisiones `-rN`. Si una versión usa una sintaxis que no puede interpretar con seguridad, la comparación queda pendiente de revisión; no se reutiliza el orden de Debian, RPM o SemVer.
+
+
+### Cobertura OSV para Mageia y openEuler
+
+- Los inventarios que declaren una versión explícita de Mageia u openEuler pueden consultar los ecosistemas OSV publicados con el identificador exacto `Mageia` u `openEuler`.
+- La versión del sistema se exige para reconocer la distribución, mientras que la consulta de avisos utiliza el nombre, ecosistema y versión exactos del paquete instalado.
+- La coincidencia se conserva como evidencia OSV del paquete; no se infieren paquetes fuente, relaciones binarias ni versiones corregidas desde otra distribución.
+- Los nombres sin versión y distribuciones no publicadas por OSV (por ejemplo, Fedora) no se enrutan a estos ecosistemas.
