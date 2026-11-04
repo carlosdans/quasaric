@@ -643,3 +643,9 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - El filtro se combina con la búsqueda de texto y la severidad/KEV, sin modificar ni recalcular los hallazgos.
 - Los valores ausentes se agrupan como desconocidos; la interfaz está localizada en español e inglés.
 - La operación es local y de solo lectura; no añade dependencias, backend ni servicios externos.
+
+
+### 2026-11-04 — contador de paginación del inventario
+
+- El contador de resultados en español ahora utiliza el total filtrado, igual que el inglés.
+- El rango mostrado y el total corresponden a la búsqueda activa, no al inventario completo.
