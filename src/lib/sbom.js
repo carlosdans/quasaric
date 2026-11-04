@@ -181,6 +181,12 @@ function cyclone(document) {
     if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
       component.sourcePurl = '';
       warnings.push('The declared source package version does not match the version embedded in its source PURL; the source PURL was removed.');
+    } else if (component.sourcePurl && sourcePurlData) {
+      // A validated source PURL is itself an explicit provenance identifier.
+      // Fill omitted coordinates from it so distro advisory lookups can use
+      // the source package/version just as they do for SPDX GENERATED_FROM.
+      if (!component.sourcePackage) component.sourcePackage = sourcePurlData.qualifiedName;
+      if (!component.sourceVersion) component.sourceVersion = sourcePurlData.version;
     }
     return warnings.length ? { ...component, warning: warnings } : component;
   });

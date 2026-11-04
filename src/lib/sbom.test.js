@@ -678,3 +678,36 @@ test('does not merge CycloneDX metadata subject into an ambiguous duplicate PURL
   assert.equal(result.components.length, 3);
   assert.deepEqual(result.components.map(item => item.name), ['service', 'service-a', 'service-b']);
 });
+
+
+test('derives omitted CycloneDX source coordinates from a validated source PURL', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    components: [{
+      name: 'openssl-libs', version: '3.0.7-1',
+      properties: [{
+        name: 'quasaric:sourcePurl',
+        value: 'pkg:rpm/openssl@3.0.7-1?arch=src'
+      }]
+    }]
+  }));
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.components[0].sourcePackage, 'openssl');
+  assert.equal(result.components[0].sourceVersion, '3.0.7-1');
+  assert.equal(result.components[0].sourcePurl, 'pkg:rpm/openssl@3.0.7-1?arch=src');
+});
+
+test('preserves explicit CycloneDX source coordinates over source PURL fallbacks', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    components: [{
+      name: 'openssl-libs', version: '3.0.7-1',
+      properties: [
+        { name: 'quasaric:sourcePackage', value: 'openssl-custom' },
+        { name: 'quasaric:sourcePurl', value: 'pkg:rpm/openssl@3.0.7-1?arch=src' }
+      ]
+    }]
+  }));
+  assert.equal(result.components[0].sourcePackage, 'openssl-custom');
+  assert.equal(result.components[0].sourceVersion, '3.0.7-1');
+});
