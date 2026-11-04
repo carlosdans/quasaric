@@ -16,6 +16,7 @@ export function readInventoryRecovery(storage) {
 const MAX_IDENTIFIER_LENGTH = 2048;
 const MAX_FIELD_LENGTH = 16384;
 const STRING_FIELDS = ['name', 'type', 'version', 'vendor', 'sourcePackage', 'sourceVersion', 'architecture', 'sourceRelationship'];
+const ALLOWED_TYPES = new Set(['os', 'web', 'runtime', 'cms', 'database', 'library', 'other']);
 
 function withinByteLimit(value) {
   return new TextEncoder().encode(value).byteLength <= MAX_INVENTORY_BYTES;
@@ -86,10 +87,14 @@ export function loadInventory(storage) {
         }
       }
       seenIds.add(id);
-      items.push(item.id === id ? item : { ...item, id });
+      const normalizedItem = item.type == null || ALLOWED_TYPES.has(item.type)
+        ? item
+        : { ...item, type: 'other' };
+      items.push(normalizedItem.id === id ? normalizedItem : { ...normalizedItem, id });
     }
     const warning = items.length !== parsed.length || duplicateIds ||
-      validItems.some(item => typeof item.id !== 'string' || !item.id.trim());
+      validItems.some(item => typeof item.id !== 'string' || !item.id.trim() ||
+        (item.type != null && !ALLOWED_TYPES.has(item.type)));
     if (warning) {
       preserveForRecovery(target, raw);
     }
@@ -110,7 +115,7 @@ export function saveInventory(items, storage) {
     // the inventory shape checks performed on the original input.
     const normalized = JSON.parse(serialized);
     if (!Array.isArray(normalized) || normalized.length > MAX_INVENTORY_COMPONENTS ||
-        !normalized.every(item => isInventoryItem(item, true))) return false;
+        !normalized.every(item => isInventoryItem(item, true) && (item.type == null || ALLOWED_TYPES.has(item.type)))) return false;
     const ids = normalized.map(item => item.id).filter(id => typeof id === 'string' && id.trim());
     if (new Set(ids).size !== ids.length) return false;
     target.setItem(INVENTORY_STORAGE_KEY, serialized);

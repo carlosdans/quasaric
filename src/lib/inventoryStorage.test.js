@@ -222,3 +222,23 @@ test('reads the preserved recovery copy without modifying it', async () => {
   const blocked = { getItem() { throw new Error('storage blocked'); } };
   assert.equal(readInventoryRecovery(blocked), null);
 });
+
+
+test('normalizes unknown legacy component types and rejects them on save', () => {
+  const storage = memoryStorage();
+  assert.equal(saveInventory([{ name: 'nginx', type: 'unknown-type' }], storage), false);
+  assert.equal(storage.getItem(INVENTORY_STORAGE_KEY), null);
+
+  const raw = JSON.stringify([
+    { id: 'legacy-1', name: 'nginx', type: 'web' },
+    { id: 'legacy-2', name: 'custom-package', type: 'vendor-specific-type' }
+  ]);
+  const stored = memoryStorage([[INVENTORY_STORAGE_KEY, raw]]);
+  const result = loadInventory(stored);
+  assert.deepEqual(result.items.map(item => item.type), ['web', 'other']);
+  assert.equal(result.warning, true);
+  assert.equal(stored.getItem(INVENTORY_RECOVERY_KEY), raw);
+  assert.equal(stored.getItem(INVENTORY_STORAGE_KEY), raw);
+  assert.equal(saveInventory(result.items, stored), true);
+  assert.deepEqual(loadInventory(stored), { items: result.items, warning: false });
+});

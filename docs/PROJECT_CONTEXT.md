@@ -657,3 +657,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La pantalla de inventario ofrece descargar esa copia en bruto como archivo de texto, sin sobrescribirla ni intentar reinterpretar los datos dañados.
 - La lectura de recuperación falla de forma segura si el almacenamiento está bloqueado; incluye pruebas de lectura, ausencia y errores de acceso.
 - La recuperación no envía datos a ningún servicio y no sustituye la copia JSON normal del inventario.
+
+
+### 2026-11-04 — normalización del tipo de componente en almacenamiento local
+
+- La persistencia rechaza nuevos inventarios con tipos fuera del catálogo soportado (`os`, `web`, `runtime`, `cms`, `database`, `library`, `other`).
+- Los inventarios antiguos con tipos desconocidos conservan sus componentes: se normaliza ese campo a `other`, se activa el aviso y se mantiene una copia intacta del JSON original para recuperación.
+- Prueba de regresión para rechazo al guardar, migración sin pérdida de filas y preservación de la copia original.
