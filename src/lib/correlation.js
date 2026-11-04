@@ -189,12 +189,15 @@ export function classifyUbuntuOsvComponent(record, component) {
   } else if (hasFixedSourceBoundary && advisoryBinaryVersions.length > 1) {
     reason = 'The advisory lists multiple fixed binary versions for this binary package; manual review is required.';
   } else if (sourceClassification.status === 'affected') {
-    if (!hasFixedSourceBoundary || !advisoryBinaryVersions.length) {
-      // A binary list can exist even when Ubuntu has not published a fixed
-      // source boundary. In that case its version is not a fixed boundary.
-      // The exact source version must be explicitly listed as affected.
+    if (!hasFixedSourceBoundary) {
+      // Without a fixed source boundary, an explicitly affected source version
+      // plus an exact binary-to-source mapping is the available advisory evidence.
       status = 'affected';
       reason = 'The exact source version is listed as affected and the binary package is listed under the matching Ubuntu source package.';
+    } else if (!advisoryBinaryVersions.length) {
+      // A fixed source boundary exists, but OSV did not publish the corresponding
+      // binary build. The installed binary could already contain the fix.
+      reason = 'The source version is classified as affected, but Ubuntu OSV does not publish a fixed binary build for this package; the installed binary cannot be safely classified.';
     } else {
       const binaryOrder = compareDebianVersions(binaryVersion, advisoryBinaryVersions[0]);
       if (binaryOrder !== null && binaryOrder < 0) {

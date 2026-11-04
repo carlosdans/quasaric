@@ -165,3 +165,38 @@ test('keeps contradictory Ubuntu OSV source entries under manual review', () => 
   assert.equal(result.status, 'needs_review');
   assert.match(result.reason, /conflicting source-version assessments/i);
 });
+
+
+test('does not classify a binary as affected when a fixed source boundary exists but no fixed binary build is published', () => {
+  const incompleteBinaryEvidence = {
+    ...record,
+    affected: [{
+      ...record.affected[0],
+      ecosystem_specific: {
+        ...record.affected[0].ecosystem_specific,
+        binaries: [{ binary_name: 'libssl3t64' }]
+      }
+    }]
+  };
+  const result = classifyUbuntuOsvComponent(incompleteBinaryEvidence, component());
+  assert.equal(result.status, 'needs_review');
+  assert.equal(result.ubuntuSourceEvidence.classification, 'affected');
+  assert.equal(result.ubuntuBinaryEvidence.length, 1);
+  assert.match(result.reason, /does not publish a fixed binary build/i);
+});
+
+test('an explicitly affected source version can remain a candidate when no fixed source boundary exists', () => {
+  const noFixedBoundary = {
+    ...record,
+    affected: [{
+      ...record.affected[0],
+      ranges: [],
+      ecosystem_specific: {
+        ...record.affected[0].ecosystem_specific,
+        binaries: [{ binary_name: 'libssl3t64' }]
+      }
+    }]
+  };
+  const result = classifyUbuntuOsvComponent(noFixedBoundary, component());
+  assert.equal(result.status, 'affected');
+});
