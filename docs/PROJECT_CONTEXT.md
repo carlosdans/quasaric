@@ -685,3 +685,11 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 
 - Un análisis nuevo ya no borra el aviso de un historial que previamente no pudo persistirse. El aviso solo se limpia cuando una importación o un análisis consigue guardar el historial correctamente.
 - Prueba de regresión para evitar que el inicio de una ejecución oculte una pérdida de persistencia todavía no resuelta.
+
+
+### 2026-11-04 — detección de historial inaccesible al iniciar
+
+- La carga inicial distingue un historial realmente vacío de un almacenamiento bloqueado, JSON dañado o snapshots inválidos.
+- Cuando no se puede leer el historial, la interfaz conserva el aviso de persistencia desde el arranque; los datos dañados siguen preservándose en la clave de recuperación cuando el navegador permite escribirla.
+- La API de lectura mantiene `loadAnalysisHistory` compatible y añade un resultado explícito con historial y estado de advertencia.
+- Pruebas para almacenamiento vacío, inaccesible y JSON dañado.

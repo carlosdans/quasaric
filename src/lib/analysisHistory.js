@@ -171,27 +171,33 @@ export function compareAnalysisSnapshots(previous, current) {
   };
 }
 
-export function loadAnalysisHistory(storage) {
+export function readAnalysisHistoryState(storage) {
   try {
     const target = storage === undefined ? globalThis.localStorage : storage;
-    const raw = target?.getItem(HISTORY_KEY);
-    if (!raw) return [];
+    if (!target) return { history: [], warning: true };
+    const raw = target.getItem(HISTORY_KEY);
+    if (raw == null || raw === '') return { history: [], warning: false };
     if (!withinByteLimit(raw)) {
-      try { target?.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
-      return [];
+      try { target.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
+      return { history: [], warning: true };
     }
     let parsed;
     try { parsed = JSON.parse(raw); }
     catch {
-      try { target?.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
-      return [];
+      try { target.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
+      return { history: [], warning: true };
     }
     const valid = Array.isArray(parsed) ? parsed.filter(isValidSnapshot).slice(0, HISTORY_LIMIT) : [];
-    if (!Array.isArray(parsed) || valid.length !== parsed.length) {
-      try { target?.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
+    const warning = !Array.isArray(parsed) || valid.length !== parsed.length;
+    if (warning) {
+      try { target.setItem(HISTORY_RECOVERY_KEY, raw); } catch { /* best effort */ }
     }
-    return valid;
-  } catch { return []; }
+    return { history: valid, warning };
+  } catch { return { history: [], warning: true }; }
+}
+
+export function loadAnalysisHistory(storage) {
+  return readAnalysisHistoryState(storage).history;
 }
 
 export function saveAnalysisHistory(history, storage) {

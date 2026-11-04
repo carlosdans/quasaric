@@ -3,7 +3,7 @@ import LandingPage from './LandingPage.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeInventory } from './lib/correlation.js';
 import { toCsv } from './lib/csv.js';
-import { createAnalysisSnapshot, compareAnalysisSnapshots, loadAnalysisHistory, saveAnalysisHistory, upsertAnalysisSnapshot, readAnalysisHistoryRecovery } from './lib/analysisHistory.js';
+import { createAnalysisSnapshot, compareAnalysisSnapshots, readAnalysisHistoryState, saveAnalysisHistory, upsertAnalysisSnapshot, readAnalysisHistoryRecovery } from './lib/analysisHistory.js';
 import { createAnalysisHistoryBackup, parseAnalysisHistoryBackup, mergeAnalysisHistory } from './lib/analysisHistoryBackup.js';
 import { suggestedComponentType } from './lib/componentTypes.js';
 import { rankFindingsByRisk } from './lib/riskPriority.js';
@@ -373,9 +373,10 @@ function App() {
     };
   }, [selectedFinding]);
   const [analysis, setAnalysis] = useState(null);
-  const [analysisHistoryWarning, setAnalysisHistoryWarning] = useState(false);
+  const [analysisHistoryState] = useState(() => readAnalysisHistoryState());
+  const [analysisHistoryWarning, setAnalysisHistoryWarning] = useState(analysisHistoryState.warning);
   const analysisAbortRef = useRef(null);
-  const [analysisHistory, setAnalysisHistory] = useState(() => loadAnalysisHistory());
+  const [analysisHistory, setAnalysisHistory] = useState(analysisHistoryState.history);
   const [historyRecoveryAvailable, setHistoryRecoveryAvailable] = useState(() => Boolean(readAnalysisHistoryRecovery()));
   // Latest committed value shared by asynchronous imports and analysis completion.
   const analysisHistoryRef = useRef(analysisHistory);

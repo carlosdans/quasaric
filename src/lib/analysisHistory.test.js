@@ -389,3 +389,18 @@ test('reads the preserved analysis history recovery copy without modifying it', 
   assert.equal(readAnalysisHistoryRecovery(null), null);
   assert.equal(readAnalysisHistoryRecovery({ getItem() { throw new Error('storage blocked'); } }), null);
 });
+
+
+test('distinguishes an empty history from inaccessible or damaged local storage', async () => {
+  const { readAnalysisHistoryState } = await import('./analysisHistory.js');
+  assert.deepEqual(readAnalysisHistoryState({ getItem: () => null }), { history: [], warning: false });
+  assert.deepEqual(readAnalysisHistoryState(null), { history: [], warning: true });
+  assert.deepEqual(readAnalysisHistoryState({ getItem() { throw new Error('storage blocked'); } }), { history: [], warning: true });
+
+  const raw = '{broken history';
+  const data = new Map([['quasaric-analysis-history', raw]]);
+  const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
+  assert.deepEqual(readAnalysisHistoryState(storage), { history: [], warning: true });
+  assert.equal(data.get('quasaric-analysis-history-recovery'), raw);
+});
+
