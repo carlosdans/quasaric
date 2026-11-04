@@ -28,6 +28,6 @@ test('removing a component requires confirmation and announces its identity acce
   assert.match(app, /if \(!window\.confirm\(message\)\) return/);
   assert.match(app, /persist\(itemsRef\.current\.filter\(component => component\.id !== item\.id\)\)/);
   assert.match(app, /onClick=\{\(\) => removeItem\(item\)\}/);
-  assert.match(app, /Eliminar \|Remove /);
-  assert.match(app, /Eliminar componente\|Remove component/);
+  assert.match(app, /lang === 'es' \? 'Eliminar ' : 'Remove '/);
+  assert.match(app, /lang === 'es' \? 'Eliminar componente' : 'Remove component'/);
 });
