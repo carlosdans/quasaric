@@ -672,3 +672,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - La sección de historial ofrece descargar esa copia original en texto plano sin reinterpretarla, sobrescribirla ni modificar el historial.
 - La lectura falla de forma segura si el almacenamiento está bloqueado; incluye pruebas de contenido intacto, ausencia de copia y errores de acceso.
 - Los datos permanecen en el navegador y la descarga no utiliza servicios externos.
+
+
+### 2026-11-04 — avisos visibles de persistencia del historial
+
+- El estado de fallo de guardado del historial, que antes se calculaba pero no se mostraba, ahora aparece como alerta accesible cuando un análisis termina sin poder persistirse.
+- Si existe una copia original de recuperación, la sección explica por qué está disponible y recomienda descargarla antes de reemplazar o limpiar los datos locales.
+- Pruebas de regresión para ambos mensajes y sus roles accesibles.
