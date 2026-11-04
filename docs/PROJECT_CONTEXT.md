@@ -628,3 +628,10 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Las acciones de copiar comandos de remediación y de la guía de versiones usan ahora un helper común.
 - Prioriza la Clipboard API y recurre a `execCommand('copy')` cuando el navegador bloquea o no expone el portapapeles moderno.
 - Devuelve un resultado explícito y falla de forma segura si el navegador no ofrece ningún mecanismo; no añade dependencias ni servicios.
+
+
+### 2026-11-04 — búsqueda en inventarios grandes
+
+- El inventario permite filtrar localmente por nombre, versión, tipo, fabricante/ecosistema, PURL, CPE, paquete fuente, arquitectura y referencias de procedencia.
+- La paginación opera sobre los resultados filtrados y vuelve a la primera página al cambiar la búsqueda; limpiar el campo restaura el inventario completo.
+- No se envían los términos de búsqueda a fuentes externas ni se modifica el inventario persistido.
