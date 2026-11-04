@@ -177,8 +177,10 @@ function cyclone(document) {
     const error = validateComponentFields(component);
     if (error) return { error, index:index+1 };
     const sourcePurlData = purlInfo(component.sourcePurl);
-    if (component.sourcePurl && !sourcePurlData) return { error:'Invalid source Package URL.', index:index+1 };
-    if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
+    if (component.sourcePurl && !sourcePurlData) {
+      component.sourcePurl = '';
+      warnings.push('The source Package URL is invalid; it was removed while preserving the binary component.');
+    } else if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
       component.sourcePurl = '';
       warnings.push('The declared source package version does not match the version embedded in its source PURL; the source PURL was removed.');
     } else if (component.sourcePurl && sourcePurlData) {
@@ -268,8 +270,10 @@ function spdx(document) {
     const error = validateComponentFields(component);
     if (error) return { error, index:index+1 };
     const sourcePurlData = purlInfo(component.sourcePurl);
-    if (component.sourcePurl && !sourcePurlData) return { error:'Invalid source Package URL.', index:index+1 };
-    if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
+    if (component.sourcePurl && !sourcePurlData) {
+      component.sourcePurl = '';
+      warnings.push('The source Package URL is invalid; it was removed while preserving the binary component.');
+    } else if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
       component.sourcePurl = '';
       warnings.push('The declared source package version does not match the version embedded in its source PURL; the source PURL was removed.');
     }

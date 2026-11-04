@@ -731,3 +731,42 @@ test('uses the RPM package name rather than its PURL namespace for source identi
   assert.equal(result.components[0].sourcePackage, 'openssl');
   assert.equal(result.components[0].sourceVersion, '3.0.7-1');
 });
+
+
+test('preserves CycloneDX binary components when optional source PURLs are invalid', () => {
+  const result = parseSbom(JSON.stringify({
+    bomFormat: 'CycloneDX', specVersion: '1.6',
+    components: [{ name: 'openssl-libs', version: '3.0.7-2', properties: [
+      { name: 'quasaric:sourcePackage', value: 'openssl' },
+      { name: 'quasaric:sourceVersion', value: '3.0.7-2' },
+      { name: 'quasaric:sourcePurl', value: 'not-a-package-url' }
+    ] }]
+  }));
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.components.length, 1);
+  assert.equal(result.components[0].name, 'openssl-libs');
+  assert.equal(result.components[0].version, '3.0.7-2');
+  assert.equal(result.components[0].sourcePackage, 'openssl');
+  assert.equal(result.components[0].sourceVersion, '3.0.7-2');
+  assert.equal(result.components[0].sourcePurl, '');
+  assert.match(result.warnings[0].message, /source Package URL is invalid/);
+});
+
+test('preserves SPDX binary components when related source PURLs are invalid', () => {
+  const result = parseSbom(JSON.stringify({
+    spdxVersion: 'SPDX-2.3', dataLicense: 'CC0-1.0',
+    packages: [
+      { SPDXID: 'SPDXRef-binary', name: 'openssl-libs', versionInfo: '3.0.7-2' },
+      { SPDXID: 'SPDXRef-source', name: 'openssl', versionInfo: '3.0.7-2',
+        externalRefs: [{ referenceType: 'purl', referenceLocator: 'not-a-package-url' }] }
+    ],
+    relationships: [{ spdxElementId: 'SPDXRef-binary', relationshipType: 'GENERATED_FROM', relatedSpdxElement: 'SPDXRef-source' }]
+  }));
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.components.length, 2);
+  assert.equal(result.components[0].name, 'openssl-libs');
+  assert.equal(result.components[0].sourcePackage, 'openssl');
+  assert.equal(result.components[0].sourceVersion, '3.0.7-2');
+  assert.equal(result.components[0].sourcePurl, '');
+  assert.match(result.warnings[0].message, /source Package URL is invalid/);
+});
