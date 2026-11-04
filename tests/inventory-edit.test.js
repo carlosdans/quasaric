@@ -17,7 +17,7 @@ test('editing validates PURLs and preserves the original component if persistenc
   const editStart = app.indexOf('if (editingComponentId) {', app.indexOf('const addItem'));
   const editEnd = app.indexOf('} else {', editStart);
   const editBranch = app.slice(editStart, editEnd);
-  assert.match(editBranch, /parsePackageUrl/); // Validation remains before either write path.
+  assert.match(app.slice(app.indexOf('const addItem'), editStart), /parsePackageUrl\(form\.purl\)/); // Validation runs before either write path.
   assert.match(editBranch, /if \(!persist\(updated\)\)/);
   assert.match(editBranch, /original component has been preserved|componente original se ha conservado/);
 });
