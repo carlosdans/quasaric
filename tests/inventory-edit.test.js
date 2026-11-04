@@ -21,3 +21,13 @@ test('editing validates PURLs and preserves the original component if persistenc
   assert.match(editBranch, /if \(!persist\(updated\)\)/);
   assert.match(editBranch, /original component has been preserved|componente original se ha conservado/);
 });
+
+
+test('removing a component requires confirmation and announces its identity accessibly', () => {
+  assert.match(app, /const removeItem = item =>/);
+  assert.match(app, /if \(!window\.confirm\(message\)\) return/);
+  assert.match(app, /persist\(itemsRef\.current\.filter\(component => component\.id !== item\.id\)\)/);
+  assert.match(app, /onClick=\{\(\) => removeItem\(item\)\}/);
+  assert.match(app, /Eliminar \|Remove /);
+  assert.match(app, /Eliminar componente\|Remove component/);
+});
