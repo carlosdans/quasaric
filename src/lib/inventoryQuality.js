@@ -36,6 +36,7 @@ export function inspectInventory(items = []) {
   const identifierConflicts = [];
   const purlVersionMismatches = [];
   const sourcePurlVersionMismatches = [];
+  const sourcePurlNameMismatches = [];
   const cpeVersionMismatches = [];
   items.forEach((item, index) => {
     const name = normalizeValue(item?.name);
@@ -75,6 +76,19 @@ export function inspectInventory(items = []) {
         declaredVersion: String(item.sourceVersion).trim(), purlVersion: sourcePurl.version
       });
     }
+    if (sourcePurl && normalizeValue(item?.sourcePackage)) {
+      const declaredSource = String(item.sourcePackage).trim();
+      const matchesSourceName = declaredSource === sourcePurl.name ||
+        (sourcePurl.namespace && declaredSource === sourcePurl.namespace + '/' + sourcePurl.name);
+      if (!matchesSourceName) {
+        sourcePurlNameMismatches.push({
+          id: item?.id ?? String(index), name: item?.name || '—',
+          declaredSourcePackage: declaredSource,
+          purlSourcePackage: sourcePurl.namespace
+            ? sourcePurl.namespace + '/' + sourcePurl.name : sourcePurl.name
+        });
+      }
+    }
     if (item?.cpe && !parseCpe23(item.cpe)) {
       invalidCpes.push({ id: item?.id ?? String(index), name: item?.name || '—' });
     }
@@ -112,5 +126,5 @@ export function inspectInventory(items = []) {
       seen.set(key, index);
     }
   });
-  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, sourceVersionWithoutPackage, purlVersionMismatches, sourcePurlVersionMismatches, cpeVersionMismatches, identifierConflicts, duplicates };
+  return { missingVersion, missingSourceVersion, invalidPurls, invalidCpes, sourceVersionWithoutPackage, purlVersionMismatches, sourcePurlVersionMismatches, sourcePurlNameMismatches, cpeVersionMismatches, identifierConflicts, duplicates };
 }

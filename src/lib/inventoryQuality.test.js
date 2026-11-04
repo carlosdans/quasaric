@@ -20,7 +20,7 @@ test('keeps distinct versions and vendors separate',()=>{
   assert.deepEqual(inspectInventory([{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.1'},{name:'OpenSSL',vendor:'OpenSSL',version:'3.0.2'},{name:'OpenSSL',vendor:'Ubuntu',version:'3.0.1'}]).duplicates,[]);
 });
 test('handles empty inventories and missing names',()=>{
-  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],invalidCpes:[],sourceVersionWithoutPackage:[],purlVersionMismatches:[],sourcePurlVersionMismatches:[],cpeVersionMismatches:[],identifierConflicts:[],duplicates:[]});
+  assert.deepEqual(inspectInventory([]),{missingVersion:[],missingSourceVersion:[],invalidPurls:[],invalidCpes:[],sourceVersionWithoutPackage:[],purlVersionMismatches:[],sourcePurlVersionMismatches:[],sourcePurlNameMismatches:[],cpeVersionMismatches:[],identifierConflicts:[],duplicates:[]});
   assert.deepEqual(inspectInventory([{id:'a',version:'1.0'}]).duplicates,[]);
 });
 test('does not report false duplicates when metadata contains separators',()=>{
@@ -158,4 +158,19 @@ test('does not compare wildcard, not-applicable, missing or malformed CPE versio
     { id: 'malformed', name: 'bad', version: '1.0', cpe: 'cpe:2.3:a:bad' }
   ]);
   assert.deepEqual(result.cpeVersionMismatches, []);
+});
+
+
+test('flags source package names that contradict their source PURL', () => {
+  const result = inspectInventory([
+    { id: 'wrong-simple', name: 'openssl-libs', sourcePackage: 'openssl', sourcePurl: 'pkg:rpm/openssl-compat@3.0.2' },
+    { id: 'wrong-qualified', name: 'library', sourcePackage: 'com.example:source', sourcePurl: 'pkg:maven/com.example/other@1.0' },
+    { id: 'simple-match', name: 'openssl-libs', sourcePackage: 'openssl', sourcePurl: 'pkg:rpm/openssl@3.0.2' },
+    { id: 'qualified-match', name: 'library', sourcePackage: 'com.example/source', sourcePurl: 'pkg:maven/com.example/source@1.0' },
+    { id: 'without-source-name', name: 'library', sourcePurl: 'pkg:maven/com.example/source@1.0' }
+  ]);
+  assert.deepEqual(result.sourcePurlNameMismatches, [
+    { id: 'wrong-simple', name: 'openssl-libs', declaredSourcePackage: 'openssl', purlSourcePackage: 'openssl-compat' },
+    { id: 'wrong-qualified', name: 'library', declaredSourcePackage: 'com.example:source', purlSourcePackage: 'com.example/other' }
+  ]);
 });
