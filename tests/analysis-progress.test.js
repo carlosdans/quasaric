@@ -19,3 +19,15 @@ test('the enrichment indicator respects reduced-motion preferences', () => {
   assert.match(styles, /\.progress-track\.is-enriching i/);
   assert.match(styles, /prefers-reduced-motion:reduce\)\{\.progress-track\.is-enriching i\{animation:none/);
 });
+
+
+test('cancelling an analysis immediately releases the UI lock and invalidates stale results', () => {
+  assert.match(app, /const cancelActiveAnalysis = \(\) => \{/);
+  const cancel = app.slice(app.indexOf('const cancelActiveAnalysis'), app.indexOf('const persist =', app.indexOf('const cancelActiveAnalysis')));
+  assert.match(cancel, /analysisAbortRef\.current = null/);
+  assert.match(cancel, /controller\.abort\(\)/);
+  assert.match(cancel, /setAnalyzing\(false\)/);
+  assert.match(app, /onClick=\{cancelActiveAnalysis\}/);
+  assert.match(app, /cancelActiveAnalysis\(\);\s*itemsRef\.current = next/);
+  assert.match(app, /analysisAbortRef\.current !== controller/);
+});
