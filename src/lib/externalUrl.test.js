@@ -43,3 +43,14 @@ test('rejects local hostnames, private IPv4 ranges and IPv6 literals', () => {
     'https://[fd00::1]/advisory'
   ]) assert.equal(safeExternalUrl(value), null, value);
 });
+
+test('rejects alternate textual encodings of non-public IPv4 addresses', () => {
+  for (const value of [
+    'https://2130706433/advisory',
+    'https://0x7f000001/advisory',
+    'https://0177.0.0.1/advisory',
+    'https://192.0.2.10/advisory',
+    'https://198.51.100.20/advisory',
+    'https://203.0.113.30/advisory'
+  ]) assert.equal(safeExternalUrl(value), null, value);
+});
