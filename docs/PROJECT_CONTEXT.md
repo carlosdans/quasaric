@@ -741,3 +741,12 @@ La portada pública y la plataforma se cargan ahora por separado: el navegador d
 - Ejecución de producción [42255369699](https://github.com/carlosdans/quasaric/actions/runs/42255369699): 617/617 pruebas superadas, compilación Vite correcta y despliegue Azure Static Web Apps confirmado.
 - La validación de URL externa normaliza el hostname eliminando el punto DNS final antes de aplicar los bloqueos de host local y rangos IPv4 no públicos.
 - Pruebas específicas para localhost, nombres de host locales, rangos privados, metadata link-local, IPv6 y dominios HTTPS públicos.
+
+
+### 2026-11-06 — rangos IPv4 especiales y validación final de URL externa
+
+- Se amplía el bloqueo de direcciones IPv4 no públicas para incluir `192.88.99.0/24` y `192.175.48.0/24`.
+- Se añaden pruebas de regresión para ambas redes, además de los formatos alternativos decimal, hexadecimal y octal ya cubiertos.
+- Commit de código validado: `6ebe05a726a793db0cf7238d9bda96e999d19b02`.
+- Ejecución [42256426276](https://github.com/carlosdans/quasaric/actions/runs/42256426276): 619/619 pruebas superadas, build Vite correcto y despliegue Azure Static Web Apps completado.
+- Ejecución intermedia [42256406771](https://github.com/carlosdans/quasaric/actions/runs/42256406771): 618/618 pruebas superadas y despliegue completado.
