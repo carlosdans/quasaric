@@ -82,3 +82,15 @@ test('mobile landing navigation restores focus to its toggle when a section is s
   assert.match(landing, /aria-expanded=\{mobileNavOpen\}/);
   assert.match(landing, /aria-controls="landing-navigation"/);
 });
+
+
+test('public landing page provides a keyboard skip link to its main content', () => {
+  assert.match(landing, /<a className="landing-skip-link" href="#landing-main">/);
+  assert.match(landing, /<main id="landing-main" tabIndex=\{-1\}>/);
+  assert.match(styles, /\.landing-skip-link:focus\{[^}]*transform:translateY\(0\)/);
+});
+
+test('Escape closes the mobile landing navigation and restores focus to its toggle', () => {
+  assert.match(landing, /onKeyDown=\{event => \{ if \(event\.key === 'Escape' && mobileNavOpen\) \{ closeMobileNav\(\); mobileToggleRef\.current\?\.focus\(\); \} \}\}/);
+  assert.match(landing, /aria-label=\{lang === 'es' \? 'Navegación principal' : 'Main navigation'\}/);
+});
