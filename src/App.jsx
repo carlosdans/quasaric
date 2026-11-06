@@ -1,7 +1,6 @@
 import React from 'react';
 import LandingPage from './LandingPage.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { analyzeInventory } from './lib/correlation.js';
 import { toCsv } from './lib/csv.js';
 import { createAnalysisSnapshot, compareAnalysisSnapshots, readAnalysisHistoryState, saveAnalysisHistory, upsertAnalysisSnapshot, readAnalysisHistoryRecovery } from './lib/analysisHistory.js';
 import { createAnalysisHistoryBackup, parseAnalysisHistoryBackup, mergeAnalysisHistory } from './lib/analysisHistoryBackup.js';
@@ -615,6 +614,7 @@ function App() {
     analysisAbortRef.current = controller;
     setAnalyzing(true); setAnalysisError(''); setAnalysis(null); setFindingPage(1); setAnalysisProgress({ completed: 0, total: items.length, phase: 'nvd' });
     try {
+      const { analyzeInventory } = await import('./lib/correlation.js');
       const result = await analyzeInventory(items, {
         signal: controller.signal,
         onProgress: progress => {
