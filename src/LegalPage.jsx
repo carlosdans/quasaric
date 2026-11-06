@@ -8,24 +8,24 @@ const pages = {
       description: 'Información legal y condiciones de uso de Quasaric.',
       intro: 'Información sobre el titular del sitio y las condiciones de uso de Quasaric.',
       sections: [
-        ['Titular del sitio', 'Esta sección debe completarse antes de publicar la web como servicio definitivo. Proyecto personal sin actividad de venta de productos o servicios: Quasaric (quasaric.com). El nombre Quasaric identifica el proyecto y no es una persona jurídica. Identidad legal del titular: [PENDIENTE DE FACILITAR]. NIF: [PENDIENTE, si resulta exigible]. Domicilio a efectos legales: [PENDIENTE DE VALIDAR]. Correo electrónico de contacto: contacto@quasaric.com. No se ofrecen ventas ni contratación a través de este sitio.'],
+        ['Titular del sitio', 'Quasaric (quasaric.com) es un proyecto personal, sin venta de productos ni contratación de servicios a través de este sitio. Para consultas relacionadas con la web, puedes escribir a contacto@quasaric.com.'],
         ['Objeto y uso', 'Quasaric es una herramienta de apoyo para relacionar componentes tecnológicos declarados por el usuario con información pública sobre vulnerabilidades. No realiza escaneos activos ni verifica directamente los sistemas del usuario. El usuario debe validar los resultados y las recomendaciones con los avisos del fabricante y en su entorno.'],
         ['Propiedad intelectual', 'Los textos, diseño, marca y elementos propios de Quasaric pertenecen a sus respectivos titulares. Las marcas, nombres de productos y contenidos de terceros pertenecen a sus propietarios y se citan como referencias informativas.'],
         ['Responsabilidad y disponibilidad', 'La información se ofrece con fines informativos y de apoyo. No se garantiza la detección exhaustiva, exactitud permanente, disponibilidad ininterrumpida ni ausencia de vulnerabilidades. Quasaric no sustituye una auditoría, un escáner especializado ni un proceso profesional de gestión de vulnerabilidades.'],
         ['Enlaces y fuentes externas', 'La aplicación consulta fuentes públicas de terceros. Sus contenidos, disponibilidad y políticas se rigen por las condiciones de cada proveedor. Quasaric no controla esos servicios externos.'],
-        ['Legislación', 'La jurisdicción y legislación aplicables deberán confirmarse en función de la identidad y establecimiento del titular: [PENDIENTE DE VALIDACIÓN LEGAL].']
+        ['Legislación', 'El uso del sitio se rige por la normativa que resulte aplicable en función de las circunstancias concretas.']
       ]
     },
     en: {
       title: 'Legal notice', description: 'Legal information and terms of use for Quasaric.',
       intro: 'Information about the website operator and the terms governing use of Quasaric.',
       sections: [
-        ['Website operator', 'This section must be completed before the website is presented as a final service. Personal project with no sale of products or services: Quasaric (quasaric.com). Quasaric is the public project name, not a legal person. Operator’s legal identity: [TO BE PROVIDED]. Tax ID: [IF REQUIRED]. Legal address: [TO BE CONFIRMED]. Contact email: contacto@quasaric.com. No sales or contracting are offered through this website.'],
+        ['Website operator', 'Quasaric (quasaric.com) is a personal project. No products are sold and no services are offered for purchase through this website. For enquiries about the website, contact contacto@quasaric.com.'],
         ['Purpose and use', 'Quasaric is an assistance tool that correlates user-declared technology components with public vulnerability information. It does not actively scan or directly verify the user’s systems. Users must validate findings and recommendations against vendor advisories and their own environment.'],
         ['Intellectual property', 'Quasaric’s own text, design, brand and assets belong to their respective rights holders. Third-party marks, product names and content belong to their owners and are referenced for informational purposes.'],
         ['Liability and availability', 'Information is provided for informational and assistance purposes. Exhaustive detection, continuous accuracy, uninterrupted availability or the absence of vulnerabilities are not guaranteed. Quasaric does not replace an audit, specialist scanner or professional vulnerability-management process.'],
         ['External links and sources', 'The application queries public third-party sources. Their content, availability and policies are governed by each provider. Quasaric does not control those external services.'],
-        ['Governing law', 'Applicable law and jurisdiction must be confirmed based on the operator’s identity and establishment: [LEGAL REVIEW REQUIRED].']
+        ['Governing law', 'Use of the website is subject to the laws applicable in the relevant circumstances.']
       ]
     }
   },
@@ -35,28 +35,28 @@ const pages = {
       description: 'Qué datos utiliza Quasaric, dónde se almacenan y qué información se comparte con fuentes externas.',
       intro: 'Quasaric está diseñada con un enfoque local-first: el inventario y el historial se guardan en el almacenamiento de tu navegador.',
       sections: [
-        ['Responsable del tratamiento', 'El proyecto Quasaric (quasaric.com) es gestionado por una persona física a título particular y no vende productos ni servicios. Quasaric es el nombre público del proyecto, no la identidad legal del responsable. Identidad legal del responsable: [PENDIENTE DE FACILITAR]. Correo de contacto para privacidad: contacto@quasaric.com. La identidad legal debe completarse para que la información del responsable sea plenamente transparente cuando resulte exigible.'],
+        ['Responsable del tratamiento', 'Quasaric (quasaric.com) es un proyecto personal gestionado a título particular, sin venta de productos ni servicios. Para consultas relacionadas con privacidad y protección de datos, el canal de contacto es contacto@quasaric.com.'],
         ['Datos tratados y finalidad', 'Los componentes, versiones, preferencias, análisis e historial que introduces se almacenan localmente en tu navegador para prestar las funciones de inventario, análisis, comparación e informes. No se requiere una cuenta y la arquitectura actual no utiliza una base de datos propia ni un backend de Quasaric para almacenar el inventario.'],
         ['Consultas a terceros y dirección IP', 'Cuando ejecutas un análisis, el navegador consulta fuentes públicas de vulnerabilidades. Esas solicitudes pueden revelar a cada proveedor tu dirección IP, los identificadores consultados y los metadatos técnicos habituales de una conexión. No introduzcas nombres internos sensibles, credenciales, tokens ni secretos en el inventario. Los proveedores externos actúan conforme a sus propias políticas.'],
         ['Almacenamiento local y control', 'Los datos permanecen en el perfil y navegador donde se introducen. Puedes borrarlos desde las funciones disponibles en la aplicación o desde la configuración del navegador; borrar los datos del sitio puede eliminar inventario, preferencias e historial sin posibilidad de recuperación. Exporta una copia antes de hacerlo.'],
         ['Conservación', 'Quasaric no establece un plazo remoto de conservación para el inventario porque se guarda localmente. Su permanencia depende de la configuración, capacidad y limpieza del almacenamiento del navegador y de las acciones del usuario. Los proveedores consultados pueden conservar registros de sus solicitudes según sus propias políticas.'],
         ['Cookies y tecnologías similares', 'La aplicación no incorpora actualmente herramientas publicitarias ni analítica de terceros. Utiliza almacenamiento local del navegador para funciones solicitadas por el usuario, como conservar inventario, historial y preferencia de idioma. Este almacenamiento no es una cookie, pero es una tecnología similar y se describe también en la política de cookies.'],
-        ['Derechos y reclamaciones', 'Para ejercer los derechos de protección de datos que resulten aplicables o plantear una consulta, el canal de contacto del responsable debe completarse aquí: contacto@quasaric.com. La autoridad de control competente dependerá del establecimiento del responsable y de las circunstancias del tratamiento.'],
-        ['Cambios', 'Esta política debe revisarse si se incorporan cuentas, telemetría, analítica, publicidad, backend, formularios, nuevos proveedores o cambios en los datos tratados. Fecha de entrada en vigor: [PENDIENTE].']
+        ['Derechos y reclamaciones', 'Para consultas o solicitudes relacionadas con protección de datos, puedes escribir a contacto@quasaric.com. La autoridad de control competente dependerá de las circunstancias del tratamiento.'],
+        ['Cambios', 'Esta política debe revisarse si se incorporan cuentas, telemetría, analítica, publicidad, backend, formularios, nuevos proveedores o cambios en los datos tratados. Fecha de entrada en vigor: 6 de noviembre de 2026.']
       ]
     },
     en: {
       title: 'Privacy policy', description: 'What data Quasaric uses, where it is stored and what is shared with external sources.',
       intro: 'Quasaric is designed local-first: your inventory and history are stored in your browser.',
       sections: [
-        ['Data controller', 'The Quasaric project (quasaric.com) is operated by an individual in a personal capacity and does not sell products or services. Quasaric is the public project name, not the controller’s legal identity. Controller’s legal identity: [TO BE PROVIDED]. Privacy contact email: contacto@quasaric.com. The legal identity must be completed for full controller transparency where required.'],
+        ['Data controller', 'Quasaric (quasaric.com) is a personal project operated in a private capacity, with no sale of products or services. For privacy and data-protection enquiries, the contact channel is contacto@quasaric.com.'],
         ['Data and purposes', 'Components, versions, preferences, analyses and history you enter are stored locally in your browser to provide inventory, analysis, comparison and reporting features. No account is required, and the current architecture does not use a Quasaric-owned database or backend to store your inventory.'],
         ['Third-party queries and IP address', 'When you run an analysis, your browser queries public vulnerability sources. Each provider may receive your IP address, queried identifiers and ordinary connection metadata. Do not enter sensitive internal names, credentials, tokens or secrets. External providers operate under their own policies.'],
         ['Local storage and control', 'Data stays in the browser profile where it was entered. You can clear it using available application features or browser settings; clearing site data may irreversibly remove inventory, preferences and history. Export a backup first.'],
         ['Retention', 'Quasaric does not set a remote retention period for inventory because it is stored locally. Its persistence depends on browser settings, storage limits and user actions. External providers may retain request logs under their own policies.'],
         ['Cookies and similar technologies', 'The application currently includes no advertising tools or third-party analytics. It uses browser local storage for user-requested features such as retaining inventory, history and language preference. Local storage is not a cookie, but is a similar technology and is also described in the cookie policy.'],
-        ['Rights and complaints', 'To exercise applicable data-protection rights or make an enquiry, the controller’s contact channel must be completed here: contacto@quasaric.com. The competent supervisory authority depends on the controller’s establishment and processing circumstances.'],
-        ['Changes', 'This policy must be reviewed if accounts, telemetry, analytics, advertising, a backend, forms, new providers or new data processing are introduced. Effective date: [TO BE COMPLETED].']
+        ['Rights and complaints', 'For data-protection enquiries or requests, you can contact contacto@quasaric.com. The competent supervisory authority depends on the circumstances of the processing.'],
+        ['Changes', 'This policy must be reviewed if accounts, telemetry, analytics, advertising, a backend, forms, new providers or new data processing are introduced. Effective date: 6 November 2026.']
       ]
     }
   },
@@ -111,9 +111,9 @@ export default function LegalPage({ path, lang = 'es', onLanguageChange }) {
       <p className="legal-eyebrow">QUASARIC · {lang === 'es' ? 'INFORMACIÓN' : 'INFORMATION'}</p>
       <h1>{copy.title}</h1>
       <p className="legal-intro">{copy.intro}</p>
-      <div className="legal-pending" role="note"><strong>{lang === 'es' ? 'Documento pendiente de completar y validar' : 'Document pending completion and review'}</strong><span>{lang === 'es' ? 'Los campos entre corchetes requieren datos del titular. Estas páginas no constituyen asesoramiento jurídico.' : 'Bracketed fields require operator details. These pages are not legal advice.'}</span></div>
+      <div className="legal-pending" role="note"><strong>{lang === 'es' ? 'Información del proyecto' : 'Project information'}</strong><span>{lang === 'es' ? 'Información general; no constituye asesoramiento jurídico.' : 'General information; this is not legal advice.'}</span></div>
       {copy.sections.map(([heading, body]) => <section className="legal-section" key={heading}><h2>{heading}</h2><p>{body}</p></section>)}
-      <p className="legal-updated">{lang === 'es' ? 'Versión de trabajo · 6 de noviembre de 2026' : 'Working draft · 6 November 2026'}</p>
+      <p className="legal-updated">{lang === 'es' ? 'Actualizado · 6 de noviembre de 2026' : 'Updated · 6 November 2026'}</p>
     </main>
     <footer className="legal-footer"><span>© {new Date().getFullYear()} Quasaric</span><span><a href="/aviso-legal">{lang === 'es' ? 'Aviso legal' : 'Legal notice'}</a> · <a href="/privacidad">{lang === 'es' ? 'Privacidad' : 'Privacy'}</a> · <a href="/cookies">{lang === 'es' ? 'Cookies' : 'Cookies'}</a></span></footer>
   </div>;
