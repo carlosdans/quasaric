@@ -1,7 +1,17 @@
 node_modules/
 dist/
+
+# Local credentials and Azure tooling
 .env
 .env.*
 !.env.example
+.azure/
+*.publishsettings
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Local state and editor files
 .DS_Store
 .vscode/
