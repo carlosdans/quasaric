@@ -6,6 +6,7 @@ const landing = await readFile(new URL('../src/LandingPage.jsx', import.meta.url
 const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
 const styles = await readFile(new URL('../src/landing.css', import.meta.url), 'utf8');
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+const main = await readFile(new URL('../src/main.jsx', import.meta.url), 'utf8');
 
 test('public website explains the product in Spanish and English', () => {
   for (const phrase of ['Entiende tu exposición', 'Understand exposure', 'Preguntas frecuentes', 'FREQUENTLY ASKED QUESTIONS']) assert.ok(landing.includes(phrase), phrase);
@@ -62,4 +63,15 @@ test('public and application footers do not expose email or GitHub links', () =>
 test('vulnerability correlation engine is lazy-loaded only when analysis runs', () => {
   assert.equal(app.includes("import { analyzeInventory } from './lib/correlation.js'"), false);
   assert.ok(app.includes("await import('./lib/correlation.js')"));
+});
+
+
+test('public landing route defers the application JavaScript and workspace CSS', () => {
+  assert.match(main, /lazy\(\(\) => import\(['"]\.\/App\.jsx['"]\)\)/);
+  assert.match(main, /window\.location\.hash === '#app'/);
+  assert.match(main, /<Suspense/);
+  assert.doesNotMatch(main, /import App from ['"]\.\/App\.jsx['"]/);
+  assert.doesNotMatch(main, /import ['"]\.\/styles\.css['"]/);
+  assert.match(app, /import ['"]\.\/styles\.css['"]/);
+  assert.match(main, /<LandingPage lang=\{lang\}/);
 });
