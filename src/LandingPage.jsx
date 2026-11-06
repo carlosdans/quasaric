@@ -127,7 +127,7 @@ export default function LandingPage({ lang = 'es', onLanguageChange, onOpenApp }
         <div className="landing-header-inner">
           <Brand />
           <nav className={'landing-nav' + (mobileNavOpen ? ' is-mobile-open' : '')} id="landing-navigation" aria-label={lang === 'es' ? 'Navegación principal' : 'Main navigation'}>
-            {t.nav.map(([href, label]) => <a key={href} href={href} onClick={closeMobileNav}>{label}</a>)}
+            {t.nav.map(([href, label]) => <a key={href} href={href} onClick={() => { closeMobileNav(); mobileToggleRef.current?.focus(); }}>{label}</a>)}
           </nav>
           <div className="landing-header-actions">
             <button className="landing-language" onClick={() => onLanguageChange?.(lang === 'es' ? 'en' : 'es')} aria-label={lang === 'es' ? 'Switch to English' : 'Cambiar a español'}><Globe2 size={15}/>{lang.toUpperCase()}</button>
