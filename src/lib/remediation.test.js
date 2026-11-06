@@ -67,11 +67,11 @@ test('patched candidate remains unconfirmed and does not suggest another update'
 });
 
 test('generic and incomplete assessments require manual review with references', () => {
-  const result = buildRemediationGuidance({ references: [{ url: 'https://vendor.example/advisory' }] }, {
+  const result = buildRemediationGuidance({ references: [{ url: 'https://vendor.example.org/advisory' }] }, {
     component, evidence: []
   });
   assert.equal(result.status, 'manual_review');
-  assert.deepEqual(result.references, ['https://vendor.example/advisory']);
+  assert.deepEqual(result.references, ['https://vendor.example.org/advisory']);
 });
 
 test('builds guidance separately for each affected component', () => {
