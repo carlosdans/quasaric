@@ -750,3 +750,15 @@ La portada pública y la plataforma se cargan ahora por separado: el navegador d
 - Commit de código validado: `6ebe05a726a793db0cf7238d9bda96e999d19b02`.
 - Ejecución [42256426276](https://github.com/carlosdans/quasaric/actions/runs/42256426276): 619/619 pruebas superadas, build Vite correcto y despliegue Azure Static Web Apps completado.
 - Ejecución intermedia [42256406771](https://github.com/carlosdans/quasaric/actions/runs/42256406771): 618/618 pruebas superadas y despliegue completado.
+
+
+### 2026-11-06 — revisión de salida pública
+
+- Se vuelve a comprobar el estado de `main`: HEAD documental `d91d8a6b644cb95e7a053200444c9cd2ead13740`; último commit de código desplegado `6ebe05a726a793db0cf7238d9bda96e999d19b02`.
+- La ejecución de producción [42256426276](https://github.com/carlosdans/quasaric/actions/runs/42256426276) terminó correctamente: instalación de dependencias, 619/619 pruebas, build Vite, inclusión de `staticwebapp.config.json` y despliegue Azure Static Web Apps.
+- Revisión estática de `staticwebapp.config.json`: CSP, HSTS, anti-framing, MIME sniffing, Referrer-Policy, Permissions-Policy y caché de assets están definidos; las pruebas automatizadas cubren los valores y los orígenes HTTPS de los adaptadores.
+- La comprobación de cabeceras servidas por `https://quasaric.com` no pudo completarse desde esta sesión: el acceso web no resolvió el dominio y el entorno de ejecución no pudo resolver DNS. La configuración del repositorio no demuestra por sí sola las cabeceras efectivas en producción.
+- La API de GitHub no permitió leer la protección clásica de `main` (403) y no devolvió rulesets configurados. No se ha podido activar ni verificar protección de rama desde esta conexión.
+- Sigue sin existir `package-lock.json`; el workflow utiliza `npm install`. No se generó un lockfile sin una resolución npm verificable.
+- Siguen pendientes las pruebas visuales reales en móvil/escritorio, la comprobación con lector de pantalla y la confirmación del plan/facturación Free de Azure. No se dispone de navegador interactivo ni acceso al portal de Azure en esta sesión.
+- **Conclusión:** el despliegue público y las validaciones automatizadas están correctos; la aceptación final de producción queda condicionada a las comprobaciones externas anteriores. La herramienta sigue siendo apoyo de triage y no debe usarse como veredicto autónomo de seguridad ni como garantía de detección exhaustiva.
