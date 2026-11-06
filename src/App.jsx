@@ -401,6 +401,13 @@ function App() {
   const [analysisHistoryState] = useState(() => readAnalysisHistoryState());
   const [analysisHistoryWarning, setAnalysisHistoryWarning] = useState(analysisHistoryState.warning);
   const analysisAbortRef = useRef(null);
+  useEffect(() => () => {
+    const controller = analysisAbortRef.current;
+    if (controller) {
+      analysisAbortRef.current = null;
+      controller.abort();
+    }
+  }, []);
   const [analysisHistory, setAnalysisHistory] = useState(analysisHistoryState.history);
   const [historyRecoveryAvailable, setHistoryRecoveryAvailable] = useState(() => Boolean(readAnalysisHistoryRecovery()));
   // Latest committed value shared by asynchronous imports and analysis completion.
