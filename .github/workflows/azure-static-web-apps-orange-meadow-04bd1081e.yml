@@ -13,14 +13,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: quasaric-production
+  group: quasaric-production-static-web-apps
   cancel-in-progress: false
 
 jobs:
   test_build_deploy:
     name: Validate and deploy production
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
