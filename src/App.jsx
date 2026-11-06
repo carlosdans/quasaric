@@ -345,8 +345,9 @@ function App() {
   const [severityFilter, setSeverityFilter] = useState('all');
   const [applicabilityFilter, setApplicabilityFilter] = useState('all');
   const [findingPage, setFindingPage] = useState(1);
-  const [purlAdvisoryPage, setPurlAdvisoryPage] = useState(1);
+  const [analysis, setAnalysis] = useState(null);
   useEffect(() => { setPurlAdvisoryPage(1); }, [analysis]);
+  const [purlAdvisoryPage, setPurlAdvisoryPage] = useState(1);
   useEffect(() => { setFindingPage(1); }, [query, severityFilter, applicabilityFilter]);
   const [selectedFinding, setSelectedFinding] = useState(null);
   const [copiedRemediation, setCopiedRemediation] = useState('');
@@ -397,7 +398,6 @@ function App() {
       selectedFindingTriggerRef.current = null;
     };
   }, [selectedFinding]);
-  const [analysis, setAnalysis] = useState(null);
   const [analysisHistoryState] = useState(() => readAnalysisHistoryState());
   const [analysisHistoryWarning, setAnalysisHistoryWarning] = useState(analysisHistoryState.warning);
   const analysisAbortRef = useRef(null);
