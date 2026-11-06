@@ -754,7 +754,7 @@ La portada pública y la plataforma se cargan ahora por separado: el navegador d
 
 ### 2026-11-06 — revisión de salida pública
 
-- Se vuelve a comprobar el estado de `main`: HEAD documental `d91d8a6b644cb95e7a053200444c9cd2ead13740`; último commit de código desplegado `6ebe05a726a793db0cf7238d9bda96e999d19b02`.
+- En la revisión previa, el HEAD documental de `main` era `d91d8a6b644cb95e7a053200444c9cd2ead13740`; el último commit de código desplegado `6ebe05a726a793db0cf7238d9bda96e999d19b02`.
 - La ejecución de producción [42256426276](https://github.com/carlosdans/quasaric/actions/runs/42256426276) terminó correctamente: instalación de dependencias, 619/619 pruebas, build Vite, inclusión de `staticwebapp.config.json` y despliegue Azure Static Web Apps.
 - Revisión estática de `staticwebapp.config.json`: CSP, HSTS, anti-framing, MIME sniffing, Referrer-Policy, Permissions-Policy y caché de assets están definidos; las pruebas automatizadas cubren los valores y los orígenes HTTPS de los adaptadores.
 - La comprobación de cabeceras servidas por `https://quasaric.com` no pudo completarse desde esta sesión: el acceso web no resolvió el dominio y el entorno de ejecución no pudo resolver DNS. La configuración del repositorio no demuestra por sí sola las cabeceras efectivas en producción.
