@@ -5,7 +5,7 @@
 > **Actualizado:** 6 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `34107ea48590637431fb1c34bf0820d53b5e882b`
+> **HEAD de código validado:** `0a6b47a4cecbeaae275b391f7efe8db3460e93fc`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 22 en cada push a `main`. El workflow de Azure publica desde `main` y omite despliegues cuando el cambio solo afecta a documentación, pruebas o workflows; si el mismo commit incluye código de aplicación, el despliegue sigue ejecutándose. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `34107ea48590637431fb1c34bf0820d53b5e882b`; 608/608 tests correctos y build de producción correcto en Node 22. CI y despliegue Azure Static Web Apps [42235919804](https://github.com/carlosdans/quasaric/actions/runs/42235919804), satisfactorio el 6 de noviembre de 2026.
+**Última validación de código en `main`:** commit `0a6b47a4cecbeaae275b391f7efe8db3460e93fc`; 609/609 tests correctos y build de producción correcto en Node 22. CI y despliegue Azure Static Web Apps [42251128498](https://github.com/carlosdans/quasaric/actions/runs/42251128498), satisfactorio el 6 de noviembre de 2026.
 
 La portada pública y la plataforma se cargan ahora por separado: el navegador descarga primero la web pública y carga el bundle de la aplicación y sus estilos al entrar en `#app`. En el build validado, el JavaScript inicial queda en 253,30 kB (80,47 kB gzip); la plataforma se sirve en un chunk de 197,94 kB (51,75 kB gzip) y el motor de correlación en otro de 71,68 kB (21,49 kB gzip). Frente al bundle inicial anterior de 448,56 kB, supone una reducción aproximada del 43,5 % del JavaScript inicial. No se añaden dependencias ni servicios; el inventario y el análisis mantienen su funcionamiento local-first.
 
@@ -126,6 +126,7 @@ La portada pública y la plataforma se cargan ahora por separado: el navegador d
 
 - La portada pública carga inicialmente solo la interfaz de presentación. El módulo principal de la plataforma y `styles.css` se descargan al navegar a `#app`.
 - Al abandonar la plataforma durante un análisis, el desmontaje cancela la petición activa e invalida su controlador para evitar trabajo de red en segundo plano.
+- La navegación móvil de la portada devuelve el foco al botón del menú al seleccionar una sección, evitando que el foco quede en un enlace oculto. Prueba de regresión incluida.
 
 - El selector de idioma, los metadatos SEO y el fallback de error siguen disponibles en la ruta pública; la carga de la aplicación tiene un estado accesible.
 - Se añade una prueba de regresión para impedir que la portada vuelva a importar estáticamente la plataforma o sus estilos.
