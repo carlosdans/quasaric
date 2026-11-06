@@ -1,5 +1,6 @@
 import React from 'react';
 import LandingPage from './LandingPage.jsx';
+import './styles.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toCsv } from './lib/csv.js';
 import { createAnalysisSnapshot, compareAnalysisSnapshots, readAnalysisHistoryState, saveAnalysisHistory, upsertAnalysisSnapshot, readAnalysisHistoryRecovery } from './lib/analysisHistory.js';
