@@ -762,3 +762,13 @@ La portada pública y la plataforma se cargan ahora por separado: el navegador d
 - Sigue sin existir `package-lock.json`; el workflow utiliza `npm install`. No se generó un lockfile sin una resolución npm verificable.
 - Siguen pendientes las pruebas visuales reales en móvil/escritorio, la comprobación con lector de pantalla y la confirmación del plan/facturación Free de Azure. No se dispone de navegador interactivo ni acceso al portal de Azure en esta sesión.
 - **Conclusión:** el despliegue público y las validaciones automatizadas están correctos; la aceptación final de producción queda condicionada a las comprobaciones externas anteriores. La herramienta sigue siendo apoyo de triage y no debe usarse como veredicto autónomo de seguridad ni como garantía de detección exhaustiva.
+
+### 2026-11-06 — smoke test funcional confirmado por el usuario
+
+- El usuario confirma que la web carga y permite entrar desde un móvil.
+- El usuario confirma el flujo manual: alta del componente Apache HTTP Server 2.4.49, ejecución del análisis, generación de resultados y consulta de referencias.
+- El usuario confirma que el componente permanece en el inventario después de recargar o volver a abrir la aplicación. Esto valida la persistencia local en el navegador utilizado.
+- Revisión estática adicional de exportación CSV: `exportCsv` serializa las columnas del inventario mediante `toCsv`, crea un Blob `text/csv;charset=utf-8` y dispara la descarga `quasaric-inventory.csv`. La serialización añade BOM UTF-8, CRLF, comillas y neutralización de prefijos de fórmula; existen pruebas unitarias para esos casos y para el parser de importación.
+- La ejecución CI [42256426276](https://github.com/carlosdans/quasaric/actions/runs/42256426276) sigue siendo la evidencia automatizada disponible: 619/619 pruebas, build y despliegue correctos.
+- No se ha ejecutado una descarga real del CSV desde un navegador controlado en esta sesión; tampoco se ha inspeccionado el contenido descargado en Excel/LibreOffice. No se marca esa prueba como completada.
+- Continúan pendientes las comprobaciones que requieren acceso externo no disponible aquí: cabeceras HTTP efectivas del dominio, lector de pantalla, inspección visual de escritorio, protección de rama y plan/facturación Free de Azure.
