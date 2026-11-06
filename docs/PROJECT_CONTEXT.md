@@ -5,7 +5,7 @@
 > **Actualizado:** 6 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `00615cb6fa914e85dd5a424bd6b22f27dda99fb9`
+> **HEAD de código validado:** `6ebe05a726a793db0cf7238d9bda96e999d19b02`
 
 ## 1. Objetivo y límites
 
