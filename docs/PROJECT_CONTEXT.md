@@ -733,3 +733,11 @@ La portada pública y la plataforma se cargan ahora por separado: el navegador d
 - Los enlaces procedentes de avisos y feeds siguen requiriendo HTTPS y ausencia de credenciales.
 - Se bloquean hostnames locales/de una sola etiqueta, sufijos reservados, rangos IPv4 privados/no públicos y literales IPv6. Así se evita convertir referencias de fuentes no confiables en navegación hacia servicios locales o direcciones de metadatos.
 - Se conservan los dominios públicos HTTPS y las direcciones IPv4 públicas; pruebas de regresión para ambos casos.
+
+
+### 2026-11-06 — validación de enlaces externos y despliegue
+
+- HEAD de esta validación: `d9404b6572b828e771df373832b7bb7984eeb9ee`.
+- Ejecución de producción [42255369699](https://github.com/carlosdans/quasaric/actions/runs/42255369699): 617/617 pruebas superadas, compilación Vite correcta y despliegue Azure Static Web Apps confirmado.
+- La validación de URL externa normaliza el hostname eliminando el punto DNS final antes de aplicar los bloqueos de host local y rangos IPv4 no públicos.
+- Pruebas específicas para localhost, nombres de host locales, rangos privados, metadata link-local, IPv6 y dominios HTTPS públicos.
