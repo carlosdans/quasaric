@@ -31,3 +31,13 @@ test('cancelling an analysis immediately releases the UI lock and invalidates st
   assert.match(app, /cancelActiveAnalysis\(\);\s*itemsRef\.current = next/);
   assert.match(app, /analysisAbortRef\.current !== controller/);
 });
+
+
+test('leaving the workspace aborts an active analysis request', () => {
+  const marker = 'const analysisAbortRef = useRef(null);';
+  const start = app.indexOf(marker);
+  const cleanup = app.indexOf('controller.abort();', start);
+  const effectEnd = app.indexOf('}, []);', cleanup);
+  assert.ok(start >= 0 && cleanup > start && effectEnd > cleanup);
+  assert.match(app.slice(start, effectEnd + 6), /analysisAbortRef\.current = null/);
+});
