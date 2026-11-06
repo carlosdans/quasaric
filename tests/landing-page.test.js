@@ -60,6 +60,6 @@ test('public and application footers do not expose email or GitHub links', () =>
 });
 
 test('vulnerability correlation engine is lazy-loaded only when analysis runs', () => {
-  assert.doesNotMatch(app, /^import\\s+\\{\\s*analyzeInventory\\s*\\}\\s+from\\s+['"]\\.\\/lib\\/correlation\\.js['"]/m);
-  assert.match(app, /await import\\(['"]\\.\\/lib\\/correlation\\.js['"]\\)/);
+  assert.equal(app.includes("import { analyzeInventory } from './lib/correlation.js'"), false);
+  assert.ok(app.includes("await import('./lib/correlation.js')"));
 });
