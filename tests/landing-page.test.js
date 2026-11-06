@@ -58,3 +58,8 @@ test('public and application footers do not expose email or GitHub links', () =>
   assert.ok(landingFooter.includes('href="#product"'));
   assert.ok(landingFooter.includes('href="#trust"'));
 });
+
+test('vulnerability correlation engine is lazy-loaded only when analysis runs', () => {
+  assert.doesNotMatch(app, /^import\\s+\\{\\s*analyzeInventory\\s*\\}\\s+from\\s+['"]\\.\\/lib\\/correlation\\.js['"]/m);
+  assert.match(app, /await import\\(['"]\\.\\/lib\\/correlation\\.js['"]\\)/);
+});
