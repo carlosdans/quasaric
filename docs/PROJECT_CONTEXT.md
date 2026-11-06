@@ -2,10 +2,10 @@
 
 > Documento de continuidad. Esta sección describe el estado real del código de `main`; no sustituye las limitaciones que muestra la aplicación.
 >
-> **Actualizado:** 3 de noviembre de 2026  
+> **Actualizado:** 6 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `a351cbb6f6115b4da873ac4f1f273d61cf70f14b`
+> **HEAD de código validado:** `9b60acb86b2f37928d52925c6524d8bf1a5f68c2`
 
 ## 1. Objetivo y límites
 
@@ -96,9 +96,11 @@ npm run dev
 npm run preview
 ```
 
-CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de Azure publica desde `main` y omite despliegues cuando el cambio solo afecta a documentación, pruebas o workflows; si el mismo commit incluye código de aplicación, el despliegue sigue ejecutándose. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
+CI ejecuta tests y build con Node 22 en cada push a `main`. El workflow de Azure publica desde `main` y omite despliegues cuando el cambio solo afecta a documentación, pruebas o workflows; si el mismo commit incluye código de aplicación, el despliegue sigue ejecutándose. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `a351cbb6f6115b4da873ac4f1f273d61cf70f14b`; 562/562 tests y build de producción correctos en Node 20 y Node 22. CI [41722041561](https://github.com/carlosdans/quasaric/actions/runs/41722041561), satisfactoria. El código de aplicación de este bloque está desplegado desde `dd8f4009367caae0cafd91ae6bc449b707ca2bde` mediante Azure Static Web Apps [41721482608](https://github.com/carlosdans/quasaric/actions/runs/41721482608), satisfactoria; el commit posterior `a351cbb` solo ajusta expectativas de regresión.
+**Última validación de código en `main`:** commit `9b60acb86b2f37928d52925c6524d8bf1a5f68c2`; 607/607 tests correctos y build de producción correcto en Node 22. CI y despliegue Azure Static Web Apps [42235075589](https://github.com/carlosdans/quasaric/actions/runs/42235075589), satisfactorio el 6 de noviembre de 2026.
+
+La portada pública y la plataforma se cargan ahora por separado: el navegador descarga primero la web pública y carga el bundle de la aplicación y sus estilos al entrar en `#app`. En el build validado, el JavaScript inicial queda en 253,30 kB (80,47 kB gzip); la plataforma se sirve en un chunk de 197,94 kB (51,75 kB gzip) y el motor de correlación en otro de 71,68 kB (21,49 kB gzip). Frente al bundle inicial anterior de 448,56 kB, supone una reducción aproximada del 43,5 % del JavaScript inicial. No se añaden dependencias ni servicios; el inventario y el análisis mantienen su funcionamiento local-first.
 
 ## 7. Limitaciones y trabajo pendiente
 
@@ -118,6 +120,17 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - `d2100b0`: importación del icono `Copy` usado en la guía de versiones y prueba de regresión para evitar un error en tiempo de ejecución.
 - Los cambios son locales al frontend; no añaden dependencias, backend, servicios ni recursos Azure.
 - CI Node 20/22 y despliegue Azure del commit `d2100b0` verificados como satisfactorios el 3 de noviembre de 2026.
+
+
+### 2026-11-06 — carga diferida de la plataforma
+
+- La portada pública carga inicialmente solo la interfaz de presentación. El módulo principal de la plataforma y `styles.css` se descargan al navegar a `#app`.
+- El selector de idioma, los metadatos SEO y el fallback de error siguen disponibles en la ruta pública; la carga de la aplicación tiene un estado accesible.
+- Se añade una prueba de regresión para impedir que la portada vuelva a importar estáticamente la plataforma o sus estilos.
+- Build validado: JavaScript inicial 253,30 kB (80,47 kB gzip), plataforma 197,94 kB (51,75 kB gzip), motor de correlación 71,68 kB (21,49 kB gzip). Reducción aproximada del 43,5 % frente al bundle inicial previo de 448,56 kB.
+- Commit `9b60acb86b2f37928d52925c6524d8bf1a5f68c2`: 607/607 tests y build correctos; despliegue Azure Static Web Apps [42235075589](https://github.com/carlosdans/quasaric/actions/runs/42235075589), satisfactorio.
+- Sin nuevas dependencias, backend, servicios de pago ni recursos Azure.
+
 
 ## 9. Instrucciones para continuar
 
