@@ -5,7 +5,7 @@
 > **Actualizado:** 6 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `814181ce520bbbec4ce3ebd6d6fda5e1283c54b3`
+> **HEAD de código validado:** `00615cb6fa914e85dd5a424bd6b22f27dda99fb9`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 22 en cada push a `main`. El workflow de Azure publica desde `main` y omite despliegues cuando el cambio solo afecta a documentación, pruebas o workflows; si el mismo commit incluye código de aplicación, el despliegue sigue ejecutándose. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `814181ce520bbbec4ce3ebd6d6fda5e1283c54b3`; 613/613 tests correctos y build de producción correcto en Node 22. CI y despliegue Azure Static Web Apps [42253736400](https://github.com/carlosdans/quasaric/actions/runs/42253736400), satisfactorio el 6 de noviembre de 2026.
+**Última validación de código en `main`:** commit `814181ce520bbbec4ce3ebd6d6fda5e1283c54b3`; 616/616 tests correctos y build de producción correcto en Node 22. CI y despliegue Azure Static Web Apps [42254306727](https://github.com/carlosdans/quasaric/actions/runs/42253736400), satisfactorio el 6 de noviembre de 2026.
 
 La portada pública y la plataforma se cargan ahora por separado: el navegador descarga primero la web pública y carga el bundle de la aplicación y sus estilos al entrar en `#app`. En el build validado, el JavaScript inicial queda en 253,33 kB (80,48 kB gzip); la plataforma se sirve en un chunk de 198,02 kB (51,75 kB gzip) y el motor de correlación en otro de 71,68 kB (21,49 kB gzip). Frente al bundle inicial anterior de 448,56 kB, supone una reducción aproximada del 43,5 % del JavaScript inicial. No se añaden dependencias ni servicios; el inventario y el análisis mantienen su funcionamiento local-first.
 
@@ -716,6 +716,8 @@ La portada pública y la plataforma se cargan ahora por separado: el navegador d
 - Última ejecución de producción: [42253736400](https://github.com/carlosdans/quasaric/actions/runs/42253736400), correcta: 613/613 pruebas, build Vite y despliegue Azure Static Web Apps completados.
 - La portada pública carga de forma diferida el bundle de la plataforma y sus estilos. El motor de correlación se carga al ejecutar un análisis. El JavaScript inicial es 253,33 kB (80,48 kB gzip); el chunk de plataforma es 198,02 kB (51,75 kB gzip) y el motor 71,68 kB (21,49 kB gzip).
 - Accesibilidad: menú móvil devuelve el foco al botón tras seleccionar una sección o pulsar Escape; el enlace de salto al contenido y el foco visible tienen pruebas automatizadas. Los enlaces que abren pestañas nuevas usan `rel="noreferrer"`.
+- Exportación CSV: pruebas de regresión para neutralizar prefijos de fórmulas de hoja de cálculo (`=`, `+`, `@`, `-` y controles iniciales), manteniendo el escape de comillas, comas y saltos de línea.
+
 - Seguridad de despliegue: CSP restrictiva, cabeceras de seguridad y prueba que compara los hosts HTTPS de los adaptadores de fuentes con `connect-src`. Los enlaces externos en pestañas nuevas se comprueban para exigir `rel="noreferrer"`.
 - Seguridad del repositorio: `.gitignore` reforzado para credenciales y certificados locales; GitHub Actions fijadas a SHA inmutable; Dependabot semanal para npm y Actions.
 - El workflow actual ejecuta Node 22. El repositorio no tiene `package-lock.json`; CI utiliza `npm install`, por lo que la resolución transitiva no queda fijada por lockfile. La generación de un lockfile requiere una resolución npm reproducible y revisión de cambios; no se ha generado en esta sesión.
