@@ -693,3 +693,18 @@ CI ejecuta tests y build con Node 20 y 22 en cada push a `main`. El workflow de 
 - Cuando no se puede leer el historial, la interfaz conserva el aviso de persistencia desde el arranque; los datos dañados siguen preservándose en la clave de recuperación cuando el navegador permite escribirla.
 - La API de lectura mantiene `loadAnalysisHistory` compatible y añade un resultado explícito con historial y estado de advertencia.
 - Pruebas para almacenamiento vacío, inaccesible y JSON dañado.
+
+## 11. Estado de cierre y validación — 2026-11-06
+
+- Rama `main`, HEAD actual: `748371a5c2527005db76552c2e06490560c1ffd9`.
+- La corrección de inicialización del estado de análisis está integrada (`6a79a40`); los cambios revisados de importación CSV, remediación y SBOM están integrados (`e8feb2d`).
+- Seguridad del repositorio: `.gitignore` reforzado para credenciales y certificados locales; GitHub Actions fijadas a SHA inmutable; Dependabot semanal para npm y Actions.
+- Workflow de producción: eliminado `skip_api_build`, que la acción Azure Static Web Apps no admite. La ejecución `42231474206` del commit `748371a` terminó correctamente: 605/605 pruebas, build Vite y despliegue Azure completados. No se reprodujo la advertencia de input no reconocido.
+- El build sigue mostrando una advertencia de tamaño de chunk (518,68 kB minificados; 150,33 kB gzip) y avisos `MODULE_LEVEL_DIRECTIVE` de `lucide-react`. No impiden tests, build ni despliegue; revisar división de código si se aborda una optimización de carga.
+- El workflow actual ejecuta Node 22. La validación anterior de Node 20/22 citada en secciones históricas corresponde a commits previos y no debe interpretarse como matriz vigente del workflow unificado.
+- El repositorio no tiene `package-lock.json`; CI utiliza `npm install`, por lo que la resolución transitiva no queda fijada por lockfile. Revisar la generación y adopción de un lockfile antes de cambiar a `npm ci`.
+- La rama `main` aparece sin protección y no hay rulesets configurados. La lectura de la protección clásica requiere permisos de administración que no están disponibles en la conexión actual.
+- No se han observado secretos evidentes en los archivos actuales revisados; no equivale a un escaneo exhaustivo del historial, forks, tags o alertas de GitHub Secret Scanning.
+- Pendiente de cierre manual: recorrido visual real en navegador de escritorio y móvil, prueba de navegación/teclado y comprobación de cabeceras HTTP en el dominio publicado. La herramienta de revisión de esta sesión no pudo acceder directamente a los dominios de producción.
+- No se ha verificado el plan ni la facturación del recurso Azure desde el portal. Mantener como requisito: Azure Static Web Apps Free y coste objetivo 0 €, sin backend ni servicios de pago.
+- No ampliar funcionalidades por añadir. Priorizar correcciones reproducibles, cobertura metodológica y validación de la experiencia existente. Quasaric sigue siendo una herramienta de apoyo a la revisión, no una garantía de detección exhaustiva ni una herramienta certificada para decisiones de producción.
