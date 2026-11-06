@@ -100,7 +100,7 @@ CI ejecuta tests y build con Node 22 en cada push a `main`. El workflow de Azure
 
 **Última validación de código en `main`:** commit `814181ce520bbbec4ce3ebd6d6fda5e1283c54b3`; 613/613 tests correctos y build de producción correcto en Node 22. CI y despliegue Azure Static Web Apps [42253736400](https://github.com/carlosdans/quasaric/actions/runs/42253736400), satisfactorio el 6 de noviembre de 2026.
 
-La portada pública y la plataforma se cargan ahora por separado: el navegador descarga primero la web pública y carga el bundle de la aplicación y sus estilos al entrar en `#app`. En el build validado, el JavaScript inicial queda en 253,33 kB (80,48 kB gzip); la plataforma se sirve en un chunk de 197,94 kB (51,75 kB gzip) y el motor de correlación en otro de 71,68 kB (21,49 kB gzip). Frente al bundle inicial anterior de 448,56 kB, supone una reducción aproximada del 43,5 % del JavaScript inicial. No se añaden dependencias ni servicios; el inventario y el análisis mantienen su funcionamiento local-first.
+La portada pública y la plataforma se cargan ahora por separado: el navegador descarga primero la web pública y carga el bundle de la aplicación y sus estilos al entrar en `#app`. En el build validado, el JavaScript inicial queda en 253,33 kB (80,48 kB gzip); la plataforma se sirve en un chunk de 198,02 kB (51,75 kB gzip) y el motor de correlación en otro de 71,68 kB (21,49 kB gzip). Frente al bundle inicial anterior de 448,56 kB, supone una reducción aproximada del 43,5 % del JavaScript inicial. No se añaden dependencias ni servicios; el inventario y el análisis mantienen su funcionamiento local-first.
 
 ## 7. Limitaciones y trabajo pendiente
 
