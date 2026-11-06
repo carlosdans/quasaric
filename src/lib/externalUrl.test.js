@@ -27,6 +27,8 @@ test('rejects malformed, empty, non-string and credential-bearing URLs', () => {
 test('rejects local hostnames, private IPv4 ranges and IPv6 literals', () => {
   for (const value of [
     'https://localhost/advisory',
+    'https://localhost./advisory',
+    'https://127.0.0.1./advisory',
     'https://printer/advisory',
     'https://service.local/advisory',
     'https://vault.internal/advisory',
