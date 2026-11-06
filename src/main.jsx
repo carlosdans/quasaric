@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import LandingPage from './LandingPage.jsx';
+import LegalPage from './LegalPage.jsx';
 
 const App = lazy(() => import('./App.jsx'));
 
@@ -39,9 +40,13 @@ class AppErrorBoundary extends React.Component {
 function Root() {
   const [lang, setLang] = useState(readLanguage);
   const [isAppRoute, setIsAppRoute] = useState(() => window.location.hash === '#app');
+  const [path, setPath] = useState(() => window.location.pathname);
+  const legalRoutes = ['/aviso-legal', '/privacidad', '/cookies'];
+  const isLegalRoute = legalRoutes.includes(path);
 
   useEffect(() => {
     try { localStorage.setItem('quasaric-language', lang); } catch { /* storage may be unavailable */ }
+    if (isLegalRoute) return;
     document.documentElement.lang = lang;
     const english = lang === 'en';
     document.title = english ? 'Quasaric — Vulnerability Intelligence' : 'Quasaric — Inteligencia de vulnerabilidades';
@@ -54,15 +59,17 @@ function Root() {
     document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', document.title);
     document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
     document.querySelector('meta[property="og:locale"]')?.setAttribute('content', english ? 'en_US' : 'es_ES');
-  }, [lang]);
+  }, [lang, isLegalRoute]);
 
   useEffect(() => {
     const syncRoute = () => {
       setIsAppRoute(window.location.hash === '#app');
+      setPath(window.location.pathname);
       setLang(readLanguage());
     };
     window.addEventListener('hashchange', syncRoute);
-    return () => window.removeEventListener('hashchange', syncRoute);
+    window.addEventListener('popstate', syncRoute);
+    return () => { window.removeEventListener('hashchange', syncRoute); window.removeEventListener('popstate', syncRoute); };
   }, []);
 
   const openApp = () => {
@@ -72,7 +79,9 @@ function Root() {
 
   return (
     <AppErrorBoundary>
-      {isAppRoute ? (
+      {isLegalRoute ? (
+        <LegalPage path={path} lang={lang} onLanguageChange={setLang} />
+      ) : isAppRoute ? (
         <Suspense fallback={<main role="status" aria-live="polite" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#090d16', color: '#e8edf7', fontFamily: 'system-ui,sans-serif' }}>{lang === 'es' ? 'Cargando Quasaric…' : 'Loading Quasaric…'}</main>}>
           <App />
         </Suspense>
