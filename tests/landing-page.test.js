@@ -75,3 +75,10 @@ test('public landing route defers the application JavaScript and workspace CSS',
   assert.match(app, /import ['"]\.\/styles\.css['"]/);
   assert.match(main, /<LandingPage lang=\{lang\}/);
 });
+
+
+test('mobile landing navigation restores focus to its toggle when a section is selected', () => {
+  assert.match(landing, /onClick=\{\(\) => \{ closeMobileNav\(\); mobileToggleRef\.current\?\.focus\(\); \}\}/);
+  assert.match(landing, /aria-expanded=\{mobileNavOpen\}/);
+  assert.match(landing, /aria-controls="landing-navigation"/);
+});
