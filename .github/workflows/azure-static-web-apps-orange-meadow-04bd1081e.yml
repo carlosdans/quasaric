@@ -1,56 +1,55 @@
-name: Azure Static Web Apps CI/CD
+name: Quasaric CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths-ignore:
       - 'docs/**'
       - '*.md'
       - '**/*.md'
-      - '**/*.test.js'
-      - '**/*.spec.js'
-      - 'tests/**'
       - '.github/workflows/**'
   workflow_dispatch:
-  pull_request:
-    types: [closed]
-    branches:
-      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quasaric-production
+  cancel-in-progress: false
 
 jobs:
-  build_and_deploy_job:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    concurrency:
-      group: quasaric-production-static-web-apps
-      cancel-in-progress: false
-    timeout-minutes: 15
+  test_build_deploy:
+    name: Validate and deploy production
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: true
-          lfs: false
-      - name: Build And Deploy
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ORANGE_MEADOW_04BD1081E }}
-          action: "upload"
-          app_location: "/"
-          api_location: ""
-          output_location: "dist"
-          app_build_command: "npm run build"
+      - name: Checkout
+        uses: actions/checkout@v7
 
-  close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    name: Close Pull Request Job
-    steps:
-      - name: Close Pull Request
-        id: closepullrequest
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run automated tests
+        run: npm test
+
+      - name: Build static application
+        run: npm run build
+
+      - name: Include Azure Static Web Apps configuration
+        run: cp staticwebapp.config.json dist/staticwebapp.config.json
+
+      - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ORANGE_MEADOW_04BD1081E }}
-          action: "close"
+          action: upload
+          app_location: dist
+          api_location: ""
+          output_location: ""
+          skip_app_build: true
+          skip_api_build: true
