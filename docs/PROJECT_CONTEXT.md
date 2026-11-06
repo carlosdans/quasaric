@@ -5,7 +5,7 @@
 > **Actualizado:** 6 de noviembre de 2026  
 > **Repositorio:** https://github.com/carlosdans/quasaric  
 > **Rama:** `main`  
-> **HEAD de código validado:** `69d5885b0bd0f163dbe61dd95495326f13b1982b`
+> **HEAD de código validado:** `e7e634dd926a19bcd0a2e15e1e3930c9403a7b1b`
 
 ## 1. Objetivo y límites
 
@@ -98,7 +98,7 @@ npm run preview
 
 CI ejecuta tests y build con Node 22 en cada push a `main`. El workflow de Azure publica desde `main` y omite despliegues cuando el cambio solo afecta a documentación, pruebas o workflows; si el mismo commit incluye código de aplicación, el despliegue sigue ejecutándose. No declarar publicado un cambio hasta verificar el run de Azure del commit exacto.
 
-**Última validación de código en `main`:** commit `69d5885b0bd0f163dbe61dd95495326f13b1982b`; 611/611 tests correctos y build de producción correcto en Node 22. CI y despliegue Azure Static Web Apps [42252996972](https://github.com/carlosdans/quasaric/actions/runs/42252996972), satisfactorio el 6 de noviembre de 2026.
+**Última validación de código en `main`:** commit `e7e634dd926a19bcd0a2e15e1e3930c9403a7b1b`; 612/612 tests correctos y build de producción correcto en Node 22. CI y despliegue Azure Static Web Apps [42253304468](https://github.com/carlosdans/quasaric/actions/runs/42253304468), satisfactorio el 6 de noviembre de 2026.
 
 La portada pública y la plataforma se cargan ahora por separado: el navegador descarga primero la web pública y carga el bundle de la aplicación y sus estilos al entrar en `#app`. En el build validado, el JavaScript inicial queda en 253,33 kB (80,48 kB gzip); la plataforma se sirve en un chunk de 197,94 kB (51,75 kB gzip) y el motor de correlación en otro de 71,68 kB (21,49 kB gzip). Frente al bundle inicial anterior de 448,56 kB, supone una reducción aproximada del 43,5 % del JavaScript inicial. No se añaden dependencias ni servicios; el inventario y el análisis mantienen su funcionamiento local-first.
 
@@ -712,15 +712,15 @@ La portada pública y la plataforma se cargan ahora por separado: el navegador d
 
 ## 11. Estado de cierre y validación — 2026-11-06
 
-- Rama `main`, HEAD actual: `748371a5c2527005db76552c2e06490560c1ffd9`.
-- La corrección de inicialización del estado de análisis está integrada (`6a79a40`); los cambios revisados de importación CSV, remediación y SBOM están integrados (`e8feb2d`).
+- Rama `main`, HEAD validado: `e7e634dd926a19bcd0a2e15e1e3930c9403a7b1b`.
+- Última ejecución de producción: [42253304468](https://github.com/carlosdans/quasaric/actions/runs/42253304468), correcta: 612/612 pruebas, build Vite y despliegue Azure Static Web Apps completados.
+- La portada pública carga de forma diferida el bundle de la plataforma y sus estilos. El motor de correlación se carga al ejecutar un análisis. El JavaScript inicial es 253,33 kB (80,48 kB gzip); el chunk de plataforma es 198,02 kB (51,75 kB gzip) y el motor 71,68 kB (21,49 kB gzip).
+- Accesibilidad: menú móvil devuelve el foco al botón tras seleccionar una sección o pulsar Escape; el enlace de salto al contenido y el foco visible tienen pruebas automatizadas.
+- Seguridad de despliegue: CSP restrictiva, cabeceras de seguridad y prueba que compara los hosts HTTPS de los adaptadores de fuentes con `connect-src`.
 - Seguridad del repositorio: `.gitignore` reforzado para credenciales y certificados locales; GitHub Actions fijadas a SHA inmutable; Dependabot semanal para npm y Actions.
-- Workflow de producción: eliminado `skip_api_build`, que la acción Azure Static Web Apps no admite. La ejecución `42231474206` del commit `748371a` terminó correctamente: 605/605 pruebas, build Vite y despliegue Azure completados. No se reprodujo la advertencia de input no reconocido.
-- El build sigue mostrando una advertencia de tamaño de chunk (518,68 kB minificados; 150,33 kB gzip) y avisos `MODULE_LEVEL_DIRECTIVE` de `lucide-react`. No impiden tests, build ni despliegue; revisar división de código si se aborda una optimización de carga.
-- El workflow actual ejecuta Node 22. La validación anterior de Node 20/22 citada en secciones históricas corresponde a commits previos y no debe interpretarse como matriz vigente del workflow unificado.
-- El repositorio no tiene `package-lock.json`; CI utiliza `npm install`, por lo que la resolución transitiva no queda fijada por lockfile. Revisar la generación y adopción de un lockfile antes de cambiar a `npm ci`.
+- El workflow actual ejecuta Node 22. El repositorio no tiene `package-lock.json`; CI utiliza `npm install`, por lo que la resolución transitiva no queda fijada por lockfile. La generación de un lockfile requiere una resolución npm reproducible y revisión de cambios; no se ha generado en esta sesión.
 - La rama `main` aparece sin protección y no hay rulesets configurados. La lectura de la protección clásica requiere permisos de administración que no están disponibles en la conexión actual.
 - No se han observado secretos evidentes en los archivos actuales revisados; no equivale a un escaneo exhaustivo del historial, forks, tags o alertas de GitHub Secret Scanning.
-- Pendiente de cierre manual: recorrido visual real en navegador de escritorio y móvil, prueba de navegación/teclado y comprobación de cabeceras HTTP en el dominio publicado. La herramienta de revisión de esta sesión no pudo acceder directamente a los dominios de producción.
+- Pendiente de cierre manual: recorrido visual real en navegador de escritorio y móvil, prueba con tecnologías de asistencia y comprobación de cabeceras HTTP en el dominio publicado. No se ha podido realizar una inspección visual de navegador en esta sesión.
 - No se ha verificado el plan ni la facturación del recurso Azure desde el portal. Mantener como requisito: Azure Static Web Apps Free y coste objetivo 0 €, sin backend ni servicios de pago.
 - No ampliar funcionalidades por añadir. Priorizar correcciones reproducibles, cobertura metodológica y validación de la experiencia existente. Quasaric sigue siendo una herramienta de apoyo a la revisión, no una garantía de detección exhaustiva ni una herramienta certificada para decisiones de producción.
