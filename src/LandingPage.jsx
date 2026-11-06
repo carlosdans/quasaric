@@ -194,7 +194,7 @@ export default function LandingPage({ lang = 'es', onLanguageChange, onOpenApp }
         </section>
       </main>
       <footer className="landing-footer">
-        <div className="landing-footer-main"><div><Brand/><p>{t.footerLine}</p></div><div className="landing-footer-links"><a href="#product">{t.footerProduct}</a><a href="#trust">{t.footerLegal}</a></div></div>
+        <div className="landing-footer-main"><div><Brand/><p>{t.footerLine}</p></div><div className="landing-footer-links"><a href="#product">{t.footerProduct}</a><a href="/aviso-legal">{lang === 'es' ? 'Aviso legal' : 'Legal notice'}</a><a href="/privacidad">{lang === 'es' ? 'Privacidad' : 'Privacy'}</a><a href="/cookies">{lang === 'es' ? 'Cookies' : 'Cookies'}</a></div></div>
         <div className="landing-footer-bottom"><span>© {new Date().getFullYear()} Quasaric</span><span>{t.footerDisclaimer}</span></div>
       </footer>
     </div>
