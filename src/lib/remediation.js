@@ -1,3 +1,5 @@
+import { safeExternalUrl } from './externalUrl.js';
+
 const unique = values => [...new Set(values.filter(Boolean))];
 
 /**
@@ -17,10 +19,10 @@ export function buildRemediationGuidance(finding = {}, assessment = {}) {
   );
   const targets = unique(exactMatches.map(item => item.advisoryBinaryVersion));
   const references = unique([
+    ...((finding.references || []).map(item => typeof item === 'string' ? item : item.url)),
     ...(assessment.evidence || []).flatMap(item => item.references || []),
-    ...(assessment.evidence || []).map(item => item.url),
-    ...((finding.references || []).map(item => typeof item === 'string' ? item : item.url))
-  ]).filter(url => /^https:\/\//i.test(url));
+    ...(assessment.evidence || []).map(item => item.url)
+  ]).map(safeExternalUrl).filter(Boolean);
 
   if (osv?.status === 'affected' && exactMatches.length && targets.length === 1) {
     return {
