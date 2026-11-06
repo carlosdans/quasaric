@@ -12,8 +12,8 @@ test('supports escaped quotes, optional columns and empty rows', () => {
   assert.deepEqual(result.components.map(item=>[item.name,item.type,item.vendor]),[['Web "Core"','other','Acme'],['PHP','other','']]);
 });
 test('reports invalid rows while preserving valid rows', () => {
-  const result=parseInventoryCsv('name,type,version\nNGINX,web,1.2\n,os,24.04\nUbuntu,unknown,24.04\nPHP,runtime\n');
-  assert.equal(result.components.length,1); assert.deepEqual(result.errors.map(error=>error.row),[3,4,5]);
+  const result=parseInventoryCsv('name,type\nNGINX,web,1.2\n,os,24.04\nUbuntu,unknown,24.04\nPHP,runtime\n');
+  assert.equal(result.components.length,1); assert.deepEqual(result.errors.map(error=>error.row),[2,3,4]);
 });
 test('rejects malformed quoting, unsupported headers and missing name header', () => {
   assert.throws(()=>parseInventoryCsv('name,type\n"NGINX,web'),/unterminated/);
@@ -29,6 +29,11 @@ test('enforces size, row, column and field limits', () => {
   assert.throws(()=>parseInventoryCsv('name\n'+'x'.repeat(16385)),/field longer/);
 });
 test('rejects duplicate headers regardless of case',()=>assert.throws(()=>parseInventoryCsv('name,Name\nnginx,nginx'),/duplicate/));
+test('normalizes component type values regardless of case or surrounding whitespace',()=>{
+  const result=parseInventoryCsv('name,type\nnginx, WEB \nopenssl,LIBRARY\nubuntu,OS\n');
+  assert.deepEqual(result.components.map(item=>item.type),['web','library','os']);
+  assert.equal(result.errors.length,0);
+});
 test('preserves PURL and CPE and supports old CSV schemas',()=>{
   const result=parseInventoryCsv('name,purl,cpe\nnginx,pkg:deb/debian/nginx@1.26.0,cpe:2.3:a:nginx:nginx:1.26.0:*:*:*:*:*:*:*\n');
   assert.equal(result.components[0].purl,'pkg:deb/debian/nginx@1.26.0'); assert.match(result.components[0].cpe,/^cpe:2\.3:/);
@@ -73,4 +78,21 @@ test('rejects malformed component and source Package URLs as row errors', () => 
 test('enforces the CSV row limit when the final row has no line terminator', () => {
   const csv = 'name\n' + Array.from({ length: 50001 }, (_, i) => 'component-' + i).join('\n');
   assert.throws(() => parseInventoryCsv(csv), /50000 data-row/);
+});
+
+test('accepts case-insensitive CSV headers and maps them to canonical inventory fields', () => {
+  const result = parseInventoryCsv(
+    'NAME,TYPE,VERSION,SOURCEPACKAGE,SOURCEVERSION,ARCHITECTURE\n' +
+    'openssl-libs,library,3.0.7-1,openssl,3.0.7-1,x86_64\n'
+  );
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.components.length, 1);
+  assert.deepEqual(
+    Object.fromEntries(['name', 'type', 'version', 'sourcePackage', 'sourceVersion', 'architecture']
+      .map(field => [field, result.components[0][field]])),
+    {
+      name: 'openssl-libs', type: 'library', version: '3.0.7-1',
+      sourcePackage: 'openssl', sourceVersion: '3.0.7-1', architecture: 'x86_64'
+    }
+  );
 });

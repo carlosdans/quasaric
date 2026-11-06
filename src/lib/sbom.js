@@ -138,18 +138,24 @@ function cyclone(document) {
     const name = str(item.name) || purl?.qualifiedName || purl?.name;
     if (!name) return { error:'Missing component name.', index:index+1 };
     const refs = Array.isArray(item.externalReferences) ? item.externalReferences : [];
-    const cpeRef = refs.find(ref => /cpe/i.test(str(ref.type) + ' ' + str(ref.referenceType)));
+    const cpeValues = [...new Set(refs.filter(ref =>
+      /cpe/i.test(str(ref.type) + ' ' + str(ref.referenceType)) ||
+      /^cpe:/i.test(str(ref.url) || str(ref.referenceLocator))
+    ).map(ref => str(ref.url) || str(ref.referenceLocator)).filter(Boolean))];
+    const cpeAmbiguous = Boolean(str(item.cpe)) ? false : cpeValues.length > 1;
+    const cpeRefValue = cpeAmbiguous ? '' : (cpeValues[0] || '');
     const propertyData = propertiesFor(item);
     const properties = propertyData.values;
     const warnings = propertyData.conflicts.map(name =>
       `Conflicting CycloneDX quasaric:${name} properties were omitted to avoid ambiguous component metadata.`
     );
+    if (cpeAmbiguous) warnings.push('Multiple distinct CycloneDX CPE references are linked to this component; the CPE was omitted to avoid an ambiguous product match.');
     if (purlVersionMismatch) warnings.push('The declared component version does not match the version embedded in its PURL; the PURL was removed to prevent an incorrect OSV query.');
     const component = {
       name, version:declaredVersion || purl?.version || '',
       vendor:str(item.publisher) || str(item.supplier?.name),
       type:typeFor(name,safePurlData?.ecosystem || '',item.type), purl:safePurl,
-      cpe:str(item.cpe) || str(cpeRef?.url) || str(cpeRef?.referenceLocator),
+      cpe:str(item.cpe) || cpeRefValue,
       sourcePackage:str(properties.sourcePackage), sourceVersion:str(properties.sourceVersion),
       architecture:str(properties.architecture) || str(safePurlData?.qualifiers?.arch),
       sourceRelationship:str(properties.sourceRelationship), sourceRef:str(properties.sourceRef),
@@ -223,10 +229,12 @@ function spdx(document) {
   return document.packages.map((item,index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return { error:'Package entry must be a JSON object.', index:index+1 };
     const refs = Array.isArray(item.externalRefs) ? item.externalRefs : [];
-    const purlRef = refs.find(ref => /purl/i.test(str(ref.referenceType)));
-    const cpeRef = refs.find(ref => /cpe/i.test(str(ref.referenceType)));
-    const rawPurl = str(purlRef?.referenceLocator);
-    const rawCpe = str(cpeRef?.referenceLocator);
+    const purlValues = [...new Set(refs.filter(ref => /purl/i.test(str(ref.referenceType))).map(ref => str(ref.referenceLocator)).filter(Boolean))];
+    const cpeValues = [...new Set(refs.filter(ref => /cpe/i.test(str(ref.referenceType))).map(ref => str(ref.referenceLocator)).filter(Boolean))];
+    const purlAmbiguous = purlValues.length > 1;
+    const cpeAmbiguous = cpeValues.length > 1;
+    const rawPurl = purlAmbiguous ? '' : (purlValues[0] || '');
+    const rawCpe = cpeAmbiguous ? '' : (cpeValues[0] || '');
     if (rawPurl.length > MAX_IDENTIFIER_LENGTH || rawCpe.length > MAX_IDENTIFIER_LENGTH) return { error:'PURL and CPE fields must not exceed 2048 characters.', index:index+1 };
     const purl = purlInfo(rawPurl);
     if (rawPurl && !purl) return { error:'Invalid Package URL.', index:index+1 };
@@ -237,6 +245,8 @@ function spdx(document) {
     const name = str(item.name) || purl?.qualifiedName || purl?.name;
     if (!name) return { error:'Missing package name.', index:index+1 };
     const warnings = [];
+    if (purlAmbiguous) warnings.push('Multiple distinct SPDX PURLs are linked to this package; the PURL was omitted to avoid an ambiguous OSV query.');
+    if (cpeAmbiguous) warnings.push('Multiple distinct SPDX CPE references are linked to this package; the CPE was omitted to avoid an ambiguous product match.');
     if (purlVersionMismatch) warnings.push('The declared package version does not match the version embedded in its PURL; the PURL was removed to prevent an incorrect OSV query.');
     const component = {
       name, version:declaredVersion || purl?.version || '',
@@ -254,14 +264,16 @@ function spdx(document) {
     if (sources.length === 1) {
       const source = packages.get(sources[0]);
       const sourceRefs = Array.isArray(source.externalRefs) ? source.externalRefs : [];
-      const sourcePurlRef = sourceRefs.find(ref => /purl/i.test(str(ref.referenceType)));
-      const sourcePurl = str(sourcePurlRef?.referenceLocator);
+      const sourcePurlValues = [...new Set(sourceRefs.filter(ref => /purl/i.test(str(ref.referenceType))).map(ref => str(ref.referenceLocator)).filter(Boolean))];
+      const sourcePurlAmbiguous = sourcePurlValues.length > 1;
+      const sourcePurl = sourcePurlAmbiguous ? '' : (sourcePurlValues[0] || '');
       const sourcePurlData = purlInfo(sourcePurl);
       component.sourcePackage = str(source.name) || sourcePurlData?.name || '';
       component.sourceVersion = str(source.versionInfo) || sourcePurlData?.version || '';
       component.sourceRef = str(source.SPDXID);
       component.sourcePurl = sourcePurl;
       component.sourceRelationship = 'spdx_generated_from';
+      if (sourcePurlAmbiguous) warnings.push('Multiple distinct SPDX source PURLs are linked to the source package; the source PURL was omitted to avoid ambiguous source-package matching.');
       if (component.sourceVersion && sourcePurlData?.version && component.sourceVersion !== sourcePurlData.version) {
         component.sourcePurl = '';
         warnings.push('The declared source package version does not match the version embedded in its source PURL; the source PURL was removed.');

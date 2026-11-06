@@ -41,9 +41,12 @@ export function parseInventoryCsv(input) {
   }
   while (rows.length && rows[rows.length - 1].every(value => value.trim() === '')) rows.pop();
   if (!rows.length) throw new Error('CSV is empty.');
-  const headers = rows.shift().map(value => value.trim());
-  if (headers.length > MAX_COLUMNS) throw new Error('CSV exceeds the 32-column limit.');
-  if (new Set(headers.map(value => value.toLowerCase())).size !== headers.length) throw new Error('CSV contains duplicate column names.');
+  const rawHeaders = rows.shift().map(value => value.trim());
+  if (rawHeaders.length > MAX_COLUMNS) throw new Error('CSV exceeds the 32-column limit.');
+  const normalizedHeaders = rawHeaders.map(header => header.toLowerCase());
+  if (new Set(normalizedHeaders).size !== normalizedHeaders.length) throw new Error('CSV contains duplicate column names.');
+  const fieldNames = new Map(FIELDS.map(field => [field.toLowerCase(), field]));
+  const headers = normalizedHeaders.map(header => fieldNames.get(header) || header);
   if (!headers.includes('name')) throw new Error('CSV must include a name column.');
   const unknown = headers.filter(header => !FIELDS.includes(header));
   if (unknown.length) throw new Error('CSV contains unsupported columns: ' + unknown.join(', '));
@@ -54,7 +57,7 @@ export function parseInventoryCsv(input) {
     if (values.length !== headers.length) { errors.push({ row: rowNumber, message: 'Column count does not match the header.' }); return; }
     const record = Object.fromEntries(headers.map((header, i) => [header, values[i].trim()]));
     if (!record.name) { errors.push({ row: rowNumber, message: 'Component name is required.' }); return; }
-    const type = record.type || 'other';
+    const type = (record.type || 'other').toLowerCase();
     if (!ALLOWED_TYPES.has(type)) { errors.push({ row: rowNumber, message: 'Unsupported component type: ' + type }); return; }
     if (['purl', 'cpe', 'sourceRef', 'sourcePurl'].some(field => (record[field] || '').length > 2048)) {
       errors.push({ row: rowNumber, message: 'PURL, CPE and source reference fields must not exceed 2048 characters.' }); return;
