@@ -27,7 +27,7 @@ export function safeExternalUrl(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
   try {
     const url = new URL(value);
-    const hostname = url.hostname.toLowerCase();
+    const hostname = url.hostname.toLowerCase().replace(/\.$/, '');
     if (url.protocol !== 'https:' || !hostname || url.username || url.password) return null;
     // IPv6 literals are rejected rather than risking loopback, link-local or ULA targets.
     if (hostname.startsWith('[') || isNonPublicIpv4(hostname) || isLocalHostname(hostname)) return null;
