@@ -726,3 +726,10 @@ La portada pública y la plataforma se cargan ahora por separado: el navegador d
 - Pendiente de cierre manual: recorrido visual real en navegador de escritorio y móvil, prueba con tecnologías de asistencia y comprobación de cabeceras HTTP en el dominio publicado. No se ha podido realizar una inspección visual de navegador en esta sesión.
 - No se ha verificado el plan ni la facturación del recurso Azure desde el portal. Mantener como requisito: Azure Static Web Apps Free y coste objetivo 0 €, sin backend ni servicios de pago.
 - No ampliar funcionalidades por añadir. Priorizar correcciones reproducibles, cobertura metodológica y validación de la experiencia existente. Quasaric sigue siendo una herramienta de apoyo a la revisión, no una garantía de detección exhaustiva ni una herramienta certificada para decisiones de producción.
+
+
+### 2026-11-06 — endurecimiento de enlaces externos de fuentes públicas
+
+- Los enlaces procedentes de avisos y feeds siguen requiriendo HTTPS y ausencia de credenciales.
+- Se bloquean hostnames locales/de una sola etiqueta, sufijos reservados, rangos IPv4 privados/no públicos y literales IPv6. Así se evita convertir referencias de fuentes no confiables en navegación hacia servicios locales o direcciones de metadatos.
+- Se conservan los dominios públicos HTTPS y las direcciones IPv4 públicas; pruebas de regresión para ambos casos.
