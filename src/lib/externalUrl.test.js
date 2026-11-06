@@ -54,3 +54,10 @@ test('rejects alternate textual encodings of non-public IPv4 addresses', () => {
     'https://203.0.113.30/advisory'
   ]) assert.equal(safeExternalUrl(value), null, value);
 });
+
+test('rejects additional special-purpose IPv4 ranges', () => {
+  for (const value of [
+    'https://192.88.99.1/advisory',
+    'https://192.175.48.1/advisory'
+  ]) assert.equal(safeExternalUrl(value), null, value);
+});
