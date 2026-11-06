@@ -183,7 +183,7 @@ test('inventory quality UI exposes CPE version mismatches in both languages', ()
 
 
 test('external links opened in a new tab suppress opener access', () => {
-  const links = [...app.matchAll(/<a\\b[^>]*target=["']_blank["'][^>]*>/g)].map(match => match[0]);
+  const links = [...app.matchAll(/<a\b[^>]*target=["']_blank["'][^>]*>/g)].map(match => match[0]);
   assert.ok(links.length > 0);
   for (const link of links) {
     assert.match(link, /rel=["']noreferrer["']/);
