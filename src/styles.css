@@ -830,3 +830,22 @@ button{touch-action:manipulation}
 .app-shell .finding-remediation-command code{font-size:11px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text-primary)}
 .app-shell .finding-remediation-command button{justify-self:start}
 .app-shell .finding-remediation-command small{font-size:10px;line-height:1.6;color:var(--text-secondary)}
+
+/* Practical, evidence-led exploitation walkthroughs */
+.exploit-guide{border-top:1px solid var(--line);padding-top:20px;margin-top:20px}
+.exploit-guide-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.exploit-guide-heading h3{margin:0 0 5px}
+.exploit-guide-heading>div>p,.exploit-guide-block p,.exploit-guide-notice p{color:var(--muted);line-height:1.65;margin:7px 0 0}
+.exploit-guide-notice{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:14px;margin:14px 0}
+.exploit-guide-notice strong{display:block}
+.exploit-guide-notice a,.exploit-guide-links a{color:var(--accent,#8ab4ff);text-decoration:underline;text-underline-offset:3px}
+.exploit-guide-block{margin:18px 0}
+.exploit-guide-block h4{font-size:14px;margin:0 0 8px}
+.exploit-guide-block ul,.exploit-guide-block ol{padding-left:22px;color:var(--muted);line-height:1.65}
+.exploit-guide-block li{margin:7px 0}
+.exploit-step>strong{color:var(--text)}
+.exploit-code{position:relative;background:#080d16;border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}
+.exploit-code pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 10px;color:#dce8ff;font-size:12px;line-height:1.6}
+.exploit-code .secondary-btn{font-size:12px;padding:6px 10px}
+.exploit-guide-footnote{font-size:12px;color:var(--muted);line-height:1.6;border-top:1px solid var(--line);padding-top:12px}
+@media(max-width:640px){.exploit-guide-heading{display:block}.exploit-guide-heading>.tag{display:inline-flex;margin-top:8px}.exploit-code{padding:9px}.exploit-code pre{font-size:11px}}
