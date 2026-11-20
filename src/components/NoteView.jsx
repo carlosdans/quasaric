@@ -1,82 +1,66 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { getTranslations } from '../i18n.js';
-
-// Mapa de notas MIDI a posiciones visuales (simulando estilo Synthesia)
-// Cada nota tiene una posición y duración para caer
-const MIDI_TO_Y_POSITION = {
- 'C': 200, 'C#': 180, 'D': 160, 'D#': 130, 'E': 110,
- 'F': 90, 'F#': 60, 'G': 40, 'G#': 10, 'A': -10,
- 'A#': -40, 'B': -60
-};
+import { PIANO_NOTES, MIDI_NOTE_NAMES, KEY_POSITIONS } from '../data/pianoPatterns.js';
 
 // Teclas blancas del piano (de izquierda a derecha)
 const WHITE_KEYS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const BLACK_KEYS = ['C#', 'D#', 'F#', 'G#', 'A#'];
-
-// Mapeo de teclas a posiciones
-const KEY_X_POSITIONS = [];
-let xPos = 0;
-
-for (let octave = -1; octave <= 8; octave++) {
-  for (let i = 0; i < 7; i++) {
-    KEY_X_POSITIONS.push({
-      note: WHITE_KEYS[i],
-      octave: octave,
-      x: xPos
-    });
-    xPos += 40;
-  }
-}
 
 export function NoteView({
   notes = [],
   position = 0,
   duration = 0,
   onNoteComplete,
-  speed = 1.0
+  speed = 1.0,
+  progressionType = 'CMajor',
+  arpeggioSpeed = 1.0
 }) {
   const [language, setLanguage] = useState('en');
   const t = getTranslations(language);
-  const containerRef = useRef(null);
-  const animationRef = useRef(null);
+  const [fallingNotes, setFallingNotes] = useState([]);
+  const [completedNotes, setCompletedNotes] = useState(new Set());
+
+  // Obtener notas de arpegio según la progresión
+  useEffect(() => {
+    const arpeggios = PIANO_NOTES.arpeggios;
+    const arpNotes = arpeggios[progressionType] || arpeggios['CMajor'];
+
+    // Escalar tiempo según speed
+    const scaledNotes = arpNotes.map(note => ({
+      ...note,
+      time: note.time / speed
+    }));
+
+    setFallingNotes(scaledNotes);
+  }, [progressionType, speed]);
 
   // Notas que están "cayendo" o cerca de la línea
-  const fallingNotes = notes.filter(note => {
-    const endTime = note.time + (note.duration || 2) / speed;
-    return position < endTime && position + 2 > note.time / speed;
+  const activeFallingNotes = fallingNotes.filter(note => {
+    const endTime = note.time + (note.duration || 2) / Math.max(arpeggioSpeed, 0.1);
+    return position < endTime && position + 2 > note.time / Math.max(arpeggioSpeed, 0.1);
   });
 
   // Estado de notas completadas
-  const [completedNotes, setCompletedNotes] = useState(new Set());
+  const [currentCompletedNotes, setCurrentCompletedNotes] = useState(new Set());
 
-  // Manejar click en tecla
-  const handleKeyPress = (note) => {
-    if (!note) return;
-
-    const noteTime = note.time || 0;
-    const currentTime = position;
+  // Manejar click en nota
+  const handleNoteClick = (note) => {
+    const noteKey = note.note || `${note.name}${note.octave || 4}`;
+    const timeDiff = Math.abs((position * Math.max(arpeggioSpeed, 0.1)) - note.time);
 
     // Verificar si el tiempo está dentro del rango permitido (±0.5 segundos)
-    const timeDiff = Math.abs(currentTime - noteTime);
-
     if (timeDiff <= 0.5) {
       // Marcar como completada
-      const noteKey = note.note || `${note.name}${note.octave}`;
-      setCompletedNotes(prev => new Set([...prev, noteKey]));
-
-      // Notificar
+      setCurrentCompletedNotes(prev => new Set([...prev, noteKey]));
       onNoteComplete?.(note, timeDiff);
     }
   };
 
-  // Limpiar animación al desmontar
-  useEffect(() => {
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, []);
+  // Calcular posición X de una nota
+  const getNotePosition = (noteName) => {
+    const key = KEY_POSITIONS.find(k => k.note === noteName);
+    return key ? key.x : 100;
+  };
 
   return (
     <div className="note-view">
@@ -84,7 +68,7 @@ export function NoteView({
         <h3 className="note-title">{t.notes === 'Notes' ? 'Notes' : 'Notas'}</h3>
 
         {/* Piano visual */}
-        <div className="piano-display" ref={containerRef}>
+        <div className="piano-display" style={{ height: '180px' }}>
           {/* Línea de referencia donde deben caer las notas */}
           <div className="fall-line">
             <div className="line-indicator">{t.play === 'Play' ? 'Play' : 'Toca'} ⬇</div>
@@ -96,22 +80,30 @@ export function NoteView({
               const noteName = note.note || note.name || 'C';
               const octave = note.octave || 4;
               const startTime = note.time || 0;
-              const noteDuration = note.duration || 2;
+              const noteDuration = note.duration || 0.5;
+              const vel = note.velocity || 0.8;
 
               // Calcular posición vertical (cuanto más cerca de la línea, más arriba)
-              const timeToLine = Math.max(0, startTime + noteDuration - position);
-              const yPos = Math.max(0, Math.min(200, timeToLine * 100 * speed));
+              const timeToLine = Math.max(0, startTime + noteDuration - position / Math.max(arpeggioSpeed, 0.1));
+              const yPos = Math.max(0, Math.min(200, timeToLine * 100 * Math.max(arpeggioSpeed, 0.1)));
+
               const isHit = completedNotes.has(`${noteName}${octave}`);
+              const isTarget = timeToLine < 0.5;
+
+              // Obtener color basado en velocidad (más alta = más brillante)
+              const brightness = Math.round(50 + vel * 50);
 
               return (
                 <div
                   key={index}
-                  className={`falling-note ${isHit ? 'hit' : ''} ${timeToLine < 0.5 ? 'target' : ''}`}
+                  className={`falling-note ${isHit ? 'hit' : ''} ${isTarget ? 'target' : ''}`}
                   style={{
                     top: yPos,
-                    left: getXPosition(noteName, octave)
+                    left: getNotePosition(noteName),
+                    background: `hsl(140, 70%, ${brightness}%)`,
+                    width: '30px'
                   }}
-                  onClick={() => handleKeyPress({ ...note, name: noteName, octave })}
+                  onClick={() => handleNoteClick(note)}
                 >
                   <span className="note-name">{noteName}</span>
                 </div>
@@ -121,10 +113,10 @@ export function NoteView({
 
           {/* Teclas del piano */}
           <div className="keyboard-overlay">
-            {KEY_X_POSITIONS.map((key, index) => (
+            {KEY_POSITIONS.map((key, index) => (
               <div
                 key={index}
-                className={`key-overlay white ${key.note.includes('#') ? 'black' : 'white'}`}
+                className={`key-overlay white`}
                 style={{ left: key.x }}
               />
             ))}
@@ -133,22 +125,6 @@ export function NoteView({
       </div>
     </div>
   );
-}
-
-function getXPosition(note, octave) {
-  // Calcular posición X basada en la tecla
-  const noteIndex = WHITE_KEYS.indexOf(note) !== -1 ? WHITE_KEYS.indexOf(note) : -1;
-  if (noteIndex === -1) {
-    // Para notas negritas, usar posición intermedia
-    const blackIndex = BLACK_KEYS.indexOf(note);
-    if (blackIndex !== -1) {
-      return (blackIndex * 40) + 20;
-    }
-    return 0;
-  }
-
-  const whiteOffset = octave + 1;
-  return (noteIndex + whiteOffset * 7) * 40;
 }
 
 export default NoteView;
