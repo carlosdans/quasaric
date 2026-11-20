@@ -43,6 +43,14 @@ export const translations = {
     processing: 'Processing (this may take a moment)...',
     voice: 'Voice',
     separationReady: 'Separation complete',
+    tempo: 'Tempo',
+    tempoMinus: '-10',
+    tempoPlus: '+10',
+    start: 'Start',
+    end: 'End',
+    jump: 'Jump',
+    pianoNotes: 'Piano notes',
+    practicePiano: 'Practice Piano',
     visionEyebrow: 'The idea',
     visionTitleFirst: 'From listening',
     visionTitleSecond: 'to playing.',
@@ -100,6 +108,14 @@ export const translations = {
     processing: 'Procesando (puede tardar un momento)...',
     voice: 'Voz',
     separationReady: 'Separación completa',
+    tempo: 'Tempo',
+    tempoMinus: '-10',
+    tempoPlus: '+10',
+    start: 'Inicio',
+    end: 'Fin',
+    jump: 'Saltar',
+    pianoNotes: 'Notas de piano',
+    practicePiano: 'Practicar piano',
     visionEyebrow: 'La idea',
     visionTitleFirst: 'De escuchar',
     visionTitleSecond: 'a tocar.',
@@ -111,7 +127,7 @@ export const translations = {
     ],
     footer: 'Hecho para disfrutar tocando.',
     pageTitle: 'Quasaric — Escucha la canción. Aprende tu parte.',
-    pageDescription: 'Quasaric nace para que te centres en tu instrumento, explores las partes de una canción y aprendas a tocar.'
+    pageDescription: 'Quasaric nace para que te centres en tu instrumento, exploras las partes de una canción y aprendas a tocar.'
   }
 };
 
