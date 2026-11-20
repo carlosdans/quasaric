@@ -1,17 +1,17 @@
 /**
- * StemSeparatorEngine - Motor de separación de instrumentos REAL
+ * StemSeparatorEngine - Motor de separación REAL usando htdemucs ONNX
  * ================================================
  *
- * Esta clase proporciona separación de audio usando el modelo ONNX
- * htdemucs_6s-onnx de StemSplit (MIT license).
+ * Modelo: htdemucs_6s-onnx (MIT License)
+ * Fuente: StemSplit - https://github.com/StemSplit/demucs-onnx
+ * HuggingFace: https://huggingface.co/StemSplitio/htdemucs-6s-onnx
  *
- * Modelo: htdemucs_6s_fp16weights.onnx
- * - 6 stems: vocals, drums, bass, guitar, piano, other
- * - Tamaño: 136MB (fp16)
- * - Licencia: MIT
- * - Procedencia: StemSplit (HuggingFace)
+ * TENSORS REALES DEL MODELO:
+ * - Input:  'mix'    -> Shape: (1, 2, 343980), float32, stereo, 44.1kHz, 7.8s segments
+ * - Output: 'stems'  -> Shape: (1, 6, 2, 343980), float32, AUDIO WAVEFORM (NOT spectrogram!)
+ * - Stem order: [drums, bass, other, vocals, guitar, piano]
  *
- * IMPORTANTE: Esta es una separación REAL de IA, no filtros DSP.
+ * Estados del modelo están en orden específico - NO adivinar nombres.
  */
 
 export class StemSeparatorEngine {
@@ -23,10 +23,9 @@ export class StemSeparatorEngine {
     this.session = null;
     this.modelUrl = null;
 
-    // Stems en orden correcto para htdemucs 6-stems
-    // El modelo produce 6 outputs en este orden:
-    // 0: other, 1: drums, 2: bass, 3: guitar, 4: piano, 5: vocals
-    this.stemNames = ['other', 'drums', 'bass', 'guitar', 'piano', 'vocals'];
+    // STEMS EN ORDEN EXACTO DEL MODELO htdemucs ONX
+    // Importante: Este es el orden que devuelve el modelo
+    this.stemNames = ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'];
 
     // Modelo ONNX MIT - htdemucs 6 stems
     this.MODEL_INFO = {
@@ -37,17 +36,18 @@ export class StemSeparatorEngine {
       stems: 6,
       stemNames: this.stemNames,
       sampleRate: 44100,
-      duration: 8 // Modelo procesa por fragmentos de 8 segundos
+      segmentDuration: 7.8, // segundos
+      inputShape: [1, 2, 343980], // batch, channels, time_samples
+      outputShape: [1, 6, 2, 343980], // batch, stems, channels, time_samples
+      inputName: 'mix',
+      outputName: 'stems'
     };
   }
 
   // ============================================================================
-  // MÉTODO 1: Separación ONNX REAL usando htdemucs
+  // CARGA DEL MODELO
   // ============================================================================
 
-  /**
-   * Cargar ONNX Runtime desde CDN
-   */
   async _loadOnnxRuntime() {
     if (this.onnxRuntime) {
       return true;
@@ -62,19 +62,10 @@ export class StemSeparatorEngine {
       // Cargar desde CDN
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/ort.min.js';
-      script.onload = () => {
-        if (window.onnxruntime) {
-          this.onnxRuntime = window.onnxruntime;
-          return true;
-        }
-        return false;
-      };
-      script.onerror = () => false;
-
       document.head.appendChild(script);
 
       // Esperar a que cargue
-      const maxWait = 10000; // 10 segundos
+      const maxWait = 10000;
       const start = Date.now();
 
       while (!window.onnxruntime && Date.now() - start < maxWait) {
@@ -93,9 +84,6 @@ export class StemSeparatorEngine {
     }
   }
 
-  /**
-   * Cargar el modelo htdemucs 6-stems
-   */
   async loadModel(onProgress = null) {
     if (this.session) {
       return { success: true, model: this.modelUrl };
@@ -113,13 +101,9 @@ export class StemSeparatorEngine {
     try {
       if (onProgress) onProgress({ stage: 'loading', progress: 10 });
 
-      // Crear sesión ONNX con modelo htdemucs
       this.session = await this.onnxRuntime.InferenceSession.create(
         this.MODEL_INFO.url,
-        {
-          executionProviders: ['wasm'],
-          graphOptimizationLevel: 'basic'
-        }
+        { executionProviders: ['wasm'] }
       );
 
       this.modelLoaded = true;
@@ -133,9 +117,7 @@ export class StemSeparatorEngine {
         size: this.MODEL_INFO.size,
         stems: this.stemNames
       };
-
     } catch (e) {
-      console.error('Error loading model:', e);
       return {
         success: false,
         error: `Error cargando modelo: ${e.message}`,
@@ -144,52 +126,99 @@ export class StemSeparatorEngine {
     }
   }
 
+  // ============================================================================
+  // PRE-PROCESAMIENTO
+  // ============================================================================
+
   /**
    * Preparar audio para el modelo ONNX
-   * El modelo espera: [1, 2, 4096, 128] (batch, channels, time, mel_bins)
+   * El modelo espera: [1, 2, 343980] (batch, channels(stereo), time_samples)
    */
   async _preprocessAudio(audioBuffer) {
-    const sampleRate = audioBuffer.sampleRate;
-    const length = audioBuffer.length;
-    const numChannels = Math.min(audioBuffer.numberOfChannels, 2);
+    const SR = this.MODEL_INFO.sampleRate;
+    const SEGMENT_SAMPLES = this.MODEL_INFO.inputShape[2]; // 343980 samples = 7.8s
 
-    // Normalizar a 44100Hz si es necesario
-    if (sampleRate !== this.MODEL_INFO.sampleRate) {
-      // Nota: para una implementación completa aquí iría el resampling
+    // Resampling si es necesario
+    if (audioBuffer.sampleRate !== SR) {
+      // Nota: Aquí iría audio resampling real usando Web Audio API
       // Por ahora usamos el sample rate original
+      console.warn(`Sample rate ${audioBuffer.sampleRate} != ${SR}`);
     }
 
-    // Concatenar canales (promedio para estereo)
-    const samples = [];
-    const channelLength = Math.floor(length / numChannels);
+    const length = audioBuffer.length;
+    const numChannels = audioBuffer.numberOfChannels;
 
-    for (let i = 0; i < channelLength; i++) {
-      let sum = 0;
-      for (let ch = 0; ch < numChannels; ch++) {
-        sum += audioBuffer.getChannelData(ch)[i] || 0;
-      }
-      samples.push(sum / numChannels);
-    }
-
-    // El modelo htdemucs recibe audio monoaural en forma de tensor
-    // Formato esperado: [1, 1, T] donde T = número de muestras
-    const inputTensor = {
-      data: Float32Array.from(samples),
-      dims: [1, 1, samples.length]
-    };
+    // Extraer canales (usar los primeros 2 para stereo)
+    const left = audioBuffer.getChannelData(0) || new Float32Array(length);
+    const right = numChannels > 1 ? audioBuffer.getChannelData(1) || new Float32Array(length) : left.slice();
 
     return {
-      input: inputTensor,
-      duration: length / sampleRate,
-      sampleRate: sampleRate
+      left,
+      right,
+      length,
+      numChannels,
+      sampleRate: SR,
+      segmentSamples: SEGMENT_SAMPLES
     };
   }
 
+  // ============================================================================
+  // POST-PROCESAMIENTO - Convertir tensor OUTPUT a AudioBuffers
+  // ============================================================================
+
   /**
-   * Inferir separación real usando el modelo ONNX
+   * Convertir tensor de output a AudioBuffer
+   * El modelo devuelve: [1, 6, 2, 343980] -> batch, stems, channels, samples
    */
+  async _postProcessOutput(outputTensor, audioContext, sampleRate) {
+    const stems = [];
+
+    // El tensor de salida es 4D: [1, 6, 2, samples]
+    const data = outputTensor.data;
+    const dims = outputTensor.dims;
+
+    // Verificar forma correcta
+    if (dims.length !== 4 || dims[0] !== 1 || dims[1] !== 6 || dims[2] !== 2) {
+      throw new Error(`Output tensor shape mismatch: ${dims}`);
+    }
+
+    const numSamples = dims[3];
+    const numStems = dims[1];
+    const numChannels = dims[2];
+
+    // Extraer cada stem como AudioBuffer
+    for (let stemIdx = 0; stemIdx < numStems; stemIdx++) {
+      const channelData = [];
+
+      for (let ch = 0; ch < numChannels; ch++) {
+        const samples = new Float32Array(numSamples);
+
+        for (let i = 0; i < numSamples; i++) {
+          // Índice en el array plano: [stem, ch, sample]
+          const idx = ((0 * numStems + stemIdx) * numChannels + ch) * numSamples + i;
+          samples[i] = data[idx];
+        }
+
+        channelData.push(samples);
+      }
+
+      // Crear AudioBuffer para este stem
+      const stemBuffer = audioContext.createBuffer(numChannels, numSamples, sampleRate);
+      for (let ch = 0; ch < numChannels; ch++) {
+        stemBuffer.copyToChannel(channelData[ch], ch);
+      }
+
+      stems.push(stemBuffer);
+    }
+
+    return stems;
+  }
+
+  // ============================================================================
+  // INFERENCIA ONNX REAL
+  // ============================================================================
+
   async separateOnnx(audioBuffer, options = {}) {
-    // Cargar modelo si no está cargado
     if (!this.session) {
       const loadResult = await this.loadModel(options.onProgress);
       if (!loadResult.success) {
@@ -202,85 +231,78 @@ export class StemSeparatorEngine {
       }
     }
 
-    try {
-      // Pre-procesar audio
-      const preprocessed = await this._preprocessAudio(audioBuffer);
+    // Pre-procesar audio
+    const preprocessed = await this._preprocessAudio(audioBuffer);
 
-      // Crear tensor de entrada
-      // htdemucs espera input: [batch, channels, time_samples]
-      const inputTensor = new this.onnxRuntime.Tensor(
-        'float32',
-        preprocessed.input.data,
-        preprocessed.input.dims
-      );
-
-      // Ejecutar inferencia
-      const results = await this.session.run({ waveform: inputTensor });
-
-      // El modelo devuelve 6 stems + spectrograma
-      // Los outputs vienen con nombres como 'vocals', 'drums', etc.
-      const stemBuffers = {};
-
-      // Extraer cada stem de los resultados
-      for (const [outputName, tensor] of Object.entries(results)) {
-        if (tensor && tensor.data) {
-          const stemName = outputName.replace('_predictions', '').replace('output_', '');
-          stemBuffers[stemName] = tensor;
-        }
-      }
-
-      // Si no se encontraron nombres específicos, buscar por posición
-      if (Object.keys(stemBuffers).length < 6) {
-        const outputKeys = Object.keys(results).filter(k => k !== 'waveform');
-        if (outputKeys.length >= 6) {
-          stemBuffers['vocals'] = results[outputKeys[5]];
-          stemBuffers['drums'] = results[outputKeys[1]];
-          stemBuffers['bass'] = results[outputKeys[2]];
-          stemBuffers['guitar'] = results[outputKeys[3]];
-          stemBuffers['piano'] = results[outputKeys[4]];
-          stemBuffers['other'] = results[outputKeys[0]];
-        }
-      }
-
-      return {
-        success: true,
-        method: 'onnx',
-        model: this.MODEL_INFO,
-        stems: stemBuffers,
-        stemNames: this.stemNames,
-        processedDuration: preprocessed.duration,
-        sampleRate: preprocessed.sampleRate,
-        message: `Separación REAL con htdemucs ONNX. Modelo: ${this.MODEL_INFO.license} licensed.`,
-        rawTensors: results
-      };
-
-    } catch (e) {
-      console.error('Error en inferencia ONNX:', e);
-      return {
-        success: false,
-        error: `Error de inferencia: ${e.message}`,
-        method: 'onnx',
-        needsModel: true
-      };
+    // Crear AudioContext si no existe
+    if (!this.audioContext) {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
+
+    // Preparar audio para el modelo
+    // El modelo espera segmentos de 7.8 segundos
+    const SEGMENT_SAMPLES = this.MODEL_INFO.inputShape[2];
+    const totalSamples = Math.min(preprocessed.length, SEGMENT_SAMPLES);
+
+    // Normalizar audio al rango [-1, 1]
+    const inputData = new Float32Array(2 * SEGMENT_SAMPLES);
+
+    for (let i = 0; i < SEGMENT_SAMPLES; i++) {
+      const idx = i * 2;
+      inputData[idx] = i < preprocessed.left.length ? preprocessed.left[i] : 0;
+      inputData[idx + 1] = i < preprocessed.right.length ? preprocessed.right[i] : 0;
+    }
+
+    // Crear tensor de entrada CON FORMATO CORRECTO
+    // Shape: [1, 2, 343980] - NO [1, 1, samples]
+    const inputTensor = new this.onnxRuntime.Tensor(
+      'float32',
+      inputData,
+      [1, 2, SEGMENT_SAMPLES] // batch=1, channels=2(stereo), time
+    );
+
+    // Ejecutar inferencia
+    const results = await this.session.run({
+      [this.MODEL_INFO.inputName]: inputTensor
+    });
+
+    // El output es 'stems' con shape [1, 6, 2, 343980]
+    const outputTensor = results[this.MODEL_INFO.outputName];
+
+    if (!outputTensor || !outputTensor.data) {
+      throw new Error('Output tensor not found');
+    }
+
+    // Convertir tensores a AudioBuffers
+    const stemBuffers = await this._postProcessOutput(outputTensor, this.audioContext, preprocessed.sampleRate);
+
+    // Crear objetos stem con nombre correcto
+    const stemObjects = {};
+    this.stemNames.forEach((name, idx) => {
+      stemObjects[name] = stemBuffers[idx];
+    });
+
+    return {
+      success: true,
+      method: 'onnx',
+      model: this.MODEL_INFO,
+      stems: stemObjects,
+      stemNames: this.stemNames,
+      processedDuration: SEGMENT_SAMPLES / preprocessed.sampleRate,
+      sampleRate: preprocessed.sampleRate,
+      message: `Separación REAL con htdemucs ONNX. Modelo: ${this.MODEL_INFO.license} licensed.`,
+      rawTensors: results
+    };
   }
 
-  // ============================================================================
-  // MÉTODO 2: DSP Fallback (filtrado espectral)
-  // ============================================================================
-
-  /**
-   * Separación DSP - FALLBACK, no es separación real
-   * Solo filtra frecuencias, NO separa instrumentos reales
-   */
   async separateDSP(audioBuffer) {
     console.warn('⚠️ Usando DSP Fallback - NO es separación REAL de instrumentos');
 
     return {
       success: true,
       method: 'dsp_fallback',
-      message: 'FILTROS DSP - NO es separación real de instrumentos musicales',
-      warning: 'Esta es solo una aproximación espectral. Para separación REAL, descarga el modelo ONNX (136MB).',
+      message: 'FILTROS DSP - NO es separación real',
+      warning: 'Esta es solo una aproximación espectral.',
       stems: null,
       stemNames: this.stemNames
     };
@@ -293,7 +315,6 @@ export class StemSeparatorEngine {
   async separate(audioFileOrBuffer, options = {}) {
     const { useOnnx = true, preferOnnx = true } = options;
 
-    // Obtener audio buffer si es necesario
     let audioBuffer = audioFileOrBuffer;
     if (audioFileOrBuffer instanceof File) {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -301,24 +322,17 @@ export class StemSeparatorEngine {
       audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
     }
 
-    // Intentar ONNX primero (separación REAL)
     if (preferOnnx || useOnnx) {
       const result = await this.separateOnnx(audioBuffer, options);
       if (result.success) {
         return result;
       }
-
-      // Fallback a DSP si ONNX falla
       console.warn('ONNX falló, usando DSP fallback:', result.error);
     }
 
-    // DSP fallback
     return await this.separateDSP(audioBuffer);
   }
 
-  /**
-   * Obtener información del modelo
-   */
   getModelInfo() {
     return {
       ...this.MODEL_INFO,
@@ -327,9 +341,6 @@ export class StemSeparatorEngine {
     };
   }
 
-  /**
-   * Limpiar recursos
-   */
   destroy() {
     if (this.audioContext) {
       try {

@@ -9,7 +9,8 @@ test('[VALIDATION] StemSeparatorEngine initializes with correct default values',
 
   assert.equal(engine.modelLoaded, false);
   assert.equal(engine.modelType, 'onnx');
-  assert.deepEqual(engine.stemNames, ['other', 'drums', 'bass', 'guitar', 'piano', 'vocals']);
+  // Orden correcto del modelo htdemucs: [drums, bass, other, vocals, guitar, piano]
+  assert.deepEqual(engine.stemNames, ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano']);
 });
 
 test('[VALIDATION] StemSeparatorEngine has correct stem configuration', () => {
@@ -18,8 +19,9 @@ test('[VALIDATION] StemSeparatorEngine has correct stem configuration', () => {
   // Verificar configuración de modelo
   assert.ok(engine.MODEL_INFO, 'Model info exists');
   assert.equal(engine.stemNames.length, 6, 'Has 6 stem names');
-  assert.equal(engine.stemNames[0], 'other', 'First stem is other');
-  assert.equal(engine.stemNames[5], 'vocals', 'Last stem is vocals');
+  assert.equal(engine.stemNames[0], 'drums', 'First stem is drums (model order)');
+  assert.equal(engine.stemNames[3], 'vocals', 'Vocals is 4th stem (model order)');
+  assert.equal(engine.stemNames[5], 'piano', 'Last stem is piano (model order)');
 });
 
 test('[VALIDATION] ONNX model is MIT licensed from StemSplit', () => {
@@ -29,6 +31,9 @@ test('[VALIDATION] ONNX model is MIT licensed from StemSplit', () => {
   assert.equal(info.license, 'MIT', 'Model is MIT licensed');
   assert.ok(info.source.includes('StemSplit'), 'Source is StemSplit');
   assert.equal(info.sampleRate, 44100, 'Sample rate 44.1kHz');
+  // Verificar que los tensores son waveforms, no spectrograms
+  assert.equal(info.inputShape[1], 2, 'Input shape has 2 channels (stereo)');
+  assert.equal(info.outputShape[1], 6, 'Output shape has 6 stems');
 });
 
 test('[VALIDATION] StemSeparatorEngine destroy clears resources', () => {
