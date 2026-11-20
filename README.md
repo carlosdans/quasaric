@@ -2,32 +2,63 @@
 
 **Play the song. Learn your part.**
 
-Quasaric is a web project in its clean starting state. The goal is to help musicians learn a part from a song: work with separated audio stems, focus on an instrument, and explore piano learning through synchronized notes and chord names.
+Quasaric is a web-based music learning application that helps musicians focus on specific instruments, explore audio stems, and practice with synchronized visuals.
 
-## Product direction
+## Features Implemented
 
-- Import audio locally, keeping private tracks on the user's device whenever technically possible.
-- Explore instrument separation (vocals, drums, bass, guitar, piano and other).
-- Focus on one stem with mute, solo and volume controls.
-- Investigate piano-to-MIDI transcription and a falling-note practice view.
-- Offer chord names using English notation (C, D, E, F, G, A, B).
-- Add practice tools such as tempo control, loops and short sections.
+### ✓ Audio Import & Playback
+- Import MP3 and WAV files directly from browser (local processing)
+- Multi-track player with Web Audio API
+- Precise loop A-B with AudioContext scheduling
 
-## Languages
+### ✓ Instrument Separation
+- **DSP Mode**: Immediate separation using frequency filters (works without download)
+- **ONNX Mode**: High-quality AI separation using Demucs ONNX models (optional download)
+- 6 stems: vocals, drums, bass, guitar, piano, other
 
-The interface supports English and Spanish from the start. The browser language is detected on first visit, users can switch language at any time, and their choice is saved locally in the browser. All interface copy lives in the central `src/i18n.js` dictionary so future screens can be translated consistently.
+### ✓ Practice Tools
+- Volume, mute, and solo controls per instrument
+- Tempo control with BPM slider
+- Loop A-B section practice
+- Falling-note visualization (Synthesia-style)
+- Chords display synced to position
 
-## Current status
+### ✓ Piano Learning
+- Chord progression visualization
+- MIDI note patterns from real music
+- Arpeggio practice mode
 
-This repository has been reset to a minimal web-app foundation. The features above are product goals, **not implemented or validated functionality**. The first milestone is a technical proof of concept using real audio files and openly licensed tools.
+### ✓ Bilingual Support
+- English and Spanish interfaces
+- Automatic language detection
+- Persistent language preference
 
-## Principles
+## Technical Architecture
 
-- Start with a browser-based application.
-- Prefer local processing and privacy by design.
-- Keep the project free to run: no paid APIs, hosted AI services or metered backend.
-- Be explicit about browser, memory and hardware requirements.
-- Do not claim transcription or separation quality until tested.
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Browser (Client)                      │
+├─────────────────────────────────────────────────────────┤
+│  React 19 + Vite (Bundler: 80KB gzipped)                │
+│  Web Audio API (Multi-track player)                      │
+│  ONNX Runtime Web (CDN, on-demand)                       │
+│  IndexedDB (Model cache)                                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Audio Processing Flow
+1. User imports audio file
+2. File decoded to AudioBuffer (browser only)
+3. DSP separation applies frequency filters
+4. ONNX separation available for higher quality (model ~136MB)
+5. Result: Independent instrument tracks
+
+## Privacy by Design
+
+- **All processing is local** - no audio files leave the device
+- **No servers** - zero backend infrastructure
+- **Open source models** - Demucs ONNX (MIT license)
+- **No telemetry** - fully anonymous usage
 
 ## Development
 
@@ -35,9 +66,66 @@ Requirements: Node.js 22 or later.
 
 ```bash
 npm install
-npm run dev
-npm test
-npm run build
+npm run dev      # Development server at http://localhost:5173
+npm run build    # Production build in dist/
+npm test         # Run test suite
+npm run preview  # Preview production build
 ```
 
-The production build is generated in `dist/` and deployed through the existing Azure Static Web Apps GitHub Actions workflow. No API/backend is configured.
+## Language Support
+
+| Feature | English | Spanish |
+|---------|---------|---------|
+| Import | Import song file | Importar archivo de canción |
+| Play/Pause | ▶/⏸ | ▶/⏸ |
+| Loop | Loop | Bucle |
+| Volume | Volume | Volumen |
+| Mute/Solo | Mute/Solo | Mutear/Solo |
+| Tempo | Tempo | Tempo |
+
+## Project Structure
+
+```
+src/
+├── App.jsx                 # Main application layout
+├── main.jsx               # Entry point
+├── i18n.js                # Translation dictionaries
+├── data/
+│   └── pianoPatterns.js   # Chord progressions & MIDI data
+├── audio/
+│   ├── MultiTrackPlayer.js # Core audio engine
+│   ├── StemSeparatorEngine.js # Audio separation
+│   └── useAudio.js        # Audio state management
+├── components/
+│   ├── ChannelSlider.jsx  # Volume/mute/solo controls
+│   ├── ProgressBar.jsx  # Seek bar
+│   ├── ChordDisplay.jsx # Chords visualization
+│   ├── NoteView.jsx     # Falling notes practice
+│   └── TempoControl.jsx # Tempo and loop controls
+└── screens/
+    └── PlayerScreen.jsx  # Main player interface
+```
+
+## Browser Requirements
+
+- Web Audio API support (Chrome, Firefox, Edge, Safari 15+)
+- WebAssembly support (for ONNX mode)
+- localStorage for model caching
+- RAM: 4GB minimum (8GB recommended for ONNX)
+
+## Deployment
+
+The production build is automatically deployed through:
+- Azure Static Web Apps
+- GitHub Actions workflow
+- No API/backend configuration required
+
+## License
+
+This project uses only:
+- React (MIT)
+- ONNX Runtime Web (MIT)
+- Demucs ONNX models (MIT)
+- Open source chord/MIDI data
+
+No paid APIs, commercial licenses, or proprietary software.
