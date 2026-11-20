@@ -1,13 +1,18 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useAudio } from '../audio/useAudio';
 import { ChannelSlider } from '../components/ChannelSlider';
 import { ProgressBar } from '../components/ProgressBar';
+import { getTranslations } from '../i18n.js';
+
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
 
 export function PlayerScreen() {
-  const [files, setFiles] = useState([]);
-  const [showUpload, setShowUpload] = useState(false);
-  const [loopStart, setLoopStart] = useState(null);
-  const [loopEnd, setLoopEnd] = useState(null);
+  const [language, setLanguage] = useState('en');
+  const [error, setError] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const t = getTranslations(language);
 
   const {
     initialized,
@@ -22,7 +27,8 @@ export function PlayerScreen() {
     setTrackVolume,
     setTrackMuted,
     setTrackSolo,
-    setLoop
+    setLoop,
+    unloadAll
   } = useAudio();
 
   // Inicializar al montar
@@ -31,125 +37,164 @@ export function PlayerScreen() {
   }
 
   const handleFileUpload = async (event) => {
-    const uploadedFiles = Array.from(event.target.files).slice(0, 4);
+    event.preventDefault();
+    const file = event.target.files?.[0];
 
-    for (let i = 0; i < uploadedFiles.length; i++) {
-      const file = uploadedFiles[i];
-      const url = URL.createObjectURL(file);
-      await addTrack(url, i, file.name.replace(/\.[^/.]+$/, ''));
+    if (!file) return;
+
+    // Validaciones
+    if (file.size > MAX_FILE_SIZE) {
+      setError(t.fileTooLarge);
+      return;
     }
 
-    setFiles(prev => [...prev, ...uploadedFiles.map(f => f.name)]);
+    const fileType = file.type;
+    if (!['audio/mpeg', 'audio/wav', 'audio/x-wav'].includes(fileType)) {
+      setError(t.errorLoading);
+      return;
+    }
+
+    setImporting(true);
+    setError(null);
+
+    try {
+      const url = URL.createObjectURL(file);
+      await addTrack(url, 0, file.name.replace(/\.[^/.]+$/, ''));
+    } catch (e) {
+      console.error('Error importing file:', e);
+      setError(t.errorLoading);
+    } finally {
+      setImporting(false);
+      event.target.value = '';
+    }
   };
 
-  const handleLoopToggle = () => {
-    if (loopStart !== null && loopEnd !== null) {
-      setLoop(loopStart, loopEnd);
-    }
+  const handleOpenFile = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleUnloadAll = () => {
+    unloadAll();
   };
 
   if (!initialized) {
     return (
       <div className="player-screen">
-        <h2>Inicializando Audio...</h2>
+        <h2>{t.loading || 'Loading...'}</h2>
       </div>
     );
   }
 
-  if (tracks.length === 0) {
-    return (
-      <div className="player-screen">
-        <h2 className="screen-title">Reproductor Multipista</h2>
-
-        <div className="upload-area" onClick={() => setShowUpload(true)}>
-          <div className="upload-icon">🎵</div>
-          <h3>Seleccionar hasta 4 archivos de audio</h3>
-          <p>MP3, WAV, AAC, OGG</p>
-        </div>
-
-        <input
-          type="file"
-          accept="audio/*"
-          multiple
-          onChange={handleFileUpload}
-          style={{ display: 'none' }}
-          ref={inputRef => {
-            window.fileInput = inputRef;
-          }}
-        />
-
-        <button
-          className="upload-btn"
-          onClick={() => setShowUpload(true)}
-        >
-          Subir archivos
-        </button>
-      </div>
-    );
-  }
+  const activeTrack = tracks[0];
 
   return (
     <div className="player-screen">
-      <h2 className="screen-title">Reproductor Multipista</h2>
+      <h2 className="screen-title">{t.play || 'Player'}</h2>
 
-      {/* Track Info */}
-      <div className="track-info">
-        <h3 className="track-name">{tracks[0]?.name ?? 'Pista'}</h3>
-        <p className="track-artist">Instrumentos: {tracks.map(t => t.name).join(', ')}</p>
-      </div>
+      {/* Error Message */}
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
 
-      {/* Progress Bar */}
-      <ProgressBar
-        position={position}
-        duration={duration}
-        onSeek={seekTo}
-      />
+      {/* Import Section - Quando no hay pistas */}
+      {!activeTrack && (
+        <>
+          <div className="import-section">
+            <input
+              type="file"
+              accept="audio/mp3,audio/wav,application/octetstream"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              style={{ display: 'none' }}
+            />
 
-      {/* Transport Controls */}
-      <div className="transport-controls">
-        <button className="transport-btn" onClick={() => seekTo(Math.max(0, position - 5))}>
-          ◀◀
-        </button>
-        <button className="play-btn" onClick={togglePlay}>
-          {isPlaying ? '⏸' : '▶'}
-        </button>
-        <button className="transport-btn" onClick={() => seekTo(Math.min(duration, position + 5))}>
-          ▶▶
-        </button>
-      </div>
+            <div className="upload-area" onClick={handleOpenFile}>
+              <div className="upload-icon">🎵</div>
+              <h3>{t.openSong || 'Abrir canción'}</h3>
+              <p className="file-hint">{t.importSong || 'Importar archivo'}: MP3, WAV</p>
+            </div>
 
-      {/* Loop Controls */}
-      <div className="loop-controls">
-        <button
-          className={`loop-btn ${loopStart !== null && loopEnd !== null ? 'active' : ''}`}
-          onClick={handleLoopToggle}
-        >
-          Loop A-B
-        </button>
-      </div>
+            <button className="upload-btn" onClick={handleOpenFile}>
+              {t.openSong || 'Abrir canción'}
+            </button>
+          </div>
+        </>
+      )}
 
-      {/* Channel Controls */}
-      <div className="channels-section">
-        <h3>Canales</h3>
-        {tracks.map((track, index) => (
-          <ChannelSlider
-            key={index}
-            trackIndex={index}
-            track={track}
-            onVolumeChange={setTrackVolume}
-            onMuteToggle={setTrackMuted}
-            onSoloToggle={setTrackSolo}
+      {/* Player Controls - Cuando hay pistas */}
+      {activeTrack && (
+        <>
+          {/* Track Info */}
+          <div className="track-info">
+            <h3 className="track-name">{activeTrack.name}</h3>
+            {duration > 0 && (
+              <p className="track-duration">
+                {Math.floor(duration/60)}:{String(Math.floor(duration%60)).padStart(2,'0')}
+              </p>
+            )}
+          </div>
+
+          {/* Progress Bar */}
+          <ProgressBar
+            position={position}
+            duration={duration}
+            onSeek={seekTo}
           />
-        ))}
-      </div>
 
-      {/* Upload More Files */}
-      <button
-        className="add-track-btn"
-        onClick={() => setShowUpload(true)}
-      >
-        Añadir más pistas
-      </button>
+          {/* Transport Controls */}
+          <div className="transport-controls">
+            <button className="transport-btn" onClick={() => seekTo(Math.max(0, position - 5))}>
+              ◀◀
+            </button>
+            <button className="play-btn" onClick={togglePlay}>
+              {isPlaying ? '⏸' : '▶'}
+            </button>
+            <button className="transport-btn" onClick={() => seekTo(Math.min(duration, position + 5))}>
+              ▶▶
+            </button>
+          </div>
+
+          {/* Time Display */}
+          <div className="time-display">
+            <span>{Math.floor(position/60)}:{String(Math.floor(position%60)).padStart(2,'0')}</span>
+            <span> / </span>
+            <span>{duration > 0 ? `${Math.floor(duration/60)}:${String(Math.floor(duration%60)).padStart(2,'0')}` : '0:00'}</span>
+          </div>
+
+          {/* Channel Controls */}
+          <div className="channels-section">
+            <h3>{t.practice || 'Practice'}</h3>
+            {tracks.map((track, index) => (
+              <ChannelSlider
+                key={index}
+                trackIndex={index}
+                track={track}
+                onVolumeChange={setTrackVolume}
+                onMuteToggle={setTrackMuted}
+                onSoloToggle={setTrackSolo}
+              />
+            ))}
+          </div>
+
+          {/* Controls */}
+          <div className="player-actions">
+            <button className="transport-btn" onClick={handleOpenFile}>
+              🔄
+            </button>
+            <button className="transport-btn" onClick={handleUnloadAll}>
+              ✕
+            </button>
+          </div>
+
+          {importing && (
+            <div className="loading-indicator">
+              {t.loading || 'Loading...'}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
