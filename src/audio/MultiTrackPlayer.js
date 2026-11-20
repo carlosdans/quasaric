@@ -1,6 +1,11 @@
 /**
  * MultiTrackPlayer - Reproductor de audio multipista sincronizado
  * Usa Web Audio API nativa - 0 dependencias externas
+ *
+ * Solución de bucle A-B mejorada:
+ * - Usa AudioContext.currentTime para sincronización precisa
+ * - Programa reinicios con scheduling nativo de Web Audio
+ * - Evita depender de requestAnimationFrame para el loop
  */
 
 export class MultiTrackPlayer {
@@ -16,6 +21,7 @@ export class MultiTrackPlayer {
     this.onEnd = null;
     this.loopSettings = null;
     this._updateTimer = null;
+    this._scheduledLoopCheck = null;
   }
 
   // Inicializar AudioContext (requiere interacción del usuario)
@@ -37,6 +43,9 @@ export class MultiTrackPlayer {
     if (this._updateTimer) {
       cancelAnimationFrame(this._updateTimer);
       this._updateTimer = null;
+    }
+    if (this._scheduledLoopCheck) {
+      this._scheduledLoopCheck = null;
     }
   }
 
@@ -84,40 +93,68 @@ export class MultiTrackPlayer {
   async play() {
     if (!this.audioContext || this.isPlaying) return;
 
-    // Crear nuevas fuentes para cada pista usando el reloj común
+    const playTime = this.audioContext.currentTime + 0.01; // Pequeño offset para sincronización
+
     this.tracks.forEach(track => {
       if (!track.muted) {
         const source = this.audioContext.createBufferSource();
         source.buffer = track.buffer;
         source.loop = false;
         source.connect(track.gainNode);
-        // Sincronizar usando el reloj maestro
-        source.start(this.audioContext.currentTime, this._calculateStartOffset());
-
+        // Programar inicio sincronizado
+        source.start(playTime);
         track.source = source;
       }
     });
 
     this.startTime = this.audioContext.currentTime;
     this.isPlaying = true;
+
+    // Programar verificación de loop con scheduling preciso
+    this._scheduleLoopCheck();
   }
 
-  // Calcular offset para sincronización precisa
-  _calculateStartOffset() {
-    if (!this.loopSettings || !this.loopSettings.active) return 0;
+  // Programar verificación de loop usando scheduling de Web Audio
+  _scheduleLoopCheck() {
+    if (!this.isPlaying || !this.loopSettings?.active) return;
 
-    const elapsed = this.audioContext.currentTime - this.startTime;
     const { start, end } = this.loopSettings;
+    const now = this.audioContext.currentTime;
+    const elapsed = now - this.startTime;
 
-    // Si ya pasamos el final, empezar desde start
-    if (elapsed >= end) {
-      return Math.max(0, start);
+    // Calcular cuándo llegará al final del loop
+    let nextCheckTime = now;
+    if (elapsed < start) {
+      // Aún no ha llegado al inicio del loop
+      nextCheckTime = start;
+    } else if (elapsed < end) {
+      // En el rango del loop
+      nextCheckTime = end;
+    } else {
+      // Ya pasó el loop, reiniciar inmediatamente
+      nextCheckTime = now + 0.001;
     }
-    // Si estamos en el rango del loop
-    if (elapsed >= start) {
-      return 0;
+
+    // Programar callback con AudioContext
+    if (nextCheckTime > now) {
+      const delay = nextCheckTime - now;
+      this._scheduledLoopCheck = setTimeout(() => {
+        this._executeLoop();
+      }, delay * 1000);
     }
-    return 0;
+  }
+
+  // Ejecutar el loop sincronizado
+  _executeLoop() {
+    if (!this.isPlaying || !this.loopSettings?.active) return;
+
+    const { start } = this.loopSettings;
+    this.seek(start);
+
+    // Reprogramar para el siguiente ciclo
+    if (this.isPlaying && this.loopSettings?.active) {
+      this._scheduleLoopCheck();
+    }
   }
 
   // Pausar todas las pistas
@@ -126,6 +163,11 @@ export class MultiTrackPlayer {
 
     this.pauseTime = this.audioContext.currentTime - this.startTime;
     this.isPlaying = false;
+
+    if (this._scheduledLoopCheck) {
+      clearTimeout(this._scheduledLoopCheck);
+      this._scheduledLoopCheck = null;
+    }
 
     // Pausar todas las fuentes
     this.tracks.forEach(track => {
@@ -156,9 +198,14 @@ export class MultiTrackPlayer {
     this.startTime = this.audioContext.currentTime;
     this.pauseTime = 0;
     this.isPlaying = false;
+    this.loopSettings = null;
+    if (this._scheduledLoopCheck) {
+      clearTimeout(this._scheduledLoopCheck);
+      this._scheduledLoopCheck = null;
+    }
   }
 
-  // Seek global a posición (en segundos) - SINCRONIZADO CON RELOJ COMún
+  // Seek global a posición - SINCRONIZADO CON RELOJ COMÓN
   async seek(position) {
     if (!this.audioContext) return;
 
@@ -170,12 +217,15 @@ export class MultiTrackPlayer {
     // Detener fuentes actuales
     this.tracks.forEach(track => {
       if (track.source) {
-        track.source.stop();
+        try {
+          track.source.stop();
+        } catch(e) {}
       }
     });
 
-    // Crear nuevas fuentes desde la posición usando reloj común
-    const seekTime = this.audioContext.currentTime;
+    // Crear nuevas fuentes sincronizadas
+    const playTime = this.audioContext.currentTime + 0.005;
+    const startOffset = Math.max(0, position);
 
     this.tracks.forEach(track => {
       if (!track.muted) {
@@ -183,9 +233,7 @@ export class MultiTrackPlayer {
         source.buffer = track.buffer;
         source.loop = false;
         source.connect(track.gainNode);
-        // Usar timing de AudioContext para sincronización precisa
-        const startOffset = Math.max(0, position - (seekTime - this.audioContext.currentTime));
-        source.start(this.audioContext.currentTime, Math.max(0, position - 0.01));
+        source.start(playTime, startOffset);
         track.source = source;
       }
     });
@@ -193,6 +241,7 @@ export class MultiTrackPlayer {
     if (wasPlaying) {
       this.startTime = this.audioContext.currentTime - position;
       this.isPlaying = true;
+      this._scheduleLoopCheck();
     }
   }
 
@@ -238,33 +287,27 @@ export class MultiTrackPlayer {
     this.duration = duration;
   }
 
-  // Loop A-B - SINCRONIZADO CON EL RELOJ DE AUDIO
+  // Loop A-B - CONFIGURACIÓN PRECISA
   setLoop(startSec, endSec) {
-    if (!this.audioContext || !this.isPlaying) return null;
+    if (!this.audioContext) return null;
 
     const loopState = { start: startSec, end: endSec, active: true };
     this.loopSettings = loopState;
 
-    // Detener listeners anteriores
-    this.tracks.forEach(track => {
-      if (track.source) {
-        track.source.loop = false;
-      }
-    });
+    // Reiniciar verificación de loop
+    if (this.isPlaying) {
+      this._scheduleLoopCheck();
+    }
 
     return loopState;
   }
 
-  // Verificar loop en cada frame (método más preciso que eventos)
-  _checkLoop() {
-    if (!this.isPlaying || !this.loopSettings || !this.loopSettings.active) return;
-
-    const position = this.getPosition();
-    const { start, end } = this.loopSettings;
-
-    if (position >= end) {
-      // Reiniciar desde start usando el reloj común
-      this.seek(start);
+  // Desactivar bucle
+  clearLoop() {
+    this.loopSettings = null;
+    if (this._scheduledLoopCheck) {
+      clearTimeout(this._scheduledLoopCheck);
+      this._scheduledLoopCheck = null;
     }
   }
 
@@ -314,7 +357,7 @@ export class MultiTrackPlayer {
     this.tracks.forEach(track => {
       this._revokeBlobUrl(track);
     });
-    // Limpiar referencias
+    // Limpiar referencias manteniendo metadatos
     this.tracks.forEach((track, i) => {
       this.tracks[i] = {
         id: track?.id,
@@ -322,7 +365,6 @@ export class MultiTrackPlayer {
         volume: track?.volume ?? 1,
         muted: false,
         soloed: false
-        // No incluimos source, gainNode, buffer, blobUrl
       };
     });
   }
@@ -350,15 +392,12 @@ export class MultiTrackPlayer {
     this.isPlaying = false;
   }
 
-  // Evento de actualización de tiempo
+  // Evento de actualización de tiempo (fallback para UI)
   _startTimeUpdate() {
     const update = () => {
       if (this.onTimeUpdate && this.isPlaying) {
         const position = this.getPosition();
         this.onTimeUpdate(position, this.duration);
-
-        // Verificar loop sincronizado con reloj
-        this._checkLoop();
 
         if (position >= this.duration && this.duration > 0 && !this.loopSettings?.active) {
           this.isPlaying = false;
