@@ -22,35 +22,93 @@
         .pass { border-left: 4px solid #c8f169; }
         .fail { border-left: 4px solid #ef4444; }
         button { padding: 12px 24px; background: #c8f169; border: none; border-radius: 8px; cursor: pointer; }
-        .log { background: #111; color: #0ff; padding: 16px; font-family: monospace; margin-top: 20px; overflow-x: auto; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .log { background: #111; color: #0ff; padding: 16px; font-family: monospace; margin-top: 20px; overflow-x: auto; font-size: 12px; }
+        .waveform { height: 60px; background: #111; margin: 10px 0; border-radius: 4px; overflow: hidden; }
+        .waveform-bar { height: 100%; width: 2%; background: #c8f169; }
     </style>
 </head>
 <body>
     <h1>Test de Sincronización Multi-pista</h1>
 
     <div class="test-result pass">
-        <strong>✓ AudioContext disponible:</strong> <span id="status"></span>
+        <strong>✓ AudioContext disponible:</strong> <span id="status">Cargando...</span>
     </div>
 
     <div class="test-result" id="sync-result">
         Resultados de sincronización aparecerán aquí...
     </div>
 
-    <button onclick="runSyncTest()">Ejecutar Test de Sincronización</button>
+    <div class="waveform" id="waveform">
+        <div class="waveform-bar" style="width: 0%"></div>
+    </div>
+
+    <div style="display:flex; gap:12px; flex-wrap:wrap">
+        <button id="btn-play" onclick="runPlay()">▶ Play</button>
+        <button id="btn-pause" onclick="runPause()">⏸ Pause</button>
+        <button id="btn-stop" onclick="runStop()">⏹ Stop</button>
+    </div>
+
+    <div style="margin-top: 16px; display:flex; gap:16px">
+        <div>
+            <label>Volumen:</label>
+            <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" onchange="setVolume(this.value)" />
+        </div>
+        <div>
+            <label>Posición:</label>
+            <span id="time-display">0:00 / 0:00</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 16px">
+        <button onclick="runSyncTest()">Ejecutar Test Completo</button>
+        <button onclick="generateTestAudio()">Generar Audio de Prueba</button>
+    </div>
 
     <div class="log" id="log"></div>
 
     <script type="module">
         import { MultiTrackPlayer } from './src/audio/MultiTrackPlayer.js';
 
-        const player = new MultiTrackPlayer();
+        let player = null;
+        let testBuffers = [];
+        let isInitialized = false;
         const logEl = document.getElementById('log');
         const resultEl = document.getElementById('sync-result');
+        const waveformEl = document.getElementById('waveform');
 
         function log(msg) {
             const p = document.createElement('p');
             p.textContent = msg;
             logEl.appendChild(p);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function generateTestAudio(context, freq, duration = 1, name) {
+            const buffer = context.createBuffer(1, context.sampleRate * duration, context.sampleRate);
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < data.length; i++) {
+                data[i] = Math.sin(2 * Math.PI * freq * i / context.sampleRate) * 0.5;
+            }
+
+            return { buffer, name, freq };
+        }
+
+        async function initPlayer() {
+            if (isInitialized) return true;
+
+            try {
+                player = new (await import('./src/audio/MultiTrackPlayer.js')).MultiTrackPlayer();
+                await player.init();
+                isInitialized = true;
+                document.getElementById('status').textContent = '✓ AudioContext listo';
+                return true;
+            } catch (e) {
+                document.getElementById('status').textContent = '✗ Error: ' + e.message;
+                log('Error inicialización: ' + e.message);
+                return false;
+            }
         }
 
         window.runSyncTest = async () => {
@@ -58,36 +116,94 @@
             resultEl.className = 'test-result';
             resultEl.innerHTML = '<strong>En progreso...</strong>';
 
+            const btn = document.querySelector('button[onclick="runSyncTest()"]');
+            btn.disabled = true;
+
             try {
-                await player.init();
+                const ok = await initPlayer();
+                if (!ok) throw new Error('Falló inicialización AudioContext');
+
                 log('✓ AudioContext inicializado');
 
-                // Usar tonos de prueba generados
-                const testUrls = [
-                    'https://tonejs.github.io/audio/clock/clockwork.mp3',
-                    'https://raw.githubusercontent.com/danigbke/Audio-Recognition/master/data/audio_samples/1a.wav',
-                    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-                    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
+                const ctx = player.audioContext;
+                const testTracks = [
+                    { name: 'Melodía (440Hz)', freq: 440 },
+                    { name: 'Bajo (110Hz)', freq: 110 },
+                    { name: 'Batería (880Hz)', freq: 880 },
+                    { name: 'Voz (660Hz)', freq: 660 }
                 ];
+
+                const testUrls = [];
+                for (let i = 0; i < testTracks.length; i++) {
+                    const { buffer } = await generateTestAudio(ctx, testTracks[i].freq, 3, testTracks[i].name);
+                    const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }));
+                    testUrls.push({ url, name: testTracks[i].name });
+                }
 
                 const startTime = performance.now();
 
                 for (let i = 0; i < testUrls.length; i++) {
-                    await player.addTrack(testUrls[i], i, `Test Track ${i+1}`);
-                    log(`✓ Pista ${i+1} cargada`);
+                    await player.addTrack(testUrls[i].url, i, testUrls[i].name);
+                    log(`✓ Pista ${i+1} cargada: ${testUrls[i].name}`);
                 }
 
                 const loadTime = performance.now() - startTime;
                 log(`✓ Tiempo de carga: ${loadTime.toFixed(2)}ms`);
 
+                player.onTimeUpdate = (pos, dur) => {
+                    player.duration = dur;
+                    document.getElementById('time-display').textContent =
+                        `${Math.floor(pos/60)}:${Math.floor(pos%60).toString().padStart(2,'0')} / ${Math.floor(dur/60)}:${Math.floor(dur%60).toString().padStart(2,'0')}`;
+
+                    const progress = ((dur - pos) / dur) * 100;
+                    waveformEl.querySelector('.waveform-bar').style.width = (100 - progress) + '%';
+                };
+
+                player.onEnd = () => {
+                    log('✓ Reproducción finalizada');
+                    document.getElementById('time-display').textContent = `0:00 / ${Math.floor(player.duration/60)}:${Math.floor(player.duration%60).toString().padStart(2,'0')}`;
+                };
+
                 resultEl.className = 'test-result pass';
-                resultEl.innerHTML = '<strong>✓ TODOS LOS TESTS PASARON</strong><br>4 pistas sincronizadas correctamente';
+                resultEl.innerHTML = '<strong>✓ TESTS LISTOS</strong><br>Haz click en Play para probar sincronización, mute, solo y loop A-B';
+                btn.disabled = false;
 
             } catch (e) {
                 resultEl.className = 'test-result fail';
                 resultEl.innerHTML = `<strong>✗ ERROR:</strong> ${e.message}`;
                 log(`Error: ${e.message}`);
+                btn.disabled = false;
             }
+        };
+
+        window.runPlay = () => {
+            if (player) player.play();
+            log('▶ Reproduciendo...');
+        };
+
+        window.runPause = () => {
+            if (player) player.pause();
+            log('⏸ Pausa');
+        };
+
+        window.runStop = () => {
+            if (player) player.stop();
+            log('⏹ Detenido');
+        };
+
+        window.setVolume = (v) => {
+            if (player) {
+                player.setVolume(0, parseFloat(v));
+                player.setVolume(1, parseFloat(v));
+                player.setVolume(2, parseFloat(v));
+                player.setVolume(3, parseFloat(v));
+            }
+        };
+
+        window.generateTestAudio = async () => {
+            log('Generando audio de prueba en memoria...');
+            await initPlayer();
+            log('✓ Audio generado - listo para reproducir');
         };
     </script>
 </body>
