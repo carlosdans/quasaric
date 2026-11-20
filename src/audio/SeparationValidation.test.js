@@ -4,60 +4,41 @@ import fs from 'node:fs';
 import { StemSeparatorEngine } from './StemSeparatorEngine.js';
 import { PROGRESSIONS, PIANO_NOTES } from '../data/pianoPatterns.js';
 
-test('[VALIDATION] StemSeparatorEngine indicates DSP is approximate filtering, not real separation', async () => {
+test('[VALIDATION] StemSeparatorEngine initializes with correct default values', () => {
   const engine = new StemSeparatorEngine();
 
-  // Verificar que los filtros existen
-  assert.equal(typeof engine._lowpassFilter, 'function');
-  assert.equal(typeof engine._highpassFilter, 'function');
-  assert.equal(typeof engine._bandpassFilter, 'function');
-
-  // Verificar que los filtros son de primera orden (simplificados)
-  // Un filtro FIR de alta calidad tendría más complejidad
-  const testArray = new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5]);
-  const outputArray = new Float32Array(5);
-
-  // El filtro lowpass de primera orden NO separa instrumentos reales
-  engine._lowpassFilter(testArray, outputArray, 250, 44100);
-
-  // Verificar que el filtro produce salida
-  assert.ok(outputArray.length === 5, 'Filter should produce output array');
-
-  // Nota: Este es un filtro SIMPLE que NO separa instrumentos
-  // No produce audio de instrumentos separados, solo filtra frecuencias
+  assert.equal(engine.modelLoaded, false);
+  assert.equal(engine.modelType, 'onnx');
+  assert.deepEqual(engine.stemNames, ['other', 'drums', 'bass', 'guitar', 'piano', 'vocals']);
 });
 
-test('[VALIDATION] ONNX separation is not fully implemented', async () => {
+test('[VALIDATION] StemSeparatorEngine has correct stem configuration', () => {
   const engine = new StemSeparatorEngine();
 
-  // Verificar la documentación del método
-  const result = await engine.separateOnnx({});
-
-  // El método actual indica explícitamente que falta implementación
-  assert.ok(result, 'Separation should return a result object');
-  const hasMessage = result.message && result.message.includes('pendiente');
-  const isNotSuccess = !result.success;
-  assert.ok(hasMessage || isNotSuccess,
-    'ONNX method should indicate not fully implemented');
+  // Verificar configuración de modelo
+  assert.ok(engine.MODEL_INFO, 'Model info exists');
+  assert.equal(engine.stemNames.length, 6, 'Has 6 stem names');
+  assert.equal(engine.stemNames[0], 'other', 'First stem is other');
+  assert.equal(engine.stemNames[5], 'vocals', 'Last stem is vocals');
 });
 
-test('[VALIDATION] DSP produces filtered stems, not instrument-separated stems', async () => {
+test('[VALIDATION] ONNX model is MIT licensed from StemSplit', () => {
   const engine = new StemSeparatorEngine();
+  const info = engine.getModelInfo();
 
-  // Verificar configuración de filtros
-  assert.ok(engine.filterConfig.vocals, 'Vocal filter config exists');
-  assert.ok(engine.filterConfig.drums, 'Drum filter config exists');
-  assert.ok(engine.filterConfig.bass, 'Bass filter config exists');
-  assert.ok(engine.filterConfig.guitar, 'Guitar filter config exists');
-  assert.ok(engine.filterConfig.piano, 'Piano filter config exists');
-  assert.ok(engine.filterConfig.other, 'Other filter config exists');
+  assert.equal(info.license, 'MIT', 'Model is MIT licensed');
+  assert.ok(info.source.includes('StemSplit'), 'Source is StemSplit');
+  assert.equal(info.sampleRate, 44100, 'Sample rate 44.1kHz');
+});
 
-  // Verificar frecuencias de corte - son aproximaciones espectrales
-  // La separación real requeriría modelos de IA entrenados
-  assert.equal(typeof engine.filterConfig.vocals.low, 'number');
-  assert.equal(typeof engine.filterConfig.vocals.high, 'number');
+test('[VALIDATION] StemSeparatorEngine destroy clears resources', () => {
+  const engine = new StemSeparatorEngine();
+  engine.modelLoaded = true;
+  engine.modelType = 'onnx';
 
-  // Estas frecuencias son aproximaciones, NO garantizan separación real
+  engine.destroy();
+
+  assert.equal(engine.modelLoaded, false);
 });
 
 test('[VALIDATION] Piano patterns are pre-defined examples, not automatic transcription', () => {
@@ -120,15 +101,12 @@ test('[VALIDATION] ONNX Runtime loads from CDN, not bundled', () => {
     'ONNX Runtime should be loaded via CDN');
 });
 
-test('[VALIDATION] DSP separation creates 6 stems with frequency filtering', async () => {
+test('[VALIDATION] ONNX model is MIT licensed 6-stem model', () => {
   const engine = new StemSeparatorEngine();
+  const info = engine.getModelInfo();
 
-  // Verificar que tiene 6 stems definidos
-  assert.equal(engine.stemNames.length, 6, 'Should have 6 stem names');
-  assert.ok(engine.stemNames.includes('vocals'), 'Should include vocals');
-  assert.ok(engine.stemNames.includes('drums'), 'Should include drums');
-  assert.ok(engine.stemNames.includes('bass'), 'Should include bass');
-  assert.ok(engine.stemNames.includes('guitar'), 'Should include guitar');
-  assert.ok(engine.stemNames.includes('piano'), 'Should include piano');
-  assert.ok(engine.stemNames.includes('other'), 'Should include other');
+  assert.equal(info.license, 'MIT', 'Model must be MIT licensed for free use');
+  assert.equal(info.stems, 6, 'Model must produce 6 stems');
+  assert.equal(info.size, '136 MB', 'Model size (fp16)');
+  assert.equal(info.sampleRate, 44100, 'Sample rate 44.1kHz');
 });

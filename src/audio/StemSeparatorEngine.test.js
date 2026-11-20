@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { StemSeparatorEngine } from './StemSeparatorEngine.js';
 
-test('StemSeparatorEngine initializes with correct default values', () => {
+test('[VALIDATION] StemSeparatorEngine initializes with correct default values', () => {
   const engine = new StemSeparatorEngine();
 
   assert.equal(engine.modelLoaded, false);
-  assert.equal(engine.modelType, null);
-  assert.deepEqual(engine.stemNames, ['vocals', 'drums', 'bass', 'guitar', 'piano', 'other']);
+  assert.equal(engine.modelType, 'onnx');
+  assert.deepEqual(engine.stemNames, ['other', 'drums', 'bass', 'guitar', 'piano', 'vocals']);
   assert.ok(engine.stemNames.includes('vocals'));
   assert.ok(engine.stemNames.includes('drums'));
   assert.ok(engine.stemNames.includes('bass'));
@@ -16,37 +16,37 @@ test('StemSeparatorEngine initializes with correct default values', () => {
   assert.ok(engine.stemNames.includes('other'));
 });
 
-test('StemSeparatorEngine has filter configuration for all stems', () => {
+test('[VALIDATION] StemSeparatorEngine has correct stem configuration', () => {
   const engine = new StemSeparatorEngine();
 
-  assert.ok(engine.filterConfig.vocals, 'Missing vocals filter config');
-  assert.ok(engine.filterConfig.drums, 'Missing drums filter config');
-  assert.ok(engine.filterConfig.bass, 'Missing bass filter config');
-  assert.ok(engine.filterConfig.guitar, 'Missing guitar filter config');
-  assert.ok(engine.filterConfig.piano, 'Missing piano filter config');
-  assert.ok(engine.filterConfig.other, 'Missing other filter config');
+  // Verificar configuración de modelo
+  assert.ok(engine.MODEL_INFO, 'Model info exists');
+  assert.equal(engine.stemNames.length, 6, 'Has 6 stem names');
+  assert.equal(engine.stemNames[0], 'other', 'First stem is other');
+  assert.equal(engine.stemNames[5], 'vocals', 'Last stem is vocals');
 });
 
-test('StemSeparatorEngine getModelSizeInfo returns correct info', () => {
+test('[VALIDATION] StemSeparatorEngine getModelInfo returns correct info', () => {
   const engine = new StemSeparatorEngine();
-  const info = engine.getModelSizeInfo();
+  const info = engine.getModelInfo();
 
-  assert.equal(info.htdemucs_6s, '136 MB (fp16)');
-  assert.equal(info.htdemucs_ft, '660 MB (fp16)');
-  assert.ok(info.recommendation.minimumRam, 'Missing minimumRam recommendation');
-  assert.ok(info.recommendation.downloadTime, 'Missing downloadTime recommendation');
+  assert.equal(info.stemNames.length, 6, 'Has 6 stems');
+  assert.equal(info.license, 'MIT', 'Model is MIT licensed');
+  assert.equal(info.size, '136 MB', 'Model size is 136MB fp16');
+  assert.equal(info.stems, 6, '6 stems output');
+  assert.ok(info.url.includes('huggingface.co'), 'URL includes huggingface');
 });
 
-test('StemSeparatorEngine DSP filters are defined', () => {
+test('[VALIDATION] ONNX model is MIT licensed from StemSplit', () => {
   const engine = new StemSeparatorEngine();
+  const info = engine.getModelInfo();
 
-  assert.equal(typeof engine._lowpassFilter, 'function');
-  assert.equal(typeof engine._highpassFilter, 'function');
-  assert.equal(typeof engine._bandpassFilter, 'function');
-  assert.equal(typeof engine._applyFilter, 'function');
+  assert.equal(info.license, 'MIT', 'Model is MIT licensed');
+  assert.ok(info.source.includes('StemSplit'), 'Source is StemSplit');
+  assert.equal(info.sampleRate, 44100, 'Sample rate 44.1kHz');
 });
 
-test('StemSeparatorEngine destroy clears resources', () => {
+test('[VALIDATION] StemSeparatorEngine destroy clears resources', () => {
   const engine = new StemSeparatorEngine();
   engine.modelLoaded = true;
   engine.modelType = 'onnx';
@@ -54,5 +54,4 @@ test('StemSeparatorEngine destroy clears resources', () => {
   engine.destroy();
 
   assert.equal(engine.modelLoaded, false);
-  assert.equal(engine.modelType, null);
 });
