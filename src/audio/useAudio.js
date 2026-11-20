@@ -8,6 +8,7 @@ export function useAudio() {
   const [duration, setDuration] = useState(0);
   const [tracks, setTracks] = useState([]);
   const [audioContextReady, setAudioContextReady] = useState(false);
+  const [loopSettings, setLoopSettings] = useState(null);
 
   // Inicializar AudioContext
   const init = useCallback(async () => {
@@ -34,7 +35,8 @@ export function useAudio() {
       name: track.name,
       volume: 1,
       muted: false,
-      soloed: false
+      soloed: false,
+      blobUrl: track.blobUrl
     }]);
     setDuration(track.duration);
     return track;
@@ -70,9 +72,10 @@ export function useAudio() {
   // Mutear pista
   const setTrackMuted = useCallback((trackIndex, muted) => {
     player.setMuted(trackIndex, muted);
-    setTracks(prev => prev.map((t, i) =>
-      i === trackIndex ? { ...t, muted } : t
-    ));
+    setTracks(prev => prev.map((t, i) => ({
+      ...t,
+      muted: i === trackIndex ? muted : t.muted
+    })));
   }, []);
 
   // Solo pista
@@ -87,15 +90,41 @@ export function useAudio() {
 
   // Loop A-B
   const setLoop = useCallback((start, end) => {
-    return player.setLoop(start, end);
+    if (!isPlaying) return null;
+    const settings = player.setLoop(start, end);
+    setLoopSettings(settings);
+    return settings;
+  }, [isPlaying]);
+
+  // Unload track
+  const unloadTrack = useCallback((trackIndex) => {
+    player.unloadTrack(trackIndex);
+    setTracks(prev => prev.filter((_, i) => i !== trackIndex));
+  }, []);
+
+  // Unload all tracks
+  const unloadAll = useCallback(() => {
+    player.unloadAll();
+    setTracks([]);
+  }, []);
+
+  // Destroy player completely
+  const destroy = useCallback(() => {
+    player.destroy();
+    setInitialized(false);
+    setIsPlaying(false);
+    setPosition(0);
+    setDuration(0);
+    setTracks([]);
+    setLoopSettings(null);
   }, []);
 
   // Limpiar al desmontar
   useEffect(() => {
     return () => {
-      player.destroy();
+      destroy();
     };
-  }, []);
+  }, [destroy]);
 
   return {
     initialized,
@@ -103,6 +132,7 @@ export function useAudio() {
     position,
     duration,
     tracks,
+    loopSettings,
     init,
     addTrack,
     togglePlay,
@@ -110,7 +140,10 @@ export function useAudio() {
     setTrackVolume,
     setTrackMuted,
     setTrackSolo,
-    setLoop
+    setLoop,
+    unloadTrack,
+    unloadAll,
+    destroy
   };
 }
 
