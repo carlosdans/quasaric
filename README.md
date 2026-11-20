@@ -13,6 +13,10 @@ Quasaric is a web project in its clean starting state. The goal is to help music
 - Offer chord names using English notation (C, D, E, F, G, A, B).
 - Add practice tools such as tempo control, loops and short sections.
 
+## Languages
+
+The interface supports English and Spanish from the start. The browser language is detected on first visit, users can switch language at any time, and their choice is saved locally in the browser. All interface copy lives in the central `src/i18n.js` dictionary so future screens can be translated consistently.
+
 ## Current status
 
 This repository has been reset to a minimal web-app foundation. The features above are product goals, **not implemented or validated functionality**. The first milestone is a technical proof of concept using real audio files and openly licensed tools.

@@ -1,0 +1,70 @@
+export const translations = {
+  en: {
+    languageLabel: 'Language',
+    languageEnglish: 'English',
+    languageSpanish: 'Español',
+    status: 'In the making',
+    eyebrow: 'A new way to learn the music you love',
+    headlineFirst: 'Play the song.',
+    headlineSecond: 'Learn your part.',
+    intro: 'Focus on the instrument you want to play. Quasaric is being built to help you explore a song, isolate its parts and learn them at your own pace.',
+    explore: 'Explore the idea',
+    practice: 'Your next practice',
+    listen: 'Listen',
+    learn: 'Learn',
+    play: 'Play',
+    visionEyebrow: 'The idea',
+    visionTitleFirst: 'From listening',
+    visionTitleSecond: 'to playing.',
+    visionSubtitle: 'Less guesswork. More time with your instrument.',
+    ideas: [
+      { number: '01', title: 'Separate the song', description: 'Explore individual parts — piano, guitar, bass, drums and voice — so you can focus on what matters to you.', tag: 'Audio stems' },
+      { number: '02', title: 'See the notes', description: 'The goal: turn a piano part into a clear, synchronized note view that helps you learn it one phrase at a time.', tag: 'Piano learning' },
+      { number: '03', title: 'Play at your pace', description: 'Practice with slower tempos, short loops and chord names that follow the music.', tag: 'Practice tools' }
+    ],
+    footer: 'Made for the joy of playing.',
+    pageTitle: 'Quasaric — Play the song. Learn your part.',
+    pageDescription: 'Quasaric is being built to help you focus on your instrument, explore song parts and learn to play.'
+  },
+  es: {
+    languageLabel: 'Idioma',
+    languageEnglish: 'English',
+    languageSpanish: 'Español',
+    status: 'En desarrollo',
+    eyebrow: 'Una nueva forma de aprender la música que te gusta',
+    headlineFirst: 'Escucha la canción.',
+    headlineSecond: 'Aprende tu parte.',
+    intro: 'Concéntrate en el instrumento que quieres tocar. Quasaric nace para explorar una canción, separar sus instrumentos y aprender a tu propio ritmo.',
+    explore: 'Descubre la idea',
+    practice: 'Tu próxima práctica',
+    listen: 'Escucha',
+    learn: 'Aprende',
+    play: 'Toca',
+    visionEyebrow: 'La idea',
+    visionTitleFirst: 'De escuchar',
+    visionTitleSecond: 'a tocar.',
+    visionSubtitle: 'Menos dudas. Más tiempo con tu instrumento.',
+    ideas: [
+      { number: '01', title: 'Separa la canción', description: 'Explora cada parte — piano, guitarra, bajo, batería y voz — para centrarte en lo que te interesa.', tag: 'Pistas de audio' },
+      { number: '02', title: 'Visualiza las notas', description: 'El objetivo: convertir la parte de piano en notas sincronizadas y claras para aprenderla frase a frase.', tag: 'Aprender piano' },
+      { number: '03', title: 'Practica a tu ritmo', description: 'Practica más despacio, repite fragmentos y sigue los acordes mientras avanza la música.', tag: 'Herramientas de práctica' }
+    ],
+    footer: 'Hecho para disfrutar tocando.',
+    pageTitle: 'Quasaric — Escucha la canción. Aprende tu parte.',
+    pageDescription: 'Quasaric nace para que te centres en tu instrumento, explores las partes de una canción y aprendas a tocar.'
+  }
+};
+
+export function normalizeLanguage(language) {
+  return language === 'es' || language === 'es-ES' || language?.startsWith?.('es-') ? 'es' : 'en';
+}
+
+export function resolveLanguage(savedLanguage, browserLanguages = []) {
+  if (savedLanguage === 'es' || savedLanguage === 'en') return savedLanguage;
+  const preferred = Array.isArray(browserLanguages) ? browserLanguages : [browserLanguages];
+  return preferred.some((language) => normalizeLanguage(language) === 'es') ? 'es' : 'en';
+}
+
+export function getTranslations(language) {
+  return translations[language] ?? translations.en;
+}

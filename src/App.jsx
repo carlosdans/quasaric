@@ -1,49 +1,60 @@
-const ideas = [
-  {
-    number: '01',
-    title: 'Separate the song',
-    description: 'Explore individual parts — piano, guitar, bass, drums and voice — so you can focus on what matters to you.',
-    tag: 'Audio stems'
-  },
-  {
-    number: '02',
-    title: 'See the notes',
-    description: 'The goal: turn a piano part into a clear, synchronized note view that helps you learn it one phrase at a time.',
-    tag: 'Piano learning'
-  },
-  {
-    number: '03',
-    title: 'Play at your pace',
-    description: 'Practice with slower tempos, short loops and chord names that follow the music.',
-    tag: 'Practice tools'
+import { useEffect, useState } from 'react';
+import { getTranslations, resolveLanguage } from './i18n.js';
+
+function getInitialLanguage() {
+  try {
+    const saved = window.localStorage.getItem('quasaric-language');
+    return resolveLanguage(saved, navigator.languages?.length ? navigator.languages : [navigator.language]);
+  } catch {
+    return resolveLanguage(null, typeof navigator === 'undefined' ? [] : [navigator.language]);
   }
-];
+}
 
 export default function App() {
+  const [language, setLanguage] = useState(getInitialLanguage);
+  const t = getTranslations(language);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title = t.pageTitle;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', t.pageDescription);
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', t.pageTitle);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', t.pageDescription);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', t.pageTitle);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', t.pageDescription);
+    try {
+      window.localStorage.setItem('quasaric-language', language);
+    } catch {
+      // Language switching still works when browser storage is unavailable.
+    }
+  }, [language, t]);
+
   return (
     <main>
       <header className="topbar">
-        <a className="brand" href="/" aria-label="Quasaric home">
+        <a className="brand" href="/" aria-label="Quasaric">
           <span className="brand-mark">Q</span>
           <span>quasaric</span>
         </a>
-        <span className="status"><span className="status-dot" /> In the making</span>
+        <div className="topbar-actions">
+          <span className="status"><span className="status-dot" /> {t.status}</span>
+          <div className="language-switch" role="group" aria-label={t.languageLabel}>
+            <button type="button" onClick={() => setLanguage('es')} aria-pressed={language === 'es'}>ES</button>
+            <button type="button" onClick={() => setLanguage('en')} aria-pressed={language === 'en'}>EN</button>
+          </div>
+        </div>
       </header>
 
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">A new way to learn the music you love</p>
-          <h1>Play the song.<br /><span>Learn your part.</span></h1>
-          <p className="intro">
-            Focus on the instrument you want to play. Quasaric is being built
-            to help you explore a song, isolate its parts and learn them at
-            your own pace.
-          </p>
-          <a className="primary-link" href="#vision">Explore the idea <span aria-hidden="true">↘</span></a>
+          <p className="eyebrow">{t.eyebrow}</p>
+          <h1>{t.headlineFirst}<br /><span>{t.headlineSecond}</span></h1>
+          <p className="intro">{t.intro}</p>
+          <a className="primary-link" href="#vision">{t.explore} <span aria-hidden="true">↘</span></a>
         </div>
 
-        <div className="music-card" aria-label="Illustration of musical notes">
-          <div className="card-top"><span>YOUR NEXT PRACTICE</span><span className="equalizer"><i /><i /><i /><i /><i /></span></div>
+        <div className="music-card" aria-label={t.practice}>
+          <div className="card-top"><span>{t.practice}</span><span className="equalizer"><i /><i /><i /><i /><i /></span></div>
           <div className="staff">
             <div className="staff-lines" />
             <div className="falling-notes">
@@ -57,18 +68,18 @@ export default function App() {
               {Array.from({ length: 14 }, (_, index) => <span className="key" key={index} />)}
             </div>
           </div>
-          <div className="card-bottom"><span>LISTEN</span><span>LEARN</span><span>PLAY</span></div>
+          <div className="card-bottom"><span>{t.listen}</span><span>{t.learn}</span><span>{t.play}</span></div>
         </div>
       </section>
 
       <section className="vision" id="vision">
         <div className="section-heading">
-          <p className="eyebrow">The idea</p>
-          <h2>From listening<br />to playing.</h2>
-          <p>Less guesswork. More time with your instrument.</p>
+          <p className="eyebrow">{t.visionEyebrow}</p>
+          <h2>{t.visionTitleFirst}<br />{t.visionTitleSecond}</h2>
+          <p>{t.visionSubtitle}</p>
         </div>
         <div className="idea-list">
-          {ideas.map((idea) => (
+          {t.ideas.map((idea) => (
             <article className="idea" key={idea.number}>
               <span className="idea-number">{idea.number}</span>
               <div><h3>{idea.title}</h3><p>{idea.description}</p></div>
@@ -80,7 +91,7 @@ export default function App() {
 
       <footer>
         <a className="brand footer-brand" href="/"><span className="brand-mark">Q</span><span>quasaric</span></a>
-        <span>Made for the joy of playing.</span>
+        <span>{t.footer}</span>
         <span>© {new Date().getFullYear()} Quasaric</span>
       </footer>
     </main>
