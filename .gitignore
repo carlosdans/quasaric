@@ -15,3 +15,8 @@ dist/
 # Local state and editor files
 .DS_Store
 .vscode/
+
+# ONNX models and large binaries (not versioned)
+models/
+*.onnx
+*.onnx.gz

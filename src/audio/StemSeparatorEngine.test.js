@@ -36,7 +36,7 @@ test('[VALIDATION] StemSeparatorEngine getModelInfo returns correct info', () =>
   assert.equal(info.license, 'MIT', 'Model is MIT licensed');
   assert.equal(info.size, '136 MB', 'Model size is 136MB fp16');
   assert.equal(info.stems, 6, '6 stems output');
-  assert.ok(info.url.includes('huggingface.co'), 'URL includes huggingface');
+  assert.ok(info.url.includes('models/htdemucs') || info.url.includes('huggingface'), 'URL is valid');
 });
 
 test('[VALIDATION] ONNX model is MIT licensed from StemSplit', () => {

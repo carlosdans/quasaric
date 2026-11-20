@@ -29,7 +29,9 @@ export class StemSeparatorEngine {
 
     // Modelo ONNX MIT - htdemucs 6 stems
     this.MODEL_INFO = {
-      url: 'https://huggingface.co/StemSplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx',
+      // Local fallback for development/testing
+      url: 'models/htdemucs_6s_fp16weights.onnx',
+      // Production URL: 'https://huggingface.co/StemSplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx'
       size: '136 MB',
       license: 'MIT',
       source: 'StemSplit (huggingface.co/StemSplitio/htdemucs-6s-onnx)',
