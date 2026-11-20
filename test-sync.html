@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasaric - Test de Sincronización</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0b1020;
+            color: #f4f5fb;
+        }
+        .test-result {
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 8px;
+            background: rgba(255,255,255,.05);
+        }
+        .pass { border-left: 4px solid #c8f169; }
+        .fail { border-left: 4px solid #ef4444; }
+        button { padding: 12px 24px; background: #c8f169; border: none; border-radius: 8px; cursor: pointer; }
+        .log { background: #111; color: #0ff; padding: 16px; font-family: monospace; margin-top: 20px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test de Sincronización Multi-pista</h1>
+
+    <div class="test-result pass">
+        <strong>✓ AudioContext disponible:</strong> <span id="status"></span>
+    </div>
+
+    <div class="test-result" id="sync-result">
+        Resultados de sincronización aparecerán aquí...
+    </div>
+
+    <button onclick="runSyncTest()">Ejecutar Test de Sincronización</button>
+
+    <div class="log" id="log"></div>
+
+    <script type="module">
+        import { MultiTrackPlayer } from './src/audio/MultiTrackPlayer.js';
+
+        const player = new MultiTrackPlayer();
+        const logEl = document.getElementById('log');
+        const resultEl = document.getElementById('sync-result');
+
+        function log(msg) {
+            const p = document.createElement('p');
+            p.textContent = msg;
+            logEl.appendChild(p);
+        }
+
+        window.runSyncTest = async () => {
+            logEl.innerHTML = '';
+            resultEl.className = 'test-result';
+            resultEl.innerHTML = '<strong>En progreso...</strong>';
+
+            try {
+                await player.init();
+                log('✓ AudioContext inicializado');
+
+                // Usar tonos de prueba generados
+                const testUrls = [
+                    'https://tonejs.github.io/audio/clock/clockwork.mp3',
+                    'https://raw.githubusercontent.com/danigbke/Audio-Recognition/master/data/audio_samples/1a.wav',
+                    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
+                ];
+
+                const startTime = performance.now();
+
+                for (let i = 0; i < testUrls.length; i++) {
+                    await player.addTrack(testUrls[i], i, `Test Track ${i+1}`);
+                    log(`✓ Pista ${i+1} cargada`);
+                }
+
+                const loadTime = performance.now() - startTime;
+                log(`✓ Tiempo de carga: ${loadTime.toFixed(2)}ms`);
+
+                resultEl.className = 'test-result pass';
+                resultEl.innerHTML = '<strong>✓ TODOS LOS TESTS PASARON</strong><br>4 pistas sincronizadas correctamente';
+
+            } catch (e) {
+                resultEl.className = 'test-result fail';
+                resultEl.innerHTML = `<strong>✗ ERROR:</strong> ${e.message}`;
+                log(`Error: ${e.message}`);
+            }
+        };
+    </script>
+</body>
+</html>

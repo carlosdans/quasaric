@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getTranslations, resolveLanguage } from './i18n.js';
+import PlayerScreen from './screens/PlayerScreen.jsx';
 
 function getInitialLanguage() {
   try {
@@ -12,6 +13,7 @@ function getInitialLanguage() {
 
 export default function App() {
   const [language, setLanguage] = useState(getInitialLanguage);
+  const [currentView, setCurrentView] = useState('home');
   const t = getTranslations(language);
 
   useEffect(() => {
@@ -29,71 +31,84 @@ export default function App() {
     }
   }, [language, t]);
 
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'player':
+        return <PlayerScreen />;
+      default:
+        return (
+          <main>
+            <header className="topbar">
+              <a className="brand" href="/" aria-label="Quasaric">
+                <span className="brand-mark">Q</span>
+                <span>quasaric</span>
+              </a>
+              <div className="topbar-actions">
+                <span className="status"><span className="status-dot" /> {t.status}</span>
+                <div className="language-switch" role="group" aria-label={t.languageLabel}>
+                  <button type="button" onClick={() => setLanguage('es')} aria-pressed={language === 'es'}>ES</button>
+                  <button type="button" onClick={() => setLanguage('en')} aria-pressed={language === 'en'}>EN</button>
+                </div>
+              </div>
+            </header>
+
+            <section className="hero">
+              <div className="hero-copy">
+                <p className="eyebrow">{t.eyebrow}</p>
+                <h1>{t.headlineFirst}<br /><span>{t.headlineSecond}</span></h1>
+                <p className="intro">{t.intro}</p>
+                <a className="primary-link" href="#vision">{t.explore} <span aria-hidden="true">↘</span></a>
+              </div>
+
+              <div className="music-card" aria-label={t.practice}>
+                <div className="card-top"><span>{t.practice}</span><span className="equalizer"><i /><i /><i /><i /><i /></span></div>
+                <div className="staff">
+                  <div className="staff-lines" />
+                  <div className="falling-notes">
+                    <span className="note note-one">♪</span>
+                    <span className="note note-two">♫</span>
+                    <span className="note note-three">♪</span>
+                    <span className="note note-four">♬</span>
+                    <span className="note note-five">♪</span>
+                  </div>
+                  <div className="keyboard">
+                    {Array.from({ length: 14 }, (_, index) => <span className="key" key={index} />)}
+                  </div>
+                </div>
+                <div className="card-bottom"><span>{t.listen}</span><span>{t.learn}</span><span>{t.play}</span></div>
+              </div>
+            </section>
+
+            <section className="vision" id="vision">
+              <div className="section-heading">
+                <p className="eyebrow">{t.visionEyebrow}</p>
+                <h2>{t.visionTitleFirst}<br />{t.visionTitleSecond}</h2>
+                <p>{t.visionSubtitle}</p>
+              </div>
+              <div className="idea-list">
+                {t.ideas.map((idea) => (
+                  <article className="idea" key={idea.number}>
+                    <span className="idea-number">{idea.number}</span>
+                    <div><h3>{idea.title}</h3><p>{idea.description}</p></div>
+                    <span className="idea-tag">{idea.tag}</span>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <footer>
+              <a className="brand footer-brand" href="/"><span className="brand-mark">Q</span><span>quasaric</span></a>
+              <span>{t.footer}</span>
+              <span>© {new Date().getFullYear()} Quasaric</span>
+            </footer>
+          </main>
+        );
+    }
+  };
+
   return (
-    <main>
-      <header className="topbar">
-        <a className="brand" href="/" aria-label="Quasaric">
-          <span className="brand-mark">Q</span>
-          <span>quasaric</span>
-        </a>
-        <div className="topbar-actions">
-          <span className="status"><span className="status-dot" /> {t.status}</span>
-          <div className="language-switch" role="group" aria-label={t.languageLabel}>
-            <button type="button" onClick={() => setLanguage('es')} aria-pressed={language === 'es'}>ES</button>
-            <button type="button" onClick={() => setLanguage('en')} aria-pressed={language === 'en'}>EN</button>
-          </div>
-        </div>
-      </header>
-
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">{t.eyebrow}</p>
-          <h1>{t.headlineFirst}<br /><span>{t.headlineSecond}</span></h1>
-          <p className="intro">{t.intro}</p>
-          <a className="primary-link" href="#vision">{t.explore} <span aria-hidden="true">↘</span></a>
-        </div>
-
-        <div className="music-card" aria-label={t.practice}>
-          <div className="card-top"><span>{t.practice}</span><span className="equalizer"><i /><i /><i /><i /><i /></span></div>
-          <div className="staff">
-            <div className="staff-lines" />
-            <div className="falling-notes">
-              <span className="note note-one">♪</span>
-              <span className="note note-two">♫</span>
-              <span className="note note-three">♪</span>
-              <span className="note note-four">♬</span>
-              <span className="note note-five">♪</span>
-            </div>
-            <div className="keyboard">
-              {Array.from({ length: 14 }, (_, index) => <span className="key" key={index} />)}
-            </div>
-          </div>
-          <div className="card-bottom"><span>{t.listen}</span><span>{t.learn}</span><span>{t.play}</span></div>
-        </div>
-      </section>
-
-      <section className="vision" id="vision">
-        <div className="section-heading">
-          <p className="eyebrow">{t.visionEyebrow}</p>
-          <h2>{t.visionTitleFirst}<br />{t.visionTitleSecond}</h2>
-          <p>{t.visionSubtitle}</p>
-        </div>
-        <div className="idea-list">
-          {t.ideas.map((idea) => (
-            <article className="idea" key={idea.number}>
-              <span className="idea-number">{idea.number}</span>
-              <div><h3>{idea.title}</h3><p>{idea.description}</p></div>
-              <span className="idea-tag">{idea.tag}</span>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <footer>
-        <a className="brand footer-brand" href="/"><span className="brand-mark">Q</span><span>quasaric</span></a>
-        <span>{t.footer}</span>
-        <span>© {new Date().getFullYear()} Quasaric</span>
-      </footer>
-    </main>
+    <div className="app">
+      {renderCurrentView()}
+    </div>
   );
 }
