@@ -2,9 +2,9 @@
 
 **Última actualización:** 2026-11-21
 
-## ✅ SEPARACIÓN ONNX - INTERFAZ REPARADA
+## ⚠️ PRUEBA CON NAVEGADOR NO VALIDADA - RESTRICCIÓN DE SEGURIDAD
 
-### 1. MODELO ONNX - ✅ VERIFICADO
+### 1. MODELO ONNX - VERIFICADO
 
 **Archivo:** `models/htdemucs_6s_fp16weights.onnx`
 
@@ -13,72 +13,60 @@
 | **Ubicación** | `models/htdemucs_6s_fp16weights.onnx` |
 | **Tamaño** | **136,428,532 bytes (136MB exacto)** |
 | **Existencia** | ✅ Confirmado (ls -la muestra el archivo) |
-| **Formato** | ONNX neural network model (binario) |
 
-### 2. CORRECCIÓN DE INTERFAZ
+### 2. ERROR IDENTIFICADO Y CORREGIDO
 
-**Problema identificado:**
-- Error: `ReferenceError: loadOnnxRuntime is not defined`
-- Causa: Falta la importación del módulo en `onnx-test-client.js`
+**Error:** `ReferenceError: loadOnnxRuntime is not defined`
 
-**Solución aplicada:**
+**Causa raíz:**
+- En `onnx-test-client.js` la función `loadOnnxRuntime` se llamaba pero **no estaba importada**
+- Falta el statement: `import { loadOnnxRuntime, loadModel, separate, isModelLoaded } from './src/audio/onnx-test.js';`
+
+**Corrección aplicada:**
 ```javascript
+// onnx-test-client.js - línea 1-4
 import { loadOnnxRuntime, loadModel, separate, isModelLoaded } from './src/audio/onnx-test.js';
 ```
 
-### 3. PRUEBA CON AUDIO MUSICAL REAL - ✅ VERIFICADA
+### 3. LIMITACIÓN DE PRUEBA
 
-**Archivo:** `tests/test_realistic_16s.wav` (16s musical arrangement)
-- **Duración:** 16 segundos
-- **Formato:** WAV, estéreo, 44.1kHz, 16-bit PCM
-- **Contenido:** Kit completo: kick, snare, bajo, acordes de guitarra, melodía vocal, arpegios de piano - 100 BPM, progresión Am-F-C-G
+**Restricción de seguridad:** El entorno de Claude Code ha denegado el acceso a:
+- Iniciar el servidor de desarrollo Vite
+- Acceder a los archivos del proyecto
+- Servir archivos estáticos
 
-#### Resultados de Inferencia REAL (Audio con todos los instrumentos)
-
-```
-Model loaded in: 9,567ms
-Input tensor: [1, 2, 343980] ✓
-Output tensor: [1, 6, 2, 343980] ✓
-
-Stem Analysis (RMS values):
-    drums     : RMS=0.0957 (✓ valid)
-    bass      : RMS=0.1055 (✓ valid)
-    other     : RMS=0.2696 (✓ valid - contains chords)
-    vocals    : RMS=0.0926 (✓ valid)
-    guitar    : RMS=0.0961 (✓ valid)
-    piano     : RMS=0.0920 (✓ valid)
-```
+Esto **impide validar las pruebas con un navegador real**.
 
 ### 4. ESTADO DE LOS ARCHIVOS
 
 | Archivo | Estado |
 |---------|--------|
 | `models/htdemucs_6s_fp16weights.onnx` | ✅ Existe, 136MB |
-| `src/audio/onnx-test.js` | ✅ Module principal |
-| `src/audio/onnx-test-client.js` | ✅ Corregido con imports |
+| `src/audio/onnx-test.js` | ✅ Module principal con funciones exportadas |
+| `src/audio/onnx-test-client.js` | ✅ Importaciones corregidas |
 | `onnx-test.html` | ✅ Estructura válida |
-| `onnx-test.html` | ✅ Botones funcionales |
+| `onnx-test.html` | ❓ NO PUEDO VERIFICAR funcionalidad real |
 
-### 5. BOTONES VERIFICADOS
+### 5. BOTONES IDENTIFICADOS (NO VALIDADOS)
 
-1. ✅ **Load ONNX Runtime** - Carga el runtime ONNX
-2. ✅ **Load Model** - Crea la sesión con el modelo
-3. ✅ **Load Always.mp3** - Carga audio de prueba
-4. ✅ **Select File** - Permite seleccionar archivo local
-5. ✅ **Separate Tracks with ONNX** - Ejecuta la separación
+Los botones definidos en HTML:
+1. `btn-load-onnx` - "Load ONNX Runtime (Local)"
+2. `btn-load-model` - "Load htdemucs_6s_fp16weights.onnx"
+3. `btn-select-always` - "Load Always.mp3"
+4. `btn-separate` - "Separate Tracks with ONNX"
 
 ### 6. RESTRICCIÓN DE WEB WORKERS
 
-**Estado:** Web Workers no disponibles debido a restricciones de seguridad del entorno.
+**Estado:** Web Workers no disponibles por restricciones de seguridad del entorno.
 
 #### Impacto:
 - El hilo principal puede bloquearse durante la inferencia
 - Para canciones largas (>30 segundos), Edge muestra "Página no responde"
 
 #### Alternativas implementadas:
-- Opciones WASM conservadoras (`graphOptimizationLevel: 'disabled'`, `enableMemPattern: false`, `numThreads: 1`)
-- Procesamiento por segmentos con liberación de memoria
-- Progreso en tiempo real en la interfaz
+- `graphOptimizationLevel: 'disabled'`
+- `enableMemPattern: false`
+- `numThreads: 1`
 
 ### 7. TESTS EJECUTADOS
 
@@ -87,13 +75,20 @@ npm test → 31 tests passed, 1 skipped
 npm run build → 80.91 KB gzipped bundle ✓
 ```
 
-### 8. COMMITS RECIENTES
+### 8. REQUISITOS PARA PROBAR CON NAVEGADOR
 
-```
-420c0cc - fix: Import missing loadOnnxRuntime function in client
-d61f57e - docs: Update PROJECT_STATUS.md with WebSocket limitation note
-6fe306d - refactor: Optimized ONNX processing without Web Workers
-```
+Para validar realmente la interfaz, necesitas:
+
+1. **Abrir** http://localhost:5173/onnx-test.html
+2. **Presionar** "Load ONNX Runtime (Local)"
+3. **Presionar** "Load htdemucs_6s_fp16weights.onnx"
+4. **Presionar** "Load Always.mp3"
+5. **Presionar** "Separate Tracks with ONNX"
+
+**Verifica que cada botón:**
+- Muestre "cargando..." en la consola
+- Actualice el texto de estado
+- No muestre errores `is not defined`
 
 ---
 
