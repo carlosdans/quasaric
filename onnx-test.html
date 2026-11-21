@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTDemucs ONNX Real Test</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0b1020;
+            color: #f4f5fb;
+            line-height: 1.6;
+        }
+        .section {
+            background: #111;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        .section h3 { margin-top: 0; }
+        .status {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .status.ready { border-left: 4px solid #4ade80; background: rgba(76, 175, 80, 0.1); }
+        .status.loading { border-left: 4px solid #fbbf24; background: rgba(251, 191, 36, 0.1); }
+        .status.error { border-left: 4px solid #f87171; background: rgba(248, 113, 113, 0.1); }
+        .btn {
+            padding: 12px 24px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-secondary { background: #6b7280; }
+        .log {
+            background: #000;
+            color: #0ff;
+            padding: 16px;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+        .progress-bar {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #4ade80;
+            transition: width 0.2s;
+        }
+        .stems-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .stem-btn {
+            padding: 12px 8px;
+            background: #1e40af;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: center;
+        }
+        .stem-btn:disabled { opacity: 0.4; }
+        .waveform {
+            height: 60px;
+            background: #111;
+            border-radius: 4px;
+            margin: 12px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .waveform-bars {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            padding: 2px;
+        }
+        input[type="file"] { display: none; }
+        .upload-area {
+            border: 2px dashed #666;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+        .upload-area:hover { border-color: #3b82f6; }
+        .result-item {
+            padding: 8px;
+            margin: 4px 0;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>HTDemucs ONNX Real Test</h1>
+    <p>Testing real audio separation in-browser - no server upload</p>
+
+    <div id="status" class="status loading">
+        <strong>Status:</strong> <span id="status-text">Initializing...</span>
+    </div>
+
+    <div class="section">
+        <h3>1. Load ONNX Runtime</h3>
+        <button id="btn-load-onnx" class="btn">Load ONNX Runtime (CDN)</button>
+        <div id="onnx-status" style="margin-top: 12px; font-size: 14px;"></div>
+    </div>
+
+    <div class="section">
+        <h3>2. Load Model</h3>
+        <button id="btn-load-model" class="btn" disabled>Load htdemucs_6s_fp16weights.onnx</button>
+        <div id="model-info" style="margin-top: 12px;"></div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+    </div>
+
+    <div class="section">
+        <h3>3. Load Audio Test</h3>
+        <label>
+            <input type="checkbox" id="generate-test-audio"> Generate synthetic test audio (15s)
+        </label>
+        <br><br>
+        <button id="btn-generate-audio" class="btn">Generate Test Audio</button>
+        <button id="btn-select-file" class="btn btn-secondary" style="margin-left: 12px;">Select File</button>
+        <input type="file" id="file-input" accept="audio/mp3,audio/wav">
+
+        <div id="audio-info" style="margin-top: 12px;"></div>
+    </div>
+
+    <div class="section">
+        <h3>4. Run Separation</h3>
+        <button id="btn-separate" class="btn" disabled>Separate Tracks with ONNX</button>
+        <div id="separation-time" style="margin-top: 12px;"></div>
+    </div>
+
+    <div class="section" id="results-section" style="display: none;">
+        <h3>5. Results</h3>
+        <div id="results"></div>
+
+        <h4>Stems (click to play)</h4>
+        <div class="stems-grid" id="stems-grid"></div>
+    </div>
+
+    <div class="section">
+        <h3>Console Output</h3>
+        <div class="log" id="console-log"></div>
+    </div>
+
+    <script type="module">
+        import { StemSeparatorEngine } from './src/audio/StemSeparatorEngine.js';
+
+        // State
+        let onnxRuntime = null;
+        let session = null;
+        let separator = null;
+        let audioContext = null;
+        let audioBuffer = null;
+        let stemBuffers = {};
+        let playerBuffers = [];
+
+        const stemNames = ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'];
+        const SEGMENT_SAMPLES = 343980; // 7.8s at 44.1kHz
+
+        // DOM Elements
+        const statusEl = document.getElementById('status');
+        const statusTextEl = document.getElementById('status-text');
+        const btnLoadOnnx = document.getElementById('btn-load-onnx');
+        const btnLoadModel = document.getElementById('btn-load-model');
+        const btnGenerateAudio = document.getElementById('btn-generate-audio');
+        const btnSelectFile = document.getElementById('btn-select-file');
+        const fileInput = document.getElementById('file-input');
+        const generateTestCheckbox = document.getElementById('generate-test-audio');
+        const resultsSection = document.getElementById('results-section');
+        const resultsEl = document.getElementById('results');
+        const stemsGridEl = document.getElementById('stems-grid');
+        const consoleLogEl = document.getElementById('console-log');
+        const progressBarEl = document.getElementById('progress-fill');
+
+        function log(message) {
+            console.log(message);
+            const line = document.createElement('div');
+            line.textContent = message;
+            consoleLogEl.appendChild(line);
+            consoleLogEl.scrollTop = consoleLogEl.scrollHeight;
+        }
+
+        function updateStatus(status, text) {
+            statusEl.className = 'status ' + status;
+            statusTextEl.textContent = text;
+        }
+
+        function updateProgress(width) {
+            progressBarEl.style.width = width + '%';
+        }
+
+        // Load ONNX Runtime from CDN
+        btnLoadOnnx.addEventListener('click', async () => {
+            updateStatus('loading', 'Loading ONNX Runtime from CDN...');
+            btnLoadOnnx.disabled = true;
+
+            try {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/ort.min.js';
+                document.head.appendChild(script);
+
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                });
+
+                onnxRuntime = window.onnxruntime;
+                updateStatus('ready', 'ONNX Runtime loaded successfully');
+                btnLoadModel.disabled = false;
+                log('ONNX Runtime version: ' + onnxRuntime.version);
+
+            } catch (e) {
+                updateStatus('error', 'Failed to load ONNX Runtime');
+                log('Error loading ONNX Runtime: ' + e.message);
+            }
+        });
+
+        // Load ONNX Model
+        btnLoadModel.addEventListener('click', async () => {
+            if (!onnxRuntime) {
+                alert('Load ONNX Runtime first');
+                return;
+            }
+
+            updateStatus('loading', 'Loading ONNX model...');
+            btnLoadModel.disabled = true;
+            btnLoadOnnx.disabled = true;
+            updateProgress(10);
+
+            try {
+                log('Model URL: models/htdemucs_6s_fp16weights.onnx');
+
+                const startTime = performance.now();
+
+                session = await onnxRuntime.InferenceSession.create(
+                    'models/htdemucs_6s_fp16weights.onnx',
+                    { executionProviders: ['wasm'] }
+                );
+
+                const loadTime = performance.now() - startTime;
+                updateProgress(100);
+
+                log('Model loaded in ' + loadTime.toFixed(2) + 'ms');
+                updateStatus('ready', 'Model loaded successfully (' + loadTime.toFixed(2) + 'ms)');
+
+                // Initialize Separator
+                separator = new StemSeparatorEngine();
+                await separator.loadModel((state) => {
+                    log('Loading state: ' + JSON.stringify(state));
+                });
+
+                document.getElementById('model-info').innerHTML = `
+                    <div class="result-item">✓ Model: htdemucs_6s_fp16weights.onnx</div>
+                    <div class="result-item">✓ Stems: ${stemNames.join(', ')}</div>
+                    <div class="result-item">✓ Sample Rate: 44100Hz</div>
+                    <div class="result-item">✓ Input Shape: [1, 2, ${SEGMENT_SAMPLES}]</div>
+                    <div class="result-item">✓ Output Shape: [1, 6, 2, ${SEGMENT_SAMPLES}]</div>
+                `;
+
+            } catch (e) {
+                updateStatus('error', 'Failed to load model: ' + e.message);
+                log('Error loading model: ' + e);
+            }
+        });
+
+        // Initialize AudioContext
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                log('AudioContext initialized');
+            }
+            return audioContext;
+        }
+
+        // Generate synthetic test audio
+        btnGenerateAudio.addEventListener('click', async () => {
+            initAudioContext();
+
+            const duration = 15; // 15 seconds
+            const sampleRate = 44100;
+            const length = sampleRate * duration;
+
+            log('Generating 15s test audio...');
+
+            const buffer = audioContext.createBuffer(2, length, sampleRate);
+            const left = buffer.getChannelData(0);
+            const right = buffer.getChannelData(1);
+
+            for (let i = 0; i < length; i++) {
+                const t = i / sampleRate;
+                // Mix of frequencies to simulate a song
+                const kick = Math.sin(2 * Math.PI * 60 * t) * Math.exp(-t * 3) * 0.3;
+                const snare = Math.sin(2 * Math.PI * 200 * t) * Math.sin(2 * Math.PI * 4 * t) * 0.2;
+                const bass = Math.sin(2 * Math.PI * 55 * t + Math.sin(2 * Math.PI * 2 * t) * 0.5) * 0.4;
+                const melody = Math.sin(2 * Math.PI * 440 * t + Math.sin(2 * Math.PI * 3 * t)) * 0.2;
+
+                left[i] = kick + snare + bass + melody;
+                right[i] = left[i] * 0.9 + Math.sin(2 * Math.PI * 220 * t) * 0.05;
+            }
+
+            audioBuffer = buffer;
+            document.getElementById('audio-info').innerHTML = `
+                <div class="result-item success">✓ Generated synthetic audio</div>
+                <div class="result-item">Duration: ${buffer.duration}s</div>
+                <div class="result-item">Channels: ${buffer.numberOfChannels}</div>
+                <div class="result-item">Sample Rate: ${buffer.sampleRate}Hz</div>
+            `;
+
+            btnSelectFile.disabled = true;
+            btnSeparate.disabled = false;
+
+            log('Test audio generated: ' + buffer.duration + 's');
+        });
+
+        // Select file
+        btnSelectFile.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 50 * 1024 * 1024) {
+                alert('File too large (max 50MB)');
+                return;
+            }
+
+            initAudioContext();
+
+            log('Loading file: ' + file.name);
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                document.getElementById('audio-info').innerHTML = `
+                    <div class="result-item success">✓ Loaded: ${file.name}</div>
+                    <div class="result-item">Duration: ${audioBuffer.duration.toFixed(2)}s</div>
+                    <div class="result-item">Channels: ${audioBuffer.numberOfChannels}</div>
+                    <div class="result-item">Sample Rate: ${audioBuffer.sampleRate}Hz</div>
+                `;
+
+                btnSelectFile.disabled = true;
+                btnGenerateAudio.disabled = true;
+                btnSeparate.disabled = false;
+
+            } catch (e) {
+                log('Error loading file: ' + e.message);
+                alert('Error loading audio: ' + e.message);
+            }
+        });
+
+        // Run separation
+        btnSeparate.addEventListener('click', async () => {
+            if (!audioBuffer || !separator) {
+                alert('Load audio and model first');
+                return;
+            }
+
+            btnSeparate.disabled = true;
+            btnSeparate.textContent = 'Separating...';
+            updateStatus('loading', 'Running ONNX separation...');
+            updateProgress(10);
+
+            try {
+                const startTime = performance.now();
+
+                // Update progress
+                let progress = 10;
+                const progressInterval = setInterval(() => {
+                    progress += 5;
+                    updateProgress(Math.min(progress, 90));
+                }, 100);
+
+                log('Starting ONNX separation...');
+
+                const result = await separator.separateOnnx(audioBuffer, {
+                    useOnnx: true,
+                    preferOnnx: true
+                });
+
+                clearInterval(progressInterval);
+                updateProgress(100);
+
+                const processingTime = performance.now() - startTime;
+
+                if (result.success) {
+                    log('Separation successful in ' + processingTime.toFixed(2) + 'ms');
+                    log('Processed duration: ' + result.processedDuration + 's');
+                    log('Sample rate: ' + result.sampleRate + 'Hz');
+
+                    updateStatus('ready', 'Separation complete (' + processingTime.toFixed(2) + 'ms)');
+
+                    // Store stem buffers
+                    stemBuffers = result.stems;
+
+                    // Display results
+                    document.getElementById('separation-time').innerHTML = `
+                        <div class="result-item success">✓ Processing Time: ${processingTime.toFixed(2)}ms</div>
+                        <div class="result-item success">✓ Processed: ${result.processedDuration}s stereo</div>
+                    `;
+
+                    resultsEl.innerHTML = `
+                        <div class="result-item">Model: ${result.model.source}</div>
+                        <div class="result-item">Output: audio waveform (not spectrogram)</div>
+                        <div class="result-item">Method: ${result.method}</div>
+                        <div class="result-item">Message: ${result.message}</div>
+                    `;
+
+                    resultsSection.style.display = 'block';
+
+                    // Create stem buttons
+                    createStemButtons();
+
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+
+            } catch (e) {
+                updateStatus('error', 'Separation failed: ' + e.message);
+                log('Separation error: ' + e);
+                alert('Error: ' + e.message);
+            } finally {
+                btnSeparate.textContent = 'Separate Tracks';
+                btnSeparate.disabled = false;
+            }
+        });
+
+        function createStemButtons() {
+            stemsGridEl.innerHTML = '';
+
+            stemNames.forEach((name, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'stem-btn';
+                btn.textContent = name + (stemBuffers[name] ? ' ✓' : '');
+                btn.disabled = !stemBuffers[name];
+                btn.onclick = () => playStem(name);
+                stemsGridEl.appendChild(btn);
+            });
+        }
+
+        async function playStem(stemName) {
+            if (!audioContext || !stemBuffers[stemName]) return;
+
+            const buffer = stemBuffers[stemName];
+
+            // Resume AudioContext if suspended
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start(0);
+
+            log('Playing stem: ' + stemName);
+
+            // Stop after duration
+            source.onended = () => {
+                log('Finished playing: ' + stemName);
+            };
+        }
+
+        // Validate stems
+        async function validateStems() {
+            if (!stemBuffers || Object.keys(stemBuffers).length < 6) {
+                return { valid: false, error: 'Not all stems available' };
+            }
+
+            const validation = {
+                stemCount: 0,
+                durations: {},
+                differences: [],
+                samples: {}
+            };
+
+            // Check each stem
+            for (const name of stemNames) {
+                const buffer = stemBuffers[name];
+                if (!buffer) {
+                    validation.differences.push(name + ': missing');
+                    continue;
+                }
+
+                validation.stemCount++;
+                validation.durations[name] = buffer.duration;
+
+                // Get a sample of the audio data
+                const data = buffer.getChannelData(0);
+                validation.samples[name] = Array.from(data.slice(0, 1000));
+
+                // Check if there's content
+                let hasContent = false;
+                for (let i = 0; i < data.length; i++) {
+                    if (Math.abs(data[i]) > 0.01) {
+                        hasContent = true;
+                        break;
+                    }
+                }
+                if (!hasContent) {
+                    validation.differences.push(name + ': silent');
+                }
+            }
+
+            // Compare stems
+            for (let i = 0; i < stemNames.length; i++) {
+                for (let j = i + 1; j < stemNames.length; j++) {
+                    const a = stemNames[i], b = stemNames[j];
+                    const sa = validation.samples[a], sb = validation.samples[b];
+                    if (sa && sb) {
+                        let different = false;
+                        for (let k = 0; k < sa.length; k++) {
+                            if (Math.abs(sa[k] - sb[k]) > 0.001) {
+                                different = true;
+                                break;
+                            }
+                        }
+                        log('Comparison ' + a + ' vs ' + b + ': ' + (different ? 'different' : 'identical'));
+                    }
+                }
+            }
+
+            return validation;
+        }
+
+        // Add validation button
+        document.addEventListener('DOMContentLoaded', () => {
+            log('HTDemucs ONNX Test page loaded');
+            log('Environment: ' + navigator.userAgent);
+
+            // Check local model file exists
+            fetch('models/htdemucs_6s_fp16weights.onnx', { method: 'HEAD' })
+                .then(r => {
+                    log('Model file available: true');
+                    btnLoadModel.disabled = false;
+                })
+                .catch(e => {
+                    log('Model file check: ' + e.message);
+                });
+        });
+    </script>
+</body>
+</html>

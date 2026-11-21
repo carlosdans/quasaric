@@ -67,50 +67,128 @@ export function useAudio() {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const decoded = await audioContext.decodeAudioData(arrayBuffer);
 
-      // Usar el motor de separación DSP (funciona inmediatamente)
-      const result = await stemSeparator.separate(decoded, {
-        useOnnx: false,
-        preferredMethod: 'dsp'
+      // Intentar primero con ONNX (separación real)
+      let result = await stemSeparator.separate(decoded, {
+        useOnnx: true,
+        preferOnnx: true
       });
 
+      // Si ONNX falla, usar fallback DSP
+      if (!result.success) {
+        console.warn('ONNX falló, usando DSP fallback:', result.error);
+        result = await stemSeparator.separate(decoded, {
+          useOnnx: false,
+          preferOnnx: false
+        });
+      }
+
       if (result.success) {
-        // Crear Blob URLs para cada stem separado
         const separatedTracks = [];
         const stems = result.stemNames || stemSeparator.stemNames;
 
-        // Cargar el player original primero
+        // Cargar el track original primero
         const mainTrack = await player.addTrack(tempUrl, 0, 'Original');
 
         // Guardar URL temporal para limpieza posterior
         let blobUrls = [tempUrl];
 
-        // Para cada stem, creamos una versión (usando DSP)
-        // En una implementación real, se usarían los buffers procesados
+        // Para cada stem, crear una versión con el buffer procesado
         for (let i = 0; i < stems.length && i < stemsCount; i++) {
           const stemName = stems[i];
-          const track = {
-            id: i + 1,
-            name: stemName.charAt(0).toUpperCase() + stemName.slice(1),
-            volume: stemName === 'vocals' ? 1 : 0.4,
-            muted: false,
-            soloed: false,
-            blobUrl: tempUrl, // Usar el mismo archivo (la separación real viene del DSP)
-            duration: decoded.duration,
-            isStem: true
-          };
+          const stemBuffer = result.stems?.[stemName];
 
-          // Para la separación DSP real, necesitamos crear buffers procesados
-          // Por ahora, usamos el archivo original como placeholder
-          separatedTracks.push(track);
+          if (stemBuffer && result.method === 'onnx') {
+            // ONNX separation - usar buffer real del stem
+            try {
+              // Crear WAV del stem
+              const wavBuffer = await new Promise((resolve, reject) => {
+                const length = stemBuffer.length;
+                const sampleRate = stemBuffer.sampleRate;
+                const numChannels = stemBuffer.numberOfChannels;
+
+                // Crear buffer WAV
+                const wavHeader = Buffer.alloc(44);
+                wavHeader.write('RIFF', 0);
+                wavHeader.writeUInt32LE(36 + length * 2 * numChannels - 8, 4);
+                wavHeader.write('WAVE', 8);
+                wavHeader.write('fmt ', 12);
+                wavHeader.writeUInt16LE(1, 16); // PCM
+                wavHeader.writeUInt16LE(numChannels, 20);
+                wavHeader.writeUInt32LE(sampleRate, 24);
+                wavHeader.writeUInt32LE(sampleRate * 2 * numChannels, 28);
+                wavHeader.writeUInt16LE(2 * numChannels, 32);
+                wavHeader.writeUInt16LE(16, 34);
+                wavHeader.write('data', 36);
+
+                // Crear audio buffer
+                const audioBuffer = new ArrayBuffer(44 + length * 2 * numChannels);
+                const view = new DataView(audioBuffer);
+                for (let j = 0; j < 44; j++) {
+                  view.setUint8(j, wavHeader[j]);
+                }
+
+                let offset = 44;
+                for (let j = 0; j < length; j++) {
+                  for (let ch = 0; ch < numChannels; ch++) {
+                    const sample = Math.max(-1, Math.min(1, stemBuffer.getChannelData(ch)[j]));
+                    view.setInt16(offset, sample * 0x7FFF, true);
+                    offset += 2;
+                  }
+                }
+
+                resolve(Buffer.from(audioBuffer));
+              });
+
+              const stemUrl = URL.createObjectURL(new Blob([wavBuffer], { type: 'audio/wav' }));
+              blobUrls.push(stemUrl);
+
+              const track = {
+                id: i + 1,
+                name: stemName.charAt(0).toUpperCase() + stemName.slice(1),
+                volume: stemName === 'vocals' ? 1 : 0.4,
+                muted: false,
+                soloed: false,
+                blobUrl: stemUrl,
+                duration: stemBuffer.duration,
+                isStem: true
+              };
+
+              separatedTracks.push(track);
+            } catch (e) {
+              console.warn('Error creating stem blob:', e);
+              // Fallback: use placeholder
+              const track = {
+                id: i + 1,
+                name: stemName.charAt(0).toUpperCase() + stemName.slice(1),
+                volume: stemName === 'vocals' ? 1 : 0.4,
+                muted: false,
+                soloed: false,
+                blobUrl: tempUrl,
+                duration: decoded.duration,
+                isStem: false
+              };
+              separatedTracks.push(track);
+            }
+          } else {
+            // Fallback: usar placeholder
+            const track = {
+              id: i + 1,
+              name: stemName.charAt(0).toUpperCase() + stemName.slice(1),
+              volume: stemName === 'vocals' ? 1 : 0.4,
+              muted: false,
+              soloed: false,
+              blobUrl: tempUrl,
+              duration: decoded.duration,
+              isStem: false
+            };
+            separatedTracks.push(track);
+          }
         }
 
-        // Limpiar URL temporal
+        // Limpiar URL temporal principal
         URL.revokeObjectURL(tempUrl);
 
         // Combinar track original + tracks separados
-        // Para una implementación completa, necesitaríamos exportar los buffers procesados
-        // como Blob URLs
-
         setTracks(prev => [
           ...prev, // Track original
           ...separatedTracks
@@ -122,7 +200,8 @@ export function useAudio() {
           success: true,
           method: result.method,
           tracks: stems.slice(0, stemsCount),
-          message: result.message
+          message: result.message,
+          stemBuffers: result.stems
         };
       } else {
         throw new Error(result.error || 'Error en separación');

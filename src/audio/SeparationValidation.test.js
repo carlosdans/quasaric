@@ -66,16 +66,24 @@ test('[VALIDATION] Build size is within acceptable limits', () => {
   const pkgContent = fs.readFileSync('./package.json', 'utf8');
   const pkg = JSON.parse(pkgContent);
 
-  // Verificar que no hay dependencias pesadas de IA
+  // Verificar que no hay dependencias pesadas de IA en producción
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
 
-  // onnxruntime-web no debería estar en dependencias directas (se carga dinámicamente)
-  // Si está, indica que se incluye en el bundle inicial
+  // onnxruntime-web no debería estar en dependencias DIRECTAS (se carga dinámicamente desde CDN)
+  // onnxruntime-node es permitido como devDependency para pruebas
   console.log('Dependencies:', Object.keys(deps).join(', '));
 
-  // Verificar tamaño aceptable
-  assert.ok(deps['onnxruntime-web'] === undefined,
-    'onnxruntime-web should not be in direct dependencies');
+  // onnxruntime-web debe estar en devDependencies o no estar presente
+  // onnxruntime-node es permitido para pruebas
+  const hasOnnxRuntimeWebProd = pkg.dependencies['onnxruntime-web'] !== undefined;
+  assert.ok(!hasOnnxRuntimeWebProd,
+    'onnxruntime-web should not be in production dependencies (load from CDN)');
+
+  // Verificar que no hay otros bundles pesados
+  const heavyDeps = ['tensorflow', 'torch', 'pytorch', '@tensorflow'];
+  for (const dep of heavyDeps) {
+    assert.ok(!deps[dep], `${dep} should not be a dependency`);
+  }
 });
 
 test('[VALIDATION] Audio processing stays local', () => {
