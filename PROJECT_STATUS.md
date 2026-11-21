@@ -2,7 +2,7 @@
 
 **Última actualización:** 2026-11-21
 
-## ✅ SEPARACIÓN ONNX VERIFICADA - TODAS LAS PRUEBAS PASADAS
+## ✅ SEPARACIÓN ONNX VERIFICADA - SIN WEB WORKERS
 
 ### 1. MODELO ONNX - ✅ VERIFICADO
 
@@ -28,46 +28,21 @@
 | Tamaño | 136MB (fp16) |
 | Licencia | MIT (libre para uso gratuito) |
 
-### 2. PRUEBA CON AUDIO SINTÉTICO - ✅ VERIFICADA
-
-**Archivo:** `tests/test_audio_7.8s.wav` (7.8s synthetic audio)
-
-```
-Model loaded in: 14,215ms
-Inference time: 9,133ms
-Input tensor: [1, 2, 343980] ✓
-Output tensor: [1, 6, 2, 343980] ✓
-```
-
----
-
-### 3. PRUEBA CON AUDIO MUSICAL REAL - ✅ VERIFICADA
+### 2. PRUEBA CON AUDIO MUSICAL REAL - ✅ VERIFICADA
 
 **Archivo:** `tests/test_realistic_16s.wav` (16s musical arrangement)
 - **Duración:** 16 segundos
 - **Formato:** WAV, estéreo, 44.1kHz, 16-bit PCM
 - **Contenido:** Kit completo: kick, snare, bajo, acordes de guitarra, melodía vocal, arpegios de piano - 100 BPM, progresión Am-F-C-G
 
-#### Resultados de Inferencia REAL
+#### Resultados de Inferencia REAL (Audio con todos los instrumentos)
 
 ```
-[1] Checking model file...
-    ✓ Model file exists: ./models/htdemucs_6s_fp16weights.onnx
-    ✓ Size: 130.11 MB
+Model loaded in: 9,567ms
+Input tensor: [1, 2, 343980] ✓
+Output tensor: [1, 6, 2, 343980] ✓
 
-[2] Loading ONNX model...
-    ✓ Model loaded in 9566.92ms (≈10s)
-
-[3] Loading test audio...
-    ✓ Audio file: 16.0s total
-    ✓ Processing first segment: 7.8s
-    ✓ Loaded stereo audio with full musical arrangement
-
-[4] Running ONNX inference...
-    Segment 1: Input shape [1,2,343980]
-    ✓ Segment 1 inference: 7758.46ms
-
-[5] Stem Analysis (RMS values):
+Stem Analysis (RMS values):
     drums     : RMS=0.0957 (✓ valid)
     bass      : RMS=0.1055 (✓ valid)
     other     : RMS=0.2696 (✓ valid - contains chords)
@@ -75,169 +50,113 @@ Output tensor: [1, 6, 2, 343980] ✓
     guitar    : RMS=0.0961 (✓ valid)
     piano     : RMS=0.0920 (✓ valid)
 
-[6] Validation:
+Validation:
     ✓ drums: Valid audio
     ✓ bass: Valid audio
     ✓ other: Valid audio
     ✓ vocals: Valid audio
     ✓ guitar: Valid audio
     ✓ piano: Valid audio
-
-    Stems with content: 6/6
 ```
 
-#### Análisis Auditivo de los 6 Stems
+### 3. LIMITACIÓN DE WEB WORKERS
 
-| Stem | Contenido | Verificación |
-|------|-----------|--------------|
-| **drums** | Kick y snare con patrón rítmico | ✓ PCM audíble |
-| **bass** | Línea de bajo siguiendo progresión de acordes (Am-F-C-G) | ✓ Energía en frecuencias bajas |
-| **other** | Acordes de guitarra/power chords | ✓ RMS más alto, contiene armonía |
-| **vocals** | Melodía vocal simple (escala de Do mayor) | ✓ Contorno melódico |
-| **guitar** | Riffs de guitarra eléctrica | ✓ Armonía de acordes |
-| **piano** | Arpegios de piano | ✓ Transición fluida |
+**Estado:** Web Workers no pueden usarse debido a restricciones de seguridad del entorno.
 
-### 4. VERIFICACIÓN DEL MUTE DEL PIANO
+#### Impacto:
+- El hilo principal del navegador puede bloquearse durante la inferencia
+- Para canciones largas (>30 segundos), Edge muestra el aviso "Página no responde"
+- La inferencia WASM es inherentemente síncrona en este contexto
 
-**Archivo:** `src/screens/PlayerScreen.jsx`
+#### Alternativas implementadas:
+1. **Opciones WASM conservadoras** para reducir consumo de memoria
+2. **Procesamiento por segmentos** con liberación de tensores
+3. **Progreso en tiempo real** en la interfaz
+4. **Mensajes de estado** sin ventanas emergentes
 
-```javascript
-// Orden del modelo htdemucs ONNX:
-// Track 0: Original
-// Track 1: drums
-// Track 2: bass
-// Track 3: other
-// Track 4: vocals
-// Track 5: guitar
-// Track 6: piano  ← El piano está en el índice 6
-const PISTOL_TRACK_INDEX = 6;
-```
-
-✅ Botón visual "🔇 Piano" para silenciar/activar piano
-✅ Mute sincronizado con el resto de las pistas
-✅ El piano puede ser silenciado mientras se escucha el resto de los instrumentos
-
-### 5. PRUEBA DE REPRODUCCIÓN DE LAS 6 PISTAS
-
-**Componente:** `MultiTrackPlayer.js`
-
-✅ Reproducción sincronizada de todas las pistas
-✅ Controles de volumen independientes por pista
-✅ Mute y solo por pista
-✅ Loop A-B funcional
-✅ Barra de progreso sincronizada
-✅ Tiempo de reproducción accurate
-
-### 6. PROCESAMIENTO DE CANCIONES COMPLETAS
-
-**Archivo:** `src/audio/StemSeparatorEngine.js`
-
-Implementación de segmentación con overlap-add:
-
-```javascript
-// Segmentos por defecto: 7.8 segundos
-// Overlap: 10% (0.78s)
-// Ventana de Hanning para transiciones suaves
-```
-
-✅ Soporta canciones de cualquier duración
-✅ 16 segundos = 3 segmentos
-✅ Normalización automática de outputs
-✅ Notificaciones de progreso
-
----
-
-### 7. ESTADO DE LOS ARCHIVOS
+### 4. ESTADO DE LOS ARCHIVOS
 
 | Archivo | Estado |
 |---------|--------|
 | `models/htdemucs_6s_fp16weights.onnx` | ✅ Existe, 136MB |
-| `src/audio/StemSeparatorEngine.js` | ✅ Actualizado con segmentación |
-| `src/audio/useAudio.js` | ✅ Actualizado para ONNX |
-| `src/audio/SeparationValidation.test.js` | ✅ Tests actualizados |
-| `src/screens/PlayerScreen.jsx` | ✅ Índice de piano corregido |
-| `onnx-test.html` | ✅ Nuevo, funcional |
-| `tests/test_audio_7.8s.wav` | ✅ Audio de prueba sintético |
+| `src/audio/onnx-test.js` | ✅ Optimizado sin Web Workers |
+| `onnx-test.html` | ✅ Interfaz funcional |
+| `Always.mp3` | ✅ Disponible en `/Always.mp3` |
 
-### 8. TESTS Y BUILD
+### 5. PRUEBAS EJECUTADAS
 
 ```
 npm test → 31 tests passed, 1 skipped
 npm run build → 80.91 KB gzipped bundle ✓
 ```
 
-**Tests nuevos agregados:**
-- `[VALIDATION] Stem order matches HTDemucs ONNX output`
-- `[VALIDATION] PlayerScreen track indices match model output`
+### 6. REQUISITOS CUMPLIDOS
 
----
+1. ✅ Modelo ONNX descargado y verificado (136MB)
+2. ✅ Inferencia real ejecutada exitosamente con onnxruntime-node (Node.js 26.13.0)
+3. ✅ Página de prueba creada (`onnx-test.html`)
+4. ✅ 6 stems extraídos y validados con audio musical real
+5. ✅ Código integrado en Quasaric
+6. ✅ Tests actualizados y pasando
+7. ✅ Build de producción exitoso
 
-### 9. LIMITACIONES CONOCIDAS
+### 7. LIMITACIONES CONOCIDAS
 
 | Limitación | Impacto | Estado |
 |------------|---------|--------|
+| Web Workers bloqueados | Puede causar "página no responde" en Edge | Documentado |
 | ONNX Runtime CDN | Requiere internet para cargar el runtime | Documentado |
 | Modelo 136MB | Primera carga tarda ~10s | Cache local |
-| Inferencia ~8s/segmento | Canciones largas requieren segmentación | Implementado |
-| Audio de prueba | Archivos WAV generados, no MP3 reales de usuarios | Interfaz lista |
+| Inferencia ~8s/segmento | Canciones largas requieren segmentación | Implementado parcialmente |
 
----
+### 8. SERVIDOR LOCAL
 
-### 10. INTEGRACIÓN EN QUASARIC - ✅ COMPLETA
+**Vite Dev Server:**
+- URL: http://localhost:5173/onnx-test.html
+- Modelo: http://localhost:5173/models/htdemucs_6s_fp16weights.onnx
+- Audio de prueba: http://localhost:5173/Always.mp3 (8.4 MB, 192 kbps)
 
-**Flujo de usuario:**
-1. ✅ Importar MP3/WAV local (< 50MB)
-2. ✅ Decodificar localmente en el navegador
-3. ✅ Ejecutar separación ONNX (o fallback DSP)
-4. ✅ Generar 6 stems WAV independientes
-5. ✅ Añadir tracks al reproductor multipista
-6. ✅ Reproducir sincronizado
-7. ✅ Control volumen/mute/solo
-8. ✅ Silenciar piano específicamente
-
----
-
-### 11. DEPENDENCIA DE CDN
-
-**Advertencia:** ONNX Runtime se carga desde:
+### 9. COMMITS RECIENTES
 
 ```
-https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/ort.min.js
+6fe306d - refactor: Optimized ONNX processing without Web Workers
+5d35476 - docs: Update PROJECT_STATUS.md with final validation
+9ddb9ca - fix: Use correct ONNX Runtime API for 1.31.1
+b0b8b42 - fix: Define missing DOM element references
+f47a71a - feat: Increase max file size to 100MB for 6-minute songs
 ```
 
-La aplicación **requiere conexión a internet** para cargar el runtime ONNX. Para uso offline completo, el runtime debe empaquetarse localmente.
+### 10. CONCLUSIÓN TÉCNICA
 
----
+**La separación de instrumentos está PARCIALMENTE VERIFICADA:**
 
-### 12. COMMITS REALIZADOS
+- ✅ Modelo htdemucs_6s-onnx descargado (136MB MIT)
+- ✅ Inferencia real exitosa con audio musical
+- ✅ 6 stems extraídos con RMS válido
+- ⚠️ Web Workers no disponibles (restricciones de seguridad)
+- ⚠️ Posible bloque de UI en Edge para archivos largos
 
-```
-f01c031 - feat: Verify ONNX separation with real musical audio
-b376ea6 - feat: Verify real ONNX separation with inference tests  
-dac953b - fix: Correct piano stem index and verify stem order
-```
-
-**Push:** ✅ Al remoto `origin/main`
-
-**Archivos incluidos en Git:**
-- Código fuente y tests
-- NO incluidos: `models/htdemucs_6s_fp16weights.onnx` (136 MB), archivos WAV de prueba
+**Botones en la interfaz:**
+1. "Load ONNX Runtime (Local)" - Carga el runtime ONNX
+2. "Load htdemucs_6s_fp16weights.onnx" - Carga el modelo
+3. "Load Always.mp3" - Carga la canción de prueba
+4. "Separate Tracks with ONNX" - Ejecuta la separación
+5. Botones de stems - Reproducción individual
 
 ---
 
 ## Build de Producción
 
 ```
-✓ built in 214ms
+✓ built in 473ms
 dist/index.html:           1.73 kB (gzip: 0.63 kB)
 dist/assets/index.css:     15.54 kB (gzip: 3.82 kB)
-dist/assets/index-CXvmUQY_.js:   259.81 kB (gzip: 80.91 kB)
+dist/assets/index-DVytpG1u.js:   259.81 kB (gzip: 80.91 kB)
 ```
 
 ---
 
 ## Archivos Generados (NO incluidos en Git)
 
-- `tests/test_realistic_16s.wav` - Audio de prueba musical (2.69 MB)
-- `tests/test_audio_7.8s.wav` - Audio de prueba corto (1.31 MB)
+- `tests/Always.mp3` - Canción de prueba (8.4 MB)
 - `models/htdemucs_6s_fp16weights.onnx` - Modelo ONNX (136 MB) - **NUNCA subir a Git**
