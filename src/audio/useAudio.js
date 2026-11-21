@@ -100,33 +100,48 @@ export function useAudio() {
           if (stemBuffer && result.method === 'onnx') {
             // ONNX separation - usar buffer real del stem
             try {
-              // Crear WAV del stem
+              // Crear WAV del stem usando APIs web estándar
               const wavBuffer = await new Promise((resolve, reject) => {
                 const length = stemBuffer.length;
                 const sampleRate = stemBuffer.sampleRate;
                 const numChannels = stemBuffer.numberOfChannels;
+                const byteRate = sampleRate * 2 * numChannels;
 
-                // Crear buffer WAV
-                const wavHeader = Buffer.alloc(44);
-                wavHeader.write('RIFF', 0);
-                wavHeader.writeUInt32LE(36 + length * 2 * numChannels - 8, 4);
-                wavHeader.write('WAVE', 8);
-                wavHeader.write('fmt ', 12);
-                wavHeader.writeUInt16LE(1, 16); // PCM
-                wavHeader.writeUInt16LE(numChannels, 20);
-                wavHeader.writeUInt32LE(sampleRate, 24);
-                wavHeader.writeUInt32LE(sampleRate * 2 * numChannels, 28);
-                wavHeader.writeUInt16LE(2 * numChannels, 32);
-                wavHeader.writeUInt16LE(16, 34);
-                wavHeader.write('data', 36);
+                // Crear buffer WAV usando Uint8Array (compatible con navegador)
+                const wavSize = 44 + length * 2 * numChannels;
+                const wavArray = new Uint8Array(wavSize);
+                const view = new DataView(wavArray.buffer);
 
-                // Crear audio buffer
-                const audioBuffer = new ArrayBuffer(44 + length * 2 * numChannels);
-                const view = new DataView(audioBuffer);
-                for (let j = 0; j < 44; j++) {
-                  view.setUint8(j, wavHeader[j]);
-                }
+                // WAV Header
+                // RIFF chunk
+                view.setUint8(0, 0x52); // 'R'
+                view.setUint8(1, 0x49); // 'I'
+                view.setUint8(2, 0x46); // 'F'
+                view.setUint8(3, 0x46); // 'F'
+                view.setUint32(4, 36 + length * 2 * numChannels - 8, true); // chunk size
+                view.setUint8(8, 0x57); // 'W'
+                view.setUint8(9, 0x41); // 'A'
+                view.setUint8(10, 0x56); // 'V'
+                view.setUint8(11, 0x45); // 'E'
+                // fmt subchunk
+                view.setUint8(12, 0x66); // 'f'
+                view.setUint8(13, 0x6D); // 'm'
+                view.setUint8(14, 0x74); // 't'
+                view.setUint8(15, 0x20); // ' '
+                view.setUint16(16, 16, true); // audio format (PCM)
+                view.setUint16(20, numChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, byteRate, true);
+                view.setUint16(32, 2 * numChannels, true); // block align
+                view.setUint16(34, 16, true); // bits per sample
+                // data subchunk
+                view.setUint8(36, 0x64); // 'd'
+                view.setUint8(37, 0x61); // 'a'
+                view.setUint8(38, 0x74); // 't'
+                view.setUint8(39, 0x61); // 'a'
+                view.setUint32(40, length * 2 * numChannels, true); // data size
 
+                // Audio data
                 let offset = 44;
                 for (let j = 0; j < length; j++) {
                   for (let ch = 0; ch < numChannels; ch++) {
@@ -136,7 +151,7 @@ export function useAudio() {
                   }
                 }
 
-                resolve(Buffer.from(audioBuffer));
+                resolve(wavArray);
               });
 
               const stemUrl = URL.createObjectURL(new Blob([wavBuffer], { type: 'audio/wav' }));

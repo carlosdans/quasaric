@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { getTranslations } from '../i18n.js';
 import { CHORD_PROGRESSIONS, PROGRESSIONS, MIDI_NOTE_NAMES } from '../data/pianoPatterns.js';
+import { ChordDetector } from '../core/ChordDetector.js';
 
 // Mapa de notas musicales en diferentes octavas
 const NOTE_MAP = {
@@ -37,6 +38,23 @@ for (let octave = -1; octave <= 8; octave++) {
   }
 }
 
+// Singleton detector
+let chordDetectorInstance = null;
+let isInitializing = false;
+
+async function getChordDetector() {
+  if (chordDetectorInstance) return chordDetectorInstance;
+  if (isInitializing) {
+    // Wait for initialization
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return chordDetectorInstance;
+  }
+  isInitializing = true;
+  chordDetectorInstance = new ChordDetector();
+  isInitializing = false;
+  return chordDetectorInstance;
+}
+
 export function ChordDisplay({
   activeChord = null,
   chords = [],
@@ -45,11 +63,48 @@ export function ChordDisplay({
   onChordChange,
   showPianoNotes = false,
   pianoNotes = [],
-  progressionType = 'C Major'
+  detectedChords = [],  // Nuevas props para detección automática
+  onPlayNote = null,    // Callback para reproducir notas
+  progressionType = 'C Major',
+  enableAutoDetection = false, // Habilitar detección automática real
+  audioBuffer = null  // Buffer de audio para detección
 }) {
   const [language, setLanguage] = useState('en');
   const t = getTranslations(language);
   const [currentChords, setCurrentChords] = useState([]);
+  const [autoDetectedChords, setAutoDetectedChords] = useState([]);
+  const [isDetecting, setIsDetecting] = useState(false);
+
+  // Detección automática de acordes desde audio
+  useEffect(() => {
+    if (!enableAutoDetection || !audioBuffer) return;
+
+    const controller = new AbortController();
+
+    const detect = async () => {
+      setIsDetecting(true);
+      try {
+        const detector = await getChordDetector();
+        const result = await detector.analyze(audioBuffer, (progress) => {
+          // Progress update if needed
+        });
+
+        if (result.success) {
+          setAutoDetectedChords(result.chords);
+        }
+      } catch (e) {
+        console.error('Error detectando acordes:', e);
+      } finally {
+        setIsDetecting(false);
+      }
+    };
+
+    detect();
+
+    return () => {
+      controller.abort();
+    };
+  }, [enableAutoDetection, audioBuffer, position]);
 
   // Obtener progresión de acordes por tipo
   const getProgression = () => {
@@ -58,7 +113,10 @@ export function ChordDisplay({
 
   // Obtener acordes activos basados en posición
   useEffect(() => {
-    if (!chords || chords.length === 0) {
+    // Priorizar acordes detectados automáticamente si están disponibles
+    const chordsToUse = (autoDetectedChords.length > 0) ? autoDetectedChords : chords;
+
+    if (!chordsToUse || chordsToUse.length === 0) {
       // Usar progresión por defecto
       const progression = getProgression();
       const active = progression.filter(chord => {
@@ -73,16 +131,16 @@ export function ChordDisplay({
       return;
     }
 
-    const active = chords.filter(chord => {
+    const active = chordsToUse.filter(chord => {
       if (!chord.time) return false;
       return position >= chord.time && position < (chord.time + (chord.duration || 4));
     });
     setCurrentChords(active);
 
     if (activeChord !== active[0]?.chord) {
-      onChordChange?.(active[0]?.chord);
+      onChordChange?.(active[0]?.chord, active[0]?.notes);
     }
-  }, [position, chords, activeChord, onChordChange, progressionType]);
+  }, [position, chords, activeChord, onChordChange, progressionType, autoDetectedChords]);
 
   // Notas del piano activas en esta posición
   const activeNotes = pianoNotes.filter(note => {
@@ -93,7 +151,18 @@ export function ChordDisplay({
   // Obtener notas MIDI para el acorde actual
   const getCurrentChordNotes = () => {
     if (currentChords.length === 0) return [];
-    const chordName = currentChords[0]?.chord;
+    const chordInfo = currentChords[0];
+
+    // Si el acorde tiene notas predefinidas (detección automática)
+    if (chordInfo.notes) {
+      return chordInfo.notes.map(midi => {
+        const noteInfo = MIDI_NOTE_NAMES[midi];
+        return noteInfo ? { ...noteInfo, midi } : null;
+      }).filter(Boolean);
+    }
+
+    // Usar progresión predefined
+    const chordName = chordInfo.chord;
     if (!chordName) return [];
 
     const chordData = CHORD_PROGRESSIONS[chordName];
@@ -108,10 +177,20 @@ export function ChordDisplay({
 
   const currentNoteNames = getCurrentChordNotes();
 
+  // Handel click en teclas para reproducir
+  const handleKeyPress = (note) => {
+    if (onPlayNote) {
+      onPlayNote(note.name, note.octave, position);
+    }
+  };
+
   return (
     <div className="chord-display">
       <div className="chord-section">
         <h3 className="chord-title">{t.chords || 'Chords'}</h3>
+        {isDetecting && (
+          <span className="detecting-indicator">Analyzing...</span>
+        )}
         <div className="current-chords">
           {currentChords.length > 0 ? (
             <div className="chord-container">
@@ -143,13 +222,6 @@ export function ChordDisplay({
             <div className="line-indicator">{t.play === 'Play' ? 'Play' : 'Toca'} ⬇</div>
           </div>
 
-          {/* Notas que caen */}
-          <div className="falling-notes">
-            {fallingNotes.map((note, index) => {
-              return null;
-            })}
-          </div>
-
           {/* Teclas del piano */}
           <div className="keyboard-overlay">
             {KEY_X_POSITIONS.map((key, index) => {
@@ -160,6 +232,7 @@ export function ChordDisplay({
                   key={index}
                   className={`key-overlay white ${isHighlighted ? 'highlighted' : ''}`}
                   style={{ left: key.x }}
+                  onClick={() => handleKeyPress(key)}
                 >
                   {!key.note.includes('#') && (
                     <span className="key-label">{key.note}</span>

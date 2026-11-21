@@ -9,7 +9,7 @@
  */
 
 // Acordes comunes con notas MIDI (C4 = 60, A4 = 69)
-export const CHORD_PROGRESSIONS = {
+const CHORD_PROGRESSIONS = {
  'C': {
     name: 'C Major',
     notes: [60, 64, 67], // C4, E4, G4
@@ -49,7 +49,7 @@ export const CHORD_PROGRESSIONS = {
 };
 
 // Progresiones de acordes comunes
-export const PROGRESSIONS = {
+const PROGRESSIONS = {
   'C Major': [
     { chord: 'C', time: 0, duration: 4 },
     { chord: 'Am', time: 4, duration: 4 },
@@ -77,7 +77,7 @@ export const PROGRESSIONS = {
 };
 
 // Notas MIDI para piano (rango C1 a C8)
-export const PIANO_NOTES = {
+const PIANO_NOTES = {
   // Octava grave (C1-C2)
   bass: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72],
 
@@ -117,7 +117,7 @@ export const PIANO_NOTES = {
 };
 
 // Tabla de notas MIDI a nombres (cifrado simplificado)
-export const MIDI_NOTE_NAMES = {};
+const MIDI_NOTE_NAMES = {};
 for (let i = 21; i <= 108; i++) {
   const octave = Math.floor(i / 12) - 1;
   const noteIndex = i % 12;
@@ -130,7 +130,7 @@ for (let i = 21; i <= 108; i++) {
 }
 
 // Posición visual de teclas en piano (para el display)
-export const KEY_POSITIONS = [];
+const KEY_POSITIONS = [];
 let xPos = 0;
 
 for (let octave = -1; octave <= 8; octave++) {
@@ -146,6 +146,10 @@ for (let octave = -1; octave <= 8; octave++) {
   }
 }
 
+// Export individual names for named imports
+export { CHORD_PROGRESSIONS, PROGRESSIONS, PIANO_NOTES, MIDI_NOTE_NAMES, KEY_POSITIONS };
+
+// Default export
 export default {
   CHORD_PROGRESSIONS,
   PROGRESSIONS,

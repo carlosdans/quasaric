@@ -1,11 +1,15 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAudio } from '../audio/useAudio';
 import { ChannelSlider } from '../components/ChannelSlider';
 import { ProgressBar } from '../components/ProgressBar';
 import { TempoControl } from '../components/TempoControl';
 import { ChordDisplay } from '../components/ChordDisplay';
 import { NoteView } from '../components/NoteView';
+import { Waveform } from '../components/Waveform';
+import { PianoKeyboard } from '../components/PianoKeyboard';
 import { getTranslations } from '../i18n.js';
+import { STEM_NAMES } from '../audio/stems.js';
+import { CHORD_PROGRESSIONS, PROGRESSIONS, MIDI_NOTE_NAMES } from '../data/pianoPatterns.js';
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
 
@@ -15,6 +19,16 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
 const INSTRUMENT_NAMES = ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'];
 const PISTOL_TRACK_INDEX = 6; // Piano es el último stem (índice 6)
 
+// Default chord progressions
+const DEFAULT_PROGRESSION = 'C Major';
+const AUTOMATIC_ACCOMPANY_PATTERNS = {
+  fullChord: 'full_chord',
+  arpeggio: 'arpeggio',
+  bassAndChord: 'bass_and_chord',
+  rhythmic: 'rhythmic',
+  simple: 'simple'
+};
+
 export function PlayerScreen() {
   const [language, setLanguage] = useState('en');
   const [error, setError] = useState(null);
@@ -23,7 +37,19 @@ export function PlayerScreen() {
   const [separationResultState, setSeparationResultState] = useState(null);
   const [showPracticeMode, setShowPracticeMode] = useState(false);
   const [practiceMode, setPracticeMode] = useState('chords'); // 'chords' or 'notes'
+  const [originalAudioBuffer, setOriginalAudioBuffer] = useState(null);
+  const [waveformPlayedTime, setWaveformPlayedTime] = useState(0);
+  const [showPianoKeyboard, setShowPianoKeyboard] = useState(false);
+  const [showAutoAccompany, setShowAutoAccompany] = useState(false);
+  const [autoAccompanyPattern, setAutoAccompanyPattern] = useState('fullChord');
+  const [detectedChords, setDetectedChords] = useState([]);
+  const [manualChordNotes, setManualChordNotes] = useState([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedTracks, setRecordedTracks] = useState([]);
   const fileInputRef = useRef(null);
+  const [recordedAudioContext, setRecordedAudioContext] = useState(null);
+  const [masterChannel, setMasterChannel] = useState(null);
+  const recordedStemsRef = useRef([]);
 
   const t = getTranslations(language);
 
@@ -46,6 +72,11 @@ export function PlayerScreen() {
     setLoop,
     unloadAll
   } = useAudio();
+
+  // Sincronizar tiempo del waveform con el reproductor
+  useEffect(() => {
+    setWaveformPlayedTime(position);
+  }, [position]);
 
   // Inicializar al montar
   if (!initialized) {
@@ -78,6 +109,13 @@ export function PlayerScreen() {
       // Añadir pista original primero
       const url = URL.createObjectURL(file);
       await addTrack(url, file.name.replace(/\.[^/.]+$/, ''));
+
+      // Cargar AudioBuffer para waveform
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      setOriginalAudioBuffer(audioBuffer);
     } catch (e) {
       console.error('Error importing file:', e);
       setError(t.errorLoading);
@@ -145,6 +183,75 @@ export function PlayerScreen() {
   };
 
   const activeTrack = tracks[0];
+
+  // Get separated stems data
+  const separatedStems = trackIsSeparated ? Object.fromEntries(
+    STEM_NAMES.map((name, idx) => {
+      const trackIndex = idx + 1; // Index 1-6 for stems
+      return [name, tracks[trackIndex]];
+    })
+  ) : null;
+
+  // Get current chord notes based on position
+  const getCurrentChordNotes = () => {
+    if (detectedChords.length > 0) {
+      const activeChord = detectedChords.find(c => position >= c.time && position < c.time + c.duration);
+      if (activeChord) return activeChord.notes;
+    }
+    if (manualChordNotes.length > 0) {
+      const activeNote = manualChordNotes.find(n => position >= n.time && position < n.time + n.duration);
+      if (activeNote) return [activeNote];
+    }
+    // Default C major chord
+    return ['C4', 'E4', 'G4'];
+  };
+
+  // Play chord on piano virtual
+  const playChordOnPiano = (notes) => {
+    const noteMap = {
+      'C4': 60, 'D4': 62, 'E4': 64, 'F4': 65, 'G4': 67, 'A4': 69, 'B4': 71,
+      'C5': 72, 'D5': 74, 'E5': 76, 'F5': 77, 'G5': 79, 'A5': 81, 'B5': 83
+    };
+    notes.forEach(note => {
+      const midi = noteMap[note];
+      if (midi) {
+        // Trigger note on
+        const event = new CustomEvent('piano-note-on', { detail: { midi, velocity: 0.8 } });
+        document.dispatchEvent(event);
+      }
+    });
+  };
+
+  // Get automatic accompaniment notes
+  const getAutoAccompanyNotes = () => {
+    if (!trackIsSeparated || !duration) return [];
+
+    const progression = PROGRESSIONS[DEFAULT_PROGRESSION];
+    if (!progression) return [];
+
+    // Find current chord
+    const elapsed = position;
+    const chordInfo = progression.find(c => elapsed >= c.time && elapsed < c.time + c.duration);
+    if (!chordInfo) return [];
+
+    // Get MIDI notes for the chord
+    const chordData = CHORD_PROGRESSIONS[chordInfo.chord];
+    if (!chordData) return [];
+
+    return chordData.notes.map(midi => ({
+      name: MIDI_NOTE_NAMES[midi]?.name || 'C',
+      octave: MIDI_NOTE_NAMES[midi]?.octave || 4,
+      midi: midi,
+      time: position,
+      velocity: 0.8
+    }));
+  };
+
+  // Handle piano note for accompaniment
+  const handlePianoNote = (midi) => {
+    const event = new CustomEvent('piano-note-on', { detail: { midi, velocity: 0.8 } });
+    document.dispatchEvent(event);
+  };
 
   return (
     <div className="player-screen">
@@ -255,6 +362,19 @@ export function PlayerScreen() {
             />
           )}
 
+          {/* Waveform Visualization */}
+          {!showPracticeMode && originalAudioBuffer && (
+            <div className="waveform-section">
+              <Waveform
+                audioBuffer={originalAudioBuffer}
+                position={position}
+                duration={duration}
+                onSeek={seekTo}
+                height={80}
+              />
+            </div>
+          )}
+
           {/* Transport Controls */}
           {!showPracticeMode && (
             <div className="transport-controls">
@@ -294,6 +414,63 @@ export function PlayerScreen() {
             ))}
           </div>
 
+          {/* Six-Track Mixer - Visual Stem Controls */}
+          {trackIsSeparated && (
+            <div className="stem-mixer-section">
+              <h3 className="stem-mixer-title">🔊 Stems</h3>
+              <div className="stem-grid">
+                {STEM_NAMES.map((stemName, idx) => {
+                  const stemTrack = tracks[idx + 1];
+                  if (!stemTrack) return null;
+
+                  const displayNames = {
+                    drums: t.drums || 'Drums',
+                    bass: t.bass || 'Bass',
+                    other: t.other || 'Other',
+                    vocals: t.vocals || 'Vocals',
+                    guitar: t.guitar || 'Guitar',
+                    piano: t.piano || 'Piano'
+                  };
+
+                  return (
+                    <div
+                      key={stemName}
+                      className={`stem-track stem-${stemName} ${stemTrack.muted ? 'stem-muted' : ''} ${stemTrack.soloed ? 'stem-soloed' : ''}`}
+                    >
+                      <div className="stem-name">
+                        {displayNames[stemName]}
+                      </div>
+                      <div className="stem-controls">
+                        <button
+                          className="stem-play-btn"
+                          onClick={() => setTrackMuted(idx + 1, !stemTrack.muted)}
+                          title={stemTrack.muted ? `Unmute ${displayNames[stemName]}` : `Mute ${displayNames[stemName]}`}
+                        >
+                          {stemTrack.muted ? '🔇' : '🔊'}
+                        </button>
+                      </div>
+                      <div className="stem-volume-container">
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          value={stemTrack.volume ?? 1}
+                          onChange={(e) => setTrackVolume(idx + 1, parseFloat(e.target.value))}
+                          className="stem-volume-slider"
+                          aria-label={`${displayNames[stemName]} volume`}
+                        />
+                        <span className="stem-volume-value">
+                          {Math.round((stemTrack.volume ?? 1) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Silence Piano Button (when separated) */}
           {trackIsSeparated && pianoTrackIndex >= 0 && (
             <div className="piano-controls">
@@ -304,6 +481,13 @@ export function PlayerScreen() {
               >
                 {tracks[pianoTrackIndex]?.muted ? '🔊 Piano' : '🔇 Piano'}
               </button>
+              <button
+                className={`solo-btn`}
+                onClick={() => setShowPianoKeyboard(!showPianoKeyboard)}
+                title="Show Piano Keyboard"
+              >
+                🎹
+              </button>
             </div>
           )}
 
@@ -313,6 +497,63 @@ export function PlayerScreen() {
               tempo={120} // TODO: Vincular con AudioContext playbackRate
               showLoopControls={true}
             />
+          )}
+
+          {/* Piano Keyboard (when separated) */}
+          {showPianoKeyboard && trackIsSeparated && (
+            <div className="piano-keyboard-section">
+              <h3 className="piano-title">{t.piano || 'Piano'}</h3>
+              <PianoKeyboard
+                width={760}
+                height={140}
+                onNoteOn={(midi) => {
+                  const noteInfo = MIDI_NOTE_NAMES[midi];
+                  if (noteInfo) {
+                    const noteEvent = {
+                      name: noteInfo.name,
+                      octave: noteInfo.octave,
+                      midi: midi,
+                      time: position,
+                      velocity: 0.8
+                    };
+
+                    // Send to piano track output if available
+                    handlePianoNote(midi);
+                  }
+                }}
+              />
+              <div className="piano-help">
+                <span>🖱️ Click keys | ⌨️ Use keyboard | 🎹 MIDI supported</span>
+              </div>
+            </div>
+          )}
+
+          {/* Auto Accompany Mode */}
+          {trackIsSeparated && !showPracticeMode && (
+            <div className="auto-accompany-section">
+              <h3 className="accompany-title">{t.autoAccompany || 'Auto Accompaniment'}</h3>
+              <div className="accompany-controls">
+                <button
+                  className={`solo-btn ${showAutoAccompany ? 'active' : ''}`}
+                  onClick={() => setShowAutoAccompany(!showAutoAccompany)}
+                  title="Toggle Auto Accompaniment"
+                >
+                  {showAutoAccompany ? '🔊' : '🔇'} {t.autoAccompany || 'Auto accomp'}
+                </button>
+                {showAutoAccompany && (
+                  <select
+                    value={autoAccompanyPattern}
+                    onChange={(e) => setAutoAccompanyPattern(e.target.value)}
+                    className="pattern-select"
+                  >
+                    <option value="fullChord">Full Chord</option>
+                    <option value="arpeggio">Arpeggio</option>
+                    <option value="bassAndChord">Bass + Chord</option>
+                    <option value="simple">Simple</option>
+                  </select>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Controls */}

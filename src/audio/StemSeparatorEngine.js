@@ -6,13 +6,39 @@
  * Fuente: StemSplit - https://github.com/StemSplit/demucs-onnx
  * HuggingFace: https://huggingface.co/StemSplitio/htdemucs-6s-onnx
  *
- * TENSORS REALES DEL MODELO:
- * - Input:  'mix'    -> Shape: (1, 2, 343980), float32, stereo, 44.1kHz, 7.8s segments
- * - Output: 'stems'  -> Shape: (1, 6, 2, 343980), float32, AUDIO WAVEFORM (NOT spectrogram!)
- * - Stem order: [drums, bass, other, vocals, guitar, piano]
+ * TENSORS REALES DEL MODELO (verificado desde MonoBand APK):
+ * - Input:  'mix'    -> Shape: (1, 2, 343980), float32, stereo, 44.1kHz
+ * - Output: 'stems'  -> Shape: [1, 6, 2, 343980] - 6 stems, estéreo
+ * - Stem order (MONOBAND VERIFIED): [DRUMS, BASS, GUITAR, OTHER, PIANO, VOCALS]
  *
- * Estados del modelo están en orden específico - NO adivinar nombres.
+ * NOTA CRÍTICA sobre orden:
+ * MonoBand usa: BASS, DRUMS, GUITAR, OTHER, PIANO, VOCALS
+ * Pero el OUTPUT del modelo es en orden: [drums, bass, other, vocals, guitar, piano]
+ * Necesitamos mapear correctamente los outputs
  */
+
+// Progress callbacks registry
+const progressCallbacks = [];
+
+/**
+ * Register a progress callback
+ */
+export function onProgress(callback) {
+  progressCallbacks.push(callback);
+  return () => {
+    const idx = progressCallbacks.indexOf(callback);
+    if (idx >= 0) progressCallbacks.splice(idx, 1);
+  };
+}
+
+/**
+ * Notify all progress callbacks
+ */
+function notifyProgress(data) {
+  progressCallbacks.forEach(cb => {
+    try { cb(data); } catch (e) {}
+  });
+}
 
 export class StemSeparatorEngine {
   constructor() {
@@ -23,9 +49,16 @@ export class StemSeparatorEngine {
     this.session = null;
     this.modelUrl = null;
 
-    // STEMS EN ORDEN EXACTO DEL MODELO htdemucs ONX
-    // Importante: Este es el orden que devuelve el modelo
+    // STEMS EN ORDEN DEL MODELO ONNX (según MonoBand DemucsConstants)
+    // Este es el orden que DEVUELVE el modelo: [drums, bass, other, vocals, guitar, piano]
+    // Este orden es CRÍTICO para el correcto mapeo de outputs del modelo
+    this.modelOutputOrder = ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'];
+
+    // Nombres de stems en orden del modelo
     this.stemNames = ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'];
+
+    // Orden de UI para MonoBand-style display (BASS, DRUMS, GUITAR, OTHER, PIANO, VOCALS)
+    this.uiStemOrder = ['bass', 'drums', 'guitar', 'other', 'piano', 'vocals'];
 
     // Modelo ONNX MIT - htdemucs 6 stems
     this.MODEL_INFO = {
@@ -171,9 +204,12 @@ export class StemSeparatorEngine {
   /**
    * Convertir tensor de output a AudioBuffer
    * El modelo devuelve: [1, 6, 2, 343980] -> batch, stems, channels, samples
+   *
+   * Orden de salida del modelo: [drums, bass, other, vocals, guitar, piano]
+   * Necesitamos reordenar para coincidir con el orden de MonoBand: [bass, drums, guitar, other, piano, vocals]
    */
-  async _postProcessOutput(outputTensor, audioContext, sampleRate) {
-    const stems = [];
+  async _postProcessOutput(outputTensor, audioContext, sampleRate, outputIndexMap = null) {
+    const stems = {};
 
     // El tensor de salida es 4D: [1, 6, 2, samples]
     const data = outputTensor.data;
@@ -188,29 +224,47 @@ export class StemSeparatorEngine {
     const numStems = dims[1];
     const numChannels = dims[2];
 
+    // Mapeo de índices del modelo al orden amigable
+    // Modelo output: [drums=0, bass=1, other=2, vocals=3, guitar=4, piano=5]
+    // Queremos: [bass, drums, guitar, other, piano, vocals]
+    const indexMap = outputIndexMap || [1, 0, 4, 2, 5, 3]; // bass, drums, guitar, other, piano, vocals
+
     // Extraer cada stem como AudioBuffer
-    for (let stemIdx = 0; stemIdx < numStems; stemIdx++) {
-      const channelData = [];
+    for (let stemIdx = 0; stemIdx < this.modelOutputOrder.length; stemIdx++) {
+      const modelIdx = indexMap[stemIdx];
+      const stemName = this.modelOutputOrder[stemIdx];
 
-      for (let ch = 0; ch < numChannels; ch++) {
-        const samples = new Float32Array(numSamples);
+      // Extraer canales
+      const leftSamples = new Float32Array(numSamples);
+      const rightSamples = new Float32Array(numSamples);
 
-        for (let i = 0; i < numSamples; i++) {
-          // Índice en el array plano: [stem, ch, sample]
-          const idx = ((0 * numStems + stemIdx) * numChannels + ch) * numSamples + i;
-          samples[i] = data[idx];
-        }
-
-        channelData.push(samples);
+      for (let i = 0; i < numSamples; i++) {
+        // Índice en el array plano: [batch=0, stem, channel, sample]
+        const idxLeft = (modelIdx * 2 + 0) * numSamples + i;
+        const idxRight = (modelIdx * 2 + 1) * numSamples + i;
+        leftSamples[i] = data[idxLeft];
+        rightSamples[i] = data[idxRight];
       }
 
-      // Crear AudioBuffer para este stem
-      const stemBuffer = audioContext.createBuffer(numChannels, numSamples, sampleRate);
-      for (let ch = 0; ch < numChannels; ch++) {
-        stemBuffer.copyToChannel(channelData[ch], ch);
+      // Normalizar
+      let maxVal = 0;
+      for (let i = 0; i < numSamples; i++) {
+        maxVal = Math.max(maxVal, Math.abs(leftSamples[i]), Math.abs(rightSamples[i]));
+      }
+      const norm = maxVal > 1 ? 1 / maxVal : 1;
+
+      // Crear AudioBuffer
+      const stemBuffer = audioContext.createBuffer(2, numSamples, sampleRate);
+      const left = stemBuffer.getChannelData(0);
+      const right = stemBuffer.getChannelData(1);
+
+      for (let i = 0; i < numSamples; i++) {
+        left[i] = leftSamples[i] * norm;
+        right[i] = rightSamples[i] * norm;
       }
 
-      stems.push(stemBuffer);
+      // Guardar en el mapa de stems
+      stems[stemName] = stemBuffer;
     }
 
     return stems;
@@ -220,6 +274,10 @@ export class StemSeparatorEngine {
   // INFERENCIA ONNX REAL
   // ============================================================================
 
+  // Notas sobre el orden de los stems:
+  // - Modelo ONNX devuelve: [drums, bass, other, vocals, guitar, piano]
+  // - Este es el orden que usamos en stemNames
+  // - Cada salida[i] del tensor corresponde a stemNames[i]
   async separateOnnx(audioBuffer, options = {}) {
     if (!this.session) {
       const loadResult = await this.loadModel(options.onProgress);
@@ -242,27 +300,34 @@ export class StemSeparatorEngine {
     }
 
     // Preparar audio para el modelo
-    // El modelo espera segmentos de 7.8 segundos
-    const SEGMENT_SAMPLES = this.MODEL_INFO.inputShape[2];
-    const SAMPLE_RATE = this.MODEL_INFO.sampleRate;
+    // El modelo espera segmentos de 7.8 segundos (343980 samples a 44.1kHz)
+    const SEGMENT_SAMPLES = this.MODEL_INFO.inputShape[2]; // 343980
+    const SAMPLE_RATE = this.MODEL_INFO.sampleRate; // 44100
     const totalSamples = preprocessed.length;
 
-    // Verificar si necesitamos segmentación
-    const needsSegmentation = totalSamples > SEGMENT_SAMPLES;
-
     // Overlaps para mejor transición entre segmentos
-    const OVERLAP_RATIO = 0.1;
-    const OVERLAP_SAMPLES = Math.floor(SEGMENT_SAMPLES * OVERLAP_RATIO);
-    const STEP_SIZE = SEGMENT_SAMPLES - OVERLAP_SAMPLES;
+    // MonoBand usa OVERLAP_SAMPLES = 44100 (~1 segundo)
+    const OVERLAP_SAMPLES = this.MODEL_INFO.outputShape[2] - this.MODEL_INFO.inputShape[2]; // 44100
+    const STEP_SIZE = SEGMENT_SAMPLES - OVERLAP_SAMPLES; // 299880
 
     // Preparar buffers de salida acumulados
     const stemOutputs = {};
     this.stemNames.forEach(name => {
-      stemOutputs[name] = [];
+      stemOutputs[name] = new Float32Array(totalSamples * 2);  // stereo
     });
 
     let segmentsProcessed = 0;
     const totalSegments = Math.ceil(totalSamples / STEP_SIZE);
+
+    // Notificar progreso inicial
+    notifyProgress({ stage: 'preprocessing', progress: 10 });
+
+    // Función helper para yield cooperativo
+    const yieldIfTooLong = async (iterations) => {
+      if (iterations % 100 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+    };
 
     // Procesar cada segmento
     let sampleIdx = 0;
@@ -301,24 +366,21 @@ export class StemSeparatorEngine {
         throw new Error('Output tensor not found');
       }
 
-      // Acumular salidas
+      // Acumular salidas con overlap-add
+      // El tensor de salida es [1, 6, 2, samples]
+      // Cada stem está en orden: [drums, bass, other, vocals, guitar, piano]
       const outputData = outputTensor.data;
       const numSamples = outputTensor.dims[3];
 
+      // Extraer cada stem directamente del tensor de salida
+      // El índice del stem corresponde al orden del modelo
       for (let stemIdx = 0; stemIdx < this.stemNames.length; stemIdx++) {
         const stemName = this.stemNames[stemIdx];
-        if (!stemOutputs[stemName]) {
-          stemOutputs[stemName] = new Float32Array(totalSamples * 2);
-        }
 
         // Extraer audio de este segmento con overlap-add
         for (let i = 0; i < numSamples; i++) {
           const srcPos = sampleIdx + i;
           if (srcPos < totalSamples) {
-            // Índice en el array de salida: [batch, stem, channel, sample]
-            const idx = ((0 * 6 + stemIdx) * 2 + 0) * numSamples + i;
-            const value = outputData[idx];
-
             // Aplicar ventana de Hanning para overlap-add
             const windowPos = i - (sampleIdx % STEP_SIZE);
             const windowFactor = sampleIdx === 0 || sampleIdx + i >= totalSamples
@@ -328,9 +390,16 @@ export class StemSeparatorEngine {
                 : 1.0;
 
             const targetPos = srcPos * 2;
-            stemOutputs[stemName][targetPos] = (stemOutputs[stemName][targetPos] || 0) + value * windowFactor;
-            stemOutputs[stemName][targetPos + 1] = (stemOutputs[stemName][targetPos + 1] || 0) + value * windowFactor;
+
+            // Extraer ambos canales del tensor de salida [batch=0, stem, channel, sample]
+            for (let ch = 0; ch < 2; ch++) {
+              const idx = (stemIdx * 2 + ch) * numSamples + i;
+              const value = outputData[idx];
+              stemOutputs[stemName][targetPos + ch] = (stemOutputs[stemName][targetPos + ch] || 0) + value * windowFactor;
+            }
           }
+
+          await yieldIfTooLong(i);
         }
       }
 
@@ -343,7 +412,7 @@ export class StemSeparatorEngine {
           stage: 'processing',
           segment: segmentsProcessed,
           total: totalSegments,
-          progress: (segmentsProcessed / totalSegments) * 100
+          progress: 20 + (segmentsProcessed / totalSegments) * 60
         });
       }
     }

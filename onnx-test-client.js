@@ -1,11 +1,12 @@
 // ONNX Test Client - Handles UI interactions
 // This file is loaded as a module to ensure proper initialization
 
-import { loadOnnxRuntime, loadModel, separate, isModelLoaded } from './src/audio/onnx-test.js';
+import { loadOnnxRuntime, loadModel, separate, isModelLoadedSync, STEM_NAMES } from './src/audio/onnx-test.js';
 
 let audioBuffer = null;
 let stems = {};
 let audioContext = null;
+let currentSource = null;
 
 // DOM Elements
 const statusEl = document.getElementById('status');
@@ -41,6 +42,36 @@ function updateProgress(width) {
     progressBarEl.style.width = width + '%';
 }
 
+// Play a single stem
+function playStem(name, buffer) {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    // Stop any currently playing stem
+    if (currentSource) {
+        try { currentSource.stop(); } catch (e) {}
+    }
+
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.destination);
+    source.start();
+
+    currentSource = source;
+
+    // Update button state
+    const btns = stemsGridEl.querySelectorAll('.stem-btn');
+    btns.forEach(btn => btn.textContent = '⏸️');
+
+    source.onended = () => {
+        currentSource = null;
+        btns.forEach(btn => btn.textContent = '▶️');
+    };
+
+    log('Playing stem: ' + name);
+}
+
 // Initialize AudioContext
 function initAudioContext() {
     if (!audioContext) {
@@ -74,7 +105,7 @@ btnLoadOnnx.addEventListener('click', async () => {
 
 // Load Model
 btnLoadModel.addEventListener('click', async () => {
-    if (!isModelLoaded()) {
+    if (!isModelLoadedSync()) {
         updateStatus('loading', 'Loading ONNX model...');
         btnLoadModel.disabled = true;
         btnLoadOnnx.disabled = true;
@@ -178,7 +209,7 @@ let isSeparating = false;
 btnSeparate.addEventListener('click', async () => {
     if (isSeparating) return; // Prevent double clicks
 
-    if (!audioBuffer || !isModelLoaded()) {
+    if (!audioBuffer || !isModelLoadedSync()) {
         updateStatus('error', 'Load audio and model first');
         return;
     }
@@ -211,9 +242,42 @@ btnSeparate.addEventListener('click', async () => {
             log('Separation completed in ' + processingTime.toFixed(2) + 'ms');
             updateStatus('ready', 'Separation complete');
 
+            // Store audio buffers
+            stems = result.audioBuffers || {};
+
             document.getElementById('separation-time').innerHTML = `
                 <div class="result-item success">✓ Processing Time: ${processingTime.toFixed(2)}ms</div>
+                <div class="result-item">✓ Duration: ${result.duration.toFixed(2)}s (${result.totalSegments} segments)</div>
             `;
+
+            // Render stems grid with playback controls
+            const stemsGrid = document.getElementById('stems-grid');
+            stemsGrid.innerHTML = '';
+
+            for (const stemName of result.stemNames || STEM_NAMES) {
+                const buffer = stems[stemName];
+                if (buffer) {
+                    const btnDiv = document.createElement('div');
+
+                    const label = document.createElement('div');
+                    label.textContent = stemName;
+                    label.style.fontSize = '12px';
+                    label.style.color = '#888';
+                    label.style.marginBottom = '4px';
+                    label.style.textAlign = 'center';
+                    label.style.textTransform = 'capitalize';
+                    btnDiv.appendChild(label);
+
+                    const playBtn = document.createElement('button');
+                    playBtn.textContent = '▶️';
+                    playBtn.className = 'stem-btn';
+                    playBtn.style.margin = '0 auto';
+                    playBtn.onclick = () => playStem(stemName, buffer);
+                    btnDiv.appendChild(playBtn);
+
+                    stemsGrid.appendChild(btnDiv);
+                }
+            }
 
             resultsSection.style.display = 'block';
             btnSeparate.textContent = 'Separate Tracks';

@@ -826,3 +826,247 @@ footer{height:92px;border-top:1px solid var(--line);display:flex;justify-content
 .loop-jump-btn:hover {
   background: rgba(200, 241, 105, 0.25);
 }
+
+/* Waveform Section */
+.waveform-section {
+  margin-top: 24px;
+}
+
+.waveform-container {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.waveform-container canvas {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.waveform-container .time {
+  font-size: 12px;
+  color: #a1a9bd;
+}
+
+/* Six-Track Mixer Section */
+.stem-mixer-section {
+  margin-top: 32px;
+}
+
+.stem-mixer-title {
+  font: 700 18px system-ui, sans-serif;
+  margin: 0 0 16px;
+  color: #f4f5fb;
+}
+
+.stem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stem-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stem-name {
+  font: 600 14px system-ui, sans-serif;
+  color: #f4f5fb;
+  margin-bottom: 8px;
+}
+
+.stem-play-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #c8f169, #a99bff);
+  color: #111827;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.stem-play-btn:hover {
+  transform: scale(1.05);
+}
+
+.stem-controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.stem-volume-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stem-volume-slider {
+  flex: 1;
+  height: 6px;
+  background: rgba(161, 169, 189, 0.3);
+  border-radius: 3px;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.stem-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f4f5fb;
+  cursor: pointer;
+}
+
+.stem-volume-value {
+  font-size: 12px;
+  color: #a1a9bd;
+  min-width: 35px;
+  text-align: center;
+}
+
+/* Stem Colors */
+.stem-drums .stem-name { color: #ef4444; }
+.stem-bass .stem-name { color: #3b82f6; }
+.stem-other .stem-name { color: #a855f7; }
+.stem-vocals .stem-name { color: #ec4899; }
+.stem-guitar .stem-name { color: #f59e0b; }
+.stem-piano .stem-name { color: #10b981; }
+
+/* Solo/Mute indicators */
+.stem-muted .stem-name::after {
+  content: ' (muted)';
+  color: #64748b;
+  font-weight: normal;
+}
+
+.stem-soloed .stem-name::after {
+  content: ' (solo)';
+  color: #c8f169;
+}
+
+/* Piano Keyboard Section */
+.piano-keyboard-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.piano-title {
+  font: 700 16px system-ui, sans-serif;
+  margin: 0 0 12px;
+  color: #f4f5fb;
+}
+
+.piano-keys-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.piano-key {
+  position: relative;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.1s;
+}
+
+.piano-key.white {
+  background: #f4f5f5;
+  color: #111827;
+  height: 100%;
+  border-color: #cbd5e1;
+}
+
+.piano-key.black {
+  background: #1e293b;
+  color: #f4f5fb;
+  height: 65%;
+  margin-left: -10px;
+  z-index: 2;
+  border-color: #334155;
+}
+
+.piano-key.active {
+  background: linear-gradient(135deg, #c8f169, #a99bff);
+  box-shadow: 0 0 8px rgba(200, 241, 105, 0.5);
+}
+
+.key-label {
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #64748b;
+}
+
+.piano-help {
+  margin-top: 12px;
+  text-align: center;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* Auto Accompaniment Section */
+.auto-accompany-section {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+.accompany-title {
+  font: 700 14px system-ui, sans-serif;
+  margin: 0 0 12px;
+  color: #f4f5fb;
+}
+
+.accompany-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.pattern-select {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #f4f5fb;
+  font-size: 12px;
+}
+
+.pattern-select:focus {
+  outline: 2px solid #c8f169;
+  outline-offset: 2px;
+}
+
+.piano-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+/* Responsive adjustments for piano */
+@media (max-width: 768px) {
+  .piano-keyboard-section {
+    padding: 16px;
+  }
+
+  .auto-accompany-section {
+    padding: 12px;
+  }
+}

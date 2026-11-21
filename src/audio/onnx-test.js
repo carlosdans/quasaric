@@ -9,11 +9,22 @@ import * as ort from 'onnxruntime-web';
 let session = null;
 let modelInfo = null;
 let processedStems = null;
+let audioContext = null;
 let isModelLoaded = false;
 const SEGMENT_SAMPLES = 343980;
 const SAMPLE_RATE = 44100;
 const STEM_NAMES = ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'];
 let progressCallbacks = [];
+
+/**
+ * Get or create AudioContext singleton
+ */
+function getAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioContext;
+}
 
 /**
  * Register a progress callback
@@ -80,14 +91,41 @@ export async function loadModel(progressCallback = null) {
 
         notifyProgress({ stage: 'creating_session', progress: 40 });
 
-        // Create session with conservative settings
-        session = await ort.InferenceSession.create(modelBuffer, {
-            executionProviders: ['wasm'],
-            graphOptimizationLevel: 'disabled',
-            enableMemPattern: false,
-            numThreads: 1,
-            scratchLimit: 1024 * 1024 * 50
-        });
+        // Enable WASM Proxy Worker - runs inference in background worker, never blocks main thread
+        // This is the official ONNX Runtime solution for browser main thread responsiveness
+        ort.env.wasm.proxy = true;
+        console.log('[PROXY] WASM Proxy Worker enabled - inference will run in background worker');
+
+        // Try to create session with WASM execution provider
+        // WASM is preferred for performance, but may fail with std::bad_alloc on some browsers
+        // (especially Edge) due to memory limits with large models (130MB+)
+        // Fallback to CPU if WASM fails
+        let wasmFailed = false;
+        try {
+            session = await ort.InferenceSession.create(modelBuffer, {
+                executionProviders: ['wasm'],
+                graphOptimizationLevel: 'basic',
+                enableMemPattern: false,
+                numThreads: 1,
+                scratchLimit: 1024 * 1024 * 100,
+                memoryLimit: 1024 * 1024 * 500
+            });
+            console.log('[ONNX] Session created with WASM execution provider');
+        } catch (wasmError) {
+            console.warn('[ONNX] WASM session failed:', wasmError.message);
+            console.warn('[ONNX] Falling back to CPU execution provider');
+            wasmFailed = true;
+
+            // Fallback to CPU execution provider
+            // CPU doesn't have WASM memory limits and works in all browsers
+            session = await ort.InferenceSession.create(modelBuffer, {
+                executionProviders: ['cpu'],
+                graphOptimizationLevel: 'basic',
+                enableMemPattern: false,
+                numThreads: 1
+            });
+            console.log('[ONNX] Session created with CPU execution provider');
+        }
 
         // Verify session is valid
         if (!session.inputNames || !session.outputNames) {
@@ -102,7 +140,10 @@ export async function loadModel(progressCallback = null) {
             stems: STEM_NAMES,
             sampleRate: SAMPLE_RATE,
             segmentDuration: 7.8,
-            modelSize: modelBuffer.byteLength
+            modelSize: modelBuffer.byteLength,
+            executionProvider: session ? (session.options ? 'wasm' : 'cpu') : 'unknown',
+            // Track if WASM failed due to memory issues
+            wasmMemoryFallback: wasmFailed || false
         };
 
         isModelLoaded = true;
@@ -121,7 +162,7 @@ export async function loadModel(progressCallback = null) {
 }
 
 /**
- * Separate audio in segments to avoid memory issues
+ * Separate audio in segments with overlap-add for full duration
  */
 export async function separate(audioBuffer, options = {}) {
     if (!session) {
@@ -129,103 +170,221 @@ export async function separate(audioBuffer, options = {}) {
         if (!loadResult.success) return loadResult;
     }
 
-    const totalSamples = Math.floor(audioBuffer.duration * SAMPLE_RATE);
-    const numSegments = Math.ceil(totalSamples / SEGMENT_SAMPLES);
+    const SR = SAMPLE_RATE;
+    // Use 2-second segments for better browser responsiveness
+    // Original model trained for 7.8s, but 2s is safer for main-thread WASM
+    const SEGMENT_SAMPLES = 88200;  // 2 seconds at 44.1kHz
+    const OVERLAP_RATIO = 0.1;
+    const OVERLAP_SAMPLES = Math.floor(SEGMENT_SAMPLES * OVERLAP_RATIO);
+    const STEP_SIZE = SEGMENT_SAMPLES - OVERLAP_SAMPLES;
 
-    console.log(`Processing ${audioBuffer.duration.toFixed(2)}s audio in ${numSegments} segments`);
+    // Get actual audio length from AudioBuffer
+    const totalSamples = Math.ceil(audioBuffer.length || Math.floor(audioBuffer.duration * SR));
+    const totalSegments = Math.ceil(totalSamples / STEP_SIZE);
 
-    // For now, process just the first segment (7.8s)
-    // A full implementation would iterate all segments and overlap-add
+    console.log(`Processing ${audioBuffer.duration.toFixed(2)}s audio in ${totalSegments} segments`);
+    console.log(`Total samples: ${totalSamples}`);
+
     const startTime = performance.now();
+    const ctx = getAudioContext();
 
     notifyProgress({ stage: 'preprocessing', progress: 60 });
 
-    // Prepare input buffer (only for first segment)
-    const left = audioBuffer.getChannelData(0) || new Float32Array(totalSamples);
-    const right = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : new Float32Array(totalSamples);
+    // Get input audio
+    const left = audioBuffer.getChannelData(0);
+    const right = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : null;
 
-    const inputData = new Float32Array(2 * SEGMENT_SAMPLES);
-    for (let i = 0; i < SEGMENT_SAMPLES; i++) {
-        const idx = i * 2;
-        inputData[idx] = i < left.length ? left[i] : 0;
-        inputData[idx + 1] = i < right.length ? right[i] : 0;
-    }
+    // Prepare output buffers with overlap-add accumulation
+    const stemOutputs = {};
+    STEM_NAMES.forEach(name => {
+        stemOutputs[name] = new Float32Array(totalSamples * 2);  // stereo
+    });
 
-    const inputTensor = new ort.Tensor('float32', inputData, [1, 2, SEGMENT_SAMPLES]);
+    let segmentsProcessed = 0;
+    let sampleIdx = 0;
 
     notifyProgress({ stage: 'inference', progress: 70 });
 
-    // Run inference
-    const results = await session.run({
-        'mix': inputTensor
-    });
+    // Process each segment
+    while (sampleIdx < totalSamples) {
+        const leftSegment = new Float32Array(SEGMENT_SAMPLES);
+        const rightSegment = new Float32Array(SEGMENT_SAMPLES);
 
-    notifyProgress({ stage: 'postprocessing', progress: 90 });
+        // Fill segment with audio data (pad with zeros if needed)
+        for (let i = 0; i < SEGMENT_SAMPLES; i++) {
+            const srcIdx = sampleIdx + i;
+            leftSegment[i] = srcIdx < left.length ? left[srcIdx] : 0;
+            rightSegment[i] = right && srcIdx < right.length ? right[srcIdx] : (srcIdx < left.length ? left[srcIdx] : 0);
+        }
 
-    const processingTime = performance.now() - startTime;
+        // Create input tensor
+        const inputData = new Float32Array(2 * SEGMENT_SAMPLES);
+        for (let i = 0; i < SEGMENT_SAMPLES; i++) {
+            inputData[i * 2] = leftSegment[i];
+            inputData[i * 2 + 1] = rightSegment[i];
+        }
 
-    // Extract stems from output
-    const stems = {};
-    const outputTensor = results['stems'];
+        const inputTensor = new ort.Tensor('float32', inputData, [1, 2, SEGMENT_SAMPLES]);
 
-    if (outputTensor && outputTensor.data) {
-        const dims = outputTensor.dims;
-        const numStems = dims[1];
-        const numChannels = dims[2];
-        const numSamples = dims[3];
-        const data = outputTensor.data;
+        // Run inference
+        const results = await session.run({
+            'mix': inputTensor
+        });
 
-        for (let stemIdx = 0; stemIdx < numStems; stemIdx++) {
+        const outputTensor = results['stems'];
+        if (!outputTensor || !outputTensor.data) {
+            throw new Error('Output tensor not found');
+        }
+
+        const outputData = outputTensor.data;
+        const numSamples = outputTensor.dims[3];
+
+        // Apply overlap-add to accumulate outputs with cooperative yielding
+        // Process in chunks to avoid blocking the main thread
+        const CHUNK_SIZE = 5000;  // Process 5000 samples at a time
+        for (let stemIdx = 0; stemIdx < STEM_NAMES.length; stemIdx++) {
             const stemName = STEM_NAMES[stemIdx];
-            const channelData = [];
+            let chunkCount = 0;
 
-            for (let ch = 0; ch < numChannels; ch++) {
-                const samples = new Float32Array(numSamples);
-                for (let i = 0; i < numSamples; i++) {
-                    const idx = ((0 * numStems + stemIdx) * numChannels + ch) * numSamples + i;
-                    samples[i] = data[idx];
+            for (let i = 0; i < numSamples; i++) {
+                const srcPos = sampleIdx + i;
+                if (srcPos < totalSamples) {
+                    // Extract both channels for this stem
+                    const idxLeft = (stemIdx * 2 + 0) * numSamples + i; // [batch=0, stem, channel=0, sample]
+                    const idxRight = (stemIdx * 2 + 1) * numSamples + i; // [batch=0, stem, channel=1, sample]
+
+                    const leftVal = outputData[idxLeft];
+                    const rightVal = outputData[idxRight];
+
+                    // Apply Hanning window for overlap-add
+                    const windowPos = i - (sampleIdx % STEP_SIZE);
+                    const windowFactor = sampleIdx === 0 || sampleIdx + i >= totalSamples
+                        ? 1.0
+                        : (windowPos < OVERLAP_SAMPLES)
+                            ? 0.5 * (1 - Math.cos(Math.PI * windowPos / OVERLAP_SAMPLES))
+                            : 1.0;
+
+                    const targetPos = srcPos * 2;
+                    stemOutputs[stemName][targetPos] = (stemOutputs[stemName][targetPos] || 0) + leftVal * windowFactor;
+                    stemOutputs[stemName][targetPos + 1] = (stemOutputs[stemName][targetPos + 1] || 0) + rightVal * windowFactor;
                 }
-                channelData.push(samples);
-            }
 
-            // Calculate statistics
-            let sum = 0, sumSq = 0;
-            let min = Infinity, max = -Infinity;
-            for (let i = 0; i < samples.length; i++) {
-                const v = channelData[0][i];
-                sum += v;
-                sumSq += v * v;
-                min = Math.min(min, v);
-                max = Math.max(max, v);
+                // Yield cooperatively every CHUNK_SIZE samples
+                chunkCount++;
+                if (chunkCount >= CHUNK_SIZE) {
+                    chunkCount = 0;
+                    // Yield to event loop
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
             }
-            const rms = Math.sqrt(sumSq / samples.length);
-            const mean = sum / samples.length;
+        }
 
-            stems[stemName] = {
-                channels: channelData.length,
-                length: numSamples,
-                sampleRate: SAMPLE_RATE,
-                duration: numSamples / SAMPLE_RATE,
-                rms: rms,
-                mean: mean,
-                min: min,
-                max: max,
-                hasValidAudio: rms > 0.01 && isFinite(rms)
-            };
+        segmentsProcessed++;
+
+        // Notify progress
+        if (options.onProgress) {
+            options.onProgress({
+                stage: 'processing',
+                segment: segmentsProcessed,
+                total: totalSegments,
+                progress: 65 + (segmentsProcessed / totalSegments) * 25
+            });
+        }
+
+        sampleIdx += STEP_SIZE;
+
+        // Cooperative yield: give browser a chance to update UI
+        if (segmentsProcessed % 3 === 0 || sampleIdx >= totalSamples) {
+            await new Promise(resolve => setTimeout(resolve, 0));
         }
     }
 
-    processedStems = stems;
+    const processingTime = performance.now() - startTime;
+
+    // Normalize and create AudioBuffers with cooperative yielding
+    notifyProgress({ stage: 'postprocessing', progress: 95 });
+
+    const stemBuffers = {};
+    const stemStats = {};
+
+    for (let stemIdx = 0; stemIdx < STEM_NAMES.length; stemIdx++) {
+        const stemName = STEM_NAMES[stemIdx];
+        let maxVal = 0;
+        const data = stemOutputs[stemName];
+
+        // Find max for normalization
+        for (let i = 0; i < data.length; i++) {
+            maxVal = Math.max(maxVal, Math.abs(data[i]));
+        }
+
+        // Yield periodically during max calculation
+        if (stemIdx % 2 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
+
+        // Create AudioBuffer
+        const buffer = ctx.createBuffer(2, totalSamples, SR);
+
+        const left = buffer.getChannelData(0);
+        const right = buffer.getChannelData(1);
+        const norm = maxVal > 1 ? 1 / maxVal : 1;
+
+        let sum = 0, sumSq = 0;
+        let min = Infinity, max = -Infinity;
+        const CHUNK_SIZE = 50000;  // 50k samples per yield chunk
+        let chunkCount = 0;
+
+        for (let i = 0; i < totalSamples; i++) {
+            const l = data[i * 2] * norm;
+            const r = data[i * 2 + 1] * norm;
+            left[i] = l;
+            right[i] = r;
+
+            sum += l;
+            sumSq += l * l;
+            min = Math.min(min, l);
+            max = Math.max(max, l);
+
+            chunkCount++;
+            if (chunkCount >= CHUNK_SIZE) {
+                chunkCount = 0;
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+        }
+
+        const rms = Math.sqrt(sumSq / totalSamples);
+        const mean = sum / totalSamples;
+
+        stemBuffers[stemName] = buffer;
+        stemStats[stemName] = {
+            channels: 2,
+            length: totalSamples,
+            sampleRate: SR,
+            duration: totalSamples / SR,
+            rms: rms,
+            mean: mean,
+            min: min,
+            max: max,
+            hasValidAudio: rms > 0.01 && isFinite(rms)
+        };
+
+        // Clean up temporary output buffer to save memory
+        stemOutputs[stemName].fill(0);
+    }
+
+    processedStems = stemStats;
 
     notifyProgress({ stage: 'complete', progress: 100 });
 
     return {
         success: true,
-        stems,
+        stems: stemStats,
+        audioBuffers: stemBuffers,
         processingTime,
-        duration: SEGMENT_SAMPLES / SAMPLE_RATE,
-        sampleRate: SAMPLE_RATE,
-        totalSegments: numSegments
+        duration: totalSamples / SR,
+        sampleRate: SR,
+        totalSegments: segmentsProcessed,
+        stemNames: STEM_NAMES
     };
 }
 
