@@ -76,15 +76,35 @@ export async function loadModel(progressCallback = null) {
             progressCallback({ stage: 'ready', progress: 100 });
         }
 
-        // Get actual tensor info from session
-        const inputs = session.inputNames.map(name => ({
-            name,
-            dims: session.getInputMetadata()[name]?.dims || 'unknown'
-        }));
-        const outputs = session.outputNames.map(name => ({
-            name,
-            dims: session.getOutputMetadata()[name]?.dims || 'unknown'
-        }));
+        // Get actual tensor info from session using correct API
+        // for onnxruntime-web 1.31.1
+        const inputMetadata = session.inputMetadata || {};
+        const outputMetadata = session.outputMetadata || {};
+
+        console.log('Input metadata:', Object.keys(inputMetadata));
+        console.log('Output metadata:', Object.keys(outputMetadata));
+
+        // Try to get actual shapes from metadata
+        const inputInfo = session.inputNames ? session.inputNames : Object.keys(inputMetadata);
+        const outputInfo = session.outputNames ? session.outputNames : Object.keys(outputMetadata);
+
+        const inputs = inputInfo.map(name => {
+            const meta = inputMetadata[name] || {};
+            return {
+                name,
+                dims: meta.dims || meta.shape || 'unknown',
+                type: meta.type || 'unknown'
+            };
+        });
+
+        const outputs = outputInfo.map(name => {
+            const meta = outputMetadata[name] || {};
+            return {
+                name,
+                dims: meta.dims || meta.shape || 'unknown',
+                type: meta.type || 'unknown'
+            };
+        });
 
         console.log('Inputs:', inputs);
         console.log('Outputs:', outputs);
@@ -148,10 +168,12 @@ export async function separate(audioBuffer, options = {}) {
 
     const inputTensor = new ort.Tensor('float32', inputData, [1, 2, SEGMENT_SAMPLES]);
 
+    // Run inference - use actual output names from model
+    const outputNames = session.outputNames || ['stems'];
+    const feeds = { 'mix': inputTensor };
+
     // Run inference
-    const results = await session.run({
-        'mix': inputTensor
-    });
+    const results = await session.run(feeds);
 
     return {
         success: true,
