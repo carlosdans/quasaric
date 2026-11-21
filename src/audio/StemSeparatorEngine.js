@@ -244,56 +244,150 @@ export class StemSeparatorEngine {
     // Preparar audio para el modelo
     // El modelo espera segmentos de 7.8 segundos
     const SEGMENT_SAMPLES = this.MODEL_INFO.inputShape[2];
-    const totalSamples = Math.min(preprocessed.length, SEGMENT_SAMPLES);
+    const SAMPLE_RATE = this.MODEL_INFO.sampleRate;
+    const totalSamples = preprocessed.length;
 
-    // Normalizar audio al rango [-1, 1]
-    const inputData = new Float32Array(2 * SEGMENT_SAMPLES);
+    // Verificar si necesitamos segmentación
+    const needsSegmentation = totalSamples > SEGMENT_SAMPLES;
 
-    for (let i = 0; i < SEGMENT_SAMPLES; i++) {
-      const idx = i * 2;
-      inputData[idx] = i < preprocessed.left.length ? preprocessed.left[i] : 0;
-      inputData[idx + 1] = i < preprocessed.right.length ? preprocessed.right[i] : 0;
-    }
+    // Overlaps para mejor transición entre segmentos
+    const OVERLAP_RATIO = 0.1;
+    const OVERLAP_SAMPLES = Math.floor(SEGMENT_SAMPLES * OVERLAP_RATIO);
+    const STEP_SIZE = SEGMENT_SAMPLES - OVERLAP_SAMPLES;
 
-    // Crear tensor de entrada CON FORMATO CORRECTO
-    // Shape: [1, 2, 343980] - NO [1, 1, samples]
-    const inputTensor = new this.onnxRuntime.Tensor(
-      'float32',
-      inputData,
-      [1, 2, SEGMENT_SAMPLES] // batch=1, channels=2(stereo), time
-    );
-
-    // Ejecutar inferencia
-    const results = await this.session.run({
-      [this.MODEL_INFO.inputName]: inputTensor
+    // Preparar buffers de salida acumulados
+    const stemOutputs = {};
+    this.stemNames.forEach(name => {
+      stemOutputs[name] = [];
     });
 
-    // El output es 'stems' con shape [1, 6, 2, 343980]
-    const outputTensor = results[this.MODEL_INFO.outputName];
+    let segmentsProcessed = 0;
+    const totalSegments = Math.ceil(totalSamples / STEP_SIZE);
 
-    if (!outputTensor || !outputTensor.data) {
-      throw new Error('Output tensor not found');
+    // Procesar cada segmento
+    let sampleIdx = 0;
+    while (sampleIdx < totalSamples) {
+      // Extraer segmento
+      const leftSegment = new Float32Array(SEGMENT_SAMPLES);
+      const rightSegment = new Float32Array(SEGMENT_SAMPLES);
+
+      for (let i = 0; i < SEGMENT_SAMPLES; i++) {
+        const srcIdx = sampleIdx + i;
+        leftSegment[i] = srcIdx < preprocessed.left.length ? preprocessed.left[srcIdx] : 0;
+        rightSegment[i] = srcIdx < preprocessed.right.length ? preprocessed.right[srcIdx] : 0;
+      }
+
+      // Normalizar audio al rango [-1, 1]
+      const inputData = new Float32Array(2 * SEGMENT_SAMPLES);
+      for (let i = 0; i < SEGMENT_SAMPLES; i++) {
+        inputData[i * 2] = leftSegment[i];
+        inputData[i * 2 + 1] = rightSegment[i];
+      }
+
+      // Crear tensor de entrada
+      const inputTensor = new this.onnxRuntime.Tensor(
+        'float32',
+        inputData,
+        [1, 2, SEGMENT_SAMPLES]
+      );
+
+      // Ejecutar inferencia
+      const results = await this.session.run({
+        [this.MODEL_INFO.inputName]: inputTensor
+      });
+
+      const outputTensor = results[this.MODEL_INFO.outputName];
+      if (!outputTensor || !outputTensor.data) {
+        throw new Error('Output tensor not found');
+      }
+
+      // Acumular salidas
+      const outputData = outputTensor.data;
+      const numSamples = outputTensor.dims[3];
+
+      for (let stemIdx = 0; stemIdx < this.stemNames.length; stemIdx++) {
+        const stemName = this.stemNames[stemIdx];
+        if (!stemOutputs[stemName]) {
+          stemOutputs[stemName] = new Float32Array(totalSamples * 2);
+        }
+
+        // Extraer audio de este segmento con overlap-add
+        for (let i = 0; i < numSamples; i++) {
+          const srcPos = sampleIdx + i;
+          if (srcPos < totalSamples) {
+            // Índice en el array de salida: [batch, stem, channel, sample]
+            const idx = ((0 * 6 + stemIdx) * 2 + 0) * numSamples + i;
+            const value = outputData[idx];
+
+            // Aplicar ventana de Hanning para overlap-add
+            const windowPos = i - (sampleIdx % STEP_SIZE);
+            const windowFactor = sampleIdx === 0 || sampleIdx + i >= totalSamples
+              ? 1.0
+              : (windowPos < OVERLAP_SAMPLES)
+                ? 0.5 * (1 - Math.cos(Math.PI * windowPos / OVERLAP_SAMPLES))
+                : 1.0;
+
+            const targetPos = srcPos * 2;
+            stemOutputs[stemName][targetPos] = (stemOutputs[stemName][targetPos] || 0) + value * windowFactor;
+            stemOutputs[stemName][targetPos + 1] = (stemOutputs[stemName][targetPos + 1] || 0) + value * windowFactor;
+          }
+        }
+      }
+
+      segmentsProcessed++;
+      sampleIdx += STEP_SIZE;
+
+      // Notificar progreso
+      if (options.onProgress) {
+        options.onProgress({
+          stage: 'processing',
+          segment: segmentsProcessed,
+          total: totalSegments,
+          progress: (segmentsProcessed / totalSegments) * 100
+        });
+      }
     }
 
-    // Convertir tensores a AudioBuffers
-    const stemBuffers = await this._postProcessOutput(outputTensor, this.audioContext, preprocessed.sampleRate);
+    // Normalizar outputs finales
+    const stemBuffers = {};
+    for (const name of this.stemNames) {
+      const data = stemOutputs[name];
+      if (data) {
+        // Encontrar máximo absoluto para normalizar
+        let maxVal = 0;
+        for (let i = 0; i < data.length; i++) {
+          maxVal = Math.max(maxVal, Math.abs(data[i]));
+        }
 
-    // Crear objetos stem con nombre correcto
-    const stemObjects = {};
-    this.stemNames.forEach((name, idx) => {
-      stemObjects[name] = stemBuffers[idx];
-    });
+        // Crear AudioBuffer
+        const numSamples = totalSamples;
+        const buffer = this.audioContext.createBuffer(2, numSamples, SAMPLE_RATE);
+
+        const left = buffer.getChannelData(0);
+        const right = buffer.getChannelData(1);
+
+        for (let i = 0; i < numSamples; i++) {
+          const norm = maxVal > 1 ? 1 / maxVal : 1;
+          left[i] = data[i * 2] * norm;
+          right[i] = data[i * 2 + 1] * norm;
+        }
+
+        stemBuffers[name] = buffer;
+      }
+    }
 
     return {
       success: true,
       method: 'onnx',
       model: this.MODEL_INFO,
-      stems: stemObjects,
+      stems: stemBuffers,
       stemNames: this.stemNames,
-      processedDuration: SEGMENT_SAMPLES / preprocessed.sampleRate,
-      sampleRate: preprocessed.sampleRate,
-      message: `Separación REAL con htdemucs ONNX. Modelo: ${this.MODEL_INFO.license} licensed.`,
-      rawTensors: results
+      processedDuration: totalSamples / SAMPLE_RATE,
+      sampleRate: SAMPLE_RATE,
+      segmentsProcessed,
+      totalSegments,
+      message: `Separación REAL con htdemucs ONNX. Segmentos: ${segmentsProcessed}/${totalSegments}. Modelo: ${this.MODEL_INFO.license} licensed.`,
+      rawTensors: null
     };
   }
 
