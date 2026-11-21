@@ -82,32 +82,6 @@
             text-align: center;
         }
         .stem-btn:disabled { opacity: 0.4; }
-        .waveform {
-            height: 60px;
-            background: #111;
-            border-radius: 4px;
-            margin: 12px 0;
-            overflow: hidden;
-            position: relative;
-        }
-        .waveform-bars {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            display: flex;
-            align-items: flex-end;
-            gap: 2px;
-            padding: 2px;
-        }
-        input[type="file"] { display: none; }
-        .upload-area {
-            border: 2px dashed #666;
-            border-radius: 8px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 16px;
-        }
-        .upload-area:hover { border-color: #3b82f6; }
         .result-item {
             padding: 8px;
             margin: 4px 0;
@@ -117,301 +91,56 @@
     </style>
 </head>
 <body>
-    <h1>HTDemucs ONNX Real Test</h1>
-    <p>Testing real audio separation in-browser - no server upload</p>
+    <div id="app">
+        <h1>HTDemucs ONNX Real Test</h1>
+        <p>Testing real audio separation in-browser - no server upload</p>
 
-    <div id="status" class="status loading">
-        <strong>Status:</strong> <span id="status-text">Initializing...</span>
+        <div id="status" class="status loading">
+            <strong>Status:</strong> <span id="status-text">Initializing...</span>
+        </div>
+
+        <div class="section">
+            <h3>1. Load ONNX Runtime</h3>
+            <button id="btn-load-onnx" class="btn">Load ONNX Runtime (Local)</button>
+            <div id="onnx-status" style="margin-top: 12px; font-size: 14px;"></div>
+        </div>
+
+        <div class="section">
+            <h3>2. Load Model</h3>
+            <button id="btn-load-model" class="btn" disabled>Load htdemucs_6s_fp16weights.onnx</button>
+            <div id="model-info" style="margin-top: 12px;"></div>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+        </div>
+
+        <div class="section">
+            <h3>3. Load Audio Test</h3>
+            <button id="btn-select-always" class="btn btn-secondary">Load Always.mp3 (365s)</button>
+            <button id="btn-select-file" class="btn btn-secondary" style="margin-left: 12px;">Select File</button>
+            <input type="file" id="file-input" accept="audio/mp3,audio/wav">
+            <div id="audio-info" style="margin-top: 12px;"></div>
+        </div>
+
+        <div class="section">
+            <h3>4. Run Separation</h3>
+            <button id="btn-separate" class="btn" disabled>Separate Tracks with ONNX</button>
+            <div id="separation-time" style="margin-top: 12px;"></div>
+        </div>
+
+        <div class="section" id="results-section" style="display: none;">
+            <h3>5. Results</h3>
+            <div id="results"></div>
+
+            <h4>Stems (click to play)</h4>
+            <div class="stems-grid" id="stems-grid"></div>
+        </div>
+
+        <div class="section">
+            <h3>Console Output</h3>
+            <div class="log" id="console-log"></div>
+        </div>
     </div>
 
-    <div class="section">
-        <h3>1. Load ONNX Runtime</h3>
-        <button id="btn-load-onnx" class="btn">Load ONNX Runtime (Local)</button>
-        <div id="onnx-status" style="margin-top: 12px; font-size: 14px;"></div>
-    </div>
-
-    <div class="section">
-        <h3>2. Load Model</h3>
-        <button id="btn-load-model" class="btn" disabled>Load htdemucs_6s_fp16weights.onnx</button>
-        <div id="model-info" style="margin-top: 12px;"></div>
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
-    </div>
-
-    <div class="section">
-        <h3>3. Load Audio Test</h3>
-        <button id="btn-select-always" class="btn btn-secondary">Load Always.mp3 (365s)</button>
-        <button id="btn-select-file" class="btn btn-secondary" style="margin-left: 12px;">Select File</button>
-        <input type="file" id="file-input" accept="audio/mp3,audio/wav">
-        <div id="audio-info" style="margin-top: 12px;"></div>
-    </div>
-
-    <div class="section">
-        <h3>4. Run Separation</h3>
-        <button id="btn-separate" class="btn" disabled>Separate Tracks with ONNX</button>
-        <div id="separation-time" style="margin-top: 12px;"></div>
-    </div>
-
-    <div class="section" id="results-section" style="display: none;">
-        <h3>5. Results</h3>
-        <div id="results"></div>
-
-        <h4>Stems (click to play)</h4>
-        <div class="stems-grid" id="stems-grid"></div>
-    </div>
-
-    <div class="section">
-        <h3>Console Output</h3>
-        <div class="log" id="console-log"></div>
-    </div>
-
-    <script type="module">
-        import { loadOnnxRuntime, loadModel, separate, getModelInfo, isModelLoaded } from './src/audio/onnx-test.js';
-
-        // State
-        let audioBuffer = null;
-        let stems = {};
-        let audioContext = null;
-
-        // DOM Elements
-        const statusEl = document.getElementById('status');
-        const statusTextEl = document.getElementById('status-text');
-        const btnLoadOnnx = document.getElementById('btn-load-onnx');
-        const btnLoadModel = document.getElementById('btn-load-model');
-        const btnSelectAlways = document.getElementById('btn-select-always');
-        const btnSelectFile = document.getElementById('btn-select-file');
-        const btnSeparate = document.getElementById('btn-separate');
-        const fileInput = document.getElementById('file-input');
-        const consoleLogEl = document.getElementById('console-log');
-        const progressBarEl = document.getElementById('progress-fill');
-        const resultsSection = document.getElementById('results-section');
-        const resultsEl = document.getElementById('results');
-        const stemsGridEl = document.getElementById('stems-grid');
-        const audioInfoEl = document.getElementById('audio-info');
-        const separationTimeEl = document.getElementById('separation-time');
-
-        function log(message) {
-            console.log(message);
-            const line = document.createElement('div');
-            line.textContent = message;
-            consoleLogEl.appendChild(line);
-            consoleLogEl.scrollTop = consoleLogEl.scrollHeight;
-        }
-
-        function updateStatus(status, text) {
-            statusEl.className = 'status ' + status;
-            statusTextEl.textContent = text;
-        }
-
-        function updateProgress(width) {
-            progressBarEl.style.width = width + '%';
-        }
-
-        // Initialize AudioContext
-        function initAudioContext() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                log('AudioContext initialized');
-            }
-            return audioContext;
-        }
-
-        // Load ONNX Runtime
-        btnLoadOnnx.addEventListener('click', async () => {
-            updateStatus('loading', 'Loading ONNX Runtime from local module...');
-            btnLoadOnnx.disabled = true;
-
-            try {
-                const result = await loadOnnxRuntime();
-
-                if (result.available) {
-                    updateStatus('ready', 'ONNX Runtime loaded successfully');
-                    btnLoadModel.disabled = false;
-                    log('ONNX Runtime ready');
-                } else {
-                    throw new Error('ONNX Runtime not available');
-                }
-
-            } catch (e) {
-                updateStatus('error', 'Failed to load ONNX Runtime: ' + e.message);
-                log('Error loading ONNX Runtime: ' + e);
-            }
-        });
-
-        // Load Model
-        btnLoadModel.addEventListener('click', async () => {
-            if (!isModelLoaded()) {
-                updateStatus('loading', 'Loading ONNX model...');
-                btnLoadModel.disabled = true;
-                btnLoadOnnx.disabled = true;
-                updateProgress(10);
-
-                try {
-                    const result = await loadModel((state) => {
-                        log('Loading state: ' + JSON.stringify(state));
-                        updateProgress(state.progress);
-                    });
-
-                    if (result.success) {
-                        updateStatus('ready', 'Model loaded successfully');
-                        updateProgress(100);
-                        document.getElementById('model-info').innerHTML = `
-                            <div class="result-item">✓ Model: htdemucs_6s_fp16weights.onnx</div>
-                            <div class="result-item">✓ Stems: ${result.modelInfo.stems.join(', ')}</div>
-                            <div class="result-item">✓ Input Shape: ${JSON.stringify(result.modelInfo.inputShape)}</div>
-                            <div class="result-item">✓ Output Shape: ${JSON.stringify(result.modelInfo.outputShape)}</div>
-                        `;
-                        btnSeparate.disabled = false;
-                    } else {
-                        throw new Error(result.error);
-                    }
-
-                } catch (e) {
-                    updateStatus('error', 'Failed to load model: ' + e.message);
-                    log('Error loading model: ' + e);
-                }
-            }
-        });
-
-        // Load Always.mp3 from server
-        btnSelectAlways.addEventListener('click', async () => {
-            initAudioContext();
-
-            try {
-                log('Loading Always.mp3 from server...');
-
-                const response = await fetch('/Always.mp3');
-                if (!response.ok) throw new Error('Always.mp3 not found on server');
-
-                const arrayBuffer = await response.arrayBuffer();
-                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-                document.getElementById('audio-info').innerHTML = `
-                    <div class="result-item success">✓ Loaded Always.mp3</div>
-                    <div class="result-item">Duration: ${audioBuffer.duration.toFixed(2)}s</div>
-                    <div class="result-item">Channels: ${audioBuffer.numberOfChannels}</div>
-                    <div class="result-item">Sample Rate: ${audioBuffer.sampleRate}Hz</div>
-                `;
-
-                btnSelectFile.disabled = false;
-                btnSeparate.disabled = false;
-
-                log('Always.mp3 loaded: ' + audioBuffer.duration + 's');
-            } catch (e) {
-                log('Error loading Always.mp3: ' + e.message);
-            }
-        });
-
-        // Select file
-        btnSelectFile.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            if (file.size > 100 * 1024 * 1024) {
-                alert('File too large (max 100MB for 6-minute songs)');
-                return;
-            }
-
-            initAudioContext();
-
-            log('Loading file: ' + file.name);
-
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-                document.getElementById('audio-info').innerHTML = `
-                    <div class="result-item success">✓ Loaded: ${file.name}</div>
-                    <div class="result-item">Duration: ${audioBuffer.duration.toFixed(2)}s</div>
-                    <div class="result-item">Channels: ${audioBuffer.numberOfChannels}</div>
-                    <div class="result-item">Sample Rate: ${audioBuffer.sampleRate}Hz</div>
-                `;
-
-                btnSelectFile.disabled = true;
-                btnSeparate.disabled = false;
-                log('Loaded: ' + audioBuffer.duration + 's');
-            } catch (e) {
-                log('Error loading file: ' + e.message);
-                alert('Error loading audio: ' + e.message);
-            }
-        });
-
-        // Run separation
-        btnSeparate.addEventListener('click', async () => {
-            if (!audioBuffer || !isModelLoaded()) {
-                alert('Load audio and model first');
-                return;
-            }
-
-            btnSeparate.disabled = true;
-            btnSeparate.textContent = 'Separating...';
-            updateStatus('loading', 'Running ONNX separation...');
-            updateProgress(10);
-
-            try {
-                const startTime = performance.now();
-
-                let progress = 10;
-                const progressInterval = setInterval(() => {
-                    progress += 5;
-                    updateProgress(Math.min(progress, 90));
-                }, 100);
-
-                log('Starting ONNX separation of ' + audioBuffer.duration + 's audio...');
-
-                // For full-length audio, we would need multiple segments
-                // For now, process just the first segment (7.8s)
-                // Full implementation would use segment-by-segment processing
-                const result = await separate(audioBuffer);
-
-                clearInterval(progressInterval);
-                updateProgress(100);
-
-                const processingTime = performance.now() - startTime;
-
-                if (result.success) {
-                    log('Separation completed in ' + processingTime.toFixed(2) + 'ms');
-                    updateStatus('ready', 'Separation complete');
-
-                    // For demo, show result structure
-                    document.getElementById('separation-time').innerHTML = `
-                        <div class="result-item success">✓ Processing Time: ${processingTime.toFixed(2)}ms</div>
-                    `;
-
-                    resultsSection.style.display = 'block';
-                    btnSeparate.textContent = 'Separate Tracks';
-                    btnSeparate.disabled = false;
-
-                } else {
-                    throw new Error(result.error || 'Unknown error');
-                }
-
-            } catch (e) {
-                updateStatus('error', 'Separation failed: ' + e.message);
-                log('Separation error: ' + e);
-                alert('Error: ' + e.message);
-                btnSeparate.textContent = 'Separate Tracks';
-                btnSeparate.disabled = false;
-            }
-        });
-
-        // Check model file exists on load
-        document.addEventListener('DOMContentLoaded', () => {
-            log('HTDemucs ONNX Test page loaded');
-            log('Environment: ' + navigator.userAgent);
-
-            fetch('models/htdemucs_6s_fp16weights.onnx', { method: 'HEAD' })
-                .then(r => {
-                    log('Model file available: true');
-                    btnLoadModel.disabled = false;
-                })
-                .catch(e => {
-                    log('Model file check: ' + e.message);
-                });
-        });
-    </script>
+    <script type="module" src="/src/audio/onnx-test.js"></script>
+    <script type="module" src="/onnx-test-client.js"></script>
 </body>
 </html>
