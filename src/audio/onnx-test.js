@@ -1,164 +1,149 @@
 /**
  * ONNX Test Module
  * Loads ONNX Runtime and htdemucs model for in-browser audio separation
+ * Optimized for memory and responsive UI
  */
 
 import * as ort from 'onnxruntime-web';
 
 let session = null;
 let modelInfo = null;
+let processedStems = null;
+let isModelLoaded = false;
+const SEGMENT_SAMPLES = 343980;
+const SAMPLE_RATE = 44100;
+const STEM_NAMES = ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'];
+let progressCallbacks = [];
+
+/**
+ * Register a progress callback
+ */
+export function onProgress(callback) {
+    progressCallbacks.push(callback);
+    return () => {
+        const idx = progressCallbacks.indexOf(callback);
+        if (idx >= 0) progressCallbacks.splice(idx, 1);
+    };
+}
+
+/**
+ * Notify all progress callbacks
+ */
+function notifyProgress(data) {
+    progressCallbacks.forEach(cb => {
+        try { cb(data); } catch (e) {}
+    });
+}
 
 /**
  * Load ONNX Runtime
  */
 export async function loadOnnxRuntime() {
-    if (!ort || !ort.InferenceSession) {
+    try {
+        const ort = await import('onnxruntime-web');
+        if (ort.InferenceSession) {
+            return { available: true };
+        }
         throw new Error('onnxruntime-web not properly loaded');
+    } catch (e) {
+        return { available: false, error: e.message };
     }
-
-    return {
-        available: true,
-        session: null // Will be created when model loads
-    };
 }
 
 /**
  * Load htdemucs ONNX model
- * Uses conservative WASM options to avoid memory allocation failures
  */
 export async function loadModel(progressCallback = null) {
-    if (session) {
-        return { success: true, session };
+    if (isModelLoaded && session) {
+        if (progressCallback) progressCallback({ stage: 'ready', progress: 100 });
+        return { success: true, modelInfo, session };
     }
 
     try {
-        if (progressCallback) {
-            progressCallback({ stage: 'loading', progress: 10 });
-        }
+        notifyProgress({ stage: 'loading', progress: 10 });
 
-        // Try to fetch model as ArrayBuffer to avoid WASM memory issues
-        const modelStartTime = performance.now();
+        // Check if file exists first (HEAD request is fast)
+        const headResponse = await fetch('models/htdemucs_6s_fp16weights.onnx', { method: 'HEAD' });
+        if (!headResponse.ok) throw new Error('Model file not found');
 
-        let modelBuffer;
-        try {
-            const response = await fetch('models/htdemucs_6s_fp16weights.onnx');
-            if (!response.ok) throw new Error('Model file not found');
-            modelBuffer = await response.arrayBuffer();
-        } catch (e) {
-            throw new Error('Failed to fetch model: ' + e.message);
-        }
+        // Get content length for progress
+        const contentLength = parseInt(headResponse.headers.get('content-length') || '0', 10);
+        console.log(`Model size: ${contentLength} bytes`);
 
-        const loadEndTime = performance.now();
-        const loadDuration = loadEndTime - modelStartTime;
-        console.log(`Model fetched in ${loadDuration.toFixed(2)}ms, size: ${modelBuffer.byteLength} bytes`);
+        notifyProgress({ stage: 'fetching', progress: 20 });
 
-        if (progressCallback) {
-            progressCallback({ stage: 'loading', progress: 30 });
-        }
+        // Fetch complete model
+        const response = await fetch('models/htdemucs_6s_fp16weights.onnx');
+        if (!response.ok) throw new Error('Failed to fetch model');
 
-        // Create session with conservative settings to avoid std::bad_alloc
-        const createStartTime = performance.now();
+        const modelBuffer = await response.arrayBuffer();
 
+        notifyProgress({ stage: 'creating_session', progress: 40 });
+
+        // Create session with conservative settings
         session = await ort.InferenceSession.create(modelBuffer, {
             executionProviders: ['wasm'],
             graphOptimizationLevel: 'disabled',
             enableMemPattern: false,
             numThreads: 1,
-            // Reduce memory usage
-            scratchLimit: 1024 * 1024 * 50, // 50MB scratch buffer
+            scratchLimit: 1024 * 1024 * 50
         });
 
-        const createEndTime = performance.now();
-        const createDuration = createEndTime - createStartTime;
-        console.log(`Session created in ${createDuration.toFixed(2)}ms`);
-
-        if (progressCallback) {
-            progressCallback({ stage: 'ready', progress: 100 });
+        // Verify session is valid
+        if (!session.inputNames || !session.outputNames) {
+            throw new Error('Session missing input/output names');
         }
 
-        // Get actual tensor info from session using correct API
-        // for onnxruntime-web 1.31.1
-        const inputMetadata = session.inputMetadata || {};
-        const outputMetadata = session.outputMetadata || {};
-
-        console.log('Input metadata:', Object.keys(inputMetadata));
-        console.log('Output metadata:', Object.keys(outputMetadata));
-
-        // Try to get actual shapes from metadata
-        const inputInfo = session.inputNames ? session.inputNames : Object.keys(inputMetadata);
-        const outputInfo = session.outputNames ? session.outputNames : Object.keys(outputMetadata);
-
-        const inputs = inputInfo.map(name => {
-            const meta = inputMetadata[name] || {};
-            return {
-                name,
-                dims: meta.dims || meta.shape || 'unknown',
-                type: meta.type || 'unknown'
-            };
-        });
-
-        const outputs = outputInfo.map(name => {
-            const meta = outputMetadata[name] || {};
-            return {
-                name,
-                dims: meta.dims || meta.shape || 'unknown',
-                type: meta.type || 'unknown'
-            };
-        });
-
-        console.log('Inputs:', inputs);
-        console.log('Outputs:', outputs);
-
         modelInfo = {
-            url: 'models/htdemucs_6s_fp16weights.onnx',
             inputName: 'mix',
             outputName: 'stems',
-            inputShape: [1, 2, 343980],
-            outputShape: [1, 6, 2, 343980],
-            stems: ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'],
-            sampleRate: 44100,
+            inputShape: [1, 2, SEGMENT_SAMPLES],
+            outputShape: [1, 6, 2, SEGMENT_SAMPLES],
+            stems: STEM_NAMES,
+            sampleRate: SAMPLE_RATE,
             segmentDuration: 7.8,
-            loadDuration: loadDuration,
-            createDuration: createDuration
+            modelSize: modelBuffer.byteLength
         };
 
-        return {
-            success: true,
-            session,
-            modelInfo,
-            inputs,
-            outputs
-        };
+        isModelLoaded = true;
+
+        notifyProgress({ stage: 'ready', progress: 100 });
+        if (progressCallback) progressCallback({ stage: 'ready', progress: 100 });
+
+        console.log('Model loaded:', modelInfo);
+
+        return { success: true, modelInfo, session };
 
     } catch (e) {
-        console.error('Model loading error:', e);
-        return {
-            success: false,
-            error: e.message,
-            stack: e.stack
-        };
+        console.error('Model load error:', e);
+        return { success: false, error: e.message, stack: e.stack };
     }
 }
 
 /**
- * Run separation on audio buffer
+ * Separate audio in segments to avoid memory issues
  */
 export async function separate(audioBuffer, options = {}) {
     if (!session) {
         const loadResult = await loadModel(options.onProgress);
-        if (!loadResult.success) {
-            return loadResult;
-        }
+        if (!loadResult.success) return loadResult;
     }
 
-    const SEGMENT_SAMPLES = 343980;
-    const SAMPLE_RATE = 44100;
+    const totalSamples = Math.floor(audioBuffer.duration * SAMPLE_RATE);
+    const numSegments = Math.ceil(totalSamples / SEGMENT_SAMPLES);
 
-    // Pre-process
-    const left = audioBuffer.getChannelData(0) || new Float32Array(audioBuffer.length);
-    const right = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : left;
+    console.log(`Processing ${audioBuffer.duration.toFixed(2)}s audio in ${numSegments} segments`);
 
-    // Create input tensor
+    // For now, process just the first segment (7.8s)
+    // A full implementation would iterate all segments and overlap-add
+    const startTime = performance.now();
+
+    notifyProgress({ stage: 'preprocessing', progress: 60 });
+
+    // Prepare input buffer (only for first segment)
+    const left = audioBuffer.getChannelData(0) || new Float32Array(totalSamples);
+    const right = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : new Float32Array(totalSamples);
+
     const inputData = new Float32Array(2 * SEGMENT_SAMPLES);
     for (let i = 0; i < SEGMENT_SAMPLES; i++) {
         const idx = i * 2;
@@ -168,17 +153,79 @@ export async function separate(audioBuffer, options = {}) {
 
     const inputTensor = new ort.Tensor('float32', inputData, [1, 2, SEGMENT_SAMPLES]);
 
-    // Run inference - use actual output names from model
-    const outputNames = session.outputNames || ['stems'];
-    const feeds = { 'mix': inputTensor };
+    notifyProgress({ stage: 'inference', progress: 70 });
 
     // Run inference
-    const results = await session.run(feeds);
+    const results = await session.run({
+        'mix': inputTensor
+    });
+
+    notifyProgress({ stage: 'postprocessing', progress: 90 });
+
+    const processingTime = performance.now() - startTime;
+
+    // Extract stems from output
+    const stems = {};
+    const outputTensor = results['stems'];
+
+    if (outputTensor && outputTensor.data) {
+        const dims = outputTensor.dims;
+        const numStems = dims[1];
+        const numChannels = dims[2];
+        const numSamples = dims[3];
+        const data = outputTensor.data;
+
+        for (let stemIdx = 0; stemIdx < numStems; stemIdx++) {
+            const stemName = STEM_NAMES[stemIdx];
+            const channelData = [];
+
+            for (let ch = 0; ch < numChannels; ch++) {
+                const samples = new Float32Array(numSamples);
+                for (let i = 0; i < numSamples; i++) {
+                    const idx = ((0 * numStems + stemIdx) * numChannels + ch) * numSamples + i;
+                    samples[i] = data[idx];
+                }
+                channelData.push(samples);
+            }
+
+            // Calculate statistics
+            let sum = 0, sumSq = 0;
+            let min = Infinity, max = -Infinity;
+            for (let i = 0; i < samples.length; i++) {
+                const v = channelData[0][i];
+                sum += v;
+                sumSq += v * v;
+                min = Math.min(min, v);
+                max = Math.max(max, v);
+            }
+            const rms = Math.sqrt(sumSq / samples.length);
+            const mean = sum / samples.length;
+
+            stems[stemName] = {
+                channels: channelData.length,
+                length: numSamples,
+                sampleRate: SAMPLE_RATE,
+                duration: numSamples / SAMPLE_RATE,
+                rms: rms,
+                mean: mean,
+                min: min,
+                max: max,
+                hasValidAudio: rms > 0.01 && isFinite(rms)
+            };
+        }
+    }
+
+    processedStems = stems;
+
+    notifyProgress({ stage: 'complete', progress: 100 });
 
     return {
         success: true,
-        results,
-        inputTensor
+        stems,
+        processingTime,
+        duration: SEGMENT_SAMPLES / SAMPLE_RATE,
+        sampleRate: SAMPLE_RATE,
+        totalSegments: numSegments
     };
 }
 
@@ -192,8 +239,15 @@ export function getModelInfo() {
 /**
  * Check if model is loaded
  */
-export function isModelLoaded() {
-    return session !== null;
+export function isModelLoadedSync() {
+    return isModelLoaded;
+}
+
+/**
+ * Get processed stems
+ */
+export function getProcessedStems() {
+    return processedStems;
 }
 
 /**
@@ -208,7 +262,10 @@ export async function release() {
         }
         session = null;
     }
+    isModelLoaded = false;
     modelInfo = null;
+    processedStems = null;
+    progressCallbacks = [];
 }
 
-export { ort };
+export { STEM_NAMES, SEGMENT_SAMPLES, SAMPLE_RATE };
