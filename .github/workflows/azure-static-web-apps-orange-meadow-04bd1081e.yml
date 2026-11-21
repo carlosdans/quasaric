@@ -36,12 +36,14 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefer-offline
 
+      # The integration suite inspects dist/assets, so the production build
+      # must exist before the tests run.
+      - name: Build static application
+        run: npm run build
+
       - name: Run automated tests
         run: npm test
         continue-on-error: false
-
-      - name: Build static application
-        run: npm run build
 
       - name: Include Azure Static Web Apps configuration
         run: cp staticwebapp.config.json dist/staticwebapp.config.json
