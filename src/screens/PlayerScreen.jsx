@@ -9,8 +9,11 @@ import { getTranslations } from '../i18n.js';
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
 
-// Nombres de los instrumentos para 6 stems
-const INSTRUMENT_NAMES = ['melody', 'bass', 'drums', 'guitar', 'piano', 'other'];
+// Nombres de los instrumentos según orden del modelo HTDemucs ONNX
+// El modelo devuelve: [drums, bass, other, vocals, guitar, piano]
+// Con el track original (índice 0), quedan: drums(1), bass(2), other(3), vocals(4), guitar(5), piano(6)
+const INSTRUMENT_NAMES = ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'];
+const PISTOL_TRACK_INDEX = 6; // Piano es el último stem (índice 6)
 
 export function PlayerScreen() {
   const [language, setLanguage] = useState('en');
@@ -133,7 +136,7 @@ export function PlayerScreen() {
   };
 
   const trackIsSeparated = tracks && tracks.length > 1;
-  const pianoTrackIndex = trackIsSeparated ? 4 : -1; // El piano es el 5º track (índice 4)
+  const pianoTrackIndex = trackIsSeparated ? PISTOL_TRACK_INDEX : -1; // Piano es el último stem (índice 6)
 
   const handleSilencePiano = () => {
     if (pianoTrackIndex >= 0) {

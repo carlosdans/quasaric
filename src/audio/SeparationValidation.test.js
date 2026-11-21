@@ -123,3 +123,40 @@ test('[VALIDATION] ONNX model is MIT licensed 6-stem model', () => {
   assert.equal(info.size, '136 MB', 'Model size (fp16)');
   assert.equal(info.sampleRate, 44100, 'Sample rate 44.1kHz');
 });
+
+test('[VALIDATION] Stem order matches HTDemucs ONNX output', () => {
+  // El orden del modelo htdemucs_6s-onnx es documentado y verificado
+  const EXPECTED_ORDER = ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'];
+  const engine = new StemSeparatorEngine();
+
+  assert.deepEqual(engine.stemNames, EXPECTED_ORDER,
+    'Stem order must match HTDemucs ONNX output order');
+
+  // Verificar posiciones específicas
+  assert.equal(engine.stemNames[0], 'drums', 'drums is first stem');
+  assert.equal(engine.stemNames[1], 'bass', 'bass is second stem');
+  assert.equal(engine.stemNames[2], 'other', 'other is third stem');
+  assert.equal(engine.stemNames[3], 'vocals', 'vocals is fourth stem');
+  assert.equal(engine.stemNames[4], 'guitar', 'guitar is fifth stem');
+  assert.equal(engine.stemNames[5], 'piano', 'piano is sixth/last stem');
+
+  // El piano debe estar en el índice 5 del array de stems
+  const pianoIndex = engine.stemNames.indexOf('piano');
+  assert.equal(pianoIndex, 5, 'Piano must be at index 5');
+});
+
+test('[VALIDATION] PlayerScreen track indices match model output', () => {
+  const playerScreen = fs.readFileSync('./src/screens/PlayerScreen.jsx', 'utf8');
+
+  // Verificar que usa el orden correcto de stems
+  const expectedPattern = /['"]drums['"].*['"]bass['"].*['"]other['"].*['"]vocals['"].*['"]guitar['"].*['"]piano['"]/;
+  assert.ok(expectedPattern.test(playerScreen),
+    'PlayerScreen must use correct stem order from model');
+
+  // Verificar que pianoTrackIndex es 6 (después del track original)
+  // El archivo define PISTOL_TRACK_INDEX = 6 y lo usa en pianoTrackIndex
+  const pianoConstantPattern = /PISTOL_TRACK_INDEX\s*=\s*6/;
+  const pianoUsagePattern = /pianoTrackIndex.*=\s*trackIsSeparated\s*\?\s*PISTOL_TRACK_INDEX/;
+  assert.ok(pianoConstantPattern.test(playerScreen) || pianoUsagePattern.test(playerScreen),
+    'Piano track index must be 6 (original + 6 stems)');
+});
