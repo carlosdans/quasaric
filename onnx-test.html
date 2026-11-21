@@ -225,23 +225,42 @@
             btnLoadOnnx.disabled = true;
 
             try {
+                // Clear any previous runtime
+                window.onnxruntime = undefined;
+                onnxRuntime = undefined;
+
                 const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/ort.min.js';
+                script.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.min.js';
+                script.crossOrigin = 'anonymous';
                 document.head.appendChild(script);
 
                 await new Promise((resolve, reject) => {
-                    script.onload = resolve;
+                    script.onload = () => {
+                        // Wait a tick for the module to fully initialize
+                        setTimeout(resolve, 10);
+                    };
                     script.onerror = reject;
+                    setTimeout(reject, 10000); // Timeout
                 });
 
                 onnxRuntime = window.onnxruntime;
+
+                if (!onnxRuntime) {
+                    throw new Error('onnxruntime not available on window');
+                }
+
+                if (!onnxRuntime.InferenceSession) {
+                    throw new Error('onnxruntime.InferenceSession not available');
+                }
+
                 updateStatus('ready', 'ONNX Runtime loaded successfully');
                 btnLoadModel.disabled = false;
-                log('ONNX Runtime version: ' + onnxRuntime.version);
+                log('ONNX Runtime loaded: ' + (onnxRuntime.version || 'version unknown'));
 
             } catch (e) {
-                updateStatus('error', 'Failed to load ONNX Runtime');
-                log('Error loading ONNX Runtime: ' + e.message);
+                updateStatus('error', 'Failed to load ONNX Runtime: ' + e.message);
+                log('Error loading ONNX Runtime: ' + e);
+                log('Stack: ' + (e.stack || 'no stack'));
             }
         });
 
