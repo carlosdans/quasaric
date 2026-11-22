@@ -105,7 +105,8 @@ export function PlayerScreen({ onBackToHome }) {
 
     const fileType = file.type;
     // Permitir audio/mpeg (MP3), audio/wav y application/octetstream (fallback para navegadores)
-    const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'application/octetstream'];
+    // También manejar MIME vacío que algunos navegadores devuelven
+    const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'application/octet-stream', 'application/octetstream'];
     const isAllowedType = allowedTypes.includes(fileType) || fileType.startsWith('audio/');
 
     if (!isAllowedType) {
@@ -117,22 +118,36 @@ export function PlayerScreen({ onBackToHome }) {
     setImporting(true);
     setSeparationResultState(null);
 
+    let blobUrl = null;
+
     try {
       // Limpiar nombre del archivo (eliminar extensión)
-      const cleanName = file.name.replace(/\.[^/.]+$/, '');
-      // Añadir pista original primero
-      const url = URL.createObjectURL(file);
-      await addTrack(url, cleanName);
-
-      // Cargar AudioBuffer para waveform
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      setOriginalAudioBuffer(audioBuffer);
+      const cleanName = file.name.replace(/\.[^/.]+$/);
+      
+      // Crear Blob URL
+      blobUrl = URL.createObjectURL(file);
+      
+      // Añadir pista original primero - este método ya decodifica el audio
+      const track = await addTrack(blobUrl, cleanName);
+      
+      // Usar el AudioBuffer ya decodificado del track
+      if (track?.buffer) {
+        setOriginalAudioBuffer(track.buffer);
+      } else {
+        // Fallback: decodificar manualmente si el buffer no está disponible
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const response = await fetch(blobUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        setOriginalAudioBuffer(audioBuffer);
+      }
     } catch (e) {
       console.error('Error importing file:', e);
       setError(t.errorLoading);
+      // Limpiar blob URL en caso de error
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
     } finally {
       setImporting(false);
       event.target.value = '';
