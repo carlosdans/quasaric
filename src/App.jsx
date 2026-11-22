@@ -11,9 +11,16 @@ function getInitialLanguage() {
   }
 }
 
+function getInitialView() {
+  if (typeof window !== 'undefined' && window.location.hash === '#player') {
+    return 'player';
+  }
+  return 'home';
+}
+
 export default function App() {
   const [language, setLanguage] = useState(getInitialLanguage);
-  const [currentView, setCurrentView] = useState('home');
+  const [currentView, setCurrentView] = useState(getInitialView);
   const t = getTranslations(language);
 
   useEffect(() => {
@@ -31,10 +38,23 @@ export default function App() {
     }
   }, [language, t]);
 
+  // Sync hash URL with current view
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#player') {
+        setCurrentView('player');
+      } else if (window.location.hash === '#home') {
+        setCurrentView('home');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const renderCurrentView = () => {
     switch (currentView) {
       case 'player':
-        return <PlayerScreen />;
+        return <PlayerScreen onBackToHome={() => setCurrentView('home')} />;
       default:
         return (
           <main>
@@ -57,7 +77,15 @@ export default function App() {
                 <p className="eyebrow">{t.eyebrow}</p>
                 <h1>{t.headlineFirst}<br /><span>{t.headlineSecond}</span></h1>
                 <p className="intro">{t.intro}</p>
-                <a className="primary-link" href="#vision">{t.explore} <span aria-hidden="true">↘</span></a>
+                <div className="hero-actions">
+                  <a className="primary-link" href="#vision">{t.explore} <span aria-hidden="true">↘</span></a>
+                  <button className="play-btn hero-play-btn" onClick={() => {
+                    window.location.hash = '#player';
+                    setCurrentView('player');
+                  }} aria-label={t.tryApp}>
+                    🎵 {t.tryApp}
+                  </button>
+                </div>
               </div>
 
               <div className="music-card" aria-label={t.practice}>

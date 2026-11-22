@@ -29,7 +29,7 @@ const AUTOMATIC_ACCOMPANY_PATTERNS = {
   simple: 'simple'
 };
 
-export function PlayerScreen() {
+export function PlayerScreen({ onBackToHome }) {
   const [language, setLanguage] = useState('en');
   const [error, setError] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -52,6 +52,14 @@ export function PlayerScreen() {
   const recordedStemsRef = useRef([]);
 
   const t = getTranslations(language);
+
+  // Navigate back to home
+  const handleBackToHome = () => {
+    window.location.hash = '#home';
+    if (onBackToHome) {
+      onBackToHome();
+    }
+  };
 
   const {
     initialized,
@@ -108,7 +116,7 @@ export function PlayerScreen() {
     try {
       // Añadir pista original primero
       const url = URL.createObjectURL(file);
-      await addTrack(url, file.name.replace(/\.[^/.]+$/, ''));
+      await addTrack(url, file.name.replace(/\\.[^/.]+$/, ''));
 
       // Cargar AudioBuffer para waveform
       const response = await fetch(url);
@@ -255,6 +263,11 @@ export function PlayerScreen() {
 
   return (
     <div className="player-screen">
+      {/* Back to Home Button */}
+      <button className="back-btn" onClick={handleBackToHome} aria-label={t.backHome}>
+        ← {t.backHome}
+      </button>
+
       <h2 className="screen-title">{t.play || 'Player'}</h2>
 
       {/* Error Message */}

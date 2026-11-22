@@ -62,7 +62,9 @@ export const translations = {
     ],
     footer: 'Made for the joy of playing.',
     pageTitle: 'Quasaric — Play the song. Learn your part.',
-    pageDescription: 'Quasaric is being built to help you focus on your instrument, explore song parts and learn to play.'
+    pageDescription: 'Quasaric is being built to help you focus on your instrument, explore song parts and learn to play.',
+    tryApp: 'Try Quasaric',
+    backHome: 'Home'
   },
   es: {
     languageLabel: 'Idioma',
@@ -127,7 +129,9 @@ export const translations = {
     ],
     footer: 'Hecho para disfrutar tocando.',
     pageTitle: 'Quasaric — Escucha la canción. Aprende tu parte.',
-    pageDescription: 'Quasaric nace para que te centres en tu instrumento, exploras las partes de una canción y aprendas a tocar.'
+    pageDescription: 'Quasaric nace para que te centres en tu instrumento, exploras las partes de una canción y aprendas a tocar.',
+    tryApp: 'Probar Quasaric',
+    backHome: 'Inicio'
   }
 };
 
