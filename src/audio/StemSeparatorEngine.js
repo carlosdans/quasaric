@@ -64,17 +64,17 @@ export class StemSeparatorEngine {
     this.MODEL_INFO = {
       // Production URL for ONNX model (hosted on HuggingFace CDN)
       // CORS is supported via redirect handling in ONNX Runtime Web
-      url: 'models/HTDemucs6Stems.onnx',
-      size: '121.77 MB',
+      url: 'models/HTDemucs6Stems_int8.onnx',
+      size: '69.62 MB (INT8)',
       license: 'MIT',
-      source: 'MonoBand APK extracted (HuggingFace StemSplit)',
+      source: 'MonoBand APK extracted and INT8 quantized',
       stems: 6,
       stemNames: this.stemNames,
       sampleRate: 44100,
       segmentDuration: 7.8, // segundos
       inputShape: [1, 2, 343980], // batch, channels, time_samples
       outputShape: [1, 6, 2, 343980], // batch, stems, channels, time_samples
-      inputName: 'mix',
+      inputName: 'audio',
       outputName: 'stems'
     };
   }
