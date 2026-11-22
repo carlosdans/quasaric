@@ -275,20 +275,30 @@ El modelo ONNX debe probarse con un archivo real para validar:
 
 ## 🐛 ERRORES CORREGIDOS EN ESTA SESIÓN
 
+### Modelo ONNX - Memoria del navegador
+
+**Problema de memoria (`std::bad_alloc`):**
+- El modelo fp16 (130 MB) supera el heap disponible del navegador
+- Error: `Can't create a session. ERROR_CODE: 6, ERROR_MESSAGE: std::bad_alloc`
+- Requiere: 2GB+ RAM y modelo < 100 MB
+
+**Solución implementada:**
+- Usar modelo INT8 local: `models/HTDemucs6Stems_int8.onnx` (69.62 MB)
+- Descargar desde HuggingFace: https://huggingface.co/stemsplitio/htdemucs-6s-onnx
+- Opcional: Crear un CDN público para el INT8 (si disponible)
+
+**NOTA:** El modelo INT8 debe colocarse manualmente en `models/HTDemucs6Stems_int8.onnx`
+para uso fuera de desarrollo. En producción web, considera usar una CDN o servir el modelo desde otro hosting.
+
 ### Modelo ONNX de HuggingFace CDN
 
-**Problema de producción:**
-- Error `protobuf parsing failed` al cargar el modelo local `models/HTDemucs6Stems_int8.onnx`
+**Problema de producción anterior:**
+- Error `protobuf parsing failed` al cargar el modelo local
 - La URL relativa no está disponible en el hosting de quasaric.com
 
-**Solución aplicada:**
-- URL actualizada a HuggingFace CDN: `https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx`
-- Modelo: 130.11 MB fp16 (compatible con ONNX Runtime Web)
-- CORS soportado mediante redirección
-
-**Alternativa local (solo desarrollo):**
-- Si necesitas el modelo INT8 local (69.62 MB), coloca en `models/HTDemucs6Stems_int8.onnx`
-- Actualiza MODEL_INFO.url a `models/HTDemucs6Stems_int8.onnx`
+**Versión fallida:**
+- URL: `https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx`
+- Modelo: 130.11 MB fp16 (causaba std::bad_alloc)
 
 ### Modelo ONNX de MonoBand - VERSIÓN INT8
 
