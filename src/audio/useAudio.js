@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import player from './MultiTrackPlayer';
 import stemSeparator from './StemSeparatorEngine';
 
@@ -312,12 +312,9 @@ export function useAudio() {
     setSeparationResult(null);
   }, []);
 
-  // Limpiar al desmontar
-  useEffect(() => {
-    return () => {
-      destroy();
-    };
-  }, [destroy]);
+  // No destruir el motor desde un cleanup de efecto: React StrictMode reproduce
+  // montajes y desmontajes en desarrollo y podía cerrar el AudioContext recién creado.
+  // El cierre explícito se realiza al salir del reproductor mediante destroy().
 
   return {
     initialized,
