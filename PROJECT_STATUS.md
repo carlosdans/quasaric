@@ -275,16 +275,29 @@ El modelo ONNX debe probarse con un archivo real para validar:
 
 ## 🐛 ERRORES CORREGIDOS EN ESTA SESIÓN
 
-### Modelo ONNX - Memoria del navegador
+### Modelo ONNX - Estado final
 
-**Problema de memoria (`std::bad_alloc`):**
-- El modelo fp16 (130 MB) supera el heap disponible del navegador
-- Error: `Can't create a session. ERROR_CODE: 6, ERROR_MESSAGE: std::bad_alloc`
-- Solución: Aumentar memoryLimit a 2GB en configuración ONNX
+**URL Producción funcional:**
+```
+https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx
+```
 
-**Problema de URL del modelo INT8:**
-- Error: `failed to load external data file` - el modelo INT8 no existe en HuggingFace con ese nombre
-- Solución: Usar modelo fp16 disponible en HuggingFace
+**Características:**
+- Formato: ONNX (PyTorch export)
+- Input: 'mix' → Shape: [1, 2, 343980]
+- Output: 'stems' → Shape: [1, 6, 2, 343980]
+- Sample Rate: 44.1 kHz
+- Size: 130.11 MB fp16
+- CORS: Compatible con CSP de quasaric.com
+
+### INT8 Alternativo (local)
+
+**URL HuggingFace INT8:** `htdemucs_6s_int8.onnx` - **NO DISPONIBLE** en HuggingFace
+
+**Solución para INT8:**
+1. Usar modelo local en `models/HTDemucs6Stems_int8.onnx` (69.62 MB)
+2. Servir desde CDN o GitHub Pages
+3. Actualizar MODEL_INFO.url en StemSeparatorEngine.js
 
 ### Problemas técnicos corregidos
 
@@ -309,19 +322,26 @@ El modelo ONNX debe probarse con un archivo real para validar:
 - ANTERIOR: `result.stems`
 - CORREGIDO: `result.stemBuffers` (coincide con useAudio.js)
 
-### Modelo ONNX - Estado final
+### Para usar INT8 (69 MB)</h6>
 
-**URL Producción:**
-```
-https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx
+1. Copiar `models/HTDemucs6Stems_int8.onnx` al proyecto
+2. Servir desde un CDN (ej: GitHub Pages, AWS S3)
+3. Actualizar URL en MODEL_INFO:
+
+```javascript
+url: 'https://tu-cdn.com/HTDemucs6Stems_int8.onnx'
 ```
 
-**Características:**
-- Formato: ONNX (PyTorch export)
-- Input: 'mix' → Shape: [1, 2, 343980]
-- Output: 'stems' → Shape: [1, 6, 2, 343980]
-- Sample Rate: 44.1 kHz
-- Size: 130.11 MB fp16
+### Requirements
+
+**Para fp16 (130 MB):**
+- 2GB+ de RAM disponible en el navegador
+- Navegador moderno con WASM soporte
+- Chrome/Edge recomendado
+
+**Para INT8 (69 MB):**
+- 1GB+ de RAM disponible
+- Menos consumo de memoria que fp16
 - Memory limit: 2GB WASM heap
 
 **Alternativa INT8 local:**
