@@ -55,6 +55,7 @@ export function PlayerScreen({ onBackToHome }) {
 
   // Navigate back to home
   const handleBackToHome = () => {
+    destroy();
     window.location.hash = '#home';
     if (onBackToHome) {
       onBackToHome();
@@ -78,7 +79,8 @@ export function PlayerScreen({ onBackToHome }) {
     setTrackMuted,
     setTrackSolo,
     setLoop,
-    unloadAll
+    unloadAll,
+    destroy
   } = useAudio();
 
   // Sincronizar tiempo del waveform con el reproductor
@@ -86,10 +88,13 @@ export function PlayerScreen({ onBackToHome }) {
     setWaveformPlayedTime(position);
   }, [position]);
 
-  // Inicializar al montar
-  if (!initialized) {
-    init();
-  }
+  // Inicializar después del montaje, nunca durante el render.
+  // Esto evita crear varios AudioContext por renders consecutivos.
+  useEffect(() => {
+    if (!initialized) {
+      init();
+    }
+  }, [initialized, init]);
 
   const handleFileUpload = async (event) => {
     event.preventDefault();
@@ -103,11 +108,17 @@ export function PlayerScreen({ onBackToHome }) {
       return;
     }
 
-    const fileType = file.type;
-    // Permitir audio/mpeg (MP3), audio/wav y application/octetstream (fallback para navegadores)
-    // También manejar MIME vacío que algunos navegadores devuelven
-    const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'application/octet-stream', 'application/octetstream'];
-    const isAllowedType = allowedTypes.includes(fileType) || fileType.startsWith('audio/');
+    // MIME puede venir vacío o genérico según el navegador/sistema operativo.
+    // En esos casos usamos la extensión como filtro preliminar; la decodificación
+    // real de Web Audio es la validación definitiva del contenido.
+    const fileType = (file.type || '').toLowerCase().trim();
+    const extension = file.name.split('.').pop()?.toLowerCase() || '';
+    const supportedExtensions = ['mp3', 'wav'];
+    const genericMimeTypes = ['', 'application/octet-stream', 'application/octetstream', 'binary/octet-stream'];
+    const hasAudioMime = fileType.startsWith('audio/');
+    const hasSupportedExtension = supportedExtensions.includes(extension);
+    const isGenericMime = genericMimeTypes.includes(fileType);
+    const isAllowedType = hasAudioMime || (isGenericMime && hasSupportedExtension);
 
     if (!isAllowedType) {
       setError(t.errorLoading);
@@ -127,23 +138,23 @@ export function PlayerScreen({ onBackToHome }) {
       // Crear Blob URL
       blobUrl = URL.createObjectURL(file);
       
-      // Añadir pista original primero - este método ya decodifica el audio
-      const track = await addTrack(blobUrl, cleanName);
-      
-      // Usar el AudioBuffer ya decodificado del track
-      if (track?.buffer) {
-        setOriginalAudioBuffer(track.buffer);
-      } else {
-        // Fallback: decodificar manualmente si el buffer no está disponible
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const response = await fetch(blobUrl);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-        setOriginalAudioBuffer(audioBuffer);
+      // Garantizar que el reproductor tiene un AudioContext antes de importar.
+      if (!initialized) {
+        const ready = await init();
+        if (!ready) throw new Error('No se pudo inicializar el motor de audio');
       }
+
+      // addTrack realiza una única decodificación y devuelve la pista con su AudioBuffer.
+      const track = await addTrack(blobUrl, cleanName, undefined, file);
+      if (!track?.buffer || !Number.isFinite(track.buffer.duration) || track.buffer.duration <= 0) {
+        throw new Error('El archivo no contiene audio decodificable');
+      }
+      setOriginalAudioBuffer(track.buffer);
     } catch (e) {
       console.error('Error importing file:', e);
-      setError(t.errorLoading);
+      // Mostrar la causa técnica concreta para no ocultar fallos de lectura,
+      // inicialización o decodificación bajo un mensaje genérico.
+      setError(`${t.errorLoading} (${e?.message || 'Unknown audio error'})`);
       // Limpiar blob URL en caso de error
       if (blobUrl) {
         URL.revokeObjectURL(blobUrl);
