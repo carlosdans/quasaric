@@ -227,7 +227,7 @@ export class MultiTrackPlayer {
         }
       });
     }
-    this.startTime = this.audioContext.currentTime;
+    this.startTime = this.audioContext ? this.audioContext.currentTime : 0;
     this.pauseTime = 0;
     this.isPlaying = false;
     this.loopSettings = null;
