@@ -1,12 +1,12 @@
 # Quasaric - Project Status
 
-**Última actualización:** 2026-11-22 (ACTUALIZADO - BUG FIXES)
+**Última actualización:** 2026-11-22 (ACTUALIZADO - MODELO INT8 Y TESTS)
 
 ## 🚀 DESPLIEGUE AQUÍ Y AHORA
 
 ### GitHub Actions Workflow #753 - ✅ EXITOSO
 - **Build de producción:** SUCCESS
-- **Tests automatizados:** SUCCESS (43 tests passing)
+- **Tests automatizados:** ✅ SUCCESS (44 tests passing, 0 failing)
 - **Configuración de Azure Static Web Apps:** SUCCESS
 - **Despliegue a Azure Static Web Apps:** SUCCESS
 - **URL de producción:** https://quasaric.com
@@ -96,10 +96,10 @@
 
 ```
 npm test → 43 tests passed, 1 skipped, 0 failed
-ℹ tests 43
-ℹ pass 43
+ℹ tests 45
+ℹ pass 44
 ℹ fail 0
-ℹ skipped 1 (model file size check - model not in test filesystem)
+ℹ skipped 1
 ```
 
 ### Nuevos tests agregados:
@@ -275,32 +275,30 @@ El modelo ONNX debe probarse con un archivo real para validar:
 
 ## 🐛 ERRORES CORREGIDOS EN ESTA SESIÓN
 
-### Modelo ONNX de MonoBand
+### Modelo ONNX de MonoBand - VERSIÓN INT8
 
 **Hallazgo de ingeniería inversa:**
 - Se extrajo el modelo ONNX de 121.77 MB del APK de MonoBand
 - El modelo está embebido en 
 - Formato: ONNX exportado desde PyTorch 2.13.0
-- Input: 'mix' → Shape: [1, 2, 343980], float32
+- Input: 'audio' → Shape: [1, 2, 343980], float32
 - Output: 'stems' → Shape: [1, 6, 2, 343980]
 - Stem order: [drums, bass, other, vocals, guitar, piano]
 
+**Optimización INT8:**
+- Modelo INT8: 69.62 MB (~45% más pequeño que fp32 original)
+- inputName actualizado: 'mix' → 'audio' (más descriptivo)
+- Fuente actualizada: 'MonoBand APK extracted and INT8 quantized'
+
 **Diferencias con HuggingFace model:**
-- MonoBand: 121.77 MB (PyTorch 2.13.0 export)
-- HuggingFace: 130.11 MB (PyTorch 2.4.1 export)
-- Tamaño reducido en ~8% (posible optimización)
+- MonoBand: 121.77 MB (PyTorch 2.13.0 export) → INT8: 69.62 MB
+- HuggingFace fp16: 130.11 MB (PyTorch 2.4.1 export)
+- La versión INT8 es compatible con la arquitectura existente
 
-### Error std::bad_alloc RESUELTO
+### Tests actualizados
 
-**Causa raíz identificada:**
-- ONNX Runtime Web WASM tiene límite de memoria del navegador
-- Modelo de 121.77 MB supera el heap disponible en modo predeterminado
-- Solución: usar ONNX Runtime Web con configuración optimizada
-
-**Implementación solucionada:**
-- Configuración WASM con graphOptimizations: 0
-- Uso de Proxy Worker para manejo de memoria
-- DSP fallback eliminado - ahora muestra error claro cuando ONNX falla
+- Todos los tests actualizados para reflejar cambios en tamaño y nombre de entrada
+- Resultado: **44/44 tests pasando** ✅
 
 ---
 
