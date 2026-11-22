@@ -107,7 +107,11 @@ export class StemSeparatorEngine {
 
       this.session = await this._onnxRuntime.InferenceSession.create(
         this.MODEL_INFO.url,
-        { executionProviders: ['wasm'] }
+        {
+          executionProviders: ['wasm'],
+          graphOptimizations: 0,
+          ORT_LOGGING_LEVEL: 0
+        }
       );
 
       this.modelLoaded = true;
