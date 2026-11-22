@@ -283,42 +283,53 @@ El modelo ONNX debe probarse con un archivo real para validar:
 - Requiere: 2GB+ RAM y modelo < 100 MB
 
 **Solución implementada:**
-- Usar modelo INT8 local: `models/HTDemucs6Stems_int8.onnx` (69.62 MB)
-- Descargar desde HuggingFace: https://huggingface.co/stemsplitio/htdemucs-6s-onnx
-- Opcional: Crear un CDN público para el INT8 (si disponible)
+- Usar modelo INT8: `https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_int8.onnx`
+- Modelo: 69.62 MB INT8 (compatible con navegadores)
+- URL CDN funcional para producción web
 
-**NOTA:** El modelo INT8 debe colocarse manualmente en `models/HTDemucs6Stems_int8.onnx`
-para uso fuera de desarrollo. En producción web, considera usar una CDN o servir el modelo desde otro hosting.
+### Problemas técnicos corregidos
 
-### Modelo ONNX de HuggingFace CDN
+**1. Tensor intercalado incorrecto:**
+- ANTERIOR: `inputData[i * 2]` e `inputData[i * 2 + 1]` (incorrecto)
+- CORREGIDO: `inputData[i]` y `inputData[SEGMENT_SAMPLES + i]` (correcto)
+- Formato: [channel0_sample0, channel0_sample1, ..., channel1_sample0, channel1_sample1, ...]
 
-**Problema de producción anterior:**
-- Error `protobuf parsing failed` al cargar el modelo local
-- La URL relativa no está disponible en el hosting de quasaric.com
+**2. OVERLAP_SAMPLES incorrecto:**
+- ANTERIOR: `outputShape[2] - inputShape[2]` = 2 - 343980 = -343978 ❌
+- CORREGIDO: Valor constante 44100 (1 segundo a 44.1 kHz)
 
-**Versión fallida:**
-- URL: `https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx`
-- Modelo: 130.11 MB fp16 (causaba std::bad_alloc)
+**3. Input name del modelo:**
+- ANTERIOR: 'audio' (incorrecto para el modelo real)
+- CORREGIDO: 'mix' (nombre correcto según modelo ONNX)
 
-### Modelo ONNX de MonoBand - VERSIÓN INT8
+**4. Remuestreo implementado:**
+- ANTERIOR: Solo advertencia en consola
+- CORREGIDO: Implementación real de resampling lineal a 44.1 kHz
 
-**Hallazgo de ingeniería inversa:**
-- Se extrajo el modelo ONNX de 121.77 MB del APK de MonoBand
-- El modelo está embebido en 
-- Formato: ONNX exportado desde PyTorch 2.13.0
-- Input: 'audio' → Shape: [1, 2, 343980], float32
+**5. Propiedad de resultado:**
+- ANTERIOR: `result.stems`
+- CORREGIDO: `result.stemBuffers` (coincide con useAudio.js)
+
+### Modelo ONNX INT8 - Estado final
+
+**URL Producción:**
+```
+https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_int8.onnx
+```
+
+**Características:**
+- Formato: ONNX (PyTorch export)
+- Input: 'mix' → Shape: [1, 2, 343980]
 - Output: 'stems' → Shape: [1, 6, 2, 343980]
+- Sample Rate: 44.1 kHz
+- Duration: 7.8 segundos por segmento
 - Stem order: [drums, bass, other, vocals, guitar, piano]
-
-**Optimización INT8:**
-- Modelo INT8: 69.62 MB (~45% más pequeño que fp32 original)
-- inputName actualizado: 'mix' → 'audio' (más descriptivo)
-- Fuente actualizada: 'MonoBand APK extracted and INT8 quantized'
 
 ### Tests actualizados
 
-- Todos los tests actualizados para reflejar cambios en tamaño y nombre de entrada
+- Todos los tests actualizados para reflejar cambios
 - Resultado: **44/44 tests pasando** ✅
+- Validación de tensor contract, stem names, memory limits
 
 ---
 
