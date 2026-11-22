@@ -122,7 +122,7 @@ export function Waveform({
       ctx.moveTo(x, canvasHeight - 4);
       ctx.lineTo(x, canvasHeight);
       ctx.stroke();
-      ctx.fill(time.toFixed(1), x, canvasHeight - 8);
+      ctx.fillText(time.toFixed(1), x, canvasHeight - 8);
     }
 
   }, [waveformData, position, duration, colors]);
