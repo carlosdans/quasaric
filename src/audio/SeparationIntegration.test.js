@@ -7,7 +7,8 @@ test('[INTEGRATION] ONNX Model tensor contract is correct', () => {
   const engine = new StemSeparatorEngine();
 
   // Verificar contrato de tensores del modelo
-  assert.equal(engine.MODEL_INFO.inputName, 'mix', 'Input name is mix');
+  // inputName 'audio' es el nombre de entrada esperado por htdemucs INT8 quantized
+  assert.equal(engine.MODEL_INFO.inputName, 'audio', 'Input name is audio');
   assert.equal(engine.MODEL_INFO.outputName, 'stems', 'Output name is stems');
 
   // Forma de entrada: [batch, channels, time_samples]
