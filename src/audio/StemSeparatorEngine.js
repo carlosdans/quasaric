@@ -64,8 +64,8 @@ export class StemSeparatorEngine {
     this.MODEL_INFO = {
       // Production URL for ONNX model (hosted on HuggingFace CDN)
       // CORS is supported via redirect handling in ONNX Runtime Web
-      url: 'https://huggingface.co/StemSplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx',
-      size: '136 MB',
+      url: 'models/HTDemucs6Stems.onnx',
+      size: '121.77 MB',
       license: 'MIT',
       source: 'StemSplit (huggingface.co/StemSplitio/htdemucs-6s-onnx)',
       stems: 6,
@@ -118,11 +118,15 @@ export class StemSeparatorEngine {
         this.MODEL_INFO.url,
         {
           executionProviders: ['wasm'],
-          // Reduce memory overhead
           graphOptimizations: 0,
           ORT_LOGGING_LEVEL: 0,
-          // Increase WASM memory if needed
-          // sessionOpts: { memLimit: 512 * 1024 * 1024 }
+          // WASM memory configuration
+          sessionOpts: {
+            executionProviders: ['wasm'],
+            graphOptimizations: 0,
+            memoryLimit: 1024 * 1024 * 1024, // 1GB limit
+            executionMode: 'sequential'
+          }
         }
       );
 
@@ -477,7 +481,13 @@ export class StemSeparatorEngine {
       if (result.success) {
         return result;
       }
-      console.warn('ONNX falló, usando DSP fallback:', result.error);
+      // NO usar DSP fallback engañoso - devolver error explícito
+      return {
+        success: false,
+        error: 'Separación REAL no disponible: ' + result.error + '. El DSP fallback NO separa instrumentos musicales.',
+        method: 'onnx_failed',
+        fallback_used: false
+      };
     }
 
     return await this.separateDSP(audioBuffer);
