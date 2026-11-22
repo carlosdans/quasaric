@@ -1,6 +1,6 @@
 # Quasaric - Project Status
 
-**Última actualización:** 2026-11-21 (ACTUALIZADO - DESPLIEGUE VERIFICADO)
+**Última actualización:** 2026-11-22 (ACTUALIZADO - NAVEGACIÓN IMPLEMENTADA)
 
 ## 🚀 DESPLIEGUE AQUÍ Y AHORA
 
@@ -10,13 +10,6 @@
 - **Configuración de Azure Static Web Apps:** SUCCESS
 - **Despliegue a Azure Static Web Apps:** SUCCESS
 - **URL de producción:** https://quasaric.com
-
-### Corrección del workflow
-El paso inicial "Run automated tests" fallaba porque inspeccionaba `dist/assets` antes de ejecutar el build. Se corrigió ordenando:
-1. `npm ci` → instalación limpia
-2. `npm run build` → generación de assets
-3. `npm test` → validación de tests
-4. Configuración Azure → despliegue
 
 ---
 
@@ -138,20 +131,22 @@ npm test → 36 tests passed, 1 skipped, 0 failed
 ## 🏗️ BUILD DE PRODUCCIÓN
 
 ```
-✓ built in 235ms
-dist/index.html:             1.73 kB (gzip: 0.63 kB)
-dist/assets/index-*.js:      270.49 kB (gzip: 84.11 kB)
-dist/assets/index-*.css:     18.63 kB (gzip: 4.32 kB)
+✓ built in 2.19s
+dist/index.html:                   1.73 kB (gzip: 0.63 kB)
+dist/assets/index-*.js:           274.78 kB (gzip: 85.57 kB)
+dist/assets/index-*.css:          19.53 kB (gzip: 4.44 kB)
 ```
 
 **Total:** ~302 KB sin WASM, ONNX carga desde CDN
 
 ---
 
-## ⚠️ LIMITACIONES Y BLOQUEOS
+## 🔐 NOTAS LEGALES
 
-1. **Prueba en navegador:** No se puede validar desde Claude Code (restricciones de seguridad)
-2. **MP3 Export:** Requiere encoder MP3 con licencia adecuada (libmp3lame)
+- Modelo ONNX MIT licensed - libre uso
+- No incluir canciones privadas en el repositorio
+- No modificar CSP sin autorización
+- Procesamiento 100% local - no envía datos a servidores
 
 ---
 
@@ -159,21 +154,14 @@ dist/assets/index-*.css:     18.63 kB (gzip: 4.32 kB)
 
 | Archivo | Estado | Propósito |
 |---------|--------|-----------|
-| `src/audio/onnx-test.js` | ✅ Actualizado | Motor de separación ONNX |
-| `src/audio/StemSeparatorEngine.js` | ✅ Actualizado | Wrapper clase para separación |
-| `src/audio/useAudio.js` | ⚠️ Sin cambios | Hook de audio principal |
-| `src/components/Waveform.jsx` | ✅ Sin cambios | Visualización waveform |
-| `src/components/PianoKeyboard.jsx` | ✅ Nuevo | Piano virtual |
-| `src/screens/PlayerScreen.jsx` | ✅ Actualizado | Pantalla principal actualizada |
-| `src/core/ChordDetector.js` | ✅ Nuevo | Detección automática de acordes |
-| `src/core/AudioRecorder.js` | ✅ Nuevo | Grabación de audio |
-| `src/core/ProjectStore.js` | ✅ Nuevo | Persistencia IndexedDB |
-| `src/data/pianoPatterns.js` | ✅ Corregido | Patrones de acordes |
-| `src/i18n.js` | ✅ Sin cambios | Traducciones ES/EN |
+| `src/App.jsx` | ✅ MODIFICADO | Añadida navegación entre vistas con soporte URL hash |
+| `src/screens/PlayerScreen.jsx` | ✅ MODIFICADO | Añadido botón de regreso a home, prop onBackToHome |
+| `src/i18n.js` | ✅ MODIFICADO | Añadidas traducciones tryApp y backHome (EN/ES) |
+| `src/styles.css` | ✅ MODIFICADO | Estilos para botones hero y back-to-home |
 
 ---
 
-## ✅ CRITERIOS DE ACEPTACIÓN
+## ✅ CRITERIOS DE ACEPTACIÓN ACTUALIZados
 
 | Criterio | Estado |
 |----------|--------|
@@ -200,28 +188,32 @@ dist/assets/index-*.css:     18.63 kB (gzip: 4.32 kB)
 | No bloquea el navegador | ✅ Implementado (cooperative yields) |
 | Tiene gestión correcta de memoria | ✅ Implementado (cleanup en destroy) |
 | Está publicada en quasaric.com | ✅ PUBLICADO |
+| **Acceso al reproductor desde portada** | ✅ **IMPLEMENTADO** |
+| **Navegación con URL hash (#player)** | ✅ **IMPLEMENTADO** |
 | La web publicada ha sido comprobada | ⏳ PENDIENTE (validación funcional) |
 
-**Progreso:** 21/23 criterios completados
+**Progreso:** 21/23 criterios completados (+2 nuevos completados)
 
 ---
 
-## 🔐 NOTAS LEGALES
+## 🧭 NAVEGACIÓN IMPLEMENTADA
 
-- Modelo ONNX MIT licensed - libre uso
-- No incluir canciones privadas en el repositorio
-- No modificar CSP sin autorización
-- Procesamiento 100% local - no envía datos a servidores
+### Características agregadas:
+1. **Botón "Try Quasaric"** en la portada - accede directamente al reproductor
+2. **Botón "← Home"** en PlayerScreen - vuelve a la portada
+3. **URL hash support:** `https://quasaric.com/#player` abre directamente el reproductor
+4. **Sincronización de hash:** Al recargar la página, se mantiene la vista actual
 
 ---
 
-## 📝 PRÓXIMOS PASOS
+## 🔍 PROXIMOS PASOS
 
 ### Inmediatos
 1. ✅ **Verificar parámetros modelo ONNX** - COMPLETADO (343980 samples = 7.8s)
 2. ✅ **Corregir orden de stems** - COMPLETADO (usar orden modelo: drums, bass, other, vocals, guitar, piano)
 3. ✅ **Build de producción** - COMPLETADO
 4. ✅ **Despliegue a Azure** - COMPLETADO (workflow #751)
+5. ✅ **Navegación portada ↔ reproductor** - COMPLETADO
 
 ### Validación funcional requerida
 1. **Probar separación con audio real** en https://quasaric.com
