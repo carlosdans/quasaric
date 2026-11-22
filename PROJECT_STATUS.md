@@ -280,12 +280,11 @@ El modelo ONNX debe probarse con un archivo real para validar:
 **Problema de memoria (`std::bad_alloc`):**
 - El modelo fp16 (130 MB) supera el heap disponible del navegador
 - Error: `Can't create a session. ERROR_CODE: 6, ERROR_MESSAGE: std::bad_alloc`
-- Requiere: 2GB+ RAM y modelo < 100 MB
+- Solución: Aumentar memoryLimit a 2GB en configuración ONNX
 
-**Solución implementada:**
-- Usar modelo INT8: `https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_int8.onnx`
-- Modelo: 69.62 MB INT8 (compatible con navegadores)
-- URL CDN funcional para producción web
+**Problema de URL del modelo INT8:**
+- Error: `failed to load external data file` - el modelo INT8 no existe en HuggingFace con ese nombre
+- Solución: Usar modelo fp16 disponible en HuggingFace
 
 ### Problemas técnicos corregidos
 
@@ -310,11 +309,11 @@ El modelo ONNX debe probarse con un archivo real para validar:
 - ANTERIOR: `result.stems`
 - CORREGIDO: `result.stemBuffers` (coincide con useAudio.js)
 
-### Modelo ONNX INT8 - Estado final
+### Modelo ONNX - Estado final
 
 **URL Producción:**
 ```
-https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_int8.onnx
+https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx
 ```
 
 **Características:**
@@ -322,6 +321,24 @@ https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_int
 - Input: 'mix' → Shape: [1, 2, 343980]
 - Output: 'stems' → Shape: [1, 6, 2, 343980]
 - Sample Rate: 44.1 kHz
+- Size: 130.11 MB fp16
+- Memory limit: 2GB WASM heap
+
+**Alternativa INT8 local:**
+- Si necesitas INT8 (< 100 MB), descarga del MonoBand APK o usa modelo alternativo
+- Colócalo en `models/HTDemucs6Stems_int8.onnx` y cambia la URL
+- El INT8 local (69.62 MB) funciona pero requiere hosteo local o CDN propio
+
+### Notas de uso
+
+**Requisitos del navegador:**
+- 2GB+ de RAM disponible (para modelo fp16 de 130MB)
+- WebAssembly con soporte de memoria ampliada
+- Archivo de audio recomendado: < 10 MB para mejor rendimiento
+
+**Para obtener INT8:**
+- Descargar del APK de MonoBand usando REA
+- O usar modelo alternativo desde otros repositorios
 - Duration: 7.8 segundos por segmento
 - Stem order: [drums, bass, other, vocals, guitar, piano]
 
