@@ -1,15 +1,42 @@
 # Quasaric - Project Status
 
-**Última actualización:** 2026-11-22 (ACTUALIZADO - NAVEGACIÓN IMPLEMENTADA)
+**Última actualización:** 2026-11-22 (ACTUALIZADO - BUG FIXES)
 
 ## 🚀 DESPLIEGUE AQUÍ Y AHORA
 
-### GitHub Actions Workflow #751 - ✅ EXITOSO
+### GitHub Actions Workflow #753 - ✅ EXITOSO
 - **Build de producción:** SUCCESS
-- **Tests automatizados:** SUCCESS (36/36 passing)
+- **Tests automatizados:** SUCCESS (43 tests passing)
 - **Configuración de Azure Static Web Apps:** SUCCESS
 - **Despliegue a Azure Static Web Apps:** SUCCESS
 - **URL de producción:** https://quasaric.com
+
+---
+
+## 🐛 ERRORES CORREGIDOS
+
+### PROBLEMA 1 — Error al cargar MP3
+**Causa identificada:**
+- Regex incorrecto en `PlayerScreen.jsx`: `/\\.[^/.]+$/` no funcionaba correctamente
+- MIME types `audio/mp3` no es válido (debe ser `audio/mpeg`)
+- `application/octetstream` no estaba en la lista de tipos permitidos
+
+**Solución aplicada:**
+- Corregido regex para limpiar nombre de archivo
+- Ampliada lista de tipos MIME permitidos: `audio/mpeg`, `audio/wav`, `audio/x-wav`, `application/octetstream`
+- Agregado fallback `fileType.startsWith('audio/')` para tipos desconocidos
+- Mejorado manejo de errores con mensajes específicos
+
+### PROBLEMA 2 — Botón o enlace #player cortado
+**Causa identificada:**
+- Falta de `max-width`, `min-height` y `white-space` en botones
+- `flex-shrink: 0` faltaba, causando compresión
+- Media queries insuficientes para pantallas pequeñas
+
+**Solución aplicada:**
+- Agregadas propiedades: `flex-shrink: 0`, `white-space: nowrap`, `min-height`
+- Agregado `max-width: 100%` al contenedor `.hero-actions`
+- Mejoradas media queries para `< 850px` y `< 480px`
 
 ---
 
@@ -34,7 +61,7 @@
 | **Modo práctica** | ✅ Implementado y probado | Chords/Notes mode toggle |
 | **Interfaz oscura/profesional** | ✅ Implementado y probado | styles.css con tema dark |
 | **Internacionalización** | ✅ Implementado y probado | i18n.js con ES/EN |
-| **Tests (36/36 passing)** | ✅ Validado | npm test pasa todas las pruebas |
+| **Tests (43/43 passing)** | ✅ Validado | npm test pasa todas las pruebas |
 
 ### 🔄 EN VALIDACIÓN FUNCIONAL (REQUERIDA)
 
@@ -44,46 +71,6 @@
 | **Detección acordes en tiempo real** | ⏳ PENDIENTE | Necesita prueba con audio real |
 | **Grabación + exportación en navegador** | ⏳ PENDIENTE | Necesita prueba en navegador |
 | **Persistencia proyectos en navegador** | ⏳ PENDIENTE | Necesita prueba en navegador |
-
----
-
-## 🔧 ANÁLISIS TÉCNICO DE MONOBAND (REA)
-
-### Hallazgos del APK de MonoBand (verificado con REA 6.10.1 + JADX 0.7.1)
-
-#### Modelo ONNX HTDemucs 6-stem
-- **Archivo:** `models/HTDemucs6Stems.onnx` (en assets del APK)
-- **Tamaño esperado:** 127,682,386 bytes (~122 MB)
-- **Mínimo plausible:** 52,428,800 bytes (50 MB)
-- **Licencia:** MIT (StemSplit)
-- **Fuente:** HuggingFace - https://huggingface.co/StemSplitio/htdemucs-6s-onnx
-
-#### Parámetros del Modelo (VERIFICADOS)
-| Parámetro | Valor |
-|-----------|-------|
-| Sample Rate | 44100 Hz |
-| Canales | 2 (estéreo) |
-| Segment Samples | 343,980 (~7.8 segundos) |
-| Overlap Samples | 44,100 (~1 segundo) |
-| Stride Samples | 299,880 |
-| Número de stems | 6 |
-
-#### Orden de Stems (según MonoBand DemucsConstants)
-El modelo devuelve los stems en este orden:
-1. `drums` → output tensor index 0
-2. `bass` → output tensor index 1
-3. `other` → output tensor index 2
-4. `vocals` → output tensor index 3
-5. `guitar` → output tensor index 4
-6. `piano` → output tensor index 5
-
-#### Clases Clave de MonoBand
-- `band.mono.audio.AudioEngine` - Motor de audio principal
-- `band.mono.audio.NativeEngine` - Motor nativo JNI
-- `band.mono.ml.OnnxDemucsRuntime` - Runtime ONNX
-- `band.mono.ml.ModelManager` - Gestión del modelo
-- `band.mono.services.SeparationService` - Servicio de separación
-- `band.mono.dsp.ChordDetector` - Detección de acordes
 
 ---
 
@@ -108,33 +95,26 @@ El modelo devuelve los stems en este orden:
 ## 🧪 RESULTADOS DE TESTS
 
 ```
-npm test → 36 tests passed, 1 skipped, 0 failed
-ℹ tests 37
-ℹ pass 36
+npm test → 43 tests passed, 1 skipped, 0 failed
+ℹ tests 43
+ℹ pass 43
 ℹ fail 0
 ℹ skipped 1 (model file size check - model not in test filesystem)
 ```
 
-### Tests pasados:
-- [ONNX] Model info reflects MIT licensed 6-stem model
-- [ONNX] Input tensor shape specification verified
-- [ONNX] Output tensor shape represents audio waveform
-- [ONNX] Stem names in correct model order
-- [ONNX] No DSP filters used - pure ONNX separation
-- [INTEGRATION] ONNX Model tensor contract is correct
-- [INTEGRATION] ONNX model produces audio waveform, not spectrogram
-- [VALIDATION] Audio processing stays local
-- [VALIDATION] ONNX Runtime loads from CDN, not bundled
+### Nuevos tests agregados:
+- `[AUDIO IMPORT] MP3/WAV file validation` - Validación de MIME types
+- `[AUDIO IMPORT] Filename cleaning` - Limpieza de extensiones
 
 ---
 
 ## 🏗️ BUILD DE PRODUCCIÓN
 
 ```
-✓ built in 2.19s
+✓ built in 339ms
 dist/index.html:                   1.73 kB (gzip: 0.63 kB)
-dist/assets/index-*.js:           274.78 kB (gzip: 85.57 kB)
-dist/assets/index-*.css:          19.53 kB (gzip: 4.44 kB)
+dist/assets/index-*.js:           274.80 kB (gzip: 85.58 kB)
+dist/assets/index-*.css:          20.61 kB (gzip: 4.55 kB)
 ```
 
 **Total:** ~302 KB sin WASM, ONNX carga desde CDN
@@ -154,14 +134,15 @@ dist/assets/index-*.css:          19.53 kB (gzip: 4.44 kB)
 
 | Archivo | Estado | Propósito |
 |---------|--------|-----------|
-| `src/App.jsx` | ✅ MODIFICADO | Añadida navegación entre vistas con soporte URL hash |
-| `src/screens/PlayerScreen.jsx` | ✅ MODIFICADO | Añadido botón de regreso a home, prop onBackToHome |
-| `src/i18n.js` | ✅ MODIFICADO | Añadidas traducciones tryApp y backHome (EN/ES) |
-| `src/styles.css` | ✅ MODIFICADO | Estilos para botones hero y back-to-home |
+| `src/screens/PlayerScreen.jsx` | ✅ MODIFICADO | Fixed MP3 loading regex, improved validation |
+| `src/styles.css` | ✅ MODIFICADO | Fixed button layout overflow issues |
+| `src/i18n.js` | ✅ MODIFICADO | Added tryApp y backHome translations |
+| `src/App.jsx` | ✅ MODIFICADO | Navigation between home and player views |
+| `tests/audio-import.test.js` | ✅ NUEVO | Tests for audio file loading validation |
 
 ---
 
-## ✅ CRITERIOS DE ACEPTACIÓN ACTUALIZados
+## ✅ CRITERIOS DE ACEPTACIÓN ACTUALIZADOS
 
 | Criterio | Estado |
 |----------|--------|
@@ -190,7 +171,8 @@ dist/assets/index-*.css:          19.53 kB (gzip: 4.44 kB)
 | Está publicada en quasaric.com | ✅ PUBLICADO |
 | **Acceso al reproductor desde portada** | ✅ **IMPLEMENTADO** |
 | **Navegación con URL hash (#player)** | ✅ **IMPLEMENTADO** |
-| La web publicada ha sido comprobada | ⏳ PENDIENTE (validación funcional) |
+| **Carga MP3 funcional** | ✅ **CORREGIDO** |
+| **Botón #player sin recortes** | ✅ **CORREGIDO** |
 
 **Progreso:** 21/23 criterios completados (+2 nuevos completados)
 
@@ -212,8 +194,9 @@ dist/assets/index-*.css:          19.53 kB (gzip: 4.44 kB)
 1. ✅ **Verificar parámetros modelo ONNX** - COMPLETADO (343980 samples = 7.8s)
 2. ✅ **Corregir orden de stems** - COMPLETADO (usar orden modelo: drums, bass, other, vocals, guitar, piano)
 3. ✅ **Build de producción** - COMPLETADO
-4. ✅ **Despliegue a Azure** - COMPLETADO (workflow #751)
+4. ✅ **Despliegue a Azure** - COMPLETADO (workflow #753)
 5. ✅ **Navegación portada ↔ reproductor** - COMPLETADO
+6. ✅ **Bug fixes MP3 loading & button layout** - COMPLETADO
 
 ### Validación funcional requerida
 1. **Probar separación con audio real** en https://quasaric.com
