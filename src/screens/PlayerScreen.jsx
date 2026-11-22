@@ -143,14 +143,16 @@ export function PlayerScreen({ onBackToHome }) {
       }
 
       // addTrack realiza una única decodificación y devuelve la pista con su AudioBuffer.
-      const track = await addTrack(blobUrl, cleanName);
+      const track = await addTrack(blobUrl, cleanName, undefined, file);
       if (!track?.buffer || !Number.isFinite(track.buffer.duration) || track.buffer.duration <= 0) {
         throw new Error('El archivo no contiene audio decodificable');
       }
       setOriginalAudioBuffer(track.buffer);
     } catch (e) {
       console.error('Error importing file:', e);
-      setError(t.errorLoading);
+      // Mostrar la causa técnica concreta para no ocultar fallos de lectura,
+      // inicialización o decodificación bajo un mensaje genérico.
+      setError(`${t.errorLoading} (${e?.message || 'Unknown audio error'})`);
       // Limpiar blob URL en caso de error
       if (blobUrl) {
         URL.revokeObjectURL(blobUrl);
