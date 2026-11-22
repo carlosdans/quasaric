@@ -69,25 +69,29 @@ test('[INTEGRATION] Stem names are in correct model order', () => {
   }
 });
 
-test('[INTEGRATION] ONNX Runtime loads from CDN correctly', () => {
-  // Verificar que el CDN está referenciado
+test('[INTEGRATION] ONNX Runtime loaded as ES module', () => {
+  // Verificar que onnxruntime-web está importado como dependencia npm
   const engine = new StemSeparatorEngine();
 
-  // El CDN debe estar en el código
+  // El runtime debe estar disponible vía import estático
+  assert.ok(engine._onnxRuntime, 'ONNX Runtime instance available');
+  
+  // Verificar import en el código
   const code = fs.readFileSync('./src/audio/StemSeparatorEngine.js', 'utf8');
-  assert.ok(code.includes('cdn.jsdelivr.net'), 'CDN reference exists');
-  assert.ok(code.includes('onnxruntime-web'), 'onnxruntime-web referenced');
-  assert.ok(code.includes('ort.min.js'), 'Minified build used');
+  assert.ok(code.includes("import * as ort from 'onnxruntime-web'"), 'ES import exists');
+  assert.ok(code.includes('this._onnxRuntime'), 'Runtime accessed via getter');
 });
 
-test('[INTEGRATION] Build produces no ONNX WASM bundle (model loads from CDN)', () => {
-  // Verificar tamaño del bundle
+test('[INTEGRATION] Build produces ONNX WASM bundle for local loading', () => {
+  // Verificar que el WASM está bundleado localmente
   const distDir = './dist/assets';
   const files = fs.readdirSync(distDir);
 
-  // No debe incluir ort.wasm bundle (el modelo ONNX Runtime carga desde CDN)
+  // El WASM debe estar bundleado para carga local sin CDN
   const hasWasmBundle = files.some(f => f.includes('ort') && f.includes('.wasm'));
-
-  // El WASM debe cargarse dinámicamente desde CDN, no estar bundleado
-  assert.ok(!hasWasmBundle, 'No ONNX WASM bundled (loads from CDN)');
+  assert.ok(hasWasmBundle, 'ONNX WASM bundle exists for local loading');
+  
+  // Verificar MIME type para WASM
+  const wasmFiles = files.filter(f => f.includes('ort') && f.includes('.wasm'));
+  assert.ok(wasmFiles.length > 0, 'WASM file generated');
 });

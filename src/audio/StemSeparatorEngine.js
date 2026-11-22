@@ -1,3 +1,4 @@
+import * as ort from 'onnxruntime-web';
 /**
  * StemSeparatorEngine - Motor de separación REAL usando htdemucs ONNX
  * ================================================
@@ -45,7 +46,6 @@ export class StemSeparatorEngine {
     this.audioContext = null;
     this.modelLoaded = false;
     this.modelType = 'onnx';
-    this.onnxRuntime = null;
     this.session = null;
     this.modelUrl = null;
 
@@ -83,40 +83,9 @@ export class StemSeparatorEngine {
   // CARGA DEL MODELO
   // ============================================================================
 
-  async _loadOnnxRuntime() {
-    if (this.onnxRuntime) {
-      return true;
-    }
-
-    try {
-      if (window.onnxruntime) {
-        this.onnxRuntime = window.onnxruntime;
-        return true;
-      }
-
-      // Cargar desde CDN
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/ort.min.js';
-      document.head.appendChild(script);
-
-      // Esperar a que cargue
-      const maxWait = 10000;
-      const start = Date.now();
-
-      while (!window.onnxruntime && Date.now() - start < maxWait) {
-        await new Promise(r => setTimeout(r, 100));
-      }
-
-      if (window.onnxruntime) {
-        this.onnxRuntime = window.onnxruntime;
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      console.error('Error loading ONNX Runtime:', e);
-      return false;
-    }
+  // ONNX Runtime Web is imported directly via ES module
+  get _onnxRuntime() {
+    return ort;
   }
 
   async loadModel(onProgress = null) {
@@ -136,7 +105,7 @@ export class StemSeparatorEngine {
     try {
       if (onProgress) onProgress({ stage: 'loading', progress: 10 });
 
-      this.session = await this.onnxRuntime.InferenceSession.create(
+      this.session = await this._onnxRuntime.InferenceSession.create(
         this.MODEL_INFO.url,
         { executionProviders: ['wasm'] }
       );
@@ -350,7 +319,7 @@ export class StemSeparatorEngine {
       }
 
       // Crear tensor de entrada
-      const inputTensor = new this.onnxRuntime.Tensor(
+      const inputTensor = new this._onnxRuntime.Tensor(
         'float32',
         inputData,
         [1, 2, SEGMENT_SAMPLES]
@@ -519,7 +488,6 @@ export class StemSeparatorEngine {
     }
     this.modelLoaded = false;
     this.modelUrl = null;
-    this.onnxRuntime = null;
   }
 }
 

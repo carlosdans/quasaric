@@ -69,15 +69,15 @@ test('[VALIDATION] Build size is within acceptable limits', () => {
   // Verificar que no hay dependencias pesadas de IA en producción
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
 
-  // onnxruntime-web no debería estar en dependencias DIRECTAS (se carga dinámicamente desde CDN)
+  // onnxruntime-web debe estar en dependencies para carga local
   // onnxruntime-node es permitido como devDependency para pruebas
   console.log('Dependencies:', Object.keys(deps).join(', '));
 
-  // onnxruntime-web debe estar en devDependencies o no estar presente
+  // onnxruntime-web debe estar en dependencies para carga local
   // onnxruntime-node es permitido para pruebas
-  const hasOnnxRuntimeWebProd = pkg.dependencies['onnxruntime-web'] !== undefined;
-  assert.ok(!hasOnnxRuntimeWebProd,
-    'onnxruntime-web should not be in production dependencies (load from CDN)');
+  const hasOnnxRuntimeWeb = pkg.dependencies['onnxruntime-web'] !== undefined;
+  assert.ok(hasOnnxRuntimeWeb,
+    'onnxruntime-web must be in dependencies for local loading');
 
   // Verificar que no hay otros bundles pesados
   const heavyDeps = ['tensorflow', 'torch', 'pytorch', '@tensorflow'];
@@ -104,14 +104,15 @@ test('[VALIDATION] Audio processing stays local', () => {
   }
 });
 
-test('[VALIDATION] ONNX Runtime loads from CDN, not bundled', () => {
+test('[VALIDATION] ONNX Runtime loads locally bundled', () => {
   const stemEngine = fs.readFileSync('./src/audio/StemSeparatorEngine.js', 'utf8');
 
-  // Verificar que ONNX se carga desde CDN
-  assert.ok(stemEngine.includes('cdn.jsdelivr.net'),
-    'ONNX Runtime should load from CDN');
-  assert.ok(stemEngine.includes('onnxruntime-web'),
-    'ONNX Runtime should be loaded via CDN');
+  // ONNX Runtime se importa como ES module
+  assert.ok(stemEngine.includes("import * as ort from 'onnxruntime-web'"),
+    'ONNX Runtime should be imported as ES module');
+  // jsDelivr no se usa para runtime (modelo se carga de HuggingFace)
+  assert.ok(!stemEngine.includes('cdn.jsdelivr.net') || stemEngine.includes('huggingface.co'),
+    'CDN should only be used for model, not runtime');
 });
 
 test('[VALIDATION] ONNX model is MIT licensed 6-stem model', () => {
