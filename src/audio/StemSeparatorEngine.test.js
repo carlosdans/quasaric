@@ -34,11 +34,10 @@ test('[VALIDATION] StemSeparatorEngine getModelInfo returns correct info', () =>
 
   assert.equal(info.stemNames.length, 6, 'Has 6 stems');
   assert.equal(info.license, 'MIT', 'Model is MIT licensed');
-  // INT8 quantized model is ~69.62 MB (reduced from 136 MB fp16)
   assert.ok(info.size.includes('MB'), 'Model size is defined');
   assert.equal(info.stems, 6, '6 stems output');
-  // URL is a local models path (can be hosted locally or via CDN)
-  assert.ok(info.url.includes('HTDemucs') || info.url.includes('models'), 'URL is valid model path');
+  // URL is a valid model path (HuggingFace CDN or local models)
+  assert.ok(info.url.includes('HTDemucs') || info.url.includes('models') || info.url.includes('huggingface.co'), 'URL is valid model path');
 });
 
 test('[VALIDATION] ONNX model is MIT licensed from StemSplit', () => {
