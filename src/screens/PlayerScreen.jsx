@@ -55,6 +55,7 @@ export function PlayerScreen({ onBackToHome }) {
 
   // Navigate back to home
   const handleBackToHome = () => {
+    destroy();
     window.location.hash = '#home';
     if (onBackToHome) {
       onBackToHome();
@@ -78,7 +79,8 @@ export function PlayerScreen({ onBackToHome }) {
     setTrackMuted,
     setTrackSolo,
     setLoop,
-    unloadAll
+    unloadAll,
+    destroy
   } = useAudio();
 
   // Sincronizar tiempo del waveform con el reproductor
