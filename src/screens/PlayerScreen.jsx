@@ -86,10 +86,13 @@ export function PlayerScreen({ onBackToHome }) {
     setWaveformPlayedTime(position);
   }, [position]);
 
-  // Inicializar al montar
-  if (!initialized) {
-    init();
-  }
+  // Inicializar después del montaje, nunca durante el render.
+  // Esto evita crear varios AudioContext por renders consecutivos.
+  useEffect(() => {
+    if (!initialized) {
+      init();
+    }
+  }, [initialized, init]);
 
   const handleFileUpload = async (event) => {
     event.preventDefault();
