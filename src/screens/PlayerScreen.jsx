@@ -104,7 +104,11 @@ export function PlayerScreen({ onBackToHome }) {
     }
 
     const fileType = file.type;
-    if (!['audio/mpeg', 'audio/wav', 'audio/x-wav'].includes(fileType)) {
+    // Permitir audio/mpeg (MP3), audio/wav y application/octetstream (fallback para navegadores)
+    const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'application/octetstream'];
+    const isAllowedType = allowedTypes.includes(fileType) || fileType.startsWith('audio/');
+
+    if (!isAllowedType) {
       setError(t.errorLoading);
       return;
     }
@@ -114,9 +118,11 @@ export function PlayerScreen({ onBackToHome }) {
     setSeparationResultState(null);
 
     try {
+      // Limpiar nombre del archivo (eliminar extensión)
+      const cleanName = file.name.replace(/\.[^/.]+$/, '');
       // Añadir pista original primero
       const url = URL.createObjectURL(file);
-      await addTrack(url, file.name.replace(/\\.[^/.]+$/, ''));
+      await addTrack(url, cleanName);
 
       // Cargar AudioBuffer para waveform
       const response = await fetch(url);
@@ -282,7 +288,7 @@ export function PlayerScreen({ onBackToHome }) {
         <div className="import-section">
           <input
             type="file"
-            accept="audio/mp3,audio/wav,application/octetstream"
+            accept="audio/*"
             ref={fileInputRef}
             onChange={handleFileUpload}
             style={{ display: 'none' }}
