@@ -30,12 +30,21 @@ export class MultiTrackPlayer {
       throw new Error('Web Audio API no está disponible en este navegador');
     }
 
-    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    this.masterGain = this.audioContext.createGain();
-    this.masterGain.connect(this.audioContext.destination);
+    // Reutilizar el contexto existente: React StrictMode y los reintentos
+    // de importación pueden invocar init más de una vez.
+    if (!this.audioContext || this.audioContext.state === 'closed') {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      this.masterGain = this.audioContext.createGain();
+      this.masterGain.connect(this.audioContext.destination);
+    }
 
-    // Iniciar actualización de tiempo
-    this._startTimeUpdate();
+    if (this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
+
+    if (!this._updateTimer) {
+      this._startTimeUpdate();
+    }
   }
 
   // Detener monitoreo de tiempo
@@ -50,10 +59,33 @@ export class MultiTrackPlayer {
   }
 
   // Añadir pista
-  async addTrack(audioUrl, index, name = `Track ${index}`) {
+  async addTrack(audioUrl, index, name = `Track ${index}`, fileData = null) {
     try {
-      const response = await fetch(audioUrl);
-      const arrayBuffer = await response.arrayBuffer();
+      if (!this.audioContext || this.audioContext.state === 'closed') {
+        throw new Error('El motor de audio no está inicializado');
+      }
+
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+
+      // Decodificar directamente el File original evita depender de que
+      // fetch(blob:) esté disponible en el contexto de despliegue.
+      let arrayBuffer;
+      if (fileData && typeof fileData.arrayBuffer === 'function') {
+        arrayBuffer = await fileData.arrayBuffer();
+      } else {
+        const response = await fetch(audioUrl);
+        if (!response.ok) {
+          throw new Error(`No se pudo leer el archivo de audio (HTTP ${response.status})`);
+        }
+        arrayBuffer = await response.arrayBuffer();
+      }
+
+      if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+        throw new Error('El archivo seleccionado está vacío');
+      }
+
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
 
       const source = this.audioContext.createBufferSource();
