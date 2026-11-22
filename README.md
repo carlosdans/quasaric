@@ -50,7 +50,7 @@ Quasaric is a web-based music learning application that helps musicians focus on
 1. User imports audio file
 2. File decoded to AudioBuffer (browser only)
 3. DSP separation applies frequency filters
-4. ONNX separation available for higher quality (model ~69.62MB INT8)
+4. ONNX separation available for higher quality (model ~130MB fp16 from HuggingFace)
 5. Result: Independent instrument tracks
 
 ## Privacy by Design
