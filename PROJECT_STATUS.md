@@ -275,6 +275,21 @@ El modelo ONNX debe probarse con un archivo real para validar:
 
 ## 🐛 ERRORES CORREGIDOS EN ESTA SESIÓN
 
+### Modelo ONNX de HuggingFace CDN
+
+**Problema de producción:**
+- Error `protobuf parsing failed` al cargar el modelo local `models/HTDemucs6Stems_int8.onnx`
+- La URL relativa no está disponible en el hosting de quasaric.com
+
+**Solución aplicada:**
+- URL actualizada a HuggingFace CDN: `https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx`
+- Modelo: 130.11 MB fp16 (compatible con ONNX Runtime Web)
+- CORS soportado mediante redirección
+
+**Alternativa local (solo desarrollo):**
+- Si necesitas el modelo INT8 local (69.62 MB), coloca en `models/HTDemucs6Stems_int8.onnx`
+- Actualiza MODEL_INFO.url a `models/HTDemucs6Stems_int8.onnx`
+
 ### Modelo ONNX de MonoBand - VERSIÓN INT8
 
 **Hallazgo de ingeniería inversa:**
@@ -289,11 +304,6 @@ El modelo ONNX debe probarse con un archivo real para validar:
 - Modelo INT8: 69.62 MB (~45% más pequeño que fp32 original)
 - inputName actualizado: 'mix' → 'audio' (más descriptivo)
 - Fuente actualizada: 'MonoBand APK extracted and INT8 quantized'
-
-**Diferencias con HuggingFace model:**
-- MonoBand: 121.77 MB (PyTorch 2.13.0 export) → INT8: 69.62 MB
-- HuggingFace fp16: 130.11 MB (PyTorch 2.4.1 export)
-- La versión INT8 es compatible con la arquitectura existente
 
 ### Tests actualizados
 
