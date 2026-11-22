@@ -1306,3 +1306,24 @@ footer{height:92px;border-top:1px solid var(--line);display:flex;justify-content
   .hero-actions { gap: 8px; }
   .hero-play-btn { padding: 8px 16px; font-size: 12px; }
 }
+
+/* Definitive hero CTA sizing: keep it independent from the circular player control. */
+.hero-actions .hero-play-btn {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 44px;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex: 0 1 auto;
+  white-space: normal;
+  line-height: 1.25;
+  justify-content: center;
+}
+
+@media (max-width: 850px) {
+  .hero-actions .hero-play-btn {
+    width: 100%;
+    max-width: 280px;
+  }
+}
