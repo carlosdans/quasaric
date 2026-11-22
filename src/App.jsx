@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getTranslations, resolveLanguage } from './i18n.js';
 import PlayerScreen from './screens/PlayerScreen.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 
 function getInitialLanguage() {
   try {
@@ -54,7 +55,7 @@ export default function App() {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'player':
-        return <PlayerScreen onBackToHome={() => setCurrentView('home')} />;
+        return <ErrorBoundary><PlayerScreen onBackToHome={() => setCurrentView('home')} /></ErrorBoundary>;
       default:
         return (
           <main>
