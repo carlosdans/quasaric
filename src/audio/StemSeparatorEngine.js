@@ -49,13 +49,12 @@ export class StemSeparatorEngine {
     this.stemNames = ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano'];
 
     // Modelo ONNX MIT - htdemucs 6 stems
-    // Usar fp16 desde HuggingFace CDN (INT8 no disponible en CDN)
-    // Para INT8 local, colocar en models/HTDemucs6Stems_int8.onnx
+    // INT8 quantized model - 69.62 MB (jsDelivr CDN from GitHub repo)
     this.MODEL_INFO = {
-      url: 'https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx',
-      size: '130.11 MB (fp16)',
+      url: 'https://cdn.jsdelivr.net/gh/carlosdans/quasaric@main/public/models/HTDemucs6Stems_int8.onnx',
+      size: '69.62 MB (INT8)',
       license: 'MIT',
-      source: 'StemSplit MIT licensed',
+      source: 'MonoBand APK extracted and INT8 quantized',
       stems: 6,
       stemNames: this.stemNames,
       sampleRate: 44100,
