@@ -62,12 +62,14 @@ export class StemSeparatorEngine {
 
     // Modelo ONNX MIT - htdemucs 6 stems
     this.MODEL_INFO = {
-      // Production URL for ONNX model (hosted on HuggingFace CDN)
-      // CORS is supported via redirect handling in ONNX Runtime Web
-      url: 'https://huggingface.co/stemsplitio/htdemucs-6s-onnx/resolve/main/htdemucs_6s_fp16weights.onnx',
-      size: '130.11 MB (fp16)',
+      // Production URL for ONNX model
+      // INT8 quantized version is recommended for browser use (smaller, faster)
+      // Local fallback for development: models/HTDemucs6Stems_int8.onnx
+      // CDN fallback: HuggingFace (if local model not available)
+      url: 'models/HTDemucs6Stems_int8.onnx',
+      size: '69.62 MB (INT8)',
       license: 'MIT',
-      source: 'StemSplit HuggingFace - MIT licensed',
+      source: 'MonoBand APK extracted and INT8 quantized',
       stems: 6,
       stemNames: this.stemNames,
       sampleRate: 44100,
