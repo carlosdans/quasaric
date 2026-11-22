@@ -20,3 +20,4 @@ dist/
 models/
 *.onnx
 *.onnx.gz
+.DS_Store

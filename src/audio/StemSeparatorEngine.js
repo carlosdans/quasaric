@@ -93,6 +93,15 @@ export class StemSeparatorEngine {
       return { success: true, model: this.modelUrl };
     }
 
+    // Check available memory
+    if (navigator.deviceMemory && navigator.deviceMemory < 2) {
+      return {
+        success: false,
+        error: 'Memoria insuficiente. Necesitas al menos 2GB de RAM.',
+        needsMemory: true
+      };
+    }
+
     // Validate ONNX Runtime is available
     if (!this._onnxRuntime || !this._onnxRuntime.InferenceSession) {
       return {
@@ -109,8 +118,11 @@ export class StemSeparatorEngine {
         this.MODEL_INFO.url,
         {
           executionProviders: ['wasm'],
+          // Reduce memory overhead
           graphOptimizations: 0,
-          ORT_LOGGING_LEVEL: 0
+          ORT_LOGGING_LEVEL: 0,
+          // Increase WASM memory if needed
+          // sessionOpts: { memLimit: 512 * 1024 * 1024 }
         }
       );
 
