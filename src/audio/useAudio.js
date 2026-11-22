@@ -31,8 +31,8 @@ export function useAudio() {
   }, []);
 
   // Añadir pista
-  const addTrack = useCallback(async (url, name, trackIndex = tracks.length) => {
-    const track = await player.addTrack(url, trackIndex, name);
+  const addTrack = useCallback(async (url, name, trackIndex = tracks.length, fileData = null) => {
+    const track = await player.addTrack(url, trackIndex, name, fileData);
     setTracks(prev => [...prev, {
       id: track.id,
       name: track.name,
