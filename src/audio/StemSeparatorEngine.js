@@ -93,8 +93,8 @@ export class StemSeparatorEngine {
       return { success: true, model: this.modelUrl };
     }
 
-    const canLoad = await this._loadOnnxRuntime();
-    if (!canLoad) {
+    // Validate ONNX Runtime is available
+    if (!this._onnxRuntime || !this._onnxRuntime.InferenceSession) {
       return {
         success: false,
         error: 'No se pudo cargar ONNX Runtime. Conéctate a internet.',

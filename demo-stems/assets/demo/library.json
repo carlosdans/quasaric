@@ -1,0 +1,202 @@
+{
+  "exportedAt": "2026-05-23T10:54:08Z",
+  "projectCount": 3,
+  "projects": [
+    {
+      "artist": "MonoBand",
+      "artwork": "Travels in Space-61A6DE7F/artwork.jpg",
+      "bpm": 144,
+      "createdAt": "2026-05-23T10:13:31Z",
+      "id": "61A6DE7F-0ACC-4E4F-926F-B23FBD016348",
+      "key": "A Minor",
+      "lengthSeconds": 226.79997916666667,
+      "modifiedAt": "2026-05-23T10:53:32Z",
+      "sampleRate": 48000,
+      "sourceAudio": "Travels in Space-61A6DE7F/source.mp3",
+      "stems": [
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "drums",
+          "lengthSeconds": 226.8,
+          "pathInArchive": "Travels in Space-61A6DE7F/stems/drums.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "bass",
+          "lengthSeconds": 226.8,
+          "pathInArchive": "Travels in Space-61A6DE7F/stems/bass.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "other",
+          "lengthSeconds": 226.8,
+          "pathInArchive": "Travels in Space-61A6DE7F/stems/other.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "vocals",
+          "lengthSeconds": 226.8,
+          "pathInArchive": "Travels in Space-61A6DE7F/stems/vocals.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "guitar",
+          "lengthSeconds": 226.8,
+          "pathInArchive": "Travels in Space-61A6DE7F/stems/guitar.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "piano",
+          "lengthSeconds": 226.8,
+          "pathInArchive": "Travels in Space-61A6DE7F/stems/piano.m4a",
+          "sampleRate": 44100
+        }
+      ],
+      "style": "Rock",
+      "title": "Travels in Space",
+      "userTracks": []
+    },
+    {
+      "artist": "MonoBand",
+      "artwork": "Laundry basket moon v4 - reggae-61F1A255/artwork.jpg",
+      "bpm": 72,
+      "createdAt": "2026-05-23T10:09:03Z",
+      "id": "61F1A255-570B-4DEB-B329-5839E3BF05C3",
+      "key": "D Minor",
+      "lengthSeconds": 190.63997916666668,
+      "modifiedAt": "2026-05-23T10:25:54Z",
+      "sampleRate": 48000,
+      "sourceAudio": "Laundry basket moon v4 - reggae-61F1A255/source.mp3",
+      "stems": [
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "drums",
+          "lengthSeconds": 190.64,
+          "pathInArchive": "Laundry basket moon v4 - reggae-61F1A255/stems/drums.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "bass",
+          "lengthSeconds": 190.64,
+          "pathInArchive": "Laundry basket moon v4 - reggae-61F1A255/stems/bass.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "other",
+          "lengthSeconds": 190.64,
+          "pathInArchive": "Laundry basket moon v4 - reggae-61F1A255/stems/other.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "vocals",
+          "lengthSeconds": 190.64,
+          "pathInArchive": "Laundry basket moon v4 - reggae-61F1A255/stems/vocals.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "guitar",
+          "lengthSeconds": 190.64,
+          "pathInArchive": "Laundry basket moon v4 - reggae-61F1A255/stems/guitar.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "piano",
+          "lengthSeconds": 190.64,
+          "pathInArchive": "Laundry basket moon v4 - reggae-61F1A255/stems/piano.m4a",
+          "sampleRate": 44100
+        }
+      ],
+      "title": "Laundry basket moon v4",
+      "style": "Reggae",
+      "userTracks": []
+    },
+    {
+      "artist": "MonoBand",
+      "artwork": "Concrete Symphony - indie pop-6E8F5804/artwork.jpg",
+      "bpm": 129,
+      "createdAt": "2026-05-23T10:07:05Z",
+      "id": "6E8F5804-A30B-4235-B73D-5B064DB9F59F",
+      "key": "A# Minor",
+      "lengthSeconds": 149.07997916666667,
+      "modifiedAt": "2026-05-23T10:14:22Z",
+      "sampleRate": 48000,
+      "sourceAudio": "Concrete Symphony - indie pop-6E8F5804/source.mp3",
+      "stems": [
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "drums",
+          "lengthSeconds": 149.08,
+          "pathInArchive": "Concrete Symphony - indie pop-6E8F5804/stems/drums.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "bass",
+          "lengthSeconds": 149.08,
+          "pathInArchive": "Concrete Symphony - indie pop-6E8F5804/stems/bass.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "other",
+          "lengthSeconds": 149.08,
+          "pathInArchive": "Concrete Symphony - indie pop-6E8F5804/stems/other.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "vocals",
+          "lengthSeconds": 149.08,
+          "pathInArchive": "Concrete Symphony - indie pop-6E8F5804/stems/vocals.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "guitar",
+          "lengthSeconds": 149.08,
+          "pathInArchive": "Concrete Symphony - indie pop-6E8F5804/stems/guitar.m4a",
+          "sampleRate": 44100
+        },
+        {
+          "channelCount": 2,
+          "format": "m4a",
+          "kind": "piano",
+          "lengthSeconds": 149.08,
+          "pathInArchive": "Concrete Symphony - indie pop-6E8F5804/stems/piano.m4a",
+          "sampleRate": 44100
+        }
+      ],
+      "title": "Concrete Symphony",
+      "style": "Indie Pop",
+      "userTracks": []
+    }
+  ],
+  "schemaVersion": 1
+}
