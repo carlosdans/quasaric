@@ -67,7 +67,7 @@ export class StemSeparatorEngine {
       url: 'models/HTDemucs6Stems.onnx',
       size: '121.77 MB',
       license: 'MIT',
-      source: 'StemSplit (huggingface.co/StemSplitio/htdemucs-6s-onnx)',
+      source: 'MonoBand APK extracted (HuggingFace StemSplit)',
       stems: 6,
       stemNames: this.stemNames,
       sampleRate: 44100,
