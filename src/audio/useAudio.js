@@ -73,156 +73,117 @@ export function useAudio() {
         preferOnnx: true
       });
 
-      // Si ONNX falla, usar fallback DSP
-      if (!result.success) {
-        console.warn('ONNX falló, usando DSP fallback:', result.error);
-        result = await stemSeparator.separate(decoded, {
-          useOnnx: false,
-          preferOnnx: false
-        });
+      // VALIDACIÓN: Verificar que tenemos stems reales de ONNX
+      const hasValidStems = result.success && result.stemBuffers && 
+                            Object.keys(result.stemBuffers || {}).length === stemsCount &&
+                            result.method === 'onnx';
+      
+      if (!hasValidStems) {
+        // No vamos a presentar DSP fallback como separación real
+        const errorMsg = result.warning || result.error || 'No se pudo realizar la separación con el modelo ONNX. Asegúrate de que el archivo de audio es suficientemente largo (mínimo 7.8 segundos).';
+        return {
+          success: false,
+          error: errorMsg,
+          method: result.method || 'unknown',
+          stems: null
+        };
       }
 
-      if (result.success) {
-        const separatedTracks = [];
-        const stems = result.stemNames || stemSeparator.stemNames;
+      const separatedTracks = [];
+      const stems = result.stemNames || stemSeparator.stemNames;
 
-        // Cargar el track original primero
-        const mainTrack = await player.addTrack(tempUrl, 0, 'Original');
+      // Cargar el track original primero
+      await player.addTrack(tempUrl, 0, 'Original');
 
-        // Guardar URL temporal para limpieza posterior
-        let blobUrls = [tempUrl];
+      // Guardar URL temporal para limpieza posterior
+      let blobUrls = [tempUrl];
 
-        // Para cada stem, crear una versión con el buffer procesado
-        for (let i = 0; i < stems.length && i < stemsCount; i++) {
-          const stemName = stems[i];
-          const stemBuffer = result.stems?.[stemName];
+      // Para cada stem, crear una versión con el buffer procesado
+      for (let i = 0; i < stems.length && i < stemsCount; i++) {
+        const stemName = stems[i];
+        const stemBuffer = result.stemBuffers[stemName];
 
-          if (stemBuffer && result.method === 'onnx') {
-            // ONNX separation - usar buffer real del stem
-            try {
-              // Crear WAV del stem usando APIs web estándar
-              const wavBuffer = await new Promise((resolve, reject) => {
-                const length = stemBuffer.length;
-                const sampleRate = stemBuffer.sampleRate;
-                const numChannels = stemBuffer.numberOfChannels;
-                const byteRate = sampleRate * 2 * numChannels;
+        if (stemBuffer && stemBuffer.duration > 0) {
+          try {
+            // Crear WAV del stem usando APIs web estándar
+            const wavBuffer = await new Promise((resolve, reject) => {
+              const length = stemBuffer.length;
+              const sampleRate = stemBuffer.sampleRate;
+              const numChannels = stemBuffer.numberOfChannels;
+              const byteRate = sampleRate * 2 * numChannels;
 
-                // Crear buffer WAV usando Uint8Array (compatible con navegador)
-                const wavSize = 44 + length * 2 * numChannels;
-                const wavArray = new Uint8Array(wavSize);
-                const view = new DataView(wavArray.buffer);
+              const wavSize = 44 + length * 2 * numChannels;
+              const wavArray = new Uint8Array(wavSize);
+              const view = new DataView(wavArray.buffer);
 
-                // WAV Header
-                // RIFF chunk
-                view.setUint8(0, 0x52); // 'R'
-                view.setUint8(1, 0x49); // 'I'
-                view.setUint8(2, 0x46); // 'F'
-                view.setUint8(3, 0x46); // 'F'
-                view.setUint32(4, 36 + length * 2 * numChannels - 8, true); // chunk size
-                view.setUint8(8, 0x57); // 'W'
-                view.setUint8(9, 0x41); // 'A'
-                view.setUint8(10, 0x56); // 'V'
-                view.setUint8(11, 0x45); // 'E'
-                // fmt subchunk
-                view.setUint8(12, 0x66); // 'f'
-                view.setUint8(13, 0x6D); // 'm'
-                view.setUint8(14, 0x74); // 't'
-                view.setUint8(15, 0x20); // ' '
-                view.setUint16(16, 16, true); // audio format (PCM)
-                view.setUint16(20, numChannels, true);
-                view.setUint32(24, sampleRate, true);
-                view.setUint32(28, byteRate, true);
-                view.setUint16(32, 2 * numChannels, true); // block align
-                view.setUint16(34, 16, true); // bits per sample
-                // data subchunk
-                view.setUint8(36, 0x64); // 'd'
-                view.setUint8(37, 0x61); // 'a'
-                view.setUint8(38, 0x74); // 't'
-                view.setUint8(39, 0x61); // 'a'
-                view.setUint32(40, length * 2 * numChannels, true); // data size
+              // WAV Header
+              view.setUint8(0, 0x52); view.setUint8(1, 0x49); view.setUint8(2, 0x46); view.setUint8(3, 0x46);
+              view.setUint32(4, 36 + length * 2 * numChannels - 8, true);
+              view.setUint8(8, 0x57); view.setUint8(9, 0x41); view.setUint8(10, 0x56); view.setUint8(11, 0x45);
+              view.setUint8(12, 0x66); view.setUint8(13, 0x6D); view.setUint8(14, 0x74); view.setUint8(15, 0x20);
+              view.setUint16(16, 16, true);
+              view.setUint16(20, numChannels, true);
+              view.setUint32(24, sampleRate, true);
+              view.setUint32(28, byteRate, true);
+              view.setUint16(32, 2 * numChannels, true);
+              view.setUint16(34, 16, true);
+              view.setUint8(36, 0x64); view.setUint8(37, 0x61); view.setUint8(38, 0x74); view.setUint8(39, 0x61);
+              view.setUint32(40, length * 2 * numChannels, true);
 
-                // Audio data
-                let offset = 44;
-                for (let j = 0; j < length; j++) {
-                  for (let ch = 0; ch < numChannels; ch++) {
-                    const sample = Math.max(-1, Math.min(1, stemBuffer.getChannelData(ch)[j]));
-                    view.setInt16(offset, sample * 0x7FFF, true);
-                    offset += 2;
-                  }
+              let offset = 44;
+              for (let j = 0; j < length; j++) {
+                for (let ch = 0; ch < numChannels; ch++) {
+                  const sample = Math.max(-1, Math.min(1, stemBuffer.getChannelData(ch)[j]));
+                  view.setInt16(offset, sample * 0x7FFF, true);
+                  offset += 2;
                 }
+              }
 
-                resolve(wavArray);
-              });
+              resolve(wavArray);
+            });
 
-              const stemUrl = URL.createObjectURL(new Blob([wavBuffer], { type: 'audio/wav' }));
-              blobUrls.push(stemUrl);
+            const stemUrl = URL.createObjectURL(new Blob([wavBuffer], { type: 'audio/wav' }));
+            blobUrls.push(stemUrl);
 
-              const track = {
-                id: i + 1,
-                name: stemName.charAt(0).toUpperCase() + stemName.slice(1),
-                volume: stemName === 'vocals' ? 1 : 0.4,
-                muted: false,
-                soloed: false,
-                blobUrl: stemUrl,
-                duration: stemBuffer.duration,
-                isStem: true
-              };
-
-              separatedTracks.push(track);
-            } catch (e) {
-              console.warn('Error creating stem blob:', e);
-              // Fallback: use placeholder
-              const track = {
-                id: i + 1,
-                name: stemName.charAt(0).toUpperCase() + stemName.slice(1),
-                volume: stemName === 'vocals' ? 1 : 0.4,
-                muted: false,
-                soloed: false,
-                blobUrl: tempUrl,
-                duration: decoded.duration,
-                isStem: false
-              };
-              separatedTracks.push(track);
-            }
-          } else {
-            // Fallback: usar placeholder
             const track = {
               id: i + 1,
               name: stemName.charAt(0).toUpperCase() + stemName.slice(1),
               volume: stemName === 'vocals' ? 1 : 0.4,
               muted: false,
               soloed: false,
-              blobUrl: tempUrl,
-              duration: decoded.duration,
-              isStem: false
+              blobUrl: stemUrl,
+              duration: stemBuffer.duration,
+              isStem: true
             };
+
             separatedTracks.push(track);
+          } catch (e) {
+            console.warn('Error creating stem blob:', e);
+            URL.revokeObjectURL(blobUrls[blobUrls.length - 1]);
           }
         }
-
-        // Limpiar URL temporal principal
-        URL.revokeObjectURL(tempUrl);
-
-        // Combinar track original + tracks separados
-        setTracks(prev => [
-          ...prev, // Track original
-          ...separatedTracks
-        ]);
-
-        setDuration(decoded.duration);
-
-        return {
-          success: true,
-          method: result.method,
-          tracks: stems.slice(0, stemsCount),
-          message: result.message,
-          stemBuffers: result.stems
-        };
-      } else {
-        throw new Error(result.error || 'Error en separación');
       }
+
+      // Limpiar URL temporal principal
+      URL.revokeObjectURL(tempUrl);
+
+      // Combinar track original + tracks separados
+      setTracks(prev => [
+        ...prev,
+        ...separatedTracks
+      ]);
+
+      setDuration(decoded.duration);
+
+      return {
+        success: true,
+        method: result.method,
+        message: result.message,
+        stemBuffers: result.stemBuffers
+      };
     } catch (e) {
       console.error('Error separando tracks:', e);
+      // Limpiar Blob URLs en caso de error
       return {
         success: false,
         error: e.message

@@ -593,9 +593,17 @@ export function PlayerScreen({ onBackToHome }) {
           {/* Controls */}
           <div className="player-actions">
             {!showSeparation && (
-              <button className="transport-btn" onClick={handleOpenFile}>
-                🔄
-              </button>
+              <>
+                <button className="transport-btn" onClick={handleOpenFile} title={t.openSong || 'Open song'}>
+                  🔄
+                </button>
+                {/* Separate button - only show when track loaded and not yet separated */}
+                {activeTrack && !trackIsSeparated && !importing && (
+                  <button className="transport-btn" onClick={() => setShowSeparation(true)} title={t.separate || 'Separate'}>
+                    🎛️
+                  </button>
+                )}
+              </>
             )}
             <button className="transport-btn" onClick={handleUnloadAll}>
               ✕
