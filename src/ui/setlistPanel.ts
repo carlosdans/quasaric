@@ -11,7 +11,7 @@ import { createDropdown } from './dropdown.ts';
 import type { initLibrary } from './libraryPanel.ts';
 
 type Library = ReturnType<typeof initLibrary>;
-const ACTIVE_KEY = 'steminize.setlist.active';
+const ACTIVE_KEY = 'quasaric.setlist.active';
 
 export function initSetlists(deck: Deck, library: Library) {
   let lists = loadSetlists();

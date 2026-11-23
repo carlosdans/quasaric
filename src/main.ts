@@ -75,7 +75,7 @@ gpuLinuxNote.onclick = () => {
     showGpuNote(gpu);
   }
 })();
-const GPU_FAILED_KEY = 'steminize.gpuFailed';
+const GPU_FAILED_KEY = 'quasaric.gpuFailed';
 /** The GPU didn't work for a previous song (see worker.ts): with Device on Auto, start on the CPU instead of waiting for it to fail again. */
 const gpuFailedBefore = () => {
   try {
@@ -92,7 +92,7 @@ engine.onBackend = ({ backend, threads, note }) => {
     } catch {
       /* ignore */
     }
-    toast('The GPU did not work, so Steminize is using the CPU. Set Device to GPU in Settings to try it again.', true, 9000);
+    toast('The GPU did not work, so Quasaric is using the CPU. Set Device to GPU in Settings to try it again.', true, 9000);
   }
   setBackendInfo({ backend, threads, note });
   chip.textContent = backend === 'webgpu' ? 'Running on GPU' : `Running on CPU · ${threads} thread${threads > 1 ? 's' : ''}`;
@@ -129,10 +129,10 @@ const pref = (k: string, d: string) => {
   }
 };
 const autoStart = $<HTMLInputElement>('autoStart');
-autoStart.checked = pref('steminize.autoStart', '1') === '1';
+autoStart.checked = pref('quasaric.autoStart', '1') === '1';
 autoStart.onchange = () => {
   try {
-    localStorage.setItem('steminize.autoStart', autoStart.checked ? '1' : '0');
+    localStorage.setItem('quasaric.autoStart', autoStart.checked ? '1' : '0');
   } catch {
     /* ignore */
   }

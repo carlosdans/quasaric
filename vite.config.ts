@@ -11,6 +11,19 @@ const isolation = {
   'Cross-Origin-Embedder-Policy': 'require-corp',
 };
 
+// Tauri imports are external - they're only available in the desktop app
+const tauriExternal = [
+  '@tauri-apps/api',
+  '@tauri-apps/api/core',
+  '@tauri-apps/api/path',
+  '@tauri-apps/api/event',
+  '@tauri-apps/plugin-dialog',
+  '@tauri-apps/plugin-fs',
+  '@tauri-apps/plugin',
+  'soundtouchjs',
+  '@breezystack/lamejs',
+];
+
 export default defineConfig({
   base: './',
   define: {
@@ -22,5 +35,11 @@ export default defineConfig({
   preview: { headers: isolation },
   optimizeDeps: { exclude: ['onnxruntime-web'] },
   worker: { format: 'es' },
-  build: { target: 'es2022', chunkSizeWarningLimit: 30000 },
+  build: {
+    target: 'es2022',
+    chunkSizeWarningLimit: 30000,
+    rollupOptions: {
+      external: tauriExternal,
+    },
+  },
 });

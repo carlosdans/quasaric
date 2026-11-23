@@ -5,7 +5,7 @@
 import { downloadResumable, keptBytes, type PartStore } from './modelDownload.ts';
 import type { ModelFile } from './models.ts';
 
-const CACHE = 'steminize-models-v1';
+const CACHE = 'quasaric-models-v1';
 const memory = new Map<string, ArrayBuffer>();
 const hasCaches = () => typeof caches !== 'undefined';
 
@@ -50,7 +50,7 @@ async function store(f: ModelFile, body: ReadableStream<Uint8Array> | Blob, size
 /** Where the unfinished parts of a model download are kept: next to the finished models, under part keys. */
 function partStore(f: ModelFile): PartStore {
   // A query string, not a #fragment: Cache Storage ignores fragments when matching, so every part would match the first.
-  const key = (i: number) => `${f.url}${f.url.includes('?') ? '&' : '?'}steminize-part=${String(i).padStart(4, '0')}`;
+  const key = (i: number) => `${f.url}${f.url.includes('?') ? '&' : '?'}quasaric-part=${String(i).padStart(4, '0')}`;
   return {
     async sizes() {
       const c = await open();

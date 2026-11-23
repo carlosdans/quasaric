@@ -562,14 +562,14 @@ export class Deck {
         (l.el.querySelector('.wave') as HTMLElement).style.height = `${Math.max(l.height, floor)}px`;
       }
       try {
-        localStorage.setItem('steminize.showPan', on ? '1' : '');
+        localStorage.setItem('quasaric.showPan', on ? '1' : '');
       } catch {
         /* ignore */
       }
     };
     let panOn = false;
     try {
-      panOn = localStorage.getItem('steminize.showPan') === '1';
+      panOn = localStorage.getItem('quasaric.showPan') === '1';
     } catch {
       /* ignore */
     }
@@ -841,7 +841,7 @@ export class Deck {
   /** How many takes to keep per recording (oldest dropped first past this); a global preference, set in the Live input drawer. */
   private maxTakes(): number {
     try {
-      const v = Number(localStorage.getItem('steminize.maxTakes'));
+      const v = Number(localStorage.getItem('quasaric.maxTakes'));
       if (Number.isFinite(v) && v >= 1) return Math.min(20, Math.round(v));
     } catch {
       /* ignore */
@@ -1534,7 +1534,7 @@ export class Deck {
       const v = Math.max(1, Math.min(20, Math.round(Number(maxTakesInput.value)) || 5));
       maxTakesInput.value = String(v);
       try {
-        localStorage.setItem('steminize.maxTakes', String(v));
+        localStorage.setItem('quasaric.maxTakes', String(v));
       } catch {
         /* ignore */
       }
@@ -2973,7 +2973,7 @@ export class Deck {
         p.hidden = p.dataset.pane !== name;
       }
       try {
-        localStorage.setItem('steminize.drawer', name ?? '');
+        localStorage.setItem('quasaric.drawer', name ?? '');
       } catch {
         /* ignore */
       }
@@ -2982,7 +2982,7 @@ export class Deck {
     for (const t of tabs) t.onclick = () => open(t.getAttribute('aria-expanded') === 'true' ? null : t.dataset.tab!);
     let saved = '';
     try {
-      saved = localStorage.getItem('steminize.drawer') ?? '';
+      saved = localStorage.getItem('quasaric.drawer') ?? '';
     } catch {
       /* ignore */
     }
@@ -2999,7 +2999,7 @@ export class Deck {
     // fell through to the page underneath and dragged/selected text there instead.
     const handle = $('scratchFloatBar');
     const resizeHandle = $('scratchResizeHandle');
-    const KEY = 'steminize.scratchFloat';
+    const KEY = 'quasaric.scratchFloat';
     const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi));
     // Marks the pane's normal spot in the drawer, so docking can put it back exactly there.
     const anchor = document.createComment('scratch-pane-anchor');
@@ -3644,7 +3644,7 @@ export class Deck {
     $('addMarker').onclick = () => this.addMarker();
     const pedalBtn = $('pedalBtn');
     try {
-      this.pedal = localStorage.getItem('steminize.pedal') === '1';
+      this.pedal = localStorage.getItem('quasaric.pedal') === '1';
     } catch {
       /* ignore */
     }
@@ -3653,7 +3653,7 @@ export class Deck {
       this.pedal = !this.pedal;
       pressed(pedalBtn, this.pedal);
       try {
-        localStorage.setItem('steminize.pedal', this.pedal ? '1' : '0');
+        localStorage.setItem('quasaric.pedal', this.pedal ? '1' : '0');
       } catch {
         /* ignore */
       }

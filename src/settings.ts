@@ -37,7 +37,7 @@ export const DEFAULTS: Settings = {
   clip: 'rescale',
 };
 
-const KEY = 'steminize.settings.v1';
+const KEY = 'quasaric.settings.v1';
 
 export function loadSettings(): Settings {
   try {
@@ -58,11 +58,11 @@ export function saveSettings(s: Settings) {
 }
 
 /** Round-trip audio delay (ms) taken off recorded takes so they line up with the song; see player/latency.ts. */
-const LATENCY_KEY = 'steminize.recLatencyMs';
+const LATENCY_KEY = 'quasaric.recLatencyMs';
 export const MAX_REC_LATENCY_MS = 500;
 
 /** The native engine has its own value (its round trip is a few ms, the webview's is hundreds). */
-const NATIVE_LATENCY_KEY = 'steminize.nativeRecLatencyMs';
+const NATIVE_LATENCY_KEY = 'quasaric.nativeRecLatencyMs';
 export const DEFAULT_NATIVE_LATENCY_MS = 10;
 
 export function loadRecLatencyMs(native = false): number {
@@ -86,7 +86,7 @@ export function saveRecLatencyMs(ms: number, native = false) {
 }
 
 /** Ask the browser for its smallest audio buffers (lower delay when playing live, at more risk of glitches). Read when the audio starts, so it applies from the next launch. */
-const LOW_LATENCY_KEY = 'steminize.lowLatencyAudio';
+const LOW_LATENCY_KEY = 'quasaric.lowLatencyAudio';
 
 export function loadLowLatencyAudio(): boolean {
   try {
@@ -105,7 +105,7 @@ export function saveLowLatencyAudio(on: boolean) {
 }
 
 /** Which input channels the live input uses; see Player.setMonitorChannel. */
-const CHANNEL_KEY = 'steminize.liveChannel';
+const CHANNEL_KEY = 'quasaric.liveChannel';
 export type LiveChannel = 'stereo' | 'left' | 'right' | 'sum';
 
 export function loadLiveChannel(): LiveChannel {

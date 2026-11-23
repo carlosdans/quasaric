@@ -42,10 +42,10 @@ export function initLibrary(deck: Deck) {
   const list = $('libList');
   containScroll(list);
   const autoSave = $<HTMLInputElement>('autoSave');
-  autoSave.checked = pref('steminize.autoSave', '1') === '1';
+  autoSave.checked = pref('quasaric.autoSave', '1') === '1';
   autoSave.onchange = () => {
     try {
-      localStorage.setItem('steminize.autoSave', autoSave.checked ? '1' : '0');
+      localStorage.setItem('quasaric.autoSave', autoSave.checked ? '1' : '0');
     } catch {
       /* ignore */
     }
@@ -145,7 +145,7 @@ export function initLibrary(deck: Deck) {
 
   const exportBtn = $<HTMLButtonElement>('libExport');
   const backupLine = $('libBackupNote');
-  const BACKUP_KEY = 'steminize.lastBackup';
+  const BACKUP_KEY = 'quasaric.lastBackup';
   const lastBackup = (): number | null => {
     try {
       const v = Number(localStorage.getItem(BACKUP_KEY));
@@ -179,7 +179,7 @@ export function initLibrary(deck: Deck) {
     try {
       const zip = await exportLibrary((done, total) => (exportBtn.textContent = `Zipping… ${done}/${total}`));
       const date = new Date().toISOString().slice(0, 10);
-      const saved = await saveFile(`steminize-library-${date}.zip`, zip, 'application/zip');
+      const saved = await saveFile(`quasaric-library-${date}.zip`, zip, 'application/zip');
       if (saved) {
         toast(`Backed up ${metas.size} song${metas.size > 1 ? 's' : ''}.`);
         try {

@@ -14,7 +14,7 @@ export interface Setlist {
 }
 
 export const GAPS = [0, 2, 5, 10];
-const KEY = 'steminize.setlists.v1';
+const KEY = 'quasaric.setlists.v1';
 
 /** Tolerant of anything that has been in storage: drops what isn't a usable setlist instead of throwing. */
 export function parseSetlists(json: string | null): Setlist[] {

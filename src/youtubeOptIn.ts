@@ -1,7 +1,7 @@
 // "From YouTube" is switched off until the user turns it on in Settings, after reading what it means. This is the remembered choice and
 // the wording, kept apart from the page so it can be tested.
 
-export const YOUTUBE_KEY = 'steminize.youtube';
+export const YOUTUBE_KEY = 'quasaric.youtube';
 
 /** What the user is asked to accept before the feature is turned on. */
 export const YOUTUBE_NOTICE =

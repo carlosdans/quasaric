@@ -11,7 +11,7 @@
       (function () {
         var t = 'dark';
         try {
-          if (localStorage.getItem('steminize.theme') === 'light') t = 'light';
+          if (localStorage.getItem('quasaric.theme') === 'light') t = 'light';
         } catch (e) {}
         document.documentElement.setAttribute('data-theme', t);
       })();
@@ -24,7 +24,7 @@
     <header class="top">
       <div class="brand">
         <img src="./icon.svg" alt="" width="28" height="28" />
-        <span>Steminize</span>
+        <span>Quasaric</span>
         <small class="ver" id="appVersion"></small>
       </div>
       <div class="chips">
@@ -638,7 +638,7 @@
       <div class="about-hero">
         <img src="./icon.svg" alt="" width="48" height="48" />
         <div>
-          <div class="about-name">Steminize <span id="aboutVersion"></span></div>
+          <div class="about-name">Quasaric <span id="aboutVersion"></span></div>
           <div class="muted small" id="aboutBuild"></div>
         </div>
       </div>
@@ -647,26 +647,23 @@
         <span class="muted small" id="updateStatus" role="status"></span>
         <a class="small" id="updateLink" href="https://github.com/Gerschwin/steminize/releases" target="_blank" rel="noopener noreferrer" hidden>Get it from GitHub</a>
       </div>
-      <p class="small">Split songs into stems and practise along with them. Everything runs on your own device, and your audio never leaves it.</p>
+      <p class="small">Stem separation for music practice. Split songs into stems, loop and slow them down, change key, see chords and tab. Runs entirely on your device. Fork of Steminize adapted for quasaric.com</p>
       <p class="small about-links">
-        <a href="https://github.com/Gerschwin/steminize" target="_blank" rel="noopener noreferrer">Project on GitHub</a>
-        <a href="https://github.com/Gerschwin/steminize/releases" target="_blank" rel="noopener noreferrer">Releases</a>
-        <a href="https://github.com/Gerschwin/steminize/issues" target="_blank" rel="noopener noreferrer">Report a problem</a>
+        <a href="https://github.com/Gerschwin/steminize" target="_blank" rel="noopener noreferrer">Original: Steminize on GitHub</a>
+        <a href="https://github.com/quas aric/quasaric" target="_blank" rel="noopener noreferrer">Quasaric on GitHub</a>
       </p>
 
       <div class="m-group about-support">
-        <div class="m-group-head"><h3>Support Steminize</h3></div>
-        <p class="small muted">Steminize is free and open source, and nothing is held back behind a payment. If it's useful to you, an optional contribution helps keep it maintained.</p>
-        <a class="btn primary" href="https://www.paypal.com/ncp/payment/FZTNXUUZ3QWH6" target="_blank" rel="noopener noreferrer">Contribute via PayPal</a>
+        <div class="m-group-head"><h3>Quasaric</h3></div>
+        <p class="small muted">Free and open source, no paid APIs, no analytics, no tracking. Audio never leaves your device.</p>
       </div>
 
       <div class="m-group">
-        <div class="m-group-head"><h3>What uses the network</h3></div>
+        <div class="m-group-head"><h3>Network usage</h3></div>
         <ul class="about-list small muted">
           <li>The first time you choose a separation model it is downloaded from Hugging Face, then kept on this device so it works offline.</li>
-          <li>Desktop app only, and off unless you turn it on in Settings: <b>From YouTube…</b> downloads the yt-dlp tool from GitHub the first time you use it, then fetches the audio you pick from YouTube.</li>
-          <li>Desktop app only: <b>Check for updates</b> asks GitHub for the latest release number, and only when you press it.</li>
-          <li>Nothing else is sent anywhere. There is no account, tracking or analytics.</li>
+          <li>Only model downloads. Web-based; no YouTube or desktop features.</li>
+          <li>Nothing else is sent anywhere. There is no account, tracking or analytics. Audio never leaves your device.</li>
         </ul>
       </div>
 
@@ -680,7 +677,6 @@
           <li><a href="https://github.com/cutterbl/SoundTouchJS" target="_blank" rel="noopener noreferrer">SoundTouchJS</a>, for tempo and pitch <span class="muted">· LGPL-2.1</span></li>
           <li><a href="https://github.com/shijinyu/lamejs" target="_blank" rel="noopener noreferrer">lamejs</a> (@breezystack fork), for MP3 export <span class="muted">· LGPL-3.0</span></li>
           <li><a href="https://github.com/101arrowz/fflate" target="_blank" rel="noopener noreferrer">fflate</a>, for ZIP files <span class="muted">· MIT</span></li>
-          <li>Desktop app: <a href="https://tauri.app" target="_blank" rel="noopener noreferrer">Tauri</a> <span class="muted">· MIT / Apache-2.0</span> and <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener noreferrer">yt-dlp</a> <span class="muted">· Unlicense</span></li>
         </ul>
         <p class="muted small">SoundTouchJS and lamejs are used unmodified from npm; you can swap in your own build of either.</p>
       </div>

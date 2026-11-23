@@ -1,7 +1,7 @@
 // Native audio is experimental and off by default, so it must be easy to find and hard to miss. This is the wording, and the rule for
 // when the "it exists" tip in the Live input drawer is shown, kept apart from the page so it can be tested.
 
-export const NATIVE_TIP_KEY = 'steminize.nativeTipSeen';
+export const NATIVE_TIP_KEY = 'quasaric.nativeTipSeen';
 
 export const NATIVE_TIP =
   'New and experimental: Native audio talks to your sound card directly for lower delay when you play along or record. It is off by default. Switch it on in the Native audio row below, then reopen the song.';

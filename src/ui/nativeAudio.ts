@@ -35,7 +35,7 @@ interface LoopbackResult {
 
 type Invoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 
-const KEY = 'steminize.nativePlayback';
+const KEY = 'quasaric.nativePlayback';
 interface Saved {
   on: boolean;
   host: string;

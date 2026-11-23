@@ -3,22 +3,22 @@
 // panels must never touch someone's songs or sets.
 
 export const APP_PREFERENCE_KEYS = [
-  'steminize.theme',
-  'steminize.drawer',
-  'steminize.showPan',
-  'steminize.scratchFloat',
-  'steminize.pedal',
-  'steminize.autoSave',
-  'steminize.autoStart',
-  'steminize.liveChannel',
-  'steminize.lowLatencyAudio',
-  'steminize.maxTakes',
-  'steminize.recLatencyMs',
-  'steminize.nativeRecLatencyMs',
-  'steminize.nativePlayback',
-  'steminize.gpuFailed',
-  'steminize.youtube',
-  'steminize.nativeTipSeen',
+  'quasaric.theme',
+  'quasaric.drawer',
+  'quasaric.showPan',
+  'quasaric.scratchFloat',
+  'quasaric.pedal',
+  'quasaric.autoSave',
+  'quasaric.autoStart',
+  'quasaric.liveChannel',
+  'quasaric.lowLatencyAudio',
+  'quasaric.maxTakes',
+  'quasaric.recLatencyMs',
+  'quasaric.nativeRecLatencyMs',
+  'quasaric.nativePlayback',
+  'quasaric.gpuFailed',
+  'quasaric.youtube',
+  'quasaric.nativeTipSeen',
 ] as const;
 
 interface KeyStore {

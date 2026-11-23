@@ -1,6 +1,6 @@
 // The About dialog (version, what uses the network, credits and licences), plus the one piece of
 // desktop plumbing links need: a Tauri webview won't open target="_blank" links by itself.
-import licenceSteminize from '../../LICENSE?raw';
+import licenceQuasaric from '../../LICENSE?raw';
 import licenceBasicPitch from '../analysis/models/BASIC-PITCH-LICENSE?raw';
 import noticeBasicPitch from '../analysis/models/BASIC-PITCH-NOTICE?raw';
 import { isTauri } from '../platform.ts';
@@ -64,7 +64,7 @@ async function copyText(text: string, area: HTMLTextAreaElement): Promise<boolea
 export function initAbout() {
   $('aboutVersion').textContent = `v${__APP_VERSION__}`;
   $('aboutBuild').textContent = `${isTauri ? 'Desktop app' : 'Web app'} · built ${__BUILD_DATE__}`;
-  $('licSteminize').textContent = licenceSteminize.trim();
+  $('licQuasaric').textContent = licenceQuasaric.trim();
   $('licBasicPitch').textContent = `${noticeBasicPitch.trim()}\n\n${licenceBasicPitch.trim()}`;
   $('aboutBtn').onclick = () => openDialog($<HTMLDialogElement>('aboutDlg'));
 
