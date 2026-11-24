@@ -161,11 +161,11 @@
                   <option value="full">Full (fp32)</option>
                 </select>
               </label>
-              <label>Run on
-                <select id="device">
-                  <option value="auto">Auto</option>
+              <label>Run on this device
+                <select id="device" aria-label="Choose the local inference device">
+                  <option value="auto">Auto (recommended)</option>
                   <option value="gpu">GPU (WebGPU)</option>
-                  <option value="cpu">CPU</option>
+                  <option value="cpu">CPU (WASM · on-device)</option>
                 </select>
               </label>
             </div>
