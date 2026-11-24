@@ -322,8 +322,11 @@ async function decode(file: File): Promise<Stereo> {
       setTimeout(() => reject(Object.assign(new Error('Timed out reading the audio'), { name: 'DecodeTimeout' })), 20_000),
     ),
   ]);
-  const l = buf.getChannelData(0).slice();
-  const r = buf.numberOfChannels > 1 ? buf.getChannelData(1).slice() : l.slice();
+  // getChannelData already returns a Float32Array backed by the AudioBuffer. Keep those
+  // channel views instead of cloning both full channels: the copy doubled decoded-audio
+  // memory before separation even started. Mono still needs a second channel for stereo.
+  const l = buf.getChannelData(0);
+  const r = buf.numberOfChannels > 1 ? buf.getChannelData(1) : l.slice();
   return [l, r];
 }
 
