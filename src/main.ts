@@ -550,7 +550,7 @@ setInterval(() => {
 }, 1000);
 
 $('appVersion').textContent = `v${__APP_VERSION__}`;
-$('appVersion').title = `Steminize ${__APP_VERSION__}, built ${__BUILD_DATE__}`;
+$('appVersion').title = `Quasaric ${__APP_VERSION__}, built ${__BUILD_DATE__}`;
 
 // ---------------------------------------------------------------- PWA bits
 let installEvt: any = null;

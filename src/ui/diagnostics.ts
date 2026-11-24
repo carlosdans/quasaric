@@ -31,7 +31,7 @@ export async function collectDiagnostics(): Promise<string> {
   const lines: string[] = [];
   const add = (k: string, v: unknown) => lines.push(`${k.padEnd(18)} ${v}`);
 
-  add('Steminize', `v${__APP_VERSION__} (${isTauri ? 'desktop app' : 'web app'}), built ${__BUILD_DATE__}`);
+  add('Quasaric', `v${__APP_VERSION__} (${isTauri ? 'desktop app' : 'web app'}), built ${__BUILD_DATE__}`);
   add('Collected', new Date().toISOString());
   add('Browser', nav.userAgent);
   add('Platform', `${nav.platform || 'n/a'}, ${nav.language}`);

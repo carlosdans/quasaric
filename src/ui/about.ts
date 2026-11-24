@@ -8,8 +8,8 @@ import { pickUpdate, type ReleaseInfo } from '../version.ts';
 import { collectDiagnostics } from './diagnostics.ts';
 import { $, openDialog, toast } from './dom.ts';
 
-const RELEASES_URL = 'https://github.com/Gerschwin/steminize/releases';
-const RELEASES_API = 'https://api.github.com/repos/Gerschwin/steminize/releases?per_page=30';
+const RELEASES_URL = 'https://github.com/carlosdans/quasaric/releases';
+const RELEASES_API = 'https://api.github.com/repos/carlosdans/quasaric/releases?per_page=30';
 
 /** Asks GitHub for the newest published release, only when the user presses the button. */
 async function checkForUpdates() {

@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Steminize</title>
-    <meta name="description" content="A practice studio for musicians. Split songs into stems, loop and slow them down, and learn them with chords and tab. Runs entirely on your device." />
+    <title>Quasaric</title>
+    <meta name="description" content="A music practice studio. Separate songs into stems, loop and slow them down, change key, and explore chords and tablature. Audio is processed on your device." />
     <meta name="theme-color" content="#09090d" id="themeColorMeta" />
     <script>
       // Pick the theme before anything is drawn, so the page never flashes the wrong one (the full logic is in src/theme.ts).
@@ -39,7 +39,7 @@
           <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <button class="btn ghost" id="modelsBtn">Models</button>
-        <button class="btn ghost icon" id="aboutBtn" type="button" title="About Steminize" aria-label="About Steminize">
+        <button class="btn ghost icon" id="aboutBtn" type="button" title="About Quasaric" aria-label="About Quasaric">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="7.9" r="1.1" fill="currentColor"/></svg>
         </button>
         <button class="btn ghost icon" id="helpBtn" type="button" title="Keyboard shortcuts">
@@ -413,7 +413,7 @@
                   <div class="live-grp">
                     <label class="mini latency" id="liveLatencyWrap" hidden title="How late a take lands behind the song (the delay of what you hear plus the delay of what is recorded). It is taken off the take when you stop, so it lines up. Press Measure to find it.">Latency <input type="number" id="liveLatency" min="0" max="500" step="1" value="0" /> ms</label>
                     <button class="btn tiny ghost" id="liveLatencyBtn" type="button" hidden title="Plays clicks and listens for them on the input to measure the delay. Needs the speakers near the microphone, or a cable from the output to the input. With headphones and no cable, record a take against the click and use Line up under it instead.">Measure</button>
-                    <label class="mini" id="liveLowLatWrap" hidden title="Ask the audio system for its smallest buffers and run at the sound card's own sample rate, so what you play and hear is less delayed. Some computers may crackle; turn it off if so. Takes effect the next time you open Steminize."><input type="checkbox" id="liveLowLat" /> Low-latency audio</label>
+                    <label class="mini" id="liveLowLatWrap" hidden title="Ask the audio system for its smallest buffers and run at the sound card's own sample rate, so what you play and hear is less delayed. Some computers may crackle; turn it off if so. Takes effect the next time you open Quasaric."><input type="checkbox" id="liveLowLat" /> Low-latency audio</label>
                   </div>
                   <div class="live-grp live-rec">
                     <select id="liveRecordTarget" title="Which track to record into" hidden></select>
@@ -632,7 +632,7 @@
 
     <dialog id="aboutDlg" aria-labelledby="aboutTitle">
       <form method="dialog" class="dlg-head">
-        <h2 id="aboutTitle">About Steminize</h2>
+        <h2 id="aboutTitle">About Quasaric</h2>
         <button class="btn tiny ghost" aria-label="Close">Close</button>
       </form>
       <div class="about-hero">
@@ -645,12 +645,12 @@
       <div class="about-update" id="aboutUpdate" hidden>
         <button class="btn tiny ghost" id="updateBtn" type="button">Check for updates</button>
         <span class="muted small" id="updateStatus" role="status"></span>
-        <a class="small" id="updateLink" href="https://github.com/Gerschwin/steminize/releases" target="_blank" rel="noopener noreferrer" hidden>Get it from GitHub</a>
+        <a class="small" id="updateLink" href="https://github.com/carlosdans/quasaric/releases" target="_blank" rel="noopener noreferrer" hidden>Get it from GitHub</a>
       </div>
-      <p class="small">Stem separation for music practice. Split songs into stems, loop and slow them down, change key, see chords and tab. Runs entirely on your device. Fork of Steminize adapted for quasaric.com</p>
+      <p class="small">Quasaric is a music practice studio. Separate songs into stems, loop and slow them down, change key, and explore chords and tablature. Your audio is processed on your device.</p>
       <p class="small about-links">
-        <a href="https://github.com/Gerschwin/steminize" target="_blank" rel="noopener noreferrer">Original: Steminize on GitHub</a>
-        <a href="https://github.com/quas aric/quasaric" target="_blank" rel="noopener noreferrer">Quasaric on GitHub</a>
+        <a href="https://github.com/carlosdans/quasaric" target="_blank" rel="noopener noreferrer">Quasaric on GitHub</a>
+        <a href="https://github.com/carlosdans/quasaric/issues" target="_blank" rel="noopener noreferrer">Report a problem</a>
       </p>
 
       <div class="m-group about-support">
@@ -659,10 +659,10 @@
       </div>
 
       <div class="m-group">
-        <div class="m-group-head"><h3>Network usage</h3></div>
+        <div class="m-group-head"><h3>What uses the network</h3></div>
         <ul class="about-list small muted">
           <li>The first time you choose a separation model it is downloaded from Hugging Face, then kept on this device so it works offline.</li>
-          <li>Only model downloads. Web-based; no YouTube or desktop features.</li>
+          <li>This web version only downloads separation models. It does not include YouTube downloads or desktop-only features.</li>
           <li>Nothing else is sent anywhere. There is no account, tracking or analytics. Audio never leaves your device.</li>
         </ul>
       </div>
@@ -691,7 +691,7 @@
 
       <div class="m-group about-lic">
         <div class="m-group-head"><h3>Licences</h3></div>
-        <details><summary class="small">Steminize · MIT</summary><pre id="licSteminize"></pre></details>
+        <details><summary class="small">Quasaric · MIT</summary><pre id="licQuasaric"></pre></details>
         <details><summary class="small">Basic Pitch · Apache-2.0 (bundled model)</summary><pre id="licBasicPitch"></pre></details>
         <p class="muted small">The other projects above are used under the licences named next to them; follow the links for their full text.</p>
       </div>
