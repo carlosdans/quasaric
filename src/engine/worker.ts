@@ -141,7 +141,7 @@ function runner(s: OrtT.InferenceSession) {
   const outName = s.outputNames[0];
   return async (input: Float32Array) => {
     const tensor = new ort.Tensor('float32', input, [1, 2, SEGMENT]);
-    let out: Record<string, ort.Tensor> | undefined;
+    let out: Record<string, OrtT.Tensor> | undefined;
     try {
       out = await s.run({ [inName]: tensor });
       const y = out[outName];
