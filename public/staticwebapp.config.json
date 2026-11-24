@@ -1,11 +1,22 @@
 {
+  "routes": [
+    {
+      "route": "/app",
+      "rewrite": "/app.html"
+    },
+    {
+      "route": "/app/*",
+      "rewrite": "/app.html"
+    }
+  ],
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [
       "/assets/*",
       "/icons/*",
       "/sw.js",
-      "/manifest.webmanifest"
+      "/manifest.webmanifest",
+      "/app.html"
     ]
   },
   "globalHeaders": {
