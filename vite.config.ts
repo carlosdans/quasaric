@@ -37,6 +37,7 @@ export default defineConfig({
     target: 'es2022',
     chunkSizeWarningLimit: 30000,
     rollupOptions: {
+      input: { main: 'index.html', app: 'app.html' },
       external: tauriExternal,
     },
   },
