@@ -1,3 +1,5 @@
+import CpuWorker from './workerCpu.ts?worker';
+import GpuWorker from './workerGpu.ts?worker';
 import { ALL_FILES } from '../models.ts';
 import { getModelBytes } from '../modelstore.ts';
 import type { Device } from '../settings.ts';
@@ -25,10 +27,10 @@ export class Engine {
     if (this.worker && this.workerKind === kind) return;
 
     this.worker?.terminate();
-    const worker = new Worker(
-      kind === 'gpu' ? new URL('./workerGpu.ts', import.meta.url) : new URL('./workerCpu.ts', import.meta.url),
-      { type: 'module' },
-    );
+    // Importing workers with Vite's ?worker query makes each entry a real bundled
+    // JavaScript worker asset. new URL() inside a conditional is not statically
+    // analyzable and can leave a .ts URL with an incorrect MIME type in production.
+    const worker = kind === 'gpu' ? new GpuWorker() : new CpuWorker();
     this.worker = worker;
     this.workerKind = kind;
 
