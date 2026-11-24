@@ -86,6 +86,9 @@ const SESSION_OPTS: OrtT.InferenceSession.SessionOptions = { graphOptimizationLe
 // ---- session cache (keep several on big machines, one on small ones)
 const sessions = new Map<string, OrtT.InferenceSession>();
 const maxSessions = ((navigator as any).deviceMemory ?? 4) >= 8 ? 4 : 1;
+// WASM sessions have a much tighter address-space budget than GPU sessions. Keep only one
+// CPU session and release it after each member/job, even on machines reporting 8 GB+ RAM.
+const maxWasmSessions = 1;
 let lastBackend = '';
 
 async function getSession(f: ModelFile, backend: 'webgpu' | 'wasm'): Promise<{ s: OrtT.InferenceSession; backend: 'webgpu' | 'wasm' }> {
@@ -96,10 +99,14 @@ async function getSession(f: ModelFile, backend: 'webgpu' | 'wasm'): Promise<{ s
     sessions.set(id, hit); // LRU bump
     return { s: hit, backend };
   }
-  while (sessions.size >= maxSessions) {
+  const backendSessions = [...sessions.keys()].filter((k) => k.endsWith(`|${backend}`));
+  const sessionLimit = backend === 'wasm' ? maxWasmSessions : maxSessions;
+  while (backendSessions.length >= sessionLimit) {
     const [k, old] = sessions.entries().next().value!;
     sessions.delete(k);
     await old.release();
+    const index = backendSessions.indexOf(k);
+    if (index >= 0) backendSessions.splice(index, 1);
   }
   const raw = await requestModel(f.key);
   if (!raw) throw new Error(`Model ${f.key} is not downloaded`);
@@ -134,11 +141,17 @@ function runner(s: OrtT.InferenceSession) {
   const outName = s.outputNames[0];
   return async (input: Float32Array) => {
     const tensor = new ort.Tensor('float32', input, [1, 2, SEGMENT]);
-    const out = await s.run({ [inName]: tensor });
-    const y = out[outName];
-    const data = (await y.getData()) as Float32Array;
-    y.dispose();
-    return data;
+    let out: Record<string, ort.Tensor> | undefined;
+    try {
+      out = await s.run({ [inName]: tensor });
+      const y = out[outName];
+      return (await y.getData()) as Float32Array;
+    } finally {
+      // Explicitly release both input and output tensors instead of waiting for GC. This matters
+      // on WASM, where the model's linear memory otherwise grows across chunks.
+      tensor.dispose();
+      if (out) for (const value of Object.values(out)) value.dispose();
+    }
   };
 }
 
@@ -168,7 +181,7 @@ async function run(job: SeparateJob) {
         run: runner(s),
         release: async () => {
           // Specialists are big: drop them straight away on small machines.
-          if (maxSessions === 1) {
+          if (s && (maxSessions === 1 || backend === 'wasm')) {
             for (const [k, v] of sessions) if (v === s) sessions.delete(k);
             await s.release();
           }
