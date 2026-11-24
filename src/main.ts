@@ -69,10 +69,14 @@ gpuLinuxNote.onclick = () => {
     /* no GPU */
   }
   if (chip.textContent === 'Checking device…') {
-    chip.textContent = gpu ? 'GPU ready' : `CPU only · ${navigator.hardwareConcurrency || '?'} threads`;
-    chip.title = gpu ? 'Separation will use your graphics card' : 'No usable GPU found; separation will run on the processor (slower)';
-    chip.className = `chip${gpu ? ' gpu' : ''}`;
-    showGpuNote(gpu);
+    chip.textContent = gpu
+      ? settings.s.device === 'cpu' ? 'CPU selected' : settings.s.device === 'gpu' ? 'GPU selected' : 'WebGPU available'
+      : `CPU only · ${navigator.hardwareConcurrency || '?'} threads`;
+    chip.title = gpu
+      ? 'WebGPU is available. The actual execution backend follows Settings > Run on.'
+      : 'No usable GPU found; separation will run on the processor (slower)';
+    chip.className = `chip${gpu && settings.s.device !== 'cpu' ? ' gpu' : ''}`;
+    showGpuNote(gpu && settings.s.device !== 'cpu');
   }
 })();
 const GPU_FAILED_KEY = 'quasaric.gpuFailed';
