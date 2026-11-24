@@ -20,8 +20,6 @@ const tauriExternal = [
   '@tauri-apps/plugin-dialog',
   '@tauri-apps/plugin-fs',
   '@tauri-apps/plugin',
-  'soundtouchjs',
-  '@breezystack/lamejs',
 ];
 
 export default defineConfig({

@@ -16,7 +16,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Steminize version
+      label: Quasaric version
       description: Shown next to the name at the top of the app (for example v0.9.3).
     validations:
       required: true

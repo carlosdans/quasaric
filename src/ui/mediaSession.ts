@@ -50,7 +50,7 @@ export class MediaSessionBridge {
     if (!ms) return;
     try {
       ms.metadata = title
-        ? new MediaMetadata({ title, artist: 'Steminize', artwork: [{ src: './icon-512.png', sizes: '512x512', type: 'image/png' }] })
+        ? new MediaMetadata({ title, artist: 'Quasaric', artwork: [{ src: './icon-512.png', sizes: '512x512', type: 'image/png' }] })
         : null;
     } catch {
       /* MediaMetadata unavailable */

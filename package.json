@@ -1,7 +1,7 @@
 {
   "name": "quasaric",
   "version": "0.9.4",
-  "description": "A practice studio for musicians: stem separation, looping, tempo and key change, chords, and tab with a playing trainer. Runs entirely on your device. Fork of Steminize adapted for quasaric.com",
+  "description": "A music practice studio: separate songs into stems, loop and slow them down, change key, and explore chords and tablature. Audio is processed on your device.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
