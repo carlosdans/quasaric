@@ -65,3 +65,20 @@ jobs:
           ls -lh /tmp/piano_kong.onnx /tmp/piano_kong.onnx.data /tmp/maestro-16k.pcm
       - name: Benchmark dedicated piano model against the same reference MIDI
         run: python tests/maestroKongBenchmark.py /tmp/maestro-16k.pcm /tmp/maestro.midi /tmp/piano_kong.onnx
+      - name: Prepare Transkun v2 browser decoder for CPU-only Node benchmark
+        run: |
+          git clone --depth 1 https://github.com/manh9011/TranskunWeb.git /tmp/TranskunWeb
+          cd /tmp/TranskunWeb && npm ci
+          sed -i 's@onnxruntime-web/webgpu@onnxruntime-web/wasm@' src/transkun/onnxModel.ts
+          sed -i "/wasmPaths =/d" src/transkun/onnxModel.ts
+          sed -i 's/numThreads = 1/numThreads = 2/' src/transkun/onnxModel.ts
+          sed -i 's/private readonly url: string/private readonly url: string | Uint8Array/g' src/transkun/onnxModel.ts
+      - name: Download Transkun v2 ONNX models and convert MAESTRO audio to 44.1 kHz
+        run: |
+          base="https://huggingface.co/TuesdayCrowd/transkun-onnx/resolve/main"
+          curl --fail --location --retry 3 "$base/transkun.onnx" --output /tmp/transkun.onnx
+          curl --fail --location --retry 3 "$base/transkun-heads.onnx" --output /tmp/transkun-heads.onnx
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro.wav -ac 1 -ar 44100 -f f32le -acodec pcm_f32le /tmp/maestro-44k.pcm
+          ls -lh /tmp/transkun.onnx /tmp/transkun-heads.onnx /tmp/maestro-44k.pcm
+      - name: Benchmark Transkun v2 against the same reference MIDI
+        run: node --experimental-transform-types --no-warnings tests/transkunBenchmark.mjs
