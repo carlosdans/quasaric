@@ -83,3 +83,17 @@ jobs:
           ls -lh /tmp/transkun.onnx /tmp/transkun-heads.onnx /tmp/maestro-44k.pcm
       - name: Benchmark Transkun v2 against the same reference MIDI
         run: node --experimental-transform-types --no-warnings tests/transkunBenchmark.mjs
+      - name: Download a second held-out MAESTRO test performance (Scarlatti Sonata K. 525)
+        run: |
+          base="https://huggingface.co/datasets/ddPn08/maestro-v3.0.0/resolve/main"
+          audio="2008/MIDI-Unprocessed_09_R3_2008_01-07_ORIG_MID--AUDIO_09_R3_2008_wav--2.wav"
+          midi="2008/MIDI-Unprocessed_09_R3_2008_01-07_ORIG_MID--AUDIO_09_R3_2008_wav--2.midi"
+          curl --fail --location --retry 3 "$base/$audio" --output /tmp/maestro2.wav
+          curl --fail --location --retry 3 "$base/$midi" --output /tmp/maestro2.midi
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro2.wav -ac 1 -ar 16000 -f f32le -acodec pcm_f32le /tmp/maestro2-16k.pcm
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro2.wav -ac 1 -ar 44100 -f f32le -acodec pcm_f32le /tmp/maestro2-44k.pcm
+          ls -lh /tmp/maestro2.wav /tmp/maestro2.midi /tmp/maestro2-16k.pcm /tmp/maestro2-44k.pcm
+      - name: Validate dedicated piano model on second reference
+        run: python tests/maestroKongBenchmark.py /tmp/maestro2-16k.pcm /tmp/maestro2.midi /tmp/piano_kong.onnx
+      - name: Validate Transkun v2 on second reference
+        run: node --experimental-transform-types --no-warnings tests/transkunBenchmark.mjs /tmp/maestro2-44k.pcm /tmp/maestro2.midi
