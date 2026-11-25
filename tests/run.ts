@@ -457,9 +457,12 @@ for (const [len, overlap, shifts] of [
     { start: 0.01, end: 0.3, pitch: 79, amp: 0.3 }, // weak 12th harmonic
     { start: 0, end: 1, pitch: 72, amp: 0.5 }, // real octave doubling
     { start: 0.4, end: 0.8, pitch: 100, amp: 0.3 }, // independent high note
+    { start: 0, end: 1, pitch: 74, amp: 0.8 },
+    { start: 0.01, end: 0.3, pitch: 98, amp: 0.4 }, // weak two-octave partial
+    { start: 0, end: 1, pitch: 98, amp: 0.7 }, // strong, sustained two-octave doubling
   ]);
-  ok('piano MIDI suppresses weak short upper harmonics at the same onset', clean.map((n) => n.pitch).join() === '60,72,100', clean.map((n) => n.pitch).join());
-  ok('piano MIDI retains octave doublings and independent high notes', clean.some((n) => n.pitch === 72) && clean.some((n) => n.pitch === 100));
+  ok('piano MIDI suppresses weak short upper harmonics, including two-octave partials', clean.map((n) => n.pitch).join() === '60,72,100,74,98', clean.map((n) => n.pitch).join());
+  ok('piano MIDI retains octave doublings, strong two-octave doublings and independent high notes', clean.some((n) => n.pitch === 72) && clean.some((n) => n.pitch === 98) && clean.some((n) => n.pitch === 100));
 }
 
 // ---- piano practice keyboard must include every detected pitch
