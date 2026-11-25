@@ -58,6 +58,15 @@ function frameTime(i: number) {
   return (i * FFT_HOP) / BP_SR - offset * Math.floor(i / framesPerWindow);
 }
 
+/** Piano notes are often shorter than the generic Basic Pitch default.
+ * Keep confidence thresholds conservative; lower only the minimum duration. */
+export const PIANO_NOTE_OPTIONS: NoteOptions = { minNoteMs: 65 };
+
+/** Use the piano-specific duration profile only for an explicitly named piano/keys stem. */
+export function noteOptionsForSource(source: string): NoteOptions | undefined {
+  return /piano|keys|keyboard/i.test(source) ? PIANO_NOTE_OPTIONS : undefined;
+}
+
 export interface NoteOptions {
   onsetThresh?: number; // 0.5
   frameThresh?: number; // 0.3
