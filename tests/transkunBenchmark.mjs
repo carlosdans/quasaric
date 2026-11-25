@@ -111,8 +111,8 @@ const buffers = await loadTranskunBuffers('https://huggingface.co/TuesdayCrowd/t
 console.log('Transkun parameters:', buffers.params);
 const model = new TranskunModel(new Uint8Array(readFileSync('/tmp/transkun.onnx')));
 const heads = new TranskunHeadsModel(new Uint8Array(readFileSync('/tmp/transkun-heads.onnx')));
-await model.load(['wasm']);
-await heads.load(['wasm']);
+await model.load(['cpu']);
+await heads.load(['cpu']);
 const transcriber = new TranskunTranscriber(buffers, model, heads);
 const result = await transcriber.transcribe(audio, p => {
   if (p.stage === 'merge') console.log('Transkun segment', p.segmentsDone, '/', p.segmentsTotal);
