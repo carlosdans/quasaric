@@ -92,13 +92,12 @@ const gpuFailedBefore = () => {
 };
 
 engine.onBackend = ({ backend, threads, note }) => {
-  if (note?.startsWith('GPU failed')) {
+  if (note?.startsWith('GPU failed') || note?.startsWith('This GPU does not support shader-f16')) {
     try {
       localStorage.setItem(GPU_FAILED_KEY, '1');
     } catch {
       /* ignore */
     }
-    toast('The GPU did not work, so Quasaric is using the CPU. Set Device to GPU in Settings to try it again.', true, 9000);
   }
   setBackendInfo({ backend, threads, note });
   chip.textContent = backend === 'webgpu' ? 'Running on GPU' : `Running on CPU · ${threads} thread${threads > 1 ? 's' : ''}`;
