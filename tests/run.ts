@@ -20,6 +20,7 @@ import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '.
 import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine } from '../src/analysis/basicPitch.ts';
 import { pianoKeyboardRange } from '../src/ui/pianoRange.ts';
 import { defaultPianoPracticeTarget } from '../src/ui/practiceTarget.ts';
+import { practiceCues } from '../src/ui/practiceCues.ts';
 import { decimate2 } from '../src/analysis/resample.ts';
 import { writeMidi } from '../src/encode/midi.ts';
 import { centsFrom, detectPitch, freqToNote } from '../src/analysis/pitch.ts';
@@ -438,6 +439,20 @@ for (const [len, overlap, shifts] of [
   ok('piano practice does not silently substitute guitar or other when piano is absent', defaultPianoPracticeTarget(['drums', 'guitar', 'other']) === '');
   ok('a stale saved Guitar fallback is not mistaken for a piano stem', defaultPianoPracticeTarget(['guitar', 'other'], 'guitar') === '');
   ok('an explicitly saved dedicated piano source is preserved', defaultPianoPracticeTarget(['keys', 'piano'], 'keys') === 'keys');
+}
+
+// ---- Synthesia cues: the falling bars and lit keys share one exact event timeline
+{
+  const notes = [{ start: 1.25, end: 1.5, pitch: 60, amp: 0.9 }];
+  const chords = [{ start: 2, end: 3, root: 0, q: '' }];
+  const cues = practiceCues(notes, chords, { now: 1.25, horizon: 5, shift: 2 });
+  const note = cues.find((cue) => cue.kind === 'note');
+  const chordPitches = cues.filter((cue) => cue.kind === 'chord').map((cue) => cue.pitch).sort((a, b) => a - b);
+  ok('Synthesia note cue starts at the MIDI event time and follows pitch shift', !!note && note.pitch === 62 && note.start === 1.25 && note.end === 1.5);
+  ok('Synthesia chord cues use the exact chord interval and pitch shift', chordPitches.join() === '62,66,69' && cues.filter((cue) => cue.kind === 'chord').every((cue) => cue.start === 2 && cue.end === 3));
+  ok('Synthesia excludes notes exactly at their end and activates chords exactly at their start', !practiceCues(notes, chords, { now: 1.5, horizon: 5 }).some((cue) => cue.kind === 'note') && practiceCues(notes, chords, { now: 2, horizon: 5 }).filter((cue) => cue.kind === 'chord').length === 3);
+  ok('Synthesia respects the selected practice mode', practiceCues(notes, chords, { now: 1, horizon: 5, useNotes: true, useChords: false }).every((cue) => cue.kind === 'note') && practiceCues(notes, chords, { now: 1, horizon: 5, useNotes: false, useChords: true }).every((cue) => cue.kind === 'chord'));
+  ok('Synthesia does not show cues outside the five-second look-ahead', practiceCues([{ start: 7, end: 8, pitch: 60, amp: 1 }], [], { now: 1, horizon: 5 }).length === 0);
 }
 
 // ---- audio clock: align visual practice cues with the audible output
