@@ -49,6 +49,9 @@ onModelsChanged.add(() => void renderWelcome());
 $('helpBtn').onclick = () => openDialog($<HTMLDialogElement>('helpDlg'));
 
 const chip = $('backendChip');
+// Do not use the translated chip text as state: i18n's MutationObserver may
+// translate it before the asynchronous GPU probe finishes.
+let backendReported = false;
 chip.textContent = 'Checking device…';
 // WebGPU support in WebKitGTK (the Linux desktop app's webview) is experimental and was the direct
 // cause of a severe OOM crash earlier (an asyncify WASM build misbehaving) — avoided by not loading
@@ -75,7 +78,7 @@ gpuLinuxNote.onclick = () => {
   } catch {
     /* no GPU */
   }
-  if (chip.textContent === 'Checking device…') {
+  if (!backendReported) {
     chip.textContent = gpu
       ? settings.s.device === 'cpu' ? 'CPU selected' : settings.s.device === 'gpu' ? 'GPU selected' : 'WebGPU available'
       : `CPU available · ${navigator.hardwareConcurrency || '?'} threads`;
@@ -97,6 +100,7 @@ const gpuFailedBefore = () => {
 };
 
 engine.onBackend = ({ backend, threads, note }) => {
+  backendReported = true;
   if (note?.startsWith('GPU failed') || note?.startsWith('This GPU does not support shader-f16')) {
     try {
       localStorage.setItem(GPU_FAILED_KEY, '1');
