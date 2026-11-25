@@ -1,4 +1,5 @@
 import './styles.css';
+import { initI18n } from './i18n.ts';
 import { Engine } from './engine/client.ts';
 import type { Stereo } from './engine/separate.ts';
 import { MODELS, neededFiles } from './models.ts';
@@ -21,6 +22,7 @@ import { initAbout } from './ui/about.ts';
 import { installErrorLog, setBackendInfo } from './ui/diagnostics.ts';
 
 // ---------------------------------------------------------------- setup
+initI18n();
 installErrorLog();
 registerServiceWorker();
 // The webview's own right-click menu ("Reload", "Inspect Element", ...) looks out of place on the
