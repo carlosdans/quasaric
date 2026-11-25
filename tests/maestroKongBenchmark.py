@@ -100,7 +100,7 @@ def decode_notes(outputs):
 def percentile(values, p):
     return float(np.percentile(values, p)) if values else None
 
-def score(predicted, reference, tolerance=0.1):
+def score(predicted, reference, tolerance=0.05):
     remaining = set(range(len(reference)))
     onset_abs, onset_signed, end_abs, end_signed = [], [], [], []
     tp = 0
