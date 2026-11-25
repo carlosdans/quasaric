@@ -16,12 +16,13 @@
     .visual{position:relative;border:1px solid #ffffff1c;border-radius:24px;background:linear-gradient(145deg,#171e2d,#0c111b);padding:22px;box-shadow:0 35px 100px #0008;overflow:hidden}.visual:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,#8d9dff20,transparent 65%);pointer-events:none}.visual-head{display:flex;justify-content:space-between;align-items:center;color:#c5cede;font-size:12px;position:relative}.live{color:#74dfc9;font-size:10px;letter-spacing:.12em}.track{position:relative;margin-top:25px;padding:14px 14px 12px;border:1px solid #ffffff10;border-radius:13px;background:#ffffff05}.tracktop{display:flex;justify-content:space-between;color:#e6eaf2;font-size:12px;margin-bottom:12px}.tracktop small{color:#8592a7}.wave{height:45px;display:flex;align-items:center;gap:3px}.wave i{display:block;flex:1;border-radius:4px;height:var(--h);background:linear-gradient(180deg,#9ba8ff,#5d73c9);opacity:.9}.track:nth-of-type(3) .wave i{background:linear-gradient(180deg,#79e5d4,#399f9d)}.track:nth-of-type(4) .wave i{background:linear-gradient(180deg,#e5b8ff,#9871c8)}.track:nth-of-type(5) .wave i{background:linear-gradient(180deg,#ffc98b,#b8794c)}.visual-foot{display:flex;justify-content:space-between;color:#8793a8;font-size:11px;padding:17px 2px 0}
     .section{padding:72px 0}.section-head{text-align:center;max-width:650px;margin:0 auto 38px}.kicker{color:#8d9eff;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:800}.section h2{font-size:clamp(30px,4vw,43px);line-height:1.15;letter-spacing:-.04em;margin:10px 0 12px}.section-head p,.card p{color:var(--muted);margin:0}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{padding:25px;border:1px solid var(--line);border-radius:17px;background:linear-gradient(145deg,#151b29d9,#0d111bdf)}.ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#8798ff18;color:#aeb9ff;font-size:20px;margin-bottom:18px}.card h3{font-size:17px;margin:0 0 8px}.card p{font-size:14px;line-height:1.7}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.step{border-top:1px solid #384154;padding:20px 4px}.num{color:#8d9eff;font-size:12px;letter-spacing:.12em;font-weight:800}.step h3{margin:12px 0 6px}.step p{margin:0;color:var(--muted);font-size:14px}.cta{margin:55px 0 80px;padding:48px;border:1px solid #7185ff45;border-radius:23px;text-align:center;background:radial-gradient(ellipse at 50% 0%,#8395ff20,transparent 70%),#111725}.cta p{color:var(--muted);margin:0 auto 25px;max-width:550px}.footer{padding:25px 0 38px;border-top:1px solid #ffffff14;color:#8792a5;font-size:12px;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}.footer div{display:flex;gap:20px}
     @media(max-width:800px){.hero{grid-template-columns:1fr;gap:42px;padding:65px 0 70px}.visual{max-width:620px}.grid,.steps{grid-template-columns:1fr}.navlinks{gap:14px}.navlinks .hide-mobile{display:none}.cta{padding:35px 22px}}@media(max-width:480px){.wrap{width:min(100% - 30px,1120px)}.nav{height:70px}.navlinks{font-size:12px}.navlinks .button{padding:10px 12px}.hero{padding-top:53px}h1{font-size:48px}.lead{font-size:16px}.trust{gap:12px}.visual{padding:14px}.wave{gap:2px}.cta{margin:35px 0 55px}}
-  </style>
+   .language-picker select{padding:7px 8px;border:1px solid #ffffff35;border-radius:9px;background:#111725;color:#f4f6fb;font:600 12px system-ui;cursor:pointer}\n    </style>
 </head>
 <body>
   <header class="wrap nav">
     <a class="brand" href="/" aria-label="Quasaric home"><img src="/icon.svg" alt="" /> QUASARIC</a>
     <nav class="navlinks" aria-label="Main navigation">
+      <label class="language-picker" title="Language"><select id="languageSelect" aria-label="Language"><option value="en">EN</option><option value="es">ES</option></select></label>
       <a class="hide-mobile" href="#features">Features</a><a class="hide-mobile" href="#how">How it works</a>
       <a href="https://github.com/carlosdans/quasaric" target="_blank" rel="noopener noreferrer">GitHub</a>
       <a class="button" href="/app">Open studio <span aria-hidden="true">↗</span></a>
@@ -64,5 +65,43 @@
     <section class="wrap"><div class="cta"><div class="kicker">Ready when you are</div><h2>Hear your music differently.</h2><p>Open the studio, choose a track and start discovering what's inside your music.</p><a class="button" href="/app">Launch Quasaric <span aria-hidden="true">→</span></a></div></section>
   </main>
   <footer class="wrap footer"><span>© Quasaric · Free and open source</span><div><a href="https://github.com/carlosdans/quasaric" target="_blank" rel="noopener noreferrer">GitHub</a><a href="https://github.com/carlosdans/quasaric/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">Privacy</a><a href="https://github.com/carlosdans/quasaric/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">License</a></div></footer>
+
+<script>
+(() => {
+  const key='quasaric.language';
+  const es={
+    'Features':'Características','How it works':'Cómo funciona','Open studio':'Abrir estudio',
+    'A music studio that stays yours':'Un estudio musical que sigue siendo tuyo',
+    'Your music.':'Tu música.','Every layer.':'Cada capa.',
+    'Separate songs into individual tracks, then slow them down, loop the tricky parts and explore the details. All in your browser, with audio processed on your device.':'Separa canciones en pistas individuales, reduce su velocidad, repite los fragmentos difíciles y explora cada detalle. Todo en tu navegador, con el audio procesado en tu dispositivo.',
+    'Open Quasaric':'Abrir Quasaric','Explore features':'Descubrir funciones','On-device processing':'Procesamiento en el dispositivo','No account required':'Sin necesidad de cuenta','Free and open source':'Gratis y de código abierto',
+    'YOUR SESSION':'TU SESIÓN','LOCAL AUDIO':'AUDIO LOCAL','Original mix':'Mezcla original','Full song':'Canción completa','Vocals':'Voces','Drums':'Batería','Bass':'Bajo','Separate · Listen · Practice':'Separar · Escuchar · Practicar','100% local':'100 % local',
+    'Made for the way you listen':'Diseñado para tu forma de escuchar','More than separation.':'Mucho más que separar pistas.','Get closer to the music with practical tools for learning, arranging and creative exploration.':'Acércate a la música con herramientas prácticas para aprender, arreglar y explorar tu creatividad.',
+    'Separate into stems':'Separar en pistas','Split a song into vocals, drums, bass and other instruments with on-device AI models.':'Separa una canción en voces, batería, bajo y otros instrumentos con modelos de IA ejecutados en tu dispositivo.',
+    'Slow down and loop':'Ralentizar y repetir','Work through a difficult passage at your own pace. Loop sections until every note feels right.':'Practica un pasaje difícil a tu ritmo. Repite secciones hasta que cada nota salga perfecta.',
+    'Explore the music':'Explora la música','Shape your practice with track controls, pitch and tempo tools, chords, tablature and more.':'Adapta tu práctica con controles de pista, herramientas de tono y tempo, acordes, tablaturas y mucho más.',
+    'A simple workflow':'Un flujo de trabajo sencillo','From song to separate parts.':'De una canción a sus partes.','No uploads or account setup. Bring a track and start exploring.':'Sin subir archivos ni crear una cuenta. Elige una pista y empieza a explorar.',
+    '01 / ADD':'01 / AÑADIR','Choose your audio':'Elige tu audio','Drop in a song or select an audio file from your device.':'Arrastra una canción o selecciona un archivo de audio de tu dispositivo.',
+    '02 / SEPARATE':'02 / SEPARAR','Let Quasaric work':'Deja que Quasaric trabaje','Choose your model and processing device, then create individual stems locally.':'Elige el modelo y el dispositivo de procesamiento y crea las pistas por separado en local.',
+    '03 / EXPLORE':'03 / EXPLORAR','Make it yours':'Hazla tuya','Listen to each part, adjust playback and save the results in your local library.':'Escucha cada parte, ajusta la reproducción y guarda los resultados en tu biblioteca local.',
+    'Ready when you are':'Cuando tú quieras','Hear your music differently.':'Escucha tu música de otra manera.','Open the studio, choose a track and start discovering what\'s inside your music.':'Abre el estudio, elige una pista y descubre todo lo que contiene tu música.','Launch Quasaric':'Iniciar Quasaric',
+    '© Quasaric · Free and open source':'© Quasaric · Gratis y de código abierto','Privacy':'Privacidad','License':'Licencia'
+  };
+  const en=Object.fromEntries(Object.entries(es).map(([a,b])=>[b,a]));
+  function apply(lang){
+    const dict=lang==='es'?es:en;
+    const walk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    let node;while(node=walk.nextNode()){const v=node.nodeValue?.trim();if(v&&dict[v])node.nodeValue=node.nodeValue.replace(v,dict[v]);}
+    document.documentElement.lang=lang;
+    document.title=lang==='es'?'Quasaric — Tu música, en cada capa':'Quasaric — Your music, in every layer';
+    const meta=document.querySelector('meta[name="description"]');
+    if(meta)meta.content=lang==='es'?'Quasaric es un estudio musical privado que funciona en tu dispositivo. Separa canciones en pistas y explora cada parte.':'Quasaric is a private, on-device music studio. Separate songs into stems, then slow down, loop and explore every part.';
+    const sel=document.getElementById('languageSelect');if(sel)sel.value=lang;
+  }
+  let lang='en';try{lang=localStorage.getItem(key)==='es'?'es':'en';}catch{}
+  apply(lang);
+  document.getElementById('languageSelect')?.addEventListener('change',e=>{lang=e.target.value==='es'?'es':'en';try{localStorage.setItem(key,lang);}catch{}apply(lang);});
+})();
+</script>
 </body>
 </html>
