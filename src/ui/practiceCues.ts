@@ -50,7 +50,7 @@ export function practiceCues(
     if (chord.root < 0 || !visible(chord.start, chord.end)) continue;
     const intervals = chordIntervals(chord.q);
     for (const interval of [0, ...intervals])
-      out.push({ pitch: 60 + chord.root + interval + shift, start: chord.start, end: chord.end, kind: 'chord' });
+      out.push({ pitch: 60 + ((chord.root + interval) % 12) + shift, start: chord.start, end: chord.end, kind: 'chord' });
   }
   return out;
 }
