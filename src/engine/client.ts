@@ -21,9 +21,19 @@ export class Engine {
 
   /** Load only the runtime build required by this job. In particular, a CPU selection must
    * never import the WebGPU build: its instrumented WASM can exhaust memory on some webviews. */
-  private ensureWorker(device: Device) {
-    // The entry must be chosen synchronously: ONNX Runtime re-loads this same script for its threads.
-    const kind = device !== 'cpu' && !!(navigator as any).gpu ? 'gpu' : 'cpu';
+  private async ensureWorker(device: Device) {
+    // navigator.gpu only means that the API exists; it does not guarantee that this
+    // device/browser can create an actual adapter. Probe before loading the WebGPU
+    // ONNX Runtime build, otherwise it can fail at startup with "No available adapters".
+    let gpuAvailable = false;
+    if (device !== 'cpu') {
+      try {
+        gpuAvailable = !!(await (navigator as any).gpu?.requestAdapter());
+      } catch {
+        gpuAvailable = false;
+      }
+    }
+    const kind = gpuAvailable ? 'gpu' : 'cpu';
     if (this.worker && this.workerKind === kind) return;
 
     this.worker?.terminate();
@@ -65,8 +75,8 @@ export class Engine {
     };
   }
 
-  separate(job: Omit<SeparateJob, 'type'>, onProgress: (p: Progress) => void) {
-    this.ensureWorker(job.device);
+  async separate(job: Omit<SeparateJob, 'type'>, onProgress: (p: Progress) => void) {
+    await this.ensureWorker(job.device);
     const worker = this.worker!;
     return new Promise<{ name: string; data: Stereo }[]>((resolve, reject) => {
       this.jobs.set(job.id, { resolve, reject, onProgress });
