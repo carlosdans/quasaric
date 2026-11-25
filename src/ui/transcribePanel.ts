@@ -604,7 +604,7 @@ export class Transcribe {
       ...s.stems.map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)),
     );
     this.sourceSel.value = this.source;
-    this.practiceTarget = st?.practiceTarget && s.stems.some((x) => x.name === st.practiceTarget) ? st.practiceTarget : (s.stems.find((x) => /piano|keys|keyboard/i.test(x.name))?.name ?? '');
+    this.practiceTarget = st?.practiceTarget && s.stems.some((x) => x.name === st.practiceTarget) ? st.practiceTarget : (s.stems.find((x) => /piano|keys|keyboard/i.test(x.name))?.name ?? s.stems.find((x) => /other|guitar|instrumental/i.test(x.name) && role(x.name) === 'harm')?.name ?? '');
     this.practiceTargetSel.replaceChildren(...s.stems.filter((x) => role(x.name) !== 'drums' && role(x.name) !== 'vocals').map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)));
     this.practiceTargetSel.value = this.practiceTarget;
     this.refreshPracticeTargetUi();
