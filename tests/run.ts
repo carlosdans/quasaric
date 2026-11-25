@@ -436,7 +436,8 @@ for (const [len, overlap, shifts] of [
   ok('practice keyboard has a safe default when no MIDI notes exist', pianoKeyboardRange([]).low === 36 && pianoKeyboardRange([]).high === 72);
   ok('piano practice defaults only to a dedicated piano/keys stem', defaultPianoPracticeTarget(['drums', 'guitar', 'other', 'piano']) === 'piano');
   ok('piano practice does not silently substitute guitar or other when piano is absent', defaultPianoPracticeTarget(['drums', 'guitar', 'other']) === '');
-  ok('an explicitly saved practice source is preserved', defaultPianoPracticeTarget(['guitar', 'piano'], 'guitar') === 'guitar');
+  ok('a stale saved Guitar fallback is not mistaken for a piano stem', defaultPianoPracticeTarget(['guitar', 'other'], 'guitar') === '');
+  ok('an explicitly saved dedicated piano source is preserved', defaultPianoPracticeTarget(['keys', 'piano'], 'keys') === 'keys');
 }
 
 // ---- audio clock: align visual practice cues with the audible output
