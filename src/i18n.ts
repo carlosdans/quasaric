@@ -38,6 +38,10 @@ Object.assign(ES, {
  'No published release found yet.':'Todavía no hay ninguna versión publicada.','Select the text below and copy it.':'Selecciona el texto de abajo y cópialo.','Couldn\'t collect it:':'No se pudo recopilar:','Couldn\'t open the link:':'No se pudo abrir el enlace:'
 });
 
+Object.assign(ES, {
+ 'Choose stems…':'Elegir pistas…','Select one or more stems for chord analysis':'Selecciona una o varias pistas para analizar los acordes','Detect chords again using these stems? Your corrections will be lost.':'¿Volver a detectar los acordes con estas pistas? Se perderán tus correcciones.','Choose at least one stem for chord analysis.':'Elige al menos una pista para analizar los acordes.'
+});
+
 const EN = Object.fromEntries(Object.entries(ES).map(([a,b]) => [b,a]));
 let current: Language = 'en';
 let observer: MutationObserver | undefined;
