@@ -109,6 +109,14 @@ const LUT = (() => {
 
 const isBlack = (n: number) => [1, 3, 6, 8, 10].includes(((n % 12) + 12) % 12);
 
+const CHORD_INTERVALS: Record<string, number[]> = {
+  '': [4, 7], m: [3, 7], '7': [4, 7, 10], m7: [3, 7, 10],
+  maj7: [4, 7, 11], sus2: [2, 7], sus4: [5, 7], dim: [3, 6],
+  aug: [4, 8], '5': [7], '6': [4, 7, 9], m6: [3, 7, 9],
+  '9': [2, 4, 7, 10], add9: [2, 4, 7],
+};
+const chordIntervals = (quality: string) => CHORD_INTERVALS[quality] ?? [4, 7];
+
 // Computer keyboard as a piano, while the Notes view is open: the bottom row is white keys,
 // the row above is black keys, offset to sit over the gaps between them (as on a real piano).
 const PIANO_BASE = 60; // C4
@@ -768,9 +776,8 @@ export class Transcribe {
       return { x: left + (base + 1) * keyW - keyW * 0.31, width: keyW * 0.62, black: true };
     };
     const now = pos / SR;
-    const mode = this.practiceMode;
-    const useChords = mode !== 'notes';
-    const useNotes = mode !== 'chords';
+    const useChords = this.practiceMode !== 'notes';
+    const useNotes = this.practiceMode !== 'chords';
     g.clearRect(0, 0, w, hgt);
     g.fillStyle = 'rgba(9,9,13,0.96)';
     g.fillRect(0, 0, w, hgt);
@@ -801,13 +808,7 @@ export class Transcribe {
     };
     if (useChords) for (const ch of chords) {
       if (ch.root < 0 || ch.end < now || ch.start > now + horizon) continue;
-      const intervals: Record<string, number[]> = {
-        '': [0,4,7], m: [0,3,7], '7': [0,4,7,10], m7: [0,3,7,10],
-        maj7: [0,4,7,11], sus2: [0,2,7], sus4: [0,5,7], dim: [0,3,6],
-        aug: [0,4,8], '5': [0,7], '6': [0,4,7,9], m6: [0,3,7,9],
-        '9': [0,2,4,7,10], add9: [0,2,4,7],
-      };
-      for (const interval of intervals[ch.q] ?? [0,4,7]) {
+      for (const interval of [0, ...chordIntervals(ch.q)]) {
         const pitch = 60 + ((ch.root + interval) % 12);
         falling(pitch, ch.start, ch.end, ch.start <= now && ch.end > now ? '#f5a623' : '#8b7cf6');
       }
@@ -822,7 +823,7 @@ export class Transcribe {
     for (let i = 0; i < whites.length; i++) {
       const n = whites[i], x = left + i * keyW;
       const soundingChord = useChords && chords.some(ch => ch.root >= 0 && ch.start <= now && ch.end > now &&
-        [0, ...( ({'': [4,7],m:[3,7],'7':[4,7,10],m7:[3,7,10],maj7:[4,7,11],sus2:[2,7],sus4:[5,7],dim:[3,6],aug:[4,8],'5':[7],'6':[4,7,9],m6:[3,7,9],'9':[2,4,7,10],add9:[2,4,7]} as Record<string,number[]>)[ch.q] ?? [4,7])].some(i => (ch.root + i + shift) % 12 === n % 12));
+        [0, ...chordIntervals(ch.q)].some(i => (ch.root + i + shift) % 12 === n % 12));
       const soundingNote = useNotes && notes.some(note => note.pitch + shift === n && note.start <= now && note.end > now);
       g.fillStyle = soundingChord ? '#f5a623' : soundingNote ? '#22c7d6' : '#e9e9ef';
       g.fillRect(x + dpr, keyTop, keyW - 2 * dpr, hgt - keyTop - dpr);
@@ -832,7 +833,7 @@ export class Transcribe {
     for (let n = low; n < high; n++) if (isBlack(n)) {
       const key = xOf(n);
       const activeChord = useChords && chords.some(ch => ch.root >= 0 && ch.start <= now && ch.end > now &&
-        [0, ...( ({'': [4,7],m:[3,7],'7':[4,7,10],m7:[3,7,10],maj7:[4,7,11],sus2:[2,7],sus4:[5,7],dim:[3,6],aug:[4,8],'5':[7],'6':[4,7,9],m6:[3,7,9],'9':[2,4,7,10],add9:[2,4,7]} as Record<string,number[]>)[ch.q] ?? [4,7])].some(i => (ch.root + i + shift) % 12 === n % 12));
+        [0, ...chordIntervals(ch.q)].some(i => (ch.root + i + shift) % 12 === n % 12));
       const activeNote = useNotes && notes.some(note => note.pitch + shift === n && note.start <= now && note.end > now);
       g.fillStyle = activeChord ? '#d88918' : activeNote ? '#1596a5' : '#24242c';
       g.fillRect(key.x, keyTop, key.width, (hgt - keyTop) * 0.62);
