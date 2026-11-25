@@ -46,6 +46,8 @@ Object.assign(ES, {
  'Choose the piano part you want to learn':'Elige la parte de piano que quieres aprender',
  'Piano practice part':'Parte que quieres practicar',
  'Practise this part':'Practicar esta parte',
+ 'Restore part in mix':'Restaurar parte en la mezcla',
+ 'Restore the selected part to the backing mix':'Restaurar la parte seleccionada a la mezcla de acompañamiento',
  'Mute the selected part in the mix and prepare its falling-note lesson':'Silencia la parte seleccionada en la mezcla y prepara su lección de notas',
  'Mute the part you play; the rest of the song keeps playing.':'Silencia la parte que vas a tocar; el resto de la canción seguirá sonando.',
 });
