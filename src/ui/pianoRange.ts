@@ -13,10 +13,13 @@ export function pianoKeyboardRange(pitches: readonly number[]): { low: number; h
     const centre = (min + max) / 2;
     low = Math.max(21, Math.min(73, Math.floor((centre - 18) / 12) * 12));
     high = low + 36;
-    if (high > 109) {
-      high = 109;
-      low = high - 36;
-    }
+    if (high > 109) high = 109;
+    // The three-octave fit can land at MIDI 73 (C#5) while high is exactly
+    // 109. Include the preceding C5 white key so the first black key is not
+    // clipped by xOf(), which positions black keys relative to that white key.
+    if (low > 21 && low % 12 !== 0) low = Math.floor(low / 12) * 12;
+    // Keep the highest detected note inside the half-open [low, high) range.
+    high = Math.max(high, max + 1);
   }
   return { low, high };
 }
