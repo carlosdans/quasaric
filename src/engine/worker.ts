@@ -62,7 +62,8 @@ let gpuAdapter: any | null | undefined;
 async function getWebGPUAdapter() {
   if (gpuAdapter !== undefined) return gpuAdapter;
   try {
-    gpuAdapter = await (navigator as any).gpu?.requestAdapter() ?? null;
+    const request = (navigator as any).gpu?.requestAdapter() as Promise<any> | undefined;
+    gpuAdapter = request ? await withTimeout(request, 8_000, 'Checking the GPU adapter') : null;
   } catch {
     gpuAdapter = null;
   }
