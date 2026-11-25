@@ -78,7 +78,7 @@ const expected = [
   { pitch: 74, start: 0.90, end: 1.60 },
 ];
 const missing = expected.filter((e) => !polyphonic.some(n =>
-  n.pitch === e.pitch && Math.abs(n.start - e.start) <= 0.10 && Math.abs(n.end - e.end) <= 0.10));
+  n.pitch === e.pitch && Math.abs(n.start - e.start) <= 0.06 && Math.abs(n.end - e.end) <= 0.04));
 const extras = polyphonic.filter(n => !expected.some(e => e.pitch === n.pitch));
 if (missing.length || extras.length) {
   console.error('FAIL  polyphonic piano: expected every chord tone and overlapping melody note, with no false pitches');
