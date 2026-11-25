@@ -15,6 +15,7 @@ import type { ChordMark } from '../lyrics/lyricChords.ts';
 import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
 import { noteOptionsForSource, singleLine, type NoteEvent } from '../analysis/basicPitch.ts';
 import { pianoKeyboardRange } from './pianoRange.ts';
+import { defaultPianoPracticeTarget } from './practiceTarget.ts';
 import { monoOf } from '../analysis/resample.ts';
 import { programFor, writeMidi } from '../encode/midi.ts';
 import { renderMix } from '../player/mixcore.ts';
@@ -543,7 +544,7 @@ export class Transcribe {
     this.practiceStartBtn.title = muted ? 'Restore the selected part to the backing mix' : 'Mute the selected part in the mix and prepare its falling-note lesson';
     const song = this.host.song();
     const hasPiano = !!song?.stems.some((x) => /piano|keys|keyboard/i.test(x.name));
-    if (!target) this.practiceHint.textContent = 'No practice part is available in this separation.';
+    if (!target) this.practiceHint.textContent = hasPiano ? 'Choose the Piano stem to practise it.' : 'No dedicated Piano stem was detected. Choose another part manually only if you accept that its notes may belong to other instruments.';
     else if (/piano|keys|keyboard/i.test(target)) this.practiceHint.textContent = 'Using the Piano stem. It can still contain sound from other instruments; check it by ear.';
     else if (!hasPiano) this.practiceHint.textContent = 'No dedicated Piano stem. This part may mix piano with other instruments; muting it removes the whole part. For a Piano stem, separate with HT Demucs 6-stem.';
     else this.practiceHint.textContent = 'This is not the dedicated Piano stem. Muting it removes the whole selected part.';
@@ -614,8 +615,11 @@ export class Transcribe {
     );
     this.sourceSel.value = this.source;
     const practiceStems = s.stems.filter((x) => !x.name.startsWith('no_') && role(x.name) !== 'drums' && role(x.name) !== 'vocals');
-    this.practiceTarget = st?.practiceTarget && practiceStems.some((x) => x.name === st.practiceTarget) ? st.practiceTarget : (practiceStems.find((x) => /piano|keys|keyboard/i.test(x.name))?.name ?? practiceStems.find((x) => /other|guitar|instrumental/i.test(x.name) && role(x.name) === 'harm')?.name ?? practiceStems[0]?.name ?? '');
-    this.practiceTargetSel.replaceChildren(...practiceStems.map((x) => h('option', { value: x.name }, x.name)));
+    this.practiceTarget = defaultPianoPracticeTarget(practiceStems.map((x) => x.name), st?.practiceTarget);
+    this.practiceTargetSel.replaceChildren(
+      h('option', { value: '' }, 'Select a part manually…'),
+      ...practiceStems.map((x) => h('option', { value: x.name }, x.name)),
+    );
     this.practiceTargetSel.value = this.practiceTarget;
     this.refreshPracticeTargetUi();
     this.simple = st?.simple ?? false;
