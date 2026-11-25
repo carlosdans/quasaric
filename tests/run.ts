@@ -406,7 +406,7 @@ for (const [len, overlap, shifts] of [
     addChord(harm, 67, [0, 4, 7], changeAt, duration, 0.16);
     addChord(bass, 36, [0], 0, changeAt, 0.4);
     addChord(bass, 43, [0], changeAt, duration, 0.4);
-    const sync = detectChords(cqt(harm), Array.from({ length: 8 }, (_, i) => i * beat / 2), cqt(bass), { downbeat: 0, perBar: 4 });
+    const sync = detectChords(cqt(harm), Array.from({ length: 4 }, (_, i) => i * beat), cqt(bass), { downbeat: 0, perBar: 4 });
     const meaningful = sync.filter((c) => c.root >= 0);
     const change = meaningful.find((c) => c.root === 7);
     ok('chords: detects a syncopated change halfway through a beat', !!change && Math.abs(change.start - changeAt) <= 0.08 && meaningful.some((c) => c.root === 0 && c.end <= change.start + 0.02), meaningful.map((c) => `${chordName(c)}@${c.start.toFixed(3)}`).join(' '));
