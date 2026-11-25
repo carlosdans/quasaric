@@ -9,7 +9,9 @@ const AUDIO_N_SAMPLES = BP_SR * 2 - FFT_HOP; // 43844 samples per model window
 const ANNOT_N_FRAMES = 172; // output frames per window
 const N_OVERLAP_FRAMES = 30;
 const OVERLAP_LEN = N_OVERLAP_FRAMES * FFT_HOP;
-const HOP_SIZE = AUDIO_N_SAMPLES - OVERLAP_LEN;
+export const BP_WINDOW_HOP = AUDIO_N_SAMPLES - OVERLAP_LEN;
+const HOP_SIZE = BP_WINDOW_HOP;
+export const BP_FRAMES_PER_WINDOW = ANNOT_N_FRAMES - N_OVERLAP_FRAMES;
 export const BP_WINDOW = AUDIO_N_SAMPLES;
 export const BP_PITCHES = 88;
 const MIDI_OFFSET = 21;
@@ -39,7 +41,10 @@ export function bpWindows(audio: Float32Array): Float32Array[] {
 export function bpUnwrap(parts: Float32Array[], bins: number, audioLength: number): { data: Float32Array; frames: number } {
   const olap = N_OVERLAP_FRAMES / 2;
   const keep = ANNOT_N_FRAMES - 2 * olap;
-  const frames = Math.min(parts.length * keep, Math.floor(audioLength * (FPS / BP_SR)));
+  // Match Basic Pitch's reference implementation: the output length is based on
+  // the number of audio-window hops, not the nominal frame rate. The two differ
+  // slightly because 142 kept model frames do not equal the 36,164-sample hop.
+  const frames = Math.min(parts.length * keep, Math.floor((audioLength / HOP_SIZE) * keep));
   const data = new Float32Array(frames * bins);
   for (let w = 0; w < parts.length; w++) {
     for (let t = 0; t < keep; t++) {
@@ -52,7 +57,7 @@ export function bpUnwrap(parts: Float32Array[], bins: number, audioLength: numbe
 }
 
 /** Frame index → seconds, including basic_pitch's small per-window correction. */
-function frameTime(i: number) {
+export function bpFrameTime(i: number) {
   const offset = (FFT_HOP / BP_SR) * (ANNOT_N_FRAMES - AUDIO_N_SAMPLES / FFT_HOP) + 0.0018;
   const framesPerWindow = ANNOT_N_FRAMES - N_OVERLAP_FRAMES; // bpUnwrap keeps 142 frames from each 172-frame window.
   return (i * FFT_HOP) / BP_SR - offset * Math.floor(i / framesPerWindow);
@@ -179,7 +184,7 @@ export function bpNotes(framesIn: Float32Array, onsetsIn: Float32Array, n: numbe
   }
 
   return notes
-    .map(([s, e, pitch, amp]) => ({ start: +frameTime(s).toFixed(4), end: +frameTime(e).toFixed(4), pitch, amp: +amp.toFixed(3) }))
+    .map(([s, e, pitch, amp]) => ({ start: +bpFrameTime(s).toFixed(4), end: +bpFrameTime(e).toFixed(4), pitch, amp: +amp.toFixed(3) }))
     .sort((a, b) => a.start - b.start || a.pitch - b.pitch);
 }
 
