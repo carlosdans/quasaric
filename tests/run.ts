@@ -19,6 +19,7 @@ import { BINS, CQT_FPS, NOTE_LO, cqt } from '../src/analysis/cqt.ts';
 import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '../src/analysis/chords.ts';
 import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine } from '../src/analysis/basicPitch.ts';
 import { pianoKeyboardRange } from '../src/ui/pianoRange.ts';
+import { defaultPianoPracticeTarget } from '../src/ui/practiceTarget.ts';
 import { decimate2 } from '../src/analysis/resample.ts';
 import { writeMidi } from '../src/encode/midi.ts';
 import { centsFrom, detectPitch, freqToNote } from '../src/analysis/pitch.ts';
@@ -380,6 +381,8 @@ for (const [len, overlap, shifts] of [
   const ch = detectChords(cqt(b.harm), b.beats, cqt(b.bass), { downbeat: 0, perBar: 4 });
   const names = ch.filter((c) => c.root >= 0).map((c) => chordName(c));
   ok('chords: C G Am F Dm E Am (with bass stem)', names.join(' ') === 'C G Am F Dm E Am', names.join(' '));
+  const expectedChordStarts = [0, 4, 8, 12, 16, 20, 24].map((bar) => bar * beat);
+  ok('chord changes land on their known musical bar boundaries', ch.filter((c) => c.root >= 0).length === expectedChordStarts.length && ch.filter((c) => c.root >= 0).every((c, i) => Math.abs(c.start - expectedChordStarts[i]) < 0.01), ch.filter((c) => c.root >= 0).map((c) => c.start.toFixed(3)).join(', '));
   // Common chord extensions should survive the template match, not be flattened to triads.
   const colourChord = (root: number, intervals: number[]) => {
     const n = SR * 2;
@@ -431,6 +434,9 @@ for (const [len, overlap, shifts] of [
   const narrow = pianoKeyboardRange([60, 64, 67]);
   ok('practice keyboard keeps a readable minimum of three octaves', narrow.high - narrow.low >= 36, JSON.stringify(narrow));
   ok('practice keyboard has a safe default when no MIDI notes exist', pianoKeyboardRange([]).low === 36 && pianoKeyboardRange([]).high === 72);
+  ok('piano practice defaults only to a dedicated piano/keys stem', defaultPianoPracticeTarget(['drums', 'guitar', 'other', 'piano']) === 'piano');
+  ok('piano practice does not silently substitute guitar or other when piano is absent', defaultPianoPracticeTarget(['drums', 'guitar', 'other']) === '');
+  ok('an explicitly saved practice source is preserved', defaultPianoPracticeTarget(['guitar', 'piano'], 'guitar') === 'guitar');
 }
 
 // ---- audio clock: align visual practice cues with the audible output
