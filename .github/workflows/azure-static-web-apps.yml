@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+    types: [opened, synchronize, reopened, closed]
     branches:
       - main
   workflow_dispatch:
@@ -45,10 +46,9 @@ jobs:
           test -f dist/staticwebapp.config.json
           echo "Azure configuration found in dist"
 
-      # Deployment is deliberately restricted to main.
-      # Running this workflow from the migration branch only validates.
-      - name: Deploy to Azure Static Web Apps
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      # Main publishes production. Pull requests publish isolated Azure preview environments.
+      - name: Deploy production or PR preview to Azure Static Web Apps
+        if: github.event.action != 'closed' && (github.ref == 'refs/heads/main' || github.event_name == 'pull_request')
         uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ORANGE_MEADOW_04BD1081E }}
@@ -57,3 +57,11 @@ jobs:
           api_location: ""
           output_location: ""
           skip_app_build: true
+
+      # Remove the isolated preview when the pull request is closed.
+      - name: Close PR preview environment
+        if: github.event_name == 'pull_request' && github.event.action == 'closed'
+        uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ORANGE_MEADOW_04BD1081E }}
+          action: close
