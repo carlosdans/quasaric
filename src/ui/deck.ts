@@ -628,6 +628,7 @@ export class Deck {
     new ResizeObserver(() => this.invalidateLayers()).observe($('deck'));
     const frame = () => {
       if (this.r && this.tx.stripShown) this.tx.drawStrip(); // the chord timeline moves every screen frame, like the tab strip
+      if (this.r && this.player.state.playing) this.tx.drawPracticeFrame(); // keep falling notes locked to the interpolated audio clock
       if (this.dirty && this.r) this.draw();
       // The tab scroll strip moves every screen frame while playing, not just when a player report lands.
       else if (this.r && this.player.state.playing) {
