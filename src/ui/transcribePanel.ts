@@ -843,11 +843,11 @@ export class Transcribe {
     if (useNotes && !notes.length && useChords && chords.length) {
       g.fillStyle = 'rgba(255,255,255,0.72)';
       g.font = `${11*dpr}px system-ui`;
-      g.fillText('Use Notes → To MIDI to add individual falling notes', left + 8*dpr, top + 15*dpr);
+      g.fillText(document.documentElement.lang === 'es' ? 'Usa Notas → To MIDI para ver notas individuales' : 'Use Notes → To MIDI to add individual falling notes', left + 8*dpr, top + 15*dpr);
     } else if (useNotes && !notes.length) {
       g.fillStyle = 'rgba(255,255,255,0.72)';
       g.font = `${11*dpr}px system-ui`;
-      g.fillText('Generate MIDI with “To MIDI” to see individual notes', left + 8*dpr, top + 15*dpr);
+      g.fillText(document.documentElement.lang === 'es' ? 'Genera el MIDI con «To MIDI» para ver notas individuales' : 'Generate MIDI with “To MIDI” to see individual notes', left + 8*dpr, top + 15*dpr);
     }
   }
 
