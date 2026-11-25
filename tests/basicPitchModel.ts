@@ -2,7 +2,7 @@
 // Run with: node --experimental-transform-types --no-warnings tests/basicPitchModel.ts
 import { readFileSync } from 'node:fs';
 import * as ort from 'onnxruntime-web/wasm';
-import { BP_PITCHES, BP_SR, BP_WINDOW, bpNotes, bpUnwrap, bpWindows } from '../src/analysis/basicPitch.ts';
+import { BP_PITCHES, BP_SR, BP_WINDOW, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource } from '../src/analysis/basicPitch.ts';
 
 ort.env.wasm.numThreads = 1;
 ort.env.logLevel = 'error';
@@ -48,7 +48,7 @@ for (const window of windows) {
 }
 const noteGrid = bpUnwrap(noteParts, BP_PITCHES, audio.length);
 const onsetGrid = bpUnwrap(onsetParts, BP_PITCHES, audio.length);
-const detected = bpNotes(noteGrid.data, onsetGrid.data, noteGrid.frames);
+const detected = bpNotes(noteGrid.data, onsetGrid.data, noteGrid.frames, noteOptionsForSource('Piano'));
 await session.release();
 
 const near = (pitch: number, start: number, end: number) =>
@@ -56,10 +56,10 @@ const near = (pitch: number, start: number, end: number) =>
 const c4 = near(60, 0.5, 1.35);
 const e4 = near(64, 1.65, 2.45);
 console.log('Basic Pitch model synthetic piano transcription:', JSON.stringify(detected));
-if (!c4 || !e4) {
-  console.error('FAIL  bundled ONNX model recovers both known piano notes within timing tolerance');
+if (!c4 || !e4 || detected.some((n) => n.pitch === 100)) {
+  console.error('FAIL  bundled ONNX model recovers known piano notes and suppresses the synthetic high harmonic');
   console.error('Expected MIDI 60 at 0.50–1.35 s and MIDI 64 at 1.65–2.45 s (±160/220 ms).');
   process.exitCode = 1;
 } else {
-  console.log('PASS  bundled ONNX model recovers both known piano notes within timing tolerance');
+  console.log('PASS  bundled ONNX model recovers both known piano notes and suppresses the synthetic high harmonic');
 }
