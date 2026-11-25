@@ -227,7 +227,7 @@ export class Transcribe {
       this.redraw();
     };
     this.practiceTargetSel = h('select', { class: 'tiny', title: 'Choose the piano part you want to learn', 'aria-label': 'Piano practice part' }) as HTMLSelectElement;
-    this.practiceTargetSel.onchange = () => { this.practiceTarget = this.practiceTargetSel.value; };
+    this.practiceTargetSel.onchange = () => { this.practiceTarget = this.practiceTargetSel.value; this.refreshPracticeTargetUi(); };
     this.practiceStartBtn = h('button', { class: 'btn tiny', type: 'button', title: 'Mute the selected part in the mix and prepare its falling-note lesson' }, 'Practise this part') as HTMLButtonElement;
     this.practiceStartBtn.onclick = () => this.preparePianoPractice();
     this.practiceLane = h('div', { class: 'practice-lane' },
@@ -532,10 +532,23 @@ export class Transcribe {
   }
 
   /** Prepare a piano-learning session: transcribe the selected stem, silence only that stem in the backing mix, and leave every other part (including vocals) playing. */
+  private refreshPracticeTargetUi() {
+    const target = this.practiceTarget;
+    const muted = !!target && this.host.isStemMuted(target);
+    this.practiceStartBtn.disabled = !target;
+    this.practiceStartBtn.textContent = muted ? 'Restore part in mix' : 'Practise this part';
+    this.practiceStartBtn.title = muted ? 'Restore the selected part to the backing mix' : 'Mute the selected part in the mix and prepare its falling-note lesson';
+  }
+
   private preparePianoPractice() {
     const song = this.host.song();
     const target = this.practiceTarget;
     if (!song || !target || !song.stems.some((x) => x.name === target)) return;
+    if (this.host.isStemMuted(target)) {
+      this.host.setStemMuted(target, false);
+      this.refreshPracticeTargetUi();
+      return;
+    }
     this.source = target;
     this.sourceSel.value = target;
     this.practiceMode = 'notes';
@@ -544,7 +557,8 @@ export class Transcribe {
     this.show({ notes: true });
     this.refreshMidiButtons();
     void this.ensureCqt([target]);
-    if (!this.host.isStemMuted(target)) this.host.setStemMuted(target, true);
+    this.host.setStemMuted(target, true);
+    this.refreshPracticeTargetUi();
     this.host.changed();
     if (!song.midi?.[target]?.length) void this.toMidi();
     else this.redraw();
@@ -593,7 +607,7 @@ export class Transcribe {
     this.practiceTarget = st?.practiceTarget && s.stems.some((x) => x.name === st.practiceTarget) ? st.practiceTarget : (s.stems.find((x) => /piano|keys|keyboard/i.test(x.name))?.name ?? '');
     this.practiceTargetSel.replaceChildren(...s.stems.filter((x) => role(x.name) !== 'drums' && role(x.name) !== 'vocals').map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)));
     this.practiceTargetSel.value = this.practiceTarget;
-    this.practiceStartBtn.disabled = !this.practiceTarget;
+    this.refreshPracticeTargetUi();
     this.simple = st?.simple ?? false;
     this.simpleBox.checked = this.simple;
     this.shapes = st?.shapes === 'guitar' || st?.shapes === 'ukulele' || st?.shapes === 'piano' ? st.shapes : '';
