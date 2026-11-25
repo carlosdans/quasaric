@@ -69,27 +69,27 @@ export function chordName(c: Pick<Chord, 'root' | 'q' | 'bass'>, shift = 0, shar
 
 // Common chord colours as well as triads. Weights favour root and third,
 // while extensions add enough evidence to distinguish (for example) C7 from C.
-const CHORD_FORMS: { q: Quality; tones: [number, number][]; extension?: number }[] = [
+const CHORD_FORMS: { q: Quality; tones: [number, number][]; extension?: number; suspended?: boolean }[] = [
   { q: '', tones: [[0, 1], [4, 0.9], [7, 0.8]] },
   { q: 'm', tones: [[0, 1], [3, 0.9], [7, 0.8]] },
   { q: '7', tones: [[0, 1], [4, 0.9], [7, 0.8], [10, 0.62]], extension: 10 },
   { q: 'm7', tones: [[0, 1], [3, 0.9], [7, 0.8], [10, 0.62]], extension: 10 },
   { q: 'maj7', tones: [[0, 1], [4, 0.9], [7, 0.8], [11, 0.62]], extension: 11 },
-  { q: 'sus2', tones: [[0, 1], [2, 0.85], [7, 0.8]] },
-  { q: 'sus4', tones: [[0, 1], [5, 0.85], [7, 0.8]] },
+  { q: 'sus2', tones: [[0, 1], [2, 0.85], [7, 0.8]], suspended: true },
+  { q: 'sus4', tones: [[0, 1], [5, 0.85], [7, 0.8]], suspended: true },
   { q: 'dim', tones: [[0, 1], [3, 0.9], [6, 0.8]] },
   { q: 'aug', tones: [[0, 1], [4, 0.9], [8, 0.8]] },
   { q: '6', tones: [[0, 1], [4, 0.9], [7, 0.8], [9, 0.58]], extension: 9 },
   { q: 'm6', tones: [[0, 1], [3, 0.9], [7, 0.8], [9, 0.58]], extension: 9 },
   { q: 'add9', tones: [[0, 1], [2, 0.55], [4, 0.9], [7, 0.8]], extension: 2 },
 ];
-const TEMPLATES: { root: number; q: Quality; v: Float64Array; extension?: number }[] = [];
+const TEMPLATES: { root: number; q: Quality; v: Float64Array; extension?: number; suspended?: boolean }[] = [];
 for (let r = 0; r < 12; r++)
   for (const form of CHORD_FORMS) {
     const v = new Float64Array(12);
     for (const [interval, weight] of form.tones) v[(r + interval) % 12] = weight;
     const n = Math.hypot(...v);
-    TEMPLATES.push({ root: r, q: form.q, extension: form.extension, v: v.map((x) => x / n) });
+    TEMPLATES.push({ root: r, q: form.q, extension: form.extension, suspended: form.suspended, v: v.map((x) => x / n) });
   }
 
 const unit = (v: Float64Array) => {
@@ -146,7 +146,7 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     TEMPLATES.forEach((t, k) => {
       let d = 0;
       for (let p = 0; p < 12; p++) d += treble[i][p] * t.v[p];
-      out[k] = d + 0.4 * low[i][t.root] - (t.extension != null && treble[i][(t.root + t.extension) % 12] < 0.48 ? 0.28 : 0);
+      out[k] = d + 0.3 * low[i][t.root] - (t.extension != null && treble[i][(t.root + t.extension) % 12] < 0.42 ? 0.16 : 0) - (t.suspended && Math.max(treble[i][(t.root + 3) % 12], treble[i][(t.root + 4) % 12]) > 0.35 ? 0.2 : 0);
     });
     out[S - 1] = energy[i] < 0.04 * loud ? 2 : 0.45;
     return out;
