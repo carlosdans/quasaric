@@ -25,6 +25,19 @@ Object.assign(ES, {
  'Select the local inference device':'Selecciona el dispositivo de inferencia local','Include this stem':'Incluir esta pista','All 4 stems':'Las 4 pistas','All 6 stems':'Las 6 pistas'
 });
 
+
+Object.assign(ES, {
+ 'Downloading…':'Descargando…','Downloaded':'Descargado','Stop':'Detener','Resume':'Reanudar','Download':'Descargar','Discard':'Descartar','Throw away the part that was downloaded':'Descartar la parte descargada','Download stopped. Press Resume to carry on from where it got to.':'Descarga detenida. Pulsa Reanudar para continuar desde donde se quedó.','Browse on Hugging Face ↗':'Ver en Hugging Face ↗',
+ 'GitHub is limiting requests right now. Try again in a while.':'GitHub está limitando las solicitudes. Inténtalo de nuevo dentro de un rato.','You\'re up to date':'Está actualizado','Desktop app':'Aplicación de escritorio','Web app':'Aplicación web',
+ 'Put the theme, panels and live-input and native-audio choices back to how they start? Your songs, setlists and separation settings are not touched. The app will reload.':'¿Restablecer el tema, los paneles y las opciones de entrada en directo y audio nativo? No se modificarán tus canciones, listas ni ajustes de separación. La aplicación se volverá a cargar.',
+ 'Delete from library':'Eliminar de la biblioteca','Song title':'Título de la canción','Opening…':'Abriendo…','Reading backup…':'Leyendo copia de seguridad…','Restoring…':'Restaurando…','Zipping…':'Comprimiendo…',
+ 'Separate or open some songs first, then order them here for a rehearsal or gig.':'Primero separa o abre algunas canciones y después ordénalas aquí para un ensayo o concierto.','Make a setlist to order songs from your library for a rehearsal or gig.':'Crea una lista para ordenar canciones de tu biblioteca para un ensayo o concierto.','Add songs below. Each one reopens with its own tempo, key and loop.':'Añade canciones abajo. Cada una se volverá a abrir con su tempo, tono y bucle.','Loading your library…':'Cargando tu biblioteca…','Every library song is in this setlist':'Todas las canciones de la biblioteca están en esta lista','Add a song…':'Añadir una canción…','Remove from the setlist (it stays in the library)':'Quitar de la lista (se mantiene en la biblioteca)','Setlist name':'Nombre de la lista','Setlist':'Lista de reproducción','No songs in your library yet':'Aún no hay canciones en tu biblioteca','No gap':'Sin pausa',
+ 'Tap the tab to time it first, then bar numbers can set the loop':'Marca primero el tiempo de la tablatura; después podrás usar los números de compás para definir el bucle','That tap is locked. Unlock it first.':'Ese marcador está bloqueado. Desbloquéalo primero.','Stop recording to move the playhead':'Detén la grabación para mover el cursor','Add a note':'Añadir una nota','Note…':'Nota…',
+ 'No capo':'Sin cejilla','Guitar chords':'Acordes de guitarra','Ukulele chords':'Acordes de ukelele','Piano chords':'Acordes de piano','No diagrams':'Sin diagramas','Chord diagrams':'Diagramas de acordes','Detect the chords again (replaces your edits)':'Volver a detectar los acordes (sustituye tus cambios)','Redo':'Rehacer','Chart ⤓':'Acordes ⤓','Chord detection is a first draft: roughly 60 to 75% right. Click a chord to correct it by ear.':'La detección de acordes es una primera versión: acierta aproximadamente entre el 60 y el 75 %. Haz clic en un acorde para corregirlo de oído.',
+ 'No EQ':'Sin ecualización','Low cut':'Filtro de graves','High cut':'Filtro de agudos','Boost / cut':'Realce / atenuación','Width':'Anchura',
+ 'No published release found yet.':'Todavía no hay ninguna versión publicada.','Select the text below and copy it.':'Selecciona el texto de abajo y cópialo.','Couldn\'t collect it:':'No se pudo recopilar:','Couldn\'t open the link:':'No se pudo abrir el enlace:'
+});
+
 const EN = Object.fromEntries(Object.entries(ES).map(([a,b]) => [b,a]));
 let current: Language = 'en';
 let observer: MutationObserver | undefined;
