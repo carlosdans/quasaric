@@ -5,6 +5,7 @@ import { getModelBytes } from '../modelstore.ts';
 import type { Device } from '../settings.ts';
 import type { SeparateJob, WorkerOut } from './worker.ts';
 import type { Stereo } from './separate.ts';
+import { withTimeout } from './timeout.ts';
 
 export type Progress = { done: number; total: number; stage: string };
 type Pending = {
@@ -28,7 +29,13 @@ export class Engine {
     let gpuAvailable = false;
     if (device !== 'cpu') {
       try {
-        gpuAvailable = !!(await (navigator as any).gpu?.requestAdapter());
+        const request = (navigator as any).gpu?.requestAdapter() as Promise<unknown> | undefined;
+        // Some Windows drivers expose WebGPU but never settle requestAdapter(). Do not let
+        // worker selection hang forever: after the same bounded probe used at startup,
+        // choose the CPU-only runtime and keep separation available.
+        gpuAvailable = request
+          ? !!(await withTimeout(request, 5_000, 'Checking the GPU adapter'))
+          : false;
       } catch {
         gpuAvailable = false;
       }
