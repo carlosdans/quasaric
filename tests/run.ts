@@ -17,7 +17,7 @@ import { analyse } from '../src/analysis/beats.ts';
 import { detectKey, keyName } from '../src/analysis/key.ts';
 import { BINS, CQT_FPS, NOTE_LO, cqt } from '../src/analysis/cqt.ts';
 import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '../src/analysis/chords.ts';
-import { BP_PITCHES, BP_SR, BP_WINDOW, bpNotes, bpUnwrap, bpWindows, singleLine } from '../src/analysis/basicPitch.ts';
+import { BP_PITCHES, BP_SR, BP_WINDOW, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine } from '../src/analysis/basicPitch.ts';
 import { decimate2 } from '../src/analysis/resample.ts';
 import { writeMidi } from '../src/encode/midi.ts';
 import { centsFrom, detectPitch, freqToNote } from '../src/analysis/pitch.ts';
@@ -432,6 +432,18 @@ for (const [len, overlap, shifts] of [
   const o = bpUnwrap(onsets, BP_PITCHES, 22050 * 3);
   const notes = bpNotes(n.data, o.data, n.frames);
   ok('Basic Pitch note extraction', notes.length === 1 && notes[0].pitch === 69 && Math.abs(notes[0].start - (20 * 256) / 22050) < 0.01 && Math.abs(notes[0].end - (60 * 256) / 22050) < 0.01, JSON.stringify(notes));
+
+  // Piano passages contain short repeated notes; the generic 127.7 ms minimum
+  // can discard a ~100 ms articulation. Lower only the duration gate.
+  const quickFrames = new Float32Array(48 * BP_PITCHES);
+  const quickOnsets = new Float32Array(48 * BP_PITCHES);
+  for (let t = 20; t < 29; t++) quickFrames[t * BP_PITCHES + (60 - 21)] = 0.85;
+  quickOnsets[20 * BP_PITCHES + (60 - 21)] = 0.95;
+  const quickDefault = bpNotes(quickFrames, quickOnsets, 48);
+  const quickPiano = bpNotes(quickFrames, quickOnsets, 48, noteOptionsForSource('Piano'));
+  ok('Basic Pitch piano profile retains short notes rejected by generic profile', quickDefault.length === 0 && quickPiano.length === 1 && quickPiano[0].pitch === 60, JSON.stringify({ quickDefault, quickPiano }));
+  ok('piano profile is limited to piano/keys stems', !!noteOptionsForSource('Keyboard') && !!noteOptionsForSource('Keys') && noteOptionsForSource('Other') === undefined);
+
 
   // A sustained note crossing the 142-frame unwrap boundary must remain one event
   // with no missing/duplicated frames. This catches timing discontinuities hidden
