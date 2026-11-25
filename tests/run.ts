@@ -432,6 +432,29 @@ for (const [len, overlap, shifts] of [
   const o = bpUnwrap(onsets, BP_PITCHES, 22050 * 3);
   const notes = bpNotes(n.data, o.data, n.frames);
   ok('Basic Pitch note extraction', notes.length === 1 && notes[0].pitch === 69 && Math.abs(notes[0].start - (20 * 256) / 22050) < 0.01 && Math.abs(notes[0].end - (60 * 256) / 22050) < 0.01, JSON.stringify(notes));
+
+  // A sustained note crossing the 142-frame unwrap boundary must remain one event
+  // with no missing/duplicated frames. This catches timing discontinuities hidden
+  // by tests that place every synthetic note inside a single model window.
+  const boundaryParts = Array.from({ length: 3 }, () => new Float32Array(172 * BP_PITCHES));
+  const boundaryFrames = boundaryParts.map((x) => x.slice());
+  const boundaryOnsets = boundaryParts.map((x) => x.slice());
+  for (let t = 138; t < 154; t++) set(boundaryFrames, t, 64 - 21, 0.85);
+  set(boundaryOnsets, 138, 64 - 21, 0.95);
+  const boundaryN = bpUnwrap(boundaryFrames, BP_PITCHES, BP_SR * 4);
+  const boundaryO = bpUnwrap(boundaryOnsets, BP_PITCHES, BP_SR * 4);
+  const boundaryNotes = bpNotes(boundaryN.data, boundaryO.data, boundaryN.frames);
+  const boundaryOffset = (256 / BP_SR) * (172 - (BP_SR * 2 - 256) / 256) + 0.0018;
+  const expectedBoundaryStart = (138 * 256) / BP_SR;
+  const expectedBoundaryEnd = (154 * 256) / BP_SR - boundaryOffset;
+  ok(
+    'Basic Pitch keeps a note continuous across the 142-frame window boundary',
+    boundaryNotes.length === 1 &&
+      boundaryNotes[0].pitch === 64 &&
+      Math.abs(boundaryNotes[0].start - expectedBoundaryStart) < 0.012 &&
+      Math.abs(boundaryNotes[0].end - expectedBoundaryEnd) < 0.012,
+    JSON.stringify(boundaryNotes),
+  );
   const line = singleLine([
     { start: 0, end: 1, pitch: 60, amp: 0.8 },
     { start: 0.05, end: 0.9, pitch: 72, amp: 0.4 },
