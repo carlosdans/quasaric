@@ -51,3 +51,17 @@ jobs:
           ls -lh /tmp/maestro.wav /tmp/maestro.midi /tmp/maestro.pcm
       - name: Transcribe real piano audio and compare against reference MIDI
         run: node --experimental-transform-types --no-warnings tests/maestroBenchmark.mjs /tmp/maestro.pcm /tmp/maestro.midi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ONNX CPU runtime and MIDI parser
+        run: python -m pip install --disable-pip-version-check onnxruntime mido numpy
+      - name: Download dedicated piano ONNX model and convert MAESTRO audio to 16 kHz
+        run: |
+          base="https://huggingface.co/baroned/musicnote-ondevice-models/resolve/main"
+          curl --fail --location --retry 3 "$base/piano_kong.onnx" --output /tmp/piano_kong.onnx
+          curl --fail --location --retry 3 "$base/piano_kong.onnx.data" --output /tmp/piano_kong.onnx.data
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro.wav -ac 1 -ar 16000 -f f32le -acodec pcm_f32le /tmp/maestro-16k.pcm
+          ls -lh /tmp/piano_kong.onnx /tmp/piano_kong.onnx.data /tmp/maestro-16k.pcm
+      - name: Benchmark dedicated piano model against the same reference MIDI
+        run: python tests/maestroKongBenchmark.py /tmp/maestro-16k.pcm /tmp/maestro.midi /tmp/piano_kong.onnx
