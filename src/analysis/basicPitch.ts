@@ -199,7 +199,7 @@ export function bpNotes(framesIn: Float32Array, onsetsIn: Float32Array, n: numbe
 
 /** Remove only weak, short upper partials that coincide with a stronger piano note. */
 export function suppressPianoHarmonics(events: NoteEvent[]): NoteEvent[] {
-  // Octaves and two-octave doublings are retained because they are common real piano voicings.
+  // Strong octave and two-octave doublings are retained; weak, short upper partials are removed.
   const harmonicIntervals = new Set([19, 24, 28, 31, 34, 36, 38, 40]);
   return events.filter((high) => {
     const highDuration = high.end - high.start;
