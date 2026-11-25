@@ -180,6 +180,7 @@ export class Transcribe {
   private chordStatus: HTMLElement;
   private chordSourceSel: HTMLSelectElement;
   private chordStemSel: HTMLSelectElement;
+  private chordStemHelp: HTMLElement;
   private editor: HTMLElement;
   private notesLane: HTMLElement;
   private noteCanvas: HTMLCanvasElement;
@@ -260,6 +261,7 @@ export class Transcribe {
       h('option', { value: 'custom' }, 'Choose stems…'),
     ) as HTMLSelectElement;
     this.chordStemSel = h('select', { class: 'tiny', title: 'Select one or more stems for chord analysis', 'aria-label': 'Chord analysis stems', multiple: true, size: 3, hidden: true }) as HTMLSelectElement;
+    this.chordStemHelp = h('span', { class: 'muted small', hidden: true }, 'The piano may be inside Guitar or Other. Select one or more harmonic stems; avoid drums and vocals.');
     this.chordStemSel.onchange = () => {
       const previous = this.chordStemSources;
       const next = Array.from(this.chordStemSel.selectedOptions, (o) => o.value);
@@ -281,6 +283,7 @@ export class Transcribe {
       }
       this.chordSource = next;
       this.chordStemSel.hidden = next !== 'custom';
+      this.chordStemHelp.hidden = next !== 'custom';
       if (song) song.chords = undefined;
       // Selecting the piano source should immediately expose the piano chord
       // diagrams and the beat-aligned chord strip, not just change the analysis.
@@ -308,7 +311,7 @@ export class Transcribe {
     this.chordLane = h(
       'div',
       { class: 'lane x-lane chord-lane' },
-      h('div', { class: 'lane-ctl x-ctl' }, h('span', { class: 'name' }, 'Chords ', DRAFT()), this.chordSourceSel, this.chordStemSel, this.chordNow, redo, sheet, this.chordStatus),
+      h('div', { class: 'lane-ctl x-ctl' }, h('span', { class: 'name' }, 'Chords ', DRAFT()), this.chordSourceSel, this.chordStemSel, this.chordStemHelp, this.chordNow, redo, sheet, this.chordStatus),
       chordWave,
     );
     this.editor = h('div', { class: 'chord-edit', hidden: true });
@@ -515,6 +518,7 @@ export class Transcribe {
     this.chordStemSel.replaceChildren(...s.stems.map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)));
     for (const option of this.chordStemSel.options) option.selected = this.chordStemSources.includes(option.value);
     this.chordStemSel.hidden = this.chordSource !== 'custom';
+    this.chordStemHelp.hidden = this.chordSource !== 'custom';
     this.sourceSel.replaceChildren(
       h('option', { value: HEAR }, 'All parts (no drums)'),
       ...s.stems.map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)),
