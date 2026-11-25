@@ -599,6 +599,11 @@ export class Deck {
       pans: () => this.pans(),
       eqs: () => this.eqs(),
       lanes: () => this.lanes.map((l) => ({ name: l.name, colour: l.colour })),
+      isStemMuted: (name) => !!this.lanes.find((l) => l.name === name)?.mute,
+      setStemMuted: (name, muted) => {
+        const lane = this.lanes.find((l) => l.name === name);
+        if (lane) this.setLaneRecorded(lane, { mute: muted });
+      },
       pitch: () => this.pitch,
       loop: () => this.loop,
       markers: () => this.markers,
