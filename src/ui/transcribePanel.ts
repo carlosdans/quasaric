@@ -14,6 +14,7 @@ import { QUALITIES, chordName, chordSheet, detectChords, mergeSame, noteLetter, 
 import type { ChordMark } from '../lyrics/lyricChords.ts';
 import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
 import { noteOptionsForSource, singleLine, type NoteEvent } from '../analysis/basicPitch.ts';
+import { pianoKeyboardRange } from './pianoRange.ts';
 import { monoOf } from '../analysis/resample.ts';
 import { programFor, writeMidi } from '../encode/midi.ts';
 import { renderMix } from '../player/mixcore.ts';
@@ -829,11 +830,9 @@ export class Transcribe {
     const useNotes = this.practiceMode !== 'chords';
     const pitches = notes.map(n => n.pitch + shift);
     if (!pitches.length) pitches.push(...chords.filter(ch => ch.root >= 0).map(ch => 60 + ch.root + shift));
-    const centre = pitches.length ? pitches.reduce((sum, n) => sum + n, 0) / pitches.length : 60;
-    // Three complete octaves, snapped to C, with a little protection at the MIDI limits.
-    let low = Math.max(24, Math.min(72, Math.floor((centre - 18) / 12) * 12));
-    if (low + 36 > 108) low = 72;
-    const high = low + 36;
+    // Fit the keyboard to the full detected register. A fixed three-octave window
+    // silently hid notes in bass-heavy or wide two-hand piano passages.
+    const { low, high } = pianoKeyboardRange(pitches);
     const whites: number[] = [];
     for (let n = low; n < high; n++) if (!isBlack(n)) whites.push(n);
     const keyW = (right - left) / whites.length;
