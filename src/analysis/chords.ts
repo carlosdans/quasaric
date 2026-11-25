@@ -181,8 +181,8 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
   // inside the preceding beat using short-window audio evidence. This allows
   // syncopated changes without letting sixteenth-note noise create new chords.
   const transitionTimes = segs.map(([start]) => start);
-  const refineWindow = 0.10;
-  const refineHop = 0.0125;
+  const refineWindow = 0.20;
+  const refineHop = 0.0232;
   const localTemplateScore = (templateIndex: number, t0: number, t1: number) => {
     const tr = unit(chromaOf(clean, t0, t1, 40, 84).map((x) => Math.sqrt(x)));
     const bs = unit(chromaOf(bass ?? harm, t0, t1, 28, 52).map((x) => x * x));
@@ -201,15 +201,12 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     const boundary = segs[i][0];
     let firstWinningTime = -1;
     let consecutive = 0;
-    let bestDiff = -Infinity;
-    let bestTime = scanStart;
     for (let time = scanStart; time < boundary - refineWindow * 0.25; time += refineHop) {
       const t0 = Math.max(0, time * CQT_FPS);
       const t1 = Math.min(harm.frames, (time + refineWindow) * CQT_FPS);
       if (t1 - t0 < 3) continue;
       const oldScore = localTemplateScore(from, t0, t1);
       const newScore = localTemplateScore(to, t0, t1);
-      if (newScore - oldScore > bestDiff) { bestDiff = newScore - oldScore; bestTime = time; }
       const localChroma = unit(chromaOf(clean, t0, t1, 40, 84).map((x) => Math.sqrt(x)));
       const oldTemplate = TEMPLATES[from];
       const newTemplate = TEMPLATES[to];
@@ -234,7 +231,6 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
         firstWinningTime = -1;
       }
     }
-    if (Math.abs(dur - 4 * 60 / 110) < 0.02) console.log('CHORD-REFINE-DEBUG', { i, from, to, scanStart, boundary, bestDiff, bestTime, refined: transitionTimes[i] });
   }
 
   // Merge into chords, with alternatives ranked over each chord's span.
