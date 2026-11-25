@@ -74,6 +74,7 @@ export interface TxState {
   chordStemSources?: string[];
   midi?: Record<string, NoteEvent[]>;
   notesHeight?: number; // px; unset uses the CSS default
+  practiceMode?: 'chords' | 'notes' | 'both';
   /** The scrolling chord timeline: shown, plain major / minor only, and its zoom (1 = default width of a beat). */
   strip?: boolean;
   simple?: boolean;
@@ -168,6 +169,10 @@ export class Transcribe {
   private keyHover: number | null = null;
   private heldRows = new Set<number>();
   private notesHeight?: number; // px; unset uses the CSS default
+  private practiceMode: 'chords' | 'notes' | 'both' = 'chords';
+  private practiceLane: HTMLElement;
+  private practiceCanvas: HTMLCanvasElement;
+  private practiceModeSel: HTMLSelectElement;
   private frozenAt = -1;
   private busy = '';
   private editing = -1;
@@ -193,6 +198,24 @@ export class Transcribe {
   private midiSaveBtn: HTMLButtonElement;
 
   constructor(private host: TxHost) {
+    // ---- Synthesia-style practice keyboard, driven by the existing chord and MIDI events.
+    this.practiceCanvas = h('canvas', { class: 'practice-keyboard', role: 'img', 'aria-label': 'Falling notes piano keyboard' }) as HTMLCanvasElement;
+    this.practiceModeSel = h('select', { class: 'tiny', title: 'Choose what to practise', 'aria-label': 'Practice display' },
+      h('option', { value: 'chords' }, 'Chords'),
+      h('option', { value: 'notes' }, 'Notes'),
+      h('option', { value: 'both' }, 'Chords + notes'),
+    ) as HTMLSelectElement;
+    this.practiceModeSel.onchange = () => {
+      this.practiceMode = this.practiceModeSel.value as 'chords' | 'notes' | 'both';
+      this.host.changed();
+      this.redraw();
+    };
+    this.practiceLane = h('div', { class: 'practice-lane' },
+      h('div', { class: 'practice-head' }, h('span', { class: 'name' }, 'Play along'), this.practiceModeSel,
+        h('span', { class: 'muted small' }, 'Notes fall onto the keys in time with the song')),
+      this.practiceCanvas,
+    );
+
     // ---- chord timeline lane
     this.stripCanvas = h('canvas');
     const simpleBox = h('input', { type: 'checkbox' }) as HTMLInputElement;
@@ -481,7 +504,7 @@ export class Transcribe {
       { capture: true },
     );
 
-    $('xlanes').append(this.stripLane, this.shapesRow, this.chordLane, this.editor, this.notesLane);
+    $('xlanes').append(this.practiceLane, this.stripLane, this.shapesRow, this.chordLane, this.editor, this.notesLane);
     $('stripBtn').onclick = () => this.show({ strip: !this.stripOn });
     $('chordsBtn').onclick = () => this.show({ chords: !this.chordsOn });
     $('notesBtn').onclick = () => this.show({ notes: !this.notesOn });
@@ -504,6 +527,8 @@ export class Transcribe {
   // ---------- song / state ----------
   open(s: TxSong, st?: TxState) {
     this.pitchView = { top: 0, bottom: BINS };
+    this.practiceMode = st?.practiceMode ?? 'chords';
+    this.practiceModeSel.value = this.practiceMode;
     this.heldRows.clear();
     this.unfreeze();
     cancelTranscribe();
@@ -541,7 +566,7 @@ export class Transcribe {
 
   getState(): TxState {
     const s = this.host.song();
-    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, notesHeight: this.notesHeight };
+    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, notesHeight: this.notesHeight, practiceMode: this.practiceMode };
   }
 
   private show(p: { notes?: boolean; chords?: boolean; strip?: boolean }, save = true) {
@@ -549,6 +574,7 @@ export class Transcribe {
     if (p.chords != null) this.chordsOn = p.chords;
     if (p.strip != null) this.stripOn = p.strip;
     this.notesLane.hidden = !this.notesOn;
+    this.practiceLane.hidden = !(this.notesOn || this.chordsOn);
     this.chordLane.hidden = !this.chordsOn;
     this.stripLane.hidden = !this.stripOn;
     this.shapesRow.hidden = !this.stripOn || !this.shapes;
@@ -702,7 +728,121 @@ export class Transcribe {
     if (!s) return;
     if (this.chordsOn) this.drawChords(pos);
     if (this.notesOn) this.drawNotes(pos);
+    if (this.notesOn || this.chordsOn) this.drawPractice(pos);
     this.followFreeze(pos);
+  }
+
+  /**
+   * Synthesia-style keyboard. It consumes the already detected chord events and/or
+   * the existing Basic Pitch MIDI events; it never runs another audio analysis.
+   */
+  private drawPractice(pos: number) {
+    const c = this.practiceCanvas;
+    if (!c.clientWidth) return;
+    const g = fitCanvas(c);
+    const { width: w, height: hgt } = c;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const left = 8 * dpr, right = w - 8 * dpr;
+    const top = 8 * dpr, keyTop = hgt - 42 * dpr;
+    const horizon = 4.0; // seconds visible above the keyboard
+    const low = 48, high = 84; // C3–C6
+    const white = (n: number) => !isBlack(n);
+    const whites: number[] = [];
+    for (let n = low; n < high; n++) if (white(n)) whites.push(n);
+    const keyW = (right - left) / whites.length;
+    const xOf = (pitch: number) => {
+      const p = Math.max(low, Math.min(high - 1, pitch));
+      const wi = whites.indexOf(p);
+      if (wi >= 0) return { x: left + wi * keyW, width: keyW, black: false };
+      const prev = p - 1;
+      const base = whites.indexOf(prev);
+      return { x: left + (base + 1) * keyW - keyW * 0.31, width: keyW * 0.62, black: true };
+    };
+    const now = pos / SR;
+    const mode = this.practiceMode;
+    const useChords = mode !== 'notes';
+    const useNotes = mode !== 'chords';
+    const shift = this.host.pitch();
+    const notes = this.host.song()?.midi?.[this.midiKey()] ?? [];
+    const chords = this.host.song()?.chords ?? [];
+    g.clearRect(0, 0, w, hgt);
+    g.fillStyle = 'rgba(9,9,13,0.96)';
+    g.fillRect(0, 0, w, hgt);
+    // Time grid.
+    for (let sec = 1; sec <= horizon; sec++) {
+      const y = keyTop - (sec / horizon) * (keyTop - top);
+      g.strokeStyle = 'rgba(255,255,255,0.09)';
+      g.lineWidth = Math.max(1, dpr);
+      g.beginPath(); g.moveTo(left, y); g.lineTo(right, y); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,0.38)';
+      g.font = `${9 * dpr}px system-ui, sans-serif`;
+      g.fillText(`+${sec}s`, left + 3 * dpr, y - 3 * dpr);
+    }
+    const falling = (pitch: number, start: number, end: number, colour: string) => {
+      const key = xOf(pitch + shift);
+      if (key.x + key.width < left || key.x > right) return;
+      const y0 = keyTop - ((start - now) / horizon) * (keyTop - top);
+      const y1 = keyTop - ((end - now) / horizon) * (keyTop - top);
+      const y = Math.max(top, Math.min(keyTop, y0));
+      const bottom = Math.max(top, Math.min(keyTop, y1));
+      if (bottom <= top || y >= keyTop || bottom - y < 1) return;
+      g.fillStyle = colour;
+      g.globalAlpha = 0.9;
+      g.beginPath();
+      g.roundRect(key.x + key.width * 0.12, y, key.width * 0.76, bottom - y, 4 * dpr);
+      g.fill();
+      g.globalAlpha = 1;
+    };
+    if (useChords) for (const ch of chords) {
+      if (ch.root < 0 || ch.end < now || ch.start > now + horizon) continue;
+      const intervals: Record<string, number[]> = {
+        '': [0,4,7], m: [0,3,7], '7': [0,4,7,10], m7: [0,3,7,10],
+        maj7: [0,4,7,11], sus2: [0,2,7], sus4: [0,5,7], dim: [0,3,6],
+        aug: [0,4,8], '5': [0,7], '6': [0,4,7,9], m6: [0,3,7,9],
+        '9': [0,2,4,7,10], add9: [0,2,4,7],
+      };
+      for (const interval of intervals[ch.q] ?? [0,4,7]) {
+        const pitch = 60 + ((ch.root + interval) % 12);
+        falling(pitch, ch.start, ch.end, ch.start <= now && ch.end > now ? '#f5a623' : '#8b7cf6');
+      }
+    }
+    if (useNotes) for (const n of notes) {
+      if (n.end < now || n.start > now + horizon) continue;
+      falling(n.pitch, n.start, n.end, '#22c7d6');
+    }
+    // Keyboard bed: white keys first, then black keys and active notes.
+    g.fillStyle = '#e9e9ef';
+    g.fillRect(left, keyTop, right - left, hgt - keyTop);
+    for (let i = 0; i < whites.length; i++) {
+      const n = whites[i], x = left + i * keyW;
+      const soundingChord = useChords && chords.some(ch => ch.root >= 0 && ch.start <= now && ch.end > now &&
+        [0, ...( ({'': [4,7],m:[3,7],'7':[4,7,10],m7:[3,7,10],maj7:[4,7,11],sus2:[2,7],sus4:[5,7],dim:[3,6],aug:[4,8],'5':[7],'6':[4,7,9],m6:[3,7,9],'9':[2,4,7,10],add9:[2,4,7]} as Record<string,number[]>)[ch.q] ?? [4,7])].some(i => (ch.root + i + shift) % 12 === n % 12));
+      const soundingNote = useNotes && notes.some(note => note.pitch + shift === n && note.start <= now && note.end > now);
+      g.fillStyle = soundingChord ? '#f5a623' : soundingNote ? '#22c7d6' : '#e9e9ef';
+      g.fillRect(x + dpr, keyTop, keyW - 2 * dpr, hgt - keyTop - dpr);
+      g.strokeStyle = 'rgba(0,0,0,0.28)'; g.strokeRect(x, keyTop, keyW, hgt - keyTop);
+      if (n % 12 === 0) { g.fillStyle = '#555'; g.font = `${9*dpr}px system-ui`; g.fillText(`C${Math.floor(n/12)-1}`, x+3*dpr, hgt-5*dpr); }
+    }
+    for (let n = low; n < high; n++) if (isBlack(n)) {
+      const key = xOf(n);
+      const activeChord = useChords && chords.some(ch => ch.root >= 0 && ch.start <= now && ch.end > now &&
+        [0, ...( ({'': [4,7],m:[3,7],'7':[4,7,10],m7:[3,7,10],maj7:[4,7,11],sus2:[2,7],sus4:[5,7],dim:[3,6],aug:[4,8],'5':[7],'6':[4,7,9],m6:[3,7,9],'9':[2,4,7,10],add9:[2,4,7]} as Record<string,number[]>)[ch.q] ?? [4,7])].some(i => (ch.root + i + shift) % 12 === n % 12));
+      const activeNote = useNotes && notes.some(note => note.pitch + shift === n && note.start <= now && note.end > now);
+      g.fillStyle = activeChord ? '#d88918' : activeNote ? '#1596a5' : '#24242c';
+      g.fillRect(key.x, keyTop, key.width, (hgt - keyTop) * 0.62);
+    }
+    // Fixed strike line: the falling notes meet the keyboard here.
+    g.strokeStyle = '#f5a623'; g.lineWidth = 2 * dpr;
+    g.beginPath(); g.moveTo(left, keyTop); g.lineTo(right, keyTop); g.stroke();
+    if (useNotes && !notes.length && useChords && chords.length) {
+      g.fillStyle = 'rgba(255,255,255,0.72)';
+      g.font = `${11*dpr}px system-ui`;
+      g.fillText('Use Notes → To MIDI to add individual falling notes', left + 8*dpr, top + 15*dpr);
+    } else if (useNotes && !notes.length) {
+      g.fillStyle = 'rgba(255,255,255,0.72)';
+      g.font = `${11*dpr}px system-ui`;
+      g.fillText('Generate MIDI with “To MIDI” to see individual notes', left + 8*dpr, top + 15*dpr);
+    }
   }
 
   private x(frame: number, w: number) {
