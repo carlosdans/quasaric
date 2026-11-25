@@ -52,13 +52,13 @@ const detected = bpNotes(noteGrid.data, onsetGrid.data, noteGrid.frames, noteOpt
 await session.release();
 
 const near = (pitch: number, start: number, end: number) =>
-  detected.find((n) => n.pitch === pitch && Math.abs(n.start - start) <= 0.16 && Math.abs(n.end - end) <= 0.22);
+  detected.find((n) => n.pitch === pitch && Math.abs(n.start - start) <= 0.16 && Math.abs(n.end - end) <= 0.04);
 const c4 = near(60, 0.5, 1.35);
 const e4 = near(64, 1.65, 2.45);
 console.log('Basic Pitch model synthetic piano transcription:', JSON.stringify(detected));
 if (!c4 || !e4 || detected.some((n) => n.pitch === 100)) {
-  console.error('FAIL  bundled ONNX model recovers known piano notes and suppresses the synthetic high harmonic');
-  console.error('Expected MIDI 60 at 0.50–1.35 s and MIDI 64 at 1.65–2.45 s (±160/220 ms).');
+  console.error('FAIL  bundled ONNX model recovers piano note onsets/releases and suppresses the synthetic high harmonic');
+  console.error('Expected MIDI 60 at 0.50–1.35 s and MIDI 64 at 1.65–2.45 s (onset ±160 ms, release ±40 ms).');
   process.exitCode = 1;
 } else {
   console.log('PASS  bundled ONNX model recovers both known piano notes and suppresses the synthetic high harmonic');
