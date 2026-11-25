@@ -73,6 +73,7 @@ jobs:
           sed -i "/wasmPaths =/d" src/transkun/onnxModel.ts
           sed -i 's/numThreads = 1/numThreads = 2/' src/transkun/onnxModel.ts
           sed -i 's/private readonly url: string/private readonly url: string | Uint8Array/g' src/transkun/onnxModel.ts
+          find src/transkun -name '*.ts' -type f -exec sed -i -E "s/from '(\\.\\/[^']+)'/from '\\1.ts'/g" {} +
       - name: Download Transkun v2 ONNX models and convert MAESTRO audio to 44.1 kHz
         run: |
           base="https://huggingface.co/TuesdayCrowd/transkun-onnx/resolve/main"
