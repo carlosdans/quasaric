@@ -177,9 +177,10 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     k = back[i * S + k];
   }
 
-  // Keep the stable beat-level chord path, then refine each detected boundary
-  // inside the preceding beat using short-window audio evidence. This allows
-  // syncopated changes without letting sixteenth-note noise create new chords.
+  // Keep the stable beat-level chord path, then refine each transition around
+  // its coarse beat boundary using short-window audio evidence. A beat-average
+  // can place a change either early or late (depending on how much of the beat
+  // contains the new chord), so inspect the beat on both sides of the boundary.
   const transitionTimes = segs.map(([start]) => start);
   const refineWindow = 0.20;
   const refineHop = 0.0232;
@@ -200,31 +201,30 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     const boundary = segs[i][0];
     const beatIndex = Math.max(0, grid.findIndex((beatTime, index) => index + 1 < grid.length && boundary <= grid[index + 1] + 1e-6));
     const scanStart = grid[beatIndex] ?? segs[i - 1][0];
+    const scanEnd = grid[beatIndex + 2] ?? segs[i][1];
     let firstWinningTime = -1;
     let consecutive = 0;
     let previousDifference: number | null = null;
-    for (let time = scanStart; time < boundary - refineWindow * 0.25; time += refineHop) {
+    for (let time = scanStart; time < scanEnd - refineWindow * 0.25; time += refineHop) {
       const t0 = Math.max(0, time * CQT_FPS);
       const t1 = Math.min(harm.frames, (time + refineWindow) * CQT_FPS);
       if (t1 - t0 < 3) continue;
       const oldScore = localTemplateScore(from, t0, t1);
       const newScore = localTemplateScore(to, t0, t1);
       const difference = newScore - oldScore;
-      // Refine only at a genuine local crossover. If the incoming chord already
-      // scores better at the start of the preceding beat, it may share tones
-      // with the outgoing chord; don't pull a normal beat change backwards.
       if (previousDifference !== null && previousDifference <= 0 && difference > 0) {
         firstWinningTime = time;
         consecutive = 1;
       } else if (difference > 0 && consecutive > 0) {
         consecutive++;
         if (consecutive >= 2) {
-          const candidate = Math.min(boundary, firstWinningTime + refineWindow / 2);
-          const beatDuration = Math.max(0.001, boundary - scanStart);
-          // Ordinary on-beat changes can look slightly early because the analysis
-          // window straddles the boundary. Only move a cue off the beat when the
-          // evidence places it clearly inside the preceding beat (a syncopation).
-          if (boundary - candidate >= beatDuration * 0.20) {
+          const candidate = firstWinningTime + refineWindow / 2;
+          const beatDuration = Math.max(0.001, (grid[beatIndex + 1] ?? boundary) - scanStart);
+          // Leave normal on-beat changes on the beat (the analysis window straddles
+          // it slightly). Move only when evidence places the transition clearly
+          // off the coarse boundary, whether earlier or later.
+          if (Math.abs(boundary - candidate) >= beatDuration * 0.20 &&
+              candidate > transitionTimes[i - 1] && candidate < (grid[beatIndex + 2] ?? segs[i][1])) {
             transitionTimes[i] = +candidate.toFixed(3);
           }
           break;

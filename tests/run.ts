@@ -411,6 +411,31 @@ for (const [len, overlap, shifts] of [
     const change = meaningful.find((c) => c.root === 7);
     ok('chords: detects a syncopated change halfway through a beat', !!change && Math.abs(change.start - changeAt) <= 0.08 && meaningful.some((c) => c.root === 0 && c.end <= change.start + 0.02), meaningful.map((c) => `${chordName(c)}@${c.start.toFixed(3)}`).join(' '));
   }
+  // Sub-beat timing must remain accurate away from the midpoint too.
+  for (const fraction of [0.25, 0.75]) {
+    const changeAt = (1 + fraction) * beat;
+    const duration = 4 * beat;
+    const n = Math.ceil(duration * SR);
+    const harm = new Float32Array(n);
+    const bass = new Float32Array(n);
+    const addTone = (dst: Float32Array, midi: number, start: number, end: number, amp: number) => {
+      const f = 440 * 2 ** ((midi - 69) / 12);
+      for (let i = Math.floor(start * SR); i < Math.min(n, Math.ceil(end * SR)); i++) {
+        const t = i / SR;
+        const edge = Math.min(1, (t - start) / 0.025, (end - t) / 0.025);
+        dst[i] += amp * Math.max(0, edge) * Math.sin(2 * Math.PI * f * t);
+      }
+    };
+    for (const iv of [0, 4, 7]) {
+      addTone(harm, 60 + iv, 0, changeAt, 0.16);
+      addTone(harm, 67 + iv, changeAt, duration, 0.16);
+    }
+    addTone(bass, 36, 0, changeAt, 0.4);
+    addTone(bass, 43, changeAt, duration, 0.4);
+    const sync = detectChords(cqt(harm), Array.from({ length: 4 }, (_, i) => i * beat), cqt(bass), { downbeat: 0, perBar: 4 });
+    const change = sync.find((c) => c.root === 7);
+    ok(`chords: refines a change at ${fraction} of a beat without rounding it`, !!change && Math.abs(change.start - changeAt) <= 0.08, change ? change.start.toFixed(3) : 'not detected');
+  }
   // Common chord extensions should survive the template match, not be flattened to triads.
   const colourChord = (root: number, intervals: number[]) => {
     const n = SR * 2;
@@ -457,9 +482,12 @@ for (const [len, overlap, shifts] of [
     { start: 0.01, end: 0.3, pitch: 79, amp: 0.3 }, // weak 12th harmonic
     { start: 0, end: 1, pitch: 72, amp: 0.5 }, // real octave doubling
     { start: 0.4, end: 0.8, pitch: 100, amp: 0.3 }, // independent high note
+    { start: 0, end: 1, pitch: 74, amp: 0.8 },
+    { start: 0.01, end: 0.3, pitch: 98, amp: 0.4 }, // weak two-octave partial
+    { start: 0, end: 1, pitch: 98, amp: 0.7 }, // strong, sustained two-octave doubling
   ]);
-  ok('piano MIDI suppresses weak short upper harmonics at the same onset', clean.map((n) => n.pitch).join() === '60,72,100', clean.map((n) => n.pitch).join());
-  ok('piano MIDI retains octave doublings and independent high notes', clean.some((n) => n.pitch === 72) && clean.some((n) => n.pitch === 100));
+  ok('piano MIDI suppresses weak short upper harmonics, including two-octave partials', clean.map((n) => n.pitch).join() === '60,72,100,74,98', clean.map((n) => n.pitch).join());
+  ok('piano MIDI retains octave doublings, strong two-octave doublings and independent high notes', clean.some((n) => n.pitch === 72) && clean.some((n) => n.pitch === 98) && clean.some((n) => n.pitch === 100));
 }
 
 // ---- piano practice keyboard must include every detected pitch
