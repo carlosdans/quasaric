@@ -11,7 +11,23 @@ const ES: Record<string, string> = {
 const EN = Object.fromEntries(Object.entries(ES).map(([a,b]) => [b,a]));
 let current: Language = 'en';
 let observer: MutationObserver | undefined;
-const translate = (value: string, lang: Language) => (lang === 'es' ? ES[value] : EN[value]) ?? value;
+const translate = (value: string, lang: Language) => {
+ const exact = (lang === 'es' ? ES[value] : EN[value]);
+ if (exact) return exact;
+ if (lang === 'es') {
+  let m=value.match(/^Running on CPU · (.+)$/); if(m) return `Ejecutando en CPU · ${m[1]}`;
+  m=value.match(/^Running on GPU · (.+)$/); if(m) return `Ejecutando en GPU · ${m[1]}`;
+  m=value.match(/^Encoding (.+)$/); if(m) return `Codificando ${m[1]}`;
+  m=value.match(/^Saved (\\d+) stems$/); if(m) return `Guardadas ${m[1]} pistas`;
+  m=value.match(/^Loading track (\\d+) of (\\d+): (.+)$/); if(m) return `Cargando pista ${m[1]} de ${m[2]}: ${m[3]}`;
+  m=value.match(/^Download failed: (.+)$/); if(m) return `Error al descargar: ${m[1]}`;
+  m=value.match(/^Export failed: (.+)$/); if(m) return `Error al exportar: ${m[1]}`;
+  m=value.match(/^(.+) · (\\d+) thread(?:s)?$/); if(m) return `${m[1]} · ${m[2]} hilos`;
+  m=value.match(/^(\\d+) s left$/); if(m) return `quedan ${m[1]} s`;
+  m=value.match(/^(\\d+) min left$/); if(m) return `quedan ${m[1]} min`;
+ }
+ return value;
+};
 function translateNode(node: Node, lang: Language) {
  if (node.nodeType === Node.TEXT_NODE) { if (node.nodeValue) node.nodeValue = translate(node.nodeValue, lang); return; }
  if (!(node instanceof Element)) return;
