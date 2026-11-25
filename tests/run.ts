@@ -510,6 +510,7 @@ for (const [len, overlap, shifts] of [
   const quickPiano = bpNotes(quickFrames, quickOnsets, 48, noteOptionsForSource('Piano'));
   ok('Basic Pitch piano profile retains short notes rejected by generic profile', quickDefault.length === 0 && quickPiano.length === 1 && quickPiano[0].pitch === 60, JSON.stringify({ quickDefault, quickPiano }));
   ok('piano profile is limited to piano/keys stems', !!noteOptionsForSource('Keyboard') && !!noteOptionsForSource('Keys') && noteOptionsForSource('Other') === undefined);
+  ok('piano release calibration is limited to piano/keys stems', noteOptionsForSource('Piano')?.endOffsetMs === 80 && noteOptionsForSource('Guitar') === undefined);
 
 
   // A sustained note crossing the 142-frame unwrap boundary must remain one event
