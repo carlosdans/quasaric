@@ -17,7 +17,7 @@ import { analyse } from '../src/analysis/beats.ts';
 import { detectKey, keyName } from '../src/analysis/key.ts';
 import { BINS, CQT_FPS, NOTE_LO, cqt } from '../src/analysis/cqt.ts';
 import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '../src/analysis/chords.ts';
-import { BP_PITCHES, BP_SR, BP_WINDOW, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine } from '../src/analysis/basicPitch.ts';
+import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine } from '../src/analysis/basicPitch.ts';
 import { decimate2 } from '../src/analysis/resample.ts';
 import { writeMidi } from '../src/encode/midi.ts';
 import { centsFrom, detectPitch, freqToNote } from '../src/analysis/pitch.ts';
@@ -423,11 +423,14 @@ for (const [len, overlap, shifts] of [
   const audio = new Float32Array(22050 * 5);
   const w = bpWindows(audio);
   ok('Basic Pitch windows', w.length === 4 && w.every((x) => x.length === BP_WINDOW));
-  // Long-track frame count must use the exact 22050/256 model rate, not a floored 86 FPS.
+  // The joined model output must cover the complete source duration. Basic Pitch's
+  // reference implementation sizes it by audio-window hops, not nominal FPS.
   const longSamples = BP_SR * 180;
   const longParts = Array.from({ length: 110 }, () => new Float32Array(172 * BP_PITCHES));
   const longUnwrapped = bpUnwrap(longParts, BP_PITCHES, longSamples);
-  ok('Basic Pitch keeps exact frame rate over a 3-minute track', longUnwrapped.frames === Math.floor(longSamples / 256), `${longUnwrapped.frames} frames; expected ${Math.floor(longSamples / 256)}`);
+  const expectedLongFrames = Math.floor((longSamples / BP_WINDOW_HOP) * BP_FRAMES_PER_WINDOW);
+  ok('Basic Pitch unwrap length follows real window hops over a 3-minute track', longUnwrapped.frames === expectedLongFrames, `${longUnwrapped.frames} frames; expected ${expectedLongFrames}`);
+  ok('Basic Pitch final frame timestamp reaches the end of the 3-minute source', Math.abs(bpFrameTime(longUnwrapped.frames - 1) - 180) < 0.22, `${bpFrameTime(longUnwrapped.frames - 1).toFixed(3)} s`);
 
   // Two fake windows of activations: one note (A4) from frame 20 to 60 of the joined output.
   const parts = [0, 1].map(() => new Float32Array(172 * BP_PITCHES));
