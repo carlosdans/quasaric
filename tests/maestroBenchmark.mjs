@@ -143,4 +143,4 @@ const report = {
 };
 console.log('MAESTRO REAL-PIANO BENCHMARK — NOTE-EXTRACTION PROFILE SWEEP');
 console.log(JSON.stringify(report, null, 2));
-if (!reference.length || !predicted.length) throw new Error('No note events available for comparison');
+if (!reference.length || results.every(x => x.predictedNotes === 0)) throw new Error('No note events available for comparison');
