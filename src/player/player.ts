@@ -2,6 +2,7 @@ import workletUrl from './worklet.ts?worker&url';
 import probeUrl from './inputProbe.ts?worker&url';
 import { detectLatency, type LatencyResult } from './latency.ts';
 import { loadLowLatencyAudio, loadRecLatencyMs } from '../settings.ts';
+import { audibleSamplePosition } from './clock.ts';
 import { isTauri } from '../platform.ts';
 import type { PlayerMsg, PlayerReport } from './worklet.ts';
 import type { Practice } from './transport.ts';
@@ -194,6 +195,19 @@ export class Player {
     if (!s.playing || s.countingIn) return s.pos;
     const dt = Math.min(0.06, Math.max(0, (performance.now() - this.stateStamp) / 1000));
     return s.pos + dt * 44100 * s.tempo;
+  }
+
+  /** Song position that should be visible now, compensated for the browser's output pipeline.
+   * The worklet clock advances when samples are rendered, slightly before those samples reach
+   * the speakers. Applying the reported output latency keeps visual note/chord strikes aligned
+   * with the sound the player is actually hearing. */
+  audiblePos(): number {
+    const s = this.state;
+    const pos = this.smoothPos();
+    if (!s.playing || s.countingIn || this.nativeSong || !this.ctx) return pos;
+    const ctx = this.ctx as AudioContext & { outputLatency?: number };
+    const latency = Math.max(0, ctx.baseLatency || 0) + Math.max(0, ctx.outputLatency || 0);
+    return audibleSamplePosition(pos, latency, ctx.sampleRate, s.tempo);
   }
 
   // ---- live input monitoring: a real instrument/mic played live alongside the tracks ----
