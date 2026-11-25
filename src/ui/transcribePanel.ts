@@ -261,12 +261,14 @@ export class Transcribe {
     ) as HTMLSelectElement;
     this.chordStemSel = h('select', { class: 'tiny', title: 'Select one or more stems for chord analysis', 'aria-label': 'Chord analysis stems', multiple: true, size: 3, hidden: true }) as HTMLSelectElement;
     this.chordStemSel.onchange = () => {
-      this.chordStemSources = Array.from(this.chordStemSel.selectedOptions, (o) => o.value);
+      const previous = this.chordStemSources;
+      const next = Array.from(this.chordStemSel.selectedOptions, (o) => o.value);
       const song = this.host.song();
       if (song?.chords?.some((ch) => ch.manual) && !confirm('Detect chords again using these stems? Your corrections will be lost.')) {
-        for (const option of this.chordStemSel.options) option.selected = this.chordStemSources.includes(option.value);
+        for (const option of this.chordStemSel.options) option.selected = previous.includes(option.value);
         return;
       }
+      this.chordStemSources = next;
       if (song) song.chords = undefined;
       this.show({ chords: true, strip: true });
     };
