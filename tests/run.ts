@@ -32,6 +32,7 @@ import { audibleSamplePosition } from '../src/player/clock.ts';
 import { placeTake, shiftTake } from '../src/player/placement.ts';
 import { StreamResampler } from '../src/player/resample.ts';
 import { withTimeout } from '../src/engine/timeout.ts';
+import { gpuSupportsPrecision } from '../src/engine/backend.ts';
 import { separationMemory, songSizeWarning } from '../src/engine/sizeHint.ts';
 import { beatCells, beatPositionAt, displayName, simplifyChord, timeAtBeat } from '../src/analysis/chordStrip.ts';
 import { APP_PREFERENCE_KEYS, resetAppPreferences } from '../src/prefs.ts';
@@ -53,6 +54,12 @@ const ok = (name: string, cond: boolean, detail = '') => {
   console.log(`${cond ? 'PASS' : 'FAIL'}  ${name}${detail ? `  (${detail})` : ''}`);
   if (!cond) failed++;
 };
+
+const noF16 = new Set<string>();
+const withF16 = new Set(['shader-f16']);
+ok('compact model requires WebGPU shader-f16 support', !gpuSupportsPrecision(noF16, 'compact'));
+ok('compact model can use WebGPU when shader-f16 is supported', gpuSupportsPrecision(withF16, 'compact'));
+ok('full-precision model can use WebGPU without shader-f16', gpuSupportsPrecision(noF16, 'full'));
 
 function signal(n: number, seed = 1): Stereo {
   let s = seed;

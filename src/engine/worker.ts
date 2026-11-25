@@ -5,6 +5,7 @@
 import type * as OrtT from 'onnxruntime-web/webgpu';
 import { MODELS, neededFiles, type ModelFile, type ModelId, type Precision } from '../models.ts';
 import { fixFloat64 } from './fixfloat64.ts';
+import { gpuSupportsPrecision } from './backend.ts';
 import { withTimeout } from './timeout.ts';
 import { CancelledError, SEGMENT, pickStems, separate, type Member, type Stereo } from './separate.ts';
 import type { Device } from '../settings.ts';
@@ -57,21 +58,34 @@ function requestModel(key: string): Promise<ArrayBuffer | null> {
 }
 
 // ---- backend choice
-let gpuOk: boolean | null = null;
-async function hasWebGPU() {
-  if (gpuOk !== null) return gpuOk;
+let gpuAdapter: any | null | undefined;
+async function getWebGPUAdapter() {
+  if (gpuAdapter !== undefined) return gpuAdapter;
   try {
-    const gpu = (navigator as any).gpu;
-    gpuOk = !!(gpu && (await gpu.requestAdapter()));
+    gpuAdapter = await (navigator as any).gpu?.requestAdapter() ?? null;
   } catch {
-    gpuOk = false;
+    gpuAdapter = null;
   }
-  return gpuOk;
+  return gpuAdapter;
 }
 
-async function chooseBackend(pref: Device): Promise<'webgpu' | 'wasm'> {
-  if (pref === 'cpu') return 'wasm';
-  return (await hasWebGPU()) ? 'webgpu' : 'wasm';
+async function chooseBackend(
+  pref: Device,
+  precision: Precision,
+): Promise<{ backend: 'webgpu' | 'wasm'; note?: string }> {
+  if (pref === 'cpu') return { backend: 'wasm' };
+  const adapter = await getWebGPUAdapter();
+  if (!adapter) return { backend: 'wasm' };
+  if (!gpuSupportsPrecision(adapter.features, precision)) {
+    return {
+      backend: 'wasm',
+      note: 'This GPU does not support shader-f16, which the compact model requires. Quasaric is using the CPU instead.',
+    };
+  }
+  // Pin the adapter that passed the capability check. ONNX Runtime otherwise requests a
+  // second adapter, which can be a different GPU on hybrid Windows systems.
+  (ort.env as any).webgpu.adapter = adapter;
+  return { backend: 'webgpu' };
 }
 
 /** How long a GPU session may take to appear before the CPU is used instead. Creating one takes seconds; on some Windows GPU /
@@ -91,7 +105,11 @@ const maxSessions = ((navigator as any).deviceMemory ?? 4) >= 8 ? 4 : 1;
 const maxWasmSessions = 1;
 let lastBackend = '';
 
-async function getSession(f: ModelFile, backend: 'webgpu' | 'wasm'): Promise<{ s: OrtT.InferenceSession; backend: 'webgpu' | 'wasm' }> {
+async function getSession(
+  f: ModelFile,
+  backend: 'webgpu' | 'wasm',
+  fallbackNote?: string,
+): Promise<{ s: OrtT.InferenceSession; backend: 'webgpu' | 'wasm' }> {
   const id = `${f.key}|${backend}`;
   const hit = sessions.get(id);
   if (hit) {
@@ -114,7 +132,7 @@ async function getSession(f: ModelFile, backend: 'webgpu' | 'wasm'): Promise<{ s
   const bytes = fixFloat64(new Uint8Array(raw)).bytes;
   let s: OrtT.InferenceSession;
   let used = backend;
-  let note: string | undefined;
+  let note: string | undefined = fallbackNote;
   const attempt = ort.InferenceSession.create(bytes, { executionProviders: [backend], ...SESSION_OPTS });
   try {
     s = backend === 'webgpu' ? await withTimeout(attempt, GPU_SESSION_TIMEOUT_MS, 'Loading the model on the GPU') : await attempt;
@@ -122,7 +140,7 @@ async function getSession(f: ModelFile, backend: 'webgpu' | 'wasm'): Promise<{ s
     if (backend !== 'webgpu') throw e;
     // If the GPU attempt does turn up later, don't hold on to it.
     attempt.then((late) => late.release().catch(() => {}), () => {});
-    gpuOk = false; // the rest of this run goes straight to the CPU
+    gpuAdapter = null; // the rest of this run goes straight to the CPU
     note = `GPU failed (${(e as Error).message}); using CPU`;
     used = 'wasm';
     s = await ort.InferenceSession.create(bytes, { executionProviders: ['wasm'], ...SESSION_OPTS });
@@ -168,7 +186,9 @@ function share(a: Float32Array): Float32Array {
 async function run(job: SeparateJob) {
   const info = MODELS[job.model];
   const chosen = neededFiles(job.model, job.precision, job.twoStems, job.skip);
-  const backend = await chooseBackend(job.device);
+  const choice = await chooseBackend(job.device, job.precision);
+  const backend = choice.backend;
+  let backendNote = choice.note;
   let stage = 'Separating';
 
   const members: Member[] = chosen.map((f, i) => ({
@@ -176,7 +196,8 @@ async function run(job: SeparateJob) {
     load: async () => {
       stage = chosen.length > 1 ? `Model ${i + 1}/${chosen.length}` : 'Separating';
       post({ type: 'progress', id: job.id, done: -1, total: 0, stage: 'Loading model' });
-      const { s } = await getSession(f, backend);
+      const { s } = await getSession(f, backend, backendNote);
+      backendNote = undefined;
       return {
         run: runner(s),
         release: async () => {
