@@ -201,26 +201,21 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     const boundary = segs[i][0];
     let firstWinningTime = -1;
     let consecutive = 0;
+    let previousDifference: number | null = null;
     for (let time = scanStart; time < boundary - refineWindow * 0.25; time += refineHop) {
       const t0 = Math.max(0, time * CQT_FPS);
       const t1 = Math.min(harm.frames, (time + refineWindow) * CQT_FPS);
       if (t1 - t0 < 3) continue;
       const oldScore = localTemplateScore(from, t0, t1);
       const newScore = localTemplateScore(to, t0, t1);
-      const localChroma = unit(chromaOf(clean, t0, t1, 40, 84).map((x) => Math.sqrt(x)));
-      const oldTemplate = TEMPLATES[from];
-      const newTemplate = TEMPLATES[to];
-      let oldOnly = 0;
-      let newOnly = 0;
-      for (let pitch = 0; pitch < 12; pitch++) {
-        if (oldTemplate.v[pitch] > 0 && newTemplate.v[pitch] === 0) oldOnly += localChroma[pitch];
-        if (newTemplate.v[pitch] > 0 && oldTemplate.v[pitch] === 0) newOnly += localChroma[pitch];
-      }
-      const bassEvidence = chromaOf(bass ?? harm, t0, t1, 28, 52);
-      const bassSupportsNewRoot = bassEvidence[newTemplate.root] > bassEvidence[oldTemplate.root] * 1.05;
-      const chordTonesSupportNew = newOnly > oldOnly + 0.015;
-      if (newScore > oldScore || bassSupportsNewRoot || chordTonesSupportNew) {
-        if (consecutive === 0) firstWinningTime = time;
+      const difference = newScore - oldScore;
+      // Refine only at a genuine local crossover. If the incoming chord already
+      // scores better at the start of the preceding beat, it may share tones
+      // with the outgoing chord; don't pull a normal beat change backwards.
+      if (previousDifference !== null && previousDifference <= 0 && difference > 0) {
+        firstWinningTime = time;
+        consecutive = 1;
+      } else if (difference > 0 && consecutive > 0) {
         consecutive++;
         if (consecutive >= 2) {
           transitionTimes[i] = +Math.min(boundary, firstWinningTime + refineWindow / 2).toFixed(3);
@@ -230,6 +225,7 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
         consecutive = 0;
         firstWinningTime = -1;
       }
+      previousDifference = difference;
     }
   }
 
