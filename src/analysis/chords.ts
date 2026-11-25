@@ -114,14 +114,29 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
   }
   // Changing chord costs least on a bar line, more mid-bar, most off the beat grid.
   const changeCost = (i: number) => {
+    // Chord changes are more likely on a beat, but they are allowed between
+    // beats when the audio evidence supports an anticipation/syncopation.
+    if (i % subdivisions !== 0) return 4.2;
     if (!bar || bar.perBar < 2 || !onBeats) return 2.2;
-    const pos = (((i - shift - bar.downbeat) % bar.perBar) + bar.perBar) % bar.perBar;
+    const beatIndex = Math.floor(i / subdivisions);
+    const pos = (((beatIndex - shift - bar.downbeat) % bar.perBar) + bar.perBar) % bar.perBar;
     return pos === 0 ? 1.6 : bar.perBar % 2 === 0 && pos === bar.perBar / 2 ? 2.6 : 4;
   };
-  const bounds = [...grid, dur];
+  // Analyse four subdivisions per beat (sixteenth-note resolution in common time),
+  // rather than forcing every chord change onto a beat boundary. This matters for
+  // syncopated changes and anticipations. The last segment is clipped to song length.
+  const subdivisions = 4;
+  const bounds: number[] = [];
+  for (let i = 0; i < grid.length; i++) {
+    const a = grid[i];
+    const b = i + 1 < grid.length ? grid[i + 1] : dur;
+    if (b <= a) continue;
+    for (let sub = 0; sub < subdivisions; sub++) bounds.push(a + (b - a) * sub / subdivisions);
+  }
+  bounds.push(dur);
   const segs = bounds.slice(0, -1).map((s, i) => [s, bounds[i + 1]] as const);
 
-  // Features per beat, from the notes with likely overtones taken out.
+  // Chroma features per sixteenth-note segment, from the notes with likely overtones taken out.
   const clean = removeOvertones(harm);
   const energy: number[] = [];
   const treble: Float64Array[] = [];
