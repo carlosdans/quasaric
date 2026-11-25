@@ -17,7 +17,7 @@ import { analyse } from '../src/analysis/beats.ts';
 import { detectKey, keyName } from '../src/analysis/key.ts';
 import { BINS, CQT_FPS, NOTE_LO, cqt } from '../src/analysis/cqt.ts';
 import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '../src/analysis/chords.ts';
-import { BP_PITCHES, BP_WINDOW, bpNotes, bpUnwrap, bpWindows, singleLine } from '../src/analysis/basicPitch.ts';
+import { BP_PITCHES, BP_SR, BP_WINDOW, bpNotes, bpUnwrap, bpWindows, singleLine } from '../src/analysis/basicPitch.ts';
 import { decimate2 } from '../src/analysis/resample.ts';
 import { writeMidi } from '../src/encode/midi.ts';
 import { centsFrom, detectPitch, freqToNote } from '../src/analysis/pitch.ts';
@@ -415,6 +415,12 @@ for (const [len, overlap, shifts] of [
   const audio = new Float32Array(22050 * 5);
   const w = bpWindows(audio);
   ok('Basic Pitch windows', w.length === 4 && w.every((x) => x.length === BP_WINDOW));
+  // Long-track frame count must use the exact 22050/256 model rate, not a floored 86 FPS.
+  const longSamples = BP_SR * 180;
+  const longParts = Array.from({ length: 110 }, () => new Float32Array(172 * BP_PITCHES));
+  const longUnwrapped = bpUnwrap(longParts, BP_PITCHES, longSamples);
+  ok('Basic Pitch keeps exact frame rate over a 3-minute track', longUnwrapped.frames === Math.floor(longSamples / 256), `${longUnwrapped.frames} frames; expected ${Math.floor(longSamples / 256)}`);
+
   // Two fake windows of activations: one note (A4) from frame 20 to 60 of the joined output.
   const parts = [0, 1].map(() => new Float32Array(172 * BP_PITCHES));
   const set = (arr: Float32Array[], t: number, p: number, v: number) => (arr[Math.floor(t / 142)][((t % 142) + 15) * BP_PITCHES + p] = v);
