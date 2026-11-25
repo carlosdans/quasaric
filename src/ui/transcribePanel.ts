@@ -16,6 +16,7 @@ import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
 import { noteOptionsForSource, singleLine, type NoteEvent } from '../analysis/basicPitch.ts';
 import { pianoKeyboardRange } from './pianoRange.ts';
 import { defaultPianoPracticeTarget } from './practiceTarget.ts';
+import { practiceCues } from './practiceCues.ts';
 import { monoOf } from '../analysis/resample.ts';
 import { programFor, writeMidi } from '../encode/midi.ts';
 import { renderMix } from '../player/mixcore.ts';
@@ -116,13 +117,7 @@ const LUT = (() => {
 
 const isBlack = (n: number) => [1, 3, 6, 8, 10].includes(((n % 12) + 12) % 12);
 
-const CHORD_INTERVALS: Record<string, number[]> = {
-  '': [4, 7], m: [3, 7], '7': [4, 7, 10], m7: [3, 7, 10],
-  maj7: [4, 7, 11], sus2: [2, 7], sus4: [5, 7], dim: [3, 6],
-  aug: [4, 8], '5': [7], '6': [4, 7, 9], m6: [3, 7, 9],
-  '9': [2, 4, 7, 10], add9: [2, 4, 7],
-};
-const chordIntervals = (quality: string) => CHORD_INTERVALS[quality] ?? [4, 7];
+const chordIntervals = (quality: string) => ({ '': [4, 7], m: [3, 7], '7': [4, 7, 10], m7: [3, 7, 10], maj7: [4, 7, 11], sus2: [2, 7], sus4: [5, 7], dim: [3, 6], aug: [4, 8], '5': [7], '6': [4, 7, 9], m6: [3, 7, 9], '9': [2, 4, 7, 10], add9: [2, 4, 7] } as Record<string, number[]>)[quality] ?? [4, 7];
 
 // Computer keyboard as a piano, while the Notes view is open: the bottom row is white keys,
 // the row above is black keys, offset to sit over the gaps between them (as on a real piano).
@@ -832,6 +827,7 @@ export class Transcribe {
     const chords = song?.chords ?? [];
     const useChords = this.practiceMode !== 'notes';
     const useNotes = this.practiceMode !== 'chords';
+    const cues = practiceCues(notes, chords, { now: pos / SR, horizon, shift, useNotes, useChords });
     const pitches = notes.map(n => n.pitch + shift);
     if (!pitches.length) pitches.push(...chords.filter(ch => ch.root >= 0).map(ch => 60 + ch.root + shift));
     // Fit the keyboard to the full detected register. A fixed three-octave window
@@ -871,7 +867,7 @@ export class Transcribe {
     }
     // Draw a note as a duration bar: its bottom edge reaches the strike line at its start time.
     const falling = (pitch: number, start: number, end: number, colour: string, label?: string) => {
-      const p = pitch + shift;
+      const p = pitch;
       if (p < low || p >= high || end <= now || start > now + horizon) return;
       const key = xOf(p);
       const yStart = strikeY - ((start - now) / horizon) * laneH;
@@ -899,23 +895,16 @@ export class Transcribe {
       g.restore();
     };
 
-    if (useChords) for (const ch of chords) {
-      if (ch.root < 0 || ch.end <= now || ch.start > now + horizon) continue;
-      const chordPitches = [0, ...chordIntervals(ch.q)].map(i => 60 + ((ch.root + i) % 12));
-      for (const pitch of chordPitches)
-        falling(pitch, ch.start, ch.end, '#9a87ff', '');
-    }
-    if (useNotes) for (const n of notes)
-      falling(n.pitch, n.start, n.end, '#28d7e5', noteName(n.pitch + shift));
+    for (const cue of cues)
+      falling(cue.pitch, cue.start, cue.end, cue.kind === 'note' ? '#28d7e5' : '#9a87ff',
+        cue.kind === 'note' ? noteName(cue.pitch) : '');
 
     // Piano body and white keys: beveled edges, separators and octave labels.
     g.fillStyle = '#08090e'; g.fillRect(left, keyTop, right-left, keyBottom-keyTop);
-    const activePitch = (pitch: number) => {
-      const chord = useChords && chords.some(ch => ch.root >= 0 && ch.start <= now && ch.end > now &&
-        [0, ...chordIntervals(ch.q)].some(i => (ch.root + i + shift) % 12 === pitch % 12));
-      const note = useNotes && notes.some(n => n.pitch + shift === pitch && n.start <= now && n.end > now);
-      return { chord, note };
-    };
+    const activePitch = (pitch: number) => ({
+      chord: cues.some(cue => cue.kind === 'chord' && cue.pitch % 12 === pitch % 12 && cue.start <= now && cue.end > now),
+      note: cues.some(cue => cue.kind === 'note' && cue.pitch === pitch && cue.start <= now && cue.end > now),
+    });
     for (let i=0; i<whites.length; i++) {
       const n=whites[i], x=left+i*keyW, active=activePitch(n);
       const grad=g.createLinearGradient(0,keyTop,0,keyBottom);
