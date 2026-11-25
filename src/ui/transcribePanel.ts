@@ -748,110 +748,144 @@ export class Transcribe {
     const c = this.practiceCanvas;
     if (!c.clientWidth) return;
     const g = fitCanvas(c);
-    const { width: w, height: hgt } = c;
+    const { width: w, height: H } = c;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const left = 8 * dpr, right = w - 8 * dpr;
-    const top = 8 * dpr, keyTop = hgt - 42 * dpr;
-    const horizon = 4.0; // seconds visible above the keyboard
+    const inset = 10 * dpr;
+    const left = inset, right = w - inset;
+    const top = 10 * dpr;
+    const keyTop = H - 54 * dpr;
+    const keyBottom = H - 3 * dpr;
+    const horizon = 5;
     const shift = this.host.pitch();
-    const notes = this.host.song()?.midi?.[this.midiKey()] ?? [];
-    const chords = this.host.song()?.chords ?? [];
-    // Keep a useful three-octave window centred on the transcribed register.
+    const song = this.host.song();
+    const notes = song?.midi?.[this.midiKey()] ?? [];
+    const chords = song?.chords ?? [];
+    const useChords = this.practiceMode !== 'notes';
+    const useNotes = this.practiceMode !== 'chords';
     const pitches = notes.map(n => n.pitch + shift);
     if (!pitches.length) pitches.push(...chords.filter(ch => ch.root >= 0).map(ch => 60 + ch.root + shift));
-    const centre = pitches.length ? pitches.reduce((a,b) => a+b, 0) / pitches.length : 60;
+    const centre = pitches.length ? pitches.reduce((sum, n) => sum + n, 0) / pitches.length : 60;
+    // Three complete octaves, snapped to C, with a little protection at the MIDI limits.
     let low = Math.max(24, Math.min(72, Math.floor((centre - 18) / 12) * 12));
     if (low + 36 > 108) low = 72;
     const high = low + 36;
-    const white = (n: number) => !isBlack(n);
     const whites: number[] = [];
-    for (let n = low; n < high; n++) if (white(n)) whites.push(n);
+    for (let n = low; n < high; n++) if (!isBlack(n)) whites.push(n);
     const keyW = (right - left) / whites.length;
-    const xOf = (p: number) => {
-      const wi = whites.indexOf(p);
-      if (wi >= 0) return { x: left + wi * keyW, width: keyW, black: false };
-      const prev = p - 1;
-      const base = whites.indexOf(prev);
+    const xOf = (pitch: number) => {
+      const whiteIndex = whites.indexOf(pitch);
+      if (whiteIndex >= 0) return { x: left + whiteIndex * keyW, width: keyW, black: false };
+      const base = whites.indexOf(pitch - 1);
       return { x: left + (base + 1) * keyW - keyW * 0.31, width: keyW * 0.62, black: true };
     };
     const now = pos / SR;
-    const useChords = this.practiceMode !== 'notes';
-    const useNotes = this.practiceMode !== 'chords';
-    g.clearRect(0, 0, w, hgt);
-    g.fillStyle = 'rgba(9,9,13,0.96)';
-    g.fillRect(0, 0, w, hgt);
-    // Time grid.
+    const strikeY = keyTop;
+    const laneH = keyTop - top;
+    g.clearRect(0, 0, w, H);
+    const bg = g.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#11131d'); bg.addColorStop(1, '#090b12');
+    g.fillStyle = bg; g.fillRect(0, 0, w, H);
+
+    // Subtle octave columns and a readable five-second time grid.
+    for (let oct = low; oct < high; oct += 12) {
+      const x = xOf(oct).x;
+      g.fillStyle = 'rgba(139,124,246,0.035)';
+      g.fillRect(x, top, keyW * 7, laneH);
+    }
     for (let sec = 1; sec <= horizon; sec++) {
-      const y = keyTop - (sec / horizon) * (keyTop - top);
-      g.strokeStyle = 'rgba(255,255,255,0.09)';
+      const y = strikeY - (sec / horizon) * laneH;
+      g.strokeStyle = sec === 1 ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.085)';
       g.lineWidth = Math.max(1, dpr);
       g.beginPath(); g.moveTo(left, y); g.lineTo(right, y); g.stroke();
-      g.fillStyle = 'rgba(255,255,255,0.38)';
-      g.font = `${9 * dpr}px system-ui, sans-serif`;
-      g.fillText(`+${sec}s`, left + 3 * dpr, y - 3 * dpr);
+      g.fillStyle = 'rgba(210,215,235,0.55)';
+      g.font = `600 ${9*dpr}px system-ui,sans-serif`;
+      g.fillText(`+${sec}s`, left + 5*dpr, y - 4*dpr);
     }
-    const falling = (pitch: number, start: number, end: number, colour: string) => {
-      const shiftedPitch = pitch + shift;
-      if (shiftedPitch < low || shiftedPitch >= high) return;
-      const key = xOf(shiftedPitch);
-      if (key.x + key.width < left || key.x > right) return;
-      const y0 = keyTop - ((start - now) / horizon) * (keyTop - top);
-      const y1 = keyTop - ((end - now) / horizon) * (keyTop - top);
-      // Later times sit higher on screen, so draw the interval from its upper
-      // (end) edge down to its lower (start) edge.
-      const y = Math.max(top, Math.min(keyTop, Math.min(y0, y1)));
-      const bottom = Math.max(top, Math.min(keyTop, Math.max(y0, y1)));
-      if (bottom <= top || y >= keyTop || bottom - y < 1) return;
-      g.fillStyle = colour;
-      g.globalAlpha = 0.9;
-      g.beginPath();
-      g.roundRect(key.x + key.width * 0.12, y, key.width * 0.76, bottom - y, 4 * dpr);
-      g.fill();
-      g.globalAlpha = 1;
+    // Draw a note as a duration bar: its bottom edge reaches the strike line at its start time.
+    const falling = (pitch: number, start: number, end: number, colour: string, label?: string) => {
+      const p = pitch + shift;
+      if (p < low || p >= high || end <= now || start > now + horizon) return;
+      const key = xOf(p);
+      const yStart = strikeY - ((start - now) / horizon) * laneH;
+      const yEnd = strikeY - ((end - now) / horizon) * laneH;
+      const y = Math.max(top, Math.min(yStart, yEnd));
+      const bottom = Math.min(strikeY, Math.max(yStart, yEnd));
+      if (bottom <= top || bottom - y < 2*dpr) return;
+      const x = key.x + key.width * (key.black ? 0.13 : 0.10);
+      const width = key.width * (key.black ? 0.74 : 0.80);
+      const grad = g.createLinearGradient(x, y, x + width, bottom);
+      grad.addColorStop(0, colour); grad.addColorStop(1, colour === '#28d7e5' ? '#137bba' : '#6555d9');
+      g.save();
+      g.shadowColor = colour; g.shadowBlur = 9*dpr;
+      g.fillStyle = grad;
+      g.beginPath(); g.roundRect(x, y, width, bottom-y, 5*dpr); g.fill();
+      g.shadowBlur = 0;
+      g.strokeStyle = 'rgba(255,255,255,0.72)'; g.lineWidth = Math.max(1,dpr);
+      g.stroke();
+      if (label && bottom-y > 19*dpr && width > 22*dpr) {
+        g.fillStyle = '#fff'; g.font = `700 ${9*dpr}px system-ui,sans-serif`;
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(label, x + width/2, y + Math.min(13*dpr,(bottom-y)/2), width-5*dpr);
+        g.textAlign = 'start'; g.textBaseline = 'alphabetic';
+      }
+      g.restore();
     };
+
     if (useChords) for (const ch of chords) {
-      if (ch.root < 0 || ch.end < now || ch.start > now + horizon) continue;
-      for (const interval of [0, ...chordIntervals(ch.q)]) {
-        const pitch = 60 + ((ch.root + interval) % 12);
-        falling(pitch, ch.start, ch.end, ch.start <= now && ch.end > now ? '#f5a623' : '#8b7cf6');
+      if (ch.root < 0 || ch.end <= now || ch.start > now + horizon) continue;
+      const chordPitches = [0, ...chordIntervals(ch.q)].map(i => 60 + ((ch.root + i) % 12));
+      for (const pitch of chordPitches)
+        falling(pitch, ch.start, ch.end, '#9a87ff', '');
+    }
+    if (useNotes) for (const n of notes)
+      falling(n.pitch, n.start, n.end, '#28d7e5', noteName(n.pitch + shift));
+
+    // Piano body and white keys: beveled edges, separators and octave labels.
+    g.fillStyle = '#08090e'; g.fillRect(left, keyTop, right-left, keyBottom-keyTop);
+    const activePitch = (pitch: number) => {
+      const chord = useChords && chords.some(ch => ch.root >= 0 && ch.start <= now && ch.end > now &&
+        [0, ...chordIntervals(ch.q)].some(i => (ch.root + i + shift) % 12 === pitch % 12));
+      const note = useNotes && notes.some(n => n.pitch + shift === pitch && n.start <= now && n.end > now);
+      return { chord, note };
+    };
+    for (let i=0; i<whites.length; i++) {
+      const n=whites[i], x=left+i*keyW, active=activePitch(n);
+      const grad=g.createLinearGradient(0,keyTop,0,keyBottom);
+      grad.addColorStop(0,active.note?'#62f0f3':active.chord?'#ffd27a':'#fff');
+      grad.addColorStop(0.78,active.note?'#1a9cae':active.chord?'#d78b27':'#e1e3eb');
+      grad.addColorStop(1,'#aeb3c1');
+      g.fillStyle=grad; g.fillRect(x+0.7*dpr,keyTop,keyW-1.4*dpr,keyBottom-keyTop);
+      g.strokeStyle='rgba(12,15,25,0.65)'; g.lineWidth=dpr;
+      g.strokeRect(x+0.5*dpr,keyTop,keyW-dpr,keyBottom-keyTop);
+      if(n%12===0) {
+        g.fillStyle=active.note||active.chord?'#101522':'#50576a';
+        g.font=`700 ${9*dpr}px system-ui,sans-serif`;
+        g.fillText(`C${Math.floor(n/12)-1}`,x+4*dpr,keyBottom-6*dpr);
       }
     }
-    if (useNotes) for (const n of notes) {
-      if (n.end < now || n.start > now + horizon) continue;
-      falling(n.pitch, n.start, n.end, '#22c7d6');
+    // Black keys are drawn last so they overlap the white-key seams like a real piano.
+    for(let n=low;n<high;n++) if(isBlack(n)) {
+      const key=xOf(n), active=activePitch(n);
+      const grad=g.createLinearGradient(key.x,keyTop,key.x+key.width,keyTop+34*dpr);
+      grad.addColorStop(0,active.note?'#1ba8b7':active.chord?'#b87520':'#454958');
+      grad.addColorStop(0.5,active.note?'#116b79':active.chord?'#805016':'#171a24');
+      grad.addColorStop(1,'#080a10');
+      g.fillStyle=grad; g.shadowColor='rgba(0,0,0,0.65)'; g.shadowBlur=4*dpr;
+      g.beginPath(); g.roundRect(key.x,keyTop,key.width,(keyBottom-keyTop)*0.64,3*dpr); g.fill();
+      g.shadowBlur=0; g.strokeStyle='rgba(255,255,255,0.18)'; g.stroke();
     }
-    // Keyboard bed: white keys first, then black keys and active notes.
-    g.fillStyle = '#e9e9ef';
-    g.fillRect(left, keyTop, right - left, hgt - keyTop);
-    for (let i = 0; i < whites.length; i++) {
-      const n = whites[i], x = left + i * keyW;
-      const soundingChord = useChords && chords.some(ch => ch.root >= 0 && ch.start <= now && ch.end > now &&
-        [0, ...chordIntervals(ch.q)].some(i => (ch.root + i + shift) % 12 === n % 12));
-      const soundingNote = useNotes && notes.some(note => note.pitch + shift === n && note.start <= now && note.end > now);
-      g.fillStyle = soundingChord ? '#f5a623' : soundingNote ? '#22c7d6' : '#e9e9ef';
-      g.fillRect(x + dpr, keyTop, keyW - 2 * dpr, hgt - keyTop - dpr);
-      g.strokeStyle = 'rgba(0,0,0,0.28)'; g.strokeRect(x, keyTop, keyW, hgt - keyTop);
-      if (n % 12 === 0) { g.fillStyle = '#555'; g.font = `${9*dpr}px system-ui`; g.fillText(`C${Math.floor(n/12)-1}`, x+3*dpr, hgt-5*dpr); }
-    }
-    for (let n = low; n < high; n++) if (isBlack(n)) {
-      const key = xOf(n);
-      const activeChord = useChords && chords.some(ch => ch.root >= 0 && ch.start <= now && ch.end > now &&
-        [0, ...chordIntervals(ch.q)].some(i => (ch.root + i + shift) % 12 === n % 12));
-      const activeNote = useNotes && notes.some(note => note.pitch + shift === n && note.start <= now && note.end > now);
-      g.fillStyle = activeChord ? '#d88918' : activeNote ? '#1596a5' : '#24242c';
-      g.fillRect(key.x, keyTop, key.width, (hgt - keyTop) * 0.62);
-    }
-    // Fixed strike line: the falling notes meet the keyboard here.
-    g.strokeStyle = '#f5a623'; g.lineWidth = 2 * dpr;
-    g.beginPath(); g.moveTo(left, keyTop); g.lineTo(right, keyTop); g.stroke();
-    if (useNotes && !notes.length && useChords && chords.length) {
-      g.fillStyle = 'rgba(255,255,255,0.72)';
-      g.font = `${11*dpr}px system-ui`;
-      g.fillText(document.documentElement.lang === 'es' ? 'Usa Notas → To MIDI para ver notas individuales' : 'Use Notes → To MIDI to add individual falling notes', left + 8*dpr, top + 15*dpr);
-    } else if (useNotes && !notes.length) {
-      g.fillStyle = 'rgba(255,255,255,0.72)';
-      g.font = `${11*dpr}px system-ui`;
-      g.fillText(document.documentElement.lang === 'es' ? 'Genera el MIDI con «To MIDI» para ver notas individuales' : 'Generate MIDI with “To MIDI” to see individual notes', left + 8*dpr, top + 15*dpr);
+    // Strike line and a compact legend make the two sources easy to distinguish.
+    g.strokeStyle='#ffd166'; g.lineWidth=2*dpr;
+    g.beginPath(); g.moveTo(left,strikeY); g.lineTo(right,strikeY); g.stroke();
+    g.fillStyle='rgba(255,209,102,0.95)';
+    g.beginPath(); g.moveTo(left,strikeY); g.lineTo(left+7*dpr,strikeY-4*dpr); g.lineTo(left+7*dpr,strikeY+4*dpr); g.fill();
+    g.font=`600 ${9*dpr}px system-ui,sans-serif`;
+    g.fillStyle='rgba(220,225,240,0.72)';
+    g.fillText(useNotes ? (notes.length ? `MIDI · ${notes.length} notas` : 'MIDI sin generar') : 'Acordes detectados', left+12*dpr, H-7*dpr);
+    if (useNotes && !notes.length) {
+      g.fillStyle='rgba(255,255,255,0.9)';
+      g.font=`600 ${11*dpr}px system-ui,sans-serif`;
+      g.fillText(document.documentElement.lang === 'es' ? 'Abre Notas y pulsa «To MIDI» para generar las notas que se tocan' : 'Open Notes and choose “To MIDI” to generate the played notes', left+8*dpr, top+17*dpr);
     }
   }
 
