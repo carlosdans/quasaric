@@ -114,29 +114,14 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
   }
   // Changing chord costs least on a bar line, more mid-bar, most off the beat grid.
   const changeCost = (i: number) => {
-    // Chord changes are more likely on a beat, but they are allowed between
-    // beats when the audio evidence supports an anticipation/syncopation.
-    if (i % subdivisions !== 0) return 16.0;
     if (!bar || bar.perBar < 2 || !onBeats) return 2.2;
-    const beatIndex = Math.floor(i / subdivisions);
-    const pos = (((beatIndex - shift - bar.downbeat) % bar.perBar) + bar.perBar) % bar.perBar;
+    const pos = (((i - shift - bar.downbeat) % bar.perBar) + bar.perBar) % bar.perBar;
     return pos === 0 ? 1.6 : bar.perBar % 2 === 0 && pos === bar.perBar / 2 ? 2.6 : 4;
   };
-  // Analyse four subdivisions per beat (sixteenth-note resolution in common time),
-  // rather than forcing every chord change onto a beat boundary. This matters for
-  // syncopated changes and anticipations. The last segment is clipped to song length.
-  const subdivisions = 4;
-  const bounds: number[] = [];
-  for (let i = 0; i < grid.length; i++) {
-    const a = grid[i];
-    const b = i + 1 < grid.length ? grid[i + 1] : dur;
-    if (b <= a) continue;
-    for (let sub = 0; sub < subdivisions; sub++) bounds.push(a + (b - a) * sub / subdivisions);
-  }
-  bounds.push(dur);
+  const bounds = [...grid, dur];
   const segs = bounds.slice(0, -1).map((s, i) => [s, bounds[i + 1]] as const);
 
-  // Chroma features per sixteenth-note segment, from the notes with likely overtones taken out.
+  // Features per beat, from the notes with likely overtones taken out.
   const clean = removeOvertones(harm);
   const energy: number[] = [];
   const treble: Float64Array[] = [];
@@ -192,6 +177,50 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     k = back[i * S + k];
   }
 
+  // Keep the stable beat-level chord path, then refine each detected boundary
+  // inside the preceding beat using short-window audio evidence. This allows
+  // syncopated changes without letting sixteenth-note noise create new chords.
+  const transitionTimes = segs.map(([start]) => start);
+  const refineWindow = 0.10;
+  const refineHop = 0.0125;
+  const localTemplateScore = (templateIndex: number, t0: number, t1: number) => {
+    const tr = unit(chromaOf(clean, t0, t1, 40, 84).map((x) => Math.sqrt(x)));
+    const bs = unit(chromaOf(bass ?? harm, t0, t1, 28, 52).map((x) => x * x));
+    const template = TEMPLATES[templateIndex];
+    let d = 0;
+    for (let p = 0; p < 12; p++) d += tr[p] * template.v[p];
+    return d + 0.25 * bs[template.root]
+      - (template.extension != null && tr[(template.root + template.extension) % 12] < 0.42 ? 0.16 : 0)
+      - (template.suspended && Math.max(tr[(template.root + 3) % 12], tr[(template.root + 4) % 12]) > 0.35 ? 0.2 : 0);
+  };
+  for (let i = 1; i < n; i++) {
+    const from = path[i - 1];
+    const to = path[i];
+    if (from === to || from >= S - 1 || to >= S - 1) continue;
+    const scanStart = segs[i - 1][0];
+    const boundary = segs[i][0];
+    let firstWinningTime = -1;
+    let consecutive = 0;
+    for (let time = scanStart; time < boundary - refineWindow * 0.25; time += refineHop) {
+      const t0 = Math.max(0, time * CQT_FPS);
+      const t1 = Math.min(harm.frames, (time + refineWindow) * CQT_FPS);
+      if (t1 - t0 < 3) continue;
+      const oldScore = localTemplateScore(from, t0, t1);
+      const newScore = localTemplateScore(to, t0, t1);
+      if (newScore > oldScore + 0.025) {
+        if (consecutive === 0) firstWinningTime = time;
+        consecutive++;
+        if (consecutive >= 2) {
+          transitionTimes[i] = +firstWinningTime.toFixed(3);
+          break;
+        }
+      } else {
+        consecutive = 0;
+        firstWinningTime = -1;
+      }
+    }
+  }
+
   // Merge into chords, with alternatives ranked over each chord's span.
   const chords: Chord[] = [];
   for (let i = 0; i < n;) {
@@ -203,8 +232,8 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     const ranked = [...avg.keys()].filter((s) => s < S - 1 && s !== st).sort((a, b) => avg[b] - avg[a]);
     const t = TEMPLATES[st];
     chords.push({
-      start: +segs[i][0].toFixed(3),
-      end: +segs[j][1].toFixed(3),
+      start: +transitionTimes[i].toFixed(3),
+      end: +(j + 1 < n ? transitionTimes[j + 1] : segs[j][1]).toFixed(3),
       root: st === S - 1 ? -1 : t.root,
       q: st === S - 1 ? '' : t.q,
       alts: ranked.slice(0, 4).map((s) => [TEMPLATES[s].root, TEMPLATES[s].q]),
