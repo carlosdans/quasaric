@@ -13,7 +13,7 @@ const HOP_SIZE = AUDIO_N_SAMPLES - OVERLAP_LEN;
 export const BP_WINDOW = AUDIO_N_SAMPLES;
 export const BP_PITCHES = 88;
 const MIDI_OFFSET = 21;
-const FPS = Math.floor(BP_SR / FFT_HOP); // 86
+const FPS = BP_SR / FFT_HOP; // 86.1328125; keep the exact model frame rate to avoid cumulative drift.
 
 export interface NoteEvent {
   start: number; // seconds
