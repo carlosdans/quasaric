@@ -71,7 +71,8 @@ jobs:
           cd /tmp/TranskunWeb && npm ci
           sed -i 's@onnxruntime-web/webgpu@onnxruntime-web/wasm@' src/transkun/onnxModel.ts
           sed -i "/wasmPaths =/d" src/transkun/onnxModel.ts
-          sed -i 's/numThreads = 1/numThreads = 2/' src/transkun/onnxModel.ts
+          sed -i "/ort.env.wasm.numThreads =/i ort.env.wasm.wasmPaths = 'http://127.0.0.1:8765/'" src/transkun/onnxModel.ts
+          sed -i 's/numThreads = 1/numThreads = 1/' src/transkun/onnxModel.ts
           sed -i 's/private readonly url: string/private readonly url: string | Uint8Array/g' src/transkun/onnxModel.ts
           find src/transkun -name '*.ts' -type f -exec sed -i -E "s/from '(\\.\\/[^']+)'/from '\\1.ts'/g" {} +
       - name: Download Transkun v2 ONNX models and convert MAESTRO audio to 44.1 kHz
@@ -82,4 +83,7 @@ jobs:
           ffmpeg -hide_banner -loglevel error -i /tmp/maestro.wav -ac 1 -ar 44100 -f f32le -acodec pcm_f32le /tmp/maestro-44k.pcm
           ls -lh /tmp/transkun.onnx /tmp/transkun-heads.onnx /tmp/maestro-44k.pcm
       - name: Benchmark Transkun v2 against the same reference MIDI
-        run: node --experimental-transform-types --no-warnings tests/transkunBenchmark.mjs
+        run: |
+          python3 -m http.server 8765 --directory /tmp/TranskunWeb/node_modules/onnxruntime-web/dist >/tmp/transkun-wasm-http.log 2>&1 &
+          sleep 1
+          node --experimental-transform-types --no-warnings tests/transkunBenchmark.mjs
