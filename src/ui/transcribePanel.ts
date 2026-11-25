@@ -745,7 +745,16 @@ export class Transcribe {
     const left = 8 * dpr, right = w - 8 * dpr;
     const top = 8 * dpr, keyTop = hgt - 42 * dpr;
     const horizon = 4.0; // seconds visible above the keyboard
-    const low = 48, high = 84; // C3–C6
+    const shift = this.host.pitch();
+    const notes = this.host.song()?.midi?.[this.midiKey()] ?? [];
+    const chords = this.host.song()?.chords ?? [];
+    // Keep a useful three-octave window centred on the transcribed register.
+    const pitches = notes.map(n => n.pitch + shift);
+    if (!pitches.length) pitches.push(...chords.filter(ch => ch.root >= 0).map(ch => 60 + ch.root + shift));
+    const centre = pitches.length ? pitches.reduce((a,b) => a+b, 0) / pitches.length : 60;
+    let low = Math.max(24, Math.min(72, Math.floor((centre - 18) / 12) * 12));
+    if (low + 36 > 108) low = 72;
+    const high = low + 36;
     const white = (n: number) => !isBlack(n);
     const whites: number[] = [];
     for (let n = low; n < high; n++) if (white(n)) whites.push(n);
@@ -762,9 +771,6 @@ export class Transcribe {
     const mode = this.practiceMode;
     const useChords = mode !== 'notes';
     const useNotes = mode !== 'chords';
-    const shift = this.host.pitch();
-    const notes = this.host.song()?.midi?.[this.midiKey()] ?? [];
-    const chords = this.host.song()?.chords ?? [];
     g.clearRect(0, 0, w, hgt);
     g.fillStyle = 'rgba(9,9,13,0.96)';
     g.fillRect(0, 0, w, hgt);
