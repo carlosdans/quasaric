@@ -736,8 +736,13 @@ export class Transcribe {
     if (!s) return;
     if (this.chordsOn) this.drawChords(pos);
     if (this.notesOn) this.drawNotes(pos);
-    if (this.notesOn || this.chordsOn) this.drawPractice(pos);
+    if (this.notesOn || this.chordsOn) this.drawPractice(this.host.smoothPos());
     this.followFreeze(pos);
+  }
+
+  /** Redraw the falling-note lane against the interpolated audio clock on every screen frame. */
+  drawPracticeFrame() {
+    if (this.notesOn || this.chordsOn) this.drawPractice(this.host.smoothPos());
   }
 
   /**
