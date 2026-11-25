@@ -54,7 +54,8 @@ export function bpUnwrap(parts: Float32Array[], bins: number, audioLength: numbe
 /** Frame index → seconds, including basic_pitch's small per-window correction. */
 function frameTime(i: number) {
   const offset = (FFT_HOP / BP_SR) * (ANNOT_N_FRAMES - AUDIO_N_SAMPLES / FFT_HOP) + 0.0018;
-  return (i * FFT_HOP) / BP_SR - offset * Math.floor(i / ANNOT_N_FRAMES);
+  const framesPerWindow = ANNOT_N_FRAMES - N_OVERLAP_FRAMES; // bpUnwrap keeps 142 frames from each 172-frame window.
+  return (i * FFT_HOP) / BP_SR - offset * Math.floor(i / framesPerWindow);
 }
 
 export interface NoteOptions {
