@@ -197,8 +197,9 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     const from = path[i - 1];
     const to = path[i];
     if (from === to || from >= S - 1 || to >= S - 1) continue;
-    const scanStart = segs[i - 1][0];
     const boundary = segs[i][0];
+    const beatIndex = Math.max(0, grid.findIndex((beatTime, index) => index + 1 < grid.length && boundary <= grid[index + 1] + 1e-6));
+    const scanStart = grid[beatIndex] ?? segs[i - 1][0];
     let firstWinningTime = -1;
     let consecutive = 0;
     let previousDifference: number | null = null;
