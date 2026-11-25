@@ -264,8 +264,14 @@ export class Transcribe {
       }
       this.chordSource = next;
       if (song) song.chords = undefined;
-      this.host.changed();
-      void this.detectChords();
+      // Selecting the piano source should immediately expose the piano chord
+      // diagrams and the beat-aligned chord strip, not just change the analysis.
+      if (next === 'piano') {
+        this.shapes = 'piano';
+        this.shapeSel.value = 'piano';
+        this.shapeKey = '';
+      }
+      this.show({ chords: true, strip: true });
     };
     this.chordStatus = h('span', { class: 'muted small x-status' });
     const redo = h('button', { class: 'btn tiny ghost', type: 'button', title: 'Detect the chords again (replaces your edits)' }, 'Redo');
