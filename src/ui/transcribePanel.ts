@@ -70,7 +70,8 @@ export interface TxState {
   chords: boolean;
   source: string;
   chordList?: Chord[];
-  chordSource?: 'auto' | 'piano' | 'accompaniment';
+  chordSource?: 'auto' | 'piano' | 'accompaniment' | 'custom';
+  chordStemSources?: string[];
   midi?: Record<string, NoteEvent[]>;
   notesHeight?: number; // px; unset uses the CSS default
   /** The scrolling chord timeline: shown, plain major / minor only, and its zoom (1 = default width of a beat). */
@@ -158,7 +159,8 @@ export class Transcribe {
   /** Where the timeline last drew the playhead, so a click can be turned back into a beat. */
   private stripGeom = { cur: 0, hold: 0, cw: 78 };
   private source = HEAR;
-  private chordSource: 'auto' | 'piano' | 'accompaniment' = 'auto';
+  private chordSource: 'auto' | 'piano' | 'accompaniment' | 'custom' = 'auto';
+  private chordStemSources: string[] = [];
   private img: { key: string; canvas: HTMLCanvasElement } | null = null;
   private hover: { row: number; t: number } | null = null;
   /** Visible pitch range, as rows (0 = NOTE_HI at the top, BINS = one past NOTE_LO). Scroll/zoom the piano to change it. */
@@ -177,6 +179,7 @@ export class Transcribe {
   private chordNow: HTMLElement;
   private chordStatus: HTMLElement;
   private chordSourceSel: HTMLSelectElement;
+  private chordStemSel: HTMLSelectElement;
   private editor: HTMLElement;
   private notesLane: HTMLElement;
   private noteCanvas: HTMLCanvasElement;
@@ -254,15 +257,28 @@ export class Transcribe {
       h('option', { value: 'auto' }, 'Auto source'),
       h('option', { value: 'piano' }, 'Piano stem'),
       h('option', { value: 'accompaniment' }, 'All harmony'),
+      h('option', { value: 'custom' }, 'Choose stems…'),
     ) as HTMLSelectElement;
+    this.chordStemSel = h('select', { class: 'tiny', title: 'Select one or more stems for chord analysis', 'aria-label': 'Chord analysis stems', multiple: true, size: 3, hidden: true }) as HTMLSelectElement;
+    this.chordStemSel.onchange = () => {
+      this.chordStemSources = Array.from(this.chordStemSel.selectedOptions, (o) => o.value);
+      const song = this.host.song();
+      if (song?.chords?.some((ch) => ch.manual) && !confirm('Detect chords again using these stems? Your corrections will be lost.')) {
+        for (const option of this.chordStemSel.options) option.selected = this.chordStemSources.includes(option.value);
+        return;
+      }
+      if (song) song.chords = undefined;
+      this.show({ chords: true, strip: true });
+    };
     this.chordSourceSel.onchange = () => {
-      const next = this.chordSourceSel.value as 'auto' | 'piano' | 'accompaniment';
+      const next = this.chordSourceSel.value as 'auto' | 'piano' | 'accompaniment' | 'custom';
       const song = this.host.song();
       if (song?.chords?.some((ch) => ch.manual) && !confirm('Detect chords again using this source? Your corrections will be lost.')) {
         this.chordSourceSel.value = this.chordSource;
         return;
       }
       this.chordSource = next;
+      this.chordStemSel.hidden = next !== 'custom';
       if (song) song.chords = undefined;
       // Selecting the piano source should immediately expose the piano chord
       // diagrams and the beat-aligned chord strip, not just change the analysis.
@@ -290,7 +306,7 @@ export class Transcribe {
     this.chordLane = h(
       'div',
       { class: 'lane x-lane chord-lane' },
-      h('div', { class: 'lane-ctl x-ctl' }, h('span', { class: 'name' }, 'Chords ', DRAFT()), this.chordSourceSel, this.chordNow, redo, sheet, this.chordStatus),
+      h('div', { class: 'lane-ctl x-ctl' }, h('span', { class: 'name' }, 'Chords ', DRAFT()), this.chordSourceSel, this.chordStemSel, this.chordNow, redo, sheet, this.chordStatus),
       chordWave,
     );
     this.editor = h('div', { class: 'chord-edit', hidden: true });
@@ -492,7 +508,11 @@ export class Transcribe {
     if (st?.midi && !s.midi) s.midi = st.midi;
     this.source = st?.source && (st.source === HEAR || s.stems.some((x) => x.name === st.source)) ? st.source : HEAR;
     this.chordSource = st?.chordSource ?? 'auto';
+    this.chordStemSources = (st?.chordStemSources ?? []).filter((n) => s.stems.some((x) => x.name === n));
     this.chordSourceSel.value = this.chordSource;
+    this.chordStemSel.replaceChildren(...s.stems.map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)));
+    for (const option of this.chordStemSel.options) option.selected = this.chordStemSources.includes(option.value);
+    this.chordStemSel.hidden = this.chordSource !== 'custom';
     this.sourceSel.replaceChildren(
       h('option', { value: HEAR }, 'All parts (no drums)'),
       ...s.stems.map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)),
@@ -515,7 +535,7 @@ export class Transcribe {
 
   getState(): TxState {
     const s = this.host.song();
-    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, notesHeight: this.notesHeight };
+    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, notesHeight: this.notesHeight };
   }
 
   private show(p: { notes?: boolean; chords?: boolean; strip?: boolean }, save = true) {
@@ -1118,12 +1138,18 @@ export class Transcribe {
         toast('No piano stem found. Separate the piano first, or choose Auto source.', true);
         return;
       }
-      if (this.chordSource === 'piano') harm = [pianoStem!];
-      else {
+      if (this.chordSource === 'piano') harm = pianoStem ? [pianoStem] : [];
+      else if (this.chordSource === 'custom') {
+        harm = s.stems.filter((x) => this.chordStemSources.includes(x.name));
+        if (!harm.length) {
+          toast('Choose at least one stem for chord analysis.', true);
+          return;
+        }
+      } else {
         if (!harm.length) harm = s.stems.filter((_, i) => roles[i] !== 'drums');
         if (!harm.length) harm = s.stems;
       }
-      const useBass = this.chordSource === 'piano' ? undefined : bassStem && !harm.includes(bassStem) ? bassStem : undefined;
+      const useBass = this.chordSource === 'piano' || this.chordSource === 'custom' ? undefined : bassStem && !harm.includes(bassStem) ? bassStem : undefined;
       await this.ensureCqt([...harm.map((x) => x.name), ...(useBass ? [useBass.name] : [])]);
       if (this.host.song() !== s) return;
       const parts = harm.map((x) => s.cqt!.get(x.name)!.c);
