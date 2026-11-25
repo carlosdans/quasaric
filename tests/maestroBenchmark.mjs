@@ -89,33 +89,58 @@ for (let i = 0; i < windows.length; i++) {
   console.log('Inference window', i + 1, '/', windows.length);
 }
 const ng = bpUnwrap(noteParts, BP_PITCHES, audio.length), og = bpUnwrap(onsetParts, BP_PITCHES, audio.length);
-const predicted = bpNotes(ng.data, og.data, ng.frames, noteOptionsForSource('Piano'));
 await session.release();
 
-const remaining = new Set(reference.map((_, i) => i)), onsetErrors = [], releaseErrors = [];
-let tp = 0;
-for (const note of predicted) {
-  let best = -1, error = Infinity;
-  for (const i of remaining) {
-    const target = reference[i];
-    if (target.pitch !== note.pitch) continue;
-    const e = Math.abs(target.start - note.start);
-    if (e <= 0.1 && e < error) { best = i; error = e; }
+function evaluate(predicted) {
+  const remaining = new Set(reference.map((_, i) => i));
+  const onsetErrors = [], signedOnsets = [], releaseErrors = [], signedReleases = [];
+  let tp = 0;
+  for (const note of predicted) {
+    let best = -1, error = Infinity;
+    for (const i of remaining) {
+      const target = reference[i];
+      if (target.pitch !== note.pitch) continue;
+      const e = Math.abs(target.start - note.start);
+      if (e <= 0.1 && e < error) { best = i; error = e; }
+    }
+    if (best >= 0) {
+      remaining.delete(best); tp++;
+      const onsetDelta = (note.start - reference[best].start) * 1000;
+      const releaseDelta = (note.end - reference[best].end) * 1000;
+      onsetErrors.push(Math.abs(onsetDelta)); signedOnsets.push(onsetDelta);
+      releaseErrors.push(Math.abs(releaseDelta)); signedReleases.push(releaseDelta);
+    }
   }
-  if (best >= 0) { remaining.delete(best); tp++; onsetErrors.push(error * 1000); releaseErrors.push(Math.abs(reference[best].end - note.end) * 1000); }
+  const fp = predicted.length - tp, fn = reference.length - tp;
+  const precision = tp / Math.max(1, tp + fp), recall = tp / Math.max(1, tp + fn);
+  return {
+    predictedNotes: predicted.length, truePositives: tp, falsePositives: fp, falseNegatives: fn,
+    precision: +precision.toFixed(4), recall: +recall.toFixed(4),
+    f1: +(2 * precision * recall / Math.max(1e-9, precision + recall)).toFixed(4),
+    onsetAbsMs: { median: percentile(onsetErrors, 0.5), p95: percentile(onsetErrors, 0.95), signedMedian: percentile(signedOnsets, 0.5) },
+    keyReleaseAbsMs: { median: percentile(releaseErrors, 0.5), p95: percentile(releaseErrors, 0.95), signedMedian: percentile(signedReleases, 0.5) },
+  };
 }
-const fp = predicted.length - tp, fn = reference.length - tp;
-const precision = tp / Math.max(1, tp + fp), recall = tp / Math.max(1, tp + fn);
+const base = noteOptionsForSource('Piano');
+const profiles = [
+  { name: 'current-production', options: base },
+  { name: 'balanced', options: { ...base, onsetThresh: 0.60, frameThresh: 0.35, minNoteMs: 80, endOffsetMs: 180 } },
+  { name: 'strict', options: { ...base, onsetThresh: 0.65, frameThresh: 0.40, minNoteMs: 90, endOffsetMs: 180 } },
+  { name: 'high-precision', options: { ...base, onsetThresh: 0.70, frameThresh: 0.45, minNoteMs: 110, endOffsetMs: 220 } },
+  { name: 'short-notes', options: { ...base, onsetThresh: 0.60, frameThresh: 0.35, minNoteMs: 65, endOffsetMs: 220 } },
+  { name: 'without-harmonic-filter', options: { ...base, suppressHarmonics: false } },
+];
+const results = profiles.map(profile => ({
+  profile: profile.name,
+  ...evaluate(bpNotes(ng.data, og.data, ng.frames, profile.options)),
+}));
 const report = {
   dataset: 'MAESTRO v3.0.0 (held-out test performance)',
   audioSeconds: +duration.toFixed(2), inferenceWindows: windows.length,
-  referenceNotes: reference.length, predictedNotes: predicted.length,
-  truePositives: tp, falsePositives: fp, falseNegatives: fn,
-  precision: +precision.toFixed(4), recall: +recall.toFixed(4),
-  f1: +(2 * precision * recall / Math.max(1e-9, precision + recall)).toFixed(4),
-  onsetAbsoluteErrorMs: { median: percentile(onsetErrors, 0.5), p95: percentile(onsetErrors, 0.95) },
-  keyReleaseAbsoluteErrorMs: { median: percentile(releaseErrors, 0.5), p95: percentile(releaseErrors, 0.95) },
+  referenceNotes: reference.length,
+  onsetMatchToleranceMs: 100,
+  profiles: results,
 };
-console.log('MAESTRO REAL-PIANO BENCHMARK');
+console.log('MAESTRO REAL-PIANO BENCHMARK — NOTE-EXTRACTION PROFILE SWEEP');
 console.log(JSON.stringify(report, null, 2));
 if (!reference.length || !predicted.length) throw new Error('No note events available for comparison');
