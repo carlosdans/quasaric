@@ -1,4 +1,4 @@
-// End-to-end smoke test of the bundled Basic Pitch ONNX model on known synthetic piano notes.
+// End-to-end validation of the bundled Basic Pitch ONNX model on known synthetic piano notes.
 // Run with: node --experimental-transform-types --no-warnings tests/basicPitchModel.ts
 import { readFileSync } from 'node:fs';
 import * as ort from 'onnxruntime-web/wasm';
@@ -7,9 +7,7 @@ import { BP_PITCHES, BP_SR, BP_WINDOW, bpNotes, bpUnwrap, bpWindows, noteOptions
 ort.env.wasm.numThreads = 1;
 ort.env.logLevel = 'error';
 
-const duration = 3;
-const audio = new Float32Array(BP_SR * duration);
-function pianoNote(midi: number, start: number, end: number, amplitude: number) {
+function renderPianoNote(audio: Float32Array, midi: number, start: number, end: number, amplitude: number) {
   const fundamental = 440 * 2 ** ((midi - 69) / 12);
   const first = Math.floor(start * BP_SR);
   const last = Math.min(audio.length, Math.ceil((end + 0.08) * BP_SR));
@@ -28,38 +26,65 @@ function pianoNote(midi: number, start: number, end: number, amplitude: number) 
   }
 }
 
-// Two separate notes with known pitches and onsets, like a simple piano exercise.
-pianoNote(60, 0.5, 1.35, 0.48);
-pianoNote(64, 1.65, 2.45, 0.48);
-
 const modelUrl = new URL('../src/analysis/models/basic-pitch.onnx', import.meta.url);
 const model = new Uint8Array(readFileSync(modelUrl));
 const session = await ort.InferenceSession.create(model, { executionProviders: ['wasm'] });
-const windows = bpWindows(audio);
-const noteParts: Float32Array[] = [];
-const onsetParts: Float32Array[] = [];
-for (const window of windows) {
-  if (window.length !== BP_WINDOW) throw new Error('Basic Pitch window has an unexpected size');
-  const result = await session.run({
-    'serving_default_input_2:0': new ort.Tensor('float32', window, [1, BP_WINDOW, 1]),
-  });
-  noteParts.push(result['StatefulPartitionedCall:1'].data as Float32Array);
-  onsetParts.push(result['StatefulPartitionedCall:2'].data as Float32Array);
-}
-const noteGrid = bpUnwrap(noteParts, BP_PITCHES, audio.length);
-const onsetGrid = bpUnwrap(onsetParts, BP_PITCHES, audio.length);
-const detected = bpNotes(noteGrid.data, onsetGrid.data, noteGrid.frames, noteOptionsForSource('Piano'));
-await session.release();
 
-const near = (pitch: number, start: number, end: number) =>
-  detected.find((n) => n.pitch === pitch && Math.abs(n.start - start) <= 0.16 && Math.abs(n.end - end) <= 0.04);
-const c4 = near(60, 0.5, 1.35);
-const e4 = near(64, 1.65, 2.45);
-console.log('Basic Pitch model synthetic piano transcription:', JSON.stringify(detected));
-if (!c4 || !e4 || detected.some((n) => n.pitch === 100)) {
-  console.error('FAIL  bundled ONNX model recovers piano note onsets/releases and suppresses the synthetic high harmonic');
-  console.error('Expected MIDI 60 at 0.50–1.35 s and MIDI 64 at 1.65–2.45 s (onset ±160 ms, release ±40 ms).');
+async function transcribe(audio: Float32Array) {
+  const noteParts: Float32Array[] = [];
+  const onsetParts: Float32Array[] = [];
+  for (const window of bpWindows(audio)) {
+    if (window.length !== BP_WINDOW) throw new Error('Basic Pitch window has an unexpected size');
+    const result = await session.run({
+      'serving_default_input_2:0': new ort.Tensor('float32', window, [1, BP_WINDOW, 1]),
+    });
+    noteParts.push(result['StatefulPartitionedCall:1'].data as Float32Array);
+    onsetParts.push(result['StatefulPartitionedCall:2'].data as Float32Array);
+  }
+  const noteGrid = bpUnwrap(noteParts, BP_PITCHES, audio.length);
+  const onsetGrid = bpUnwrap(onsetParts, BP_PITCHES, audio.length);
+  return bpNotes(noteGrid.data, onsetGrid.data, noteGrid.frames, noteOptionsForSource('Piano'));
+}
+
+// Test 1: isolated notes with known attacks and releases.
+const isolatedAudio = new Float32Array(BP_SR * 3);
+renderPianoNote(isolatedAudio, 60, 0.5, 1.35, 0.48);
+renderPianoNote(isolatedAudio, 64, 1.65, 2.45, 0.48);
+const isolated = await transcribe(isolatedAudio);
+const near = (events: typeof isolated, pitch: number, start: number, end: number) =>
+  events.find((n) => n.pitch === pitch && Math.abs(n.start - start) <= 0.06 && Math.abs(n.end - end) <= 0.04);
+const c4 = near(isolated, 60, 0.5, 1.35);
+const e4 = near(isolated, 64, 1.65, 2.45);
+console.log('Basic Pitch isolated piano transcription:', JSON.stringify(isolated));
+if (!c4 || !e4 || isolated.some((n) => n.pitch === 100) || isolated.map(n => n.pitch).sort((a,b)=>a-b).join() !== '60,64') {
+  console.error('FAIL  isolated piano notes must be timed within 60 ms at onset / 40 ms at release, with no extra notes');
   process.exitCode = 1;
 } else {
-  console.log('PASS  bundled ONNX model recovers both known piano notes and suppresses the synthetic high harmonic');
+  console.log('PASS  isolated piano notes meet tight timing tolerances with no false notes');
 }
+
+// Test 2: a real piano-learning use case — a simultaneous C-major chord plus a later D5 melody note.
+const polyAudio = new Float32Array(BP_SR * 2.2);
+renderPianoNote(polyAudio, 60, 0.35, 1.35, 0.28); // C4
+renderPianoNote(polyAudio, 64, 0.35, 1.35, 0.28); // E4
+renderPianoNote(polyAudio, 67, 0.35, 1.35, 0.28); // G4
+renderPianoNote(polyAudio, 74, 0.90, 1.60, 0.24); // D5, overlapping the chord
+const polyphonic = await transcribe(polyAudio);
+console.log('Basic Pitch polyphonic piano transcription:', JSON.stringify(polyphonic));
+const expected = [
+  { pitch: 60, start: 0.35, end: 1.35 },
+  { pitch: 64, start: 0.35, end: 1.35 },
+  { pitch: 67, start: 0.35, end: 1.35 },
+  { pitch: 74, start: 0.90, end: 1.60 },
+];
+const missing = expected.filter((e) => !polyphonic.some(n =>
+  n.pitch === e.pitch && Math.abs(n.start - e.start) <= 0.10 && Math.abs(n.end - e.end) <= 0.10));
+const extras = polyphonic.filter(n => !expected.some(e => e.pitch === n.pitch));
+if (missing.length || extras.length) {
+  console.error('FAIL  polyphonic piano: expected every chord tone and overlapping melody note, with no false pitches');
+  console.error('Missing:', JSON.stringify(missing), 'Unexpected:', JSON.stringify(extras));
+  process.exitCode = 1;
+} else {
+  console.log('PASS  polyphonic chord tones and overlapping melody note recovered without false pitches');
+}
+await session.release();
