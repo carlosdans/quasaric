@@ -16,6 +16,8 @@ const CHORD_INTERVALS: Record<string, number[]> = {
   '9': [2, 4, 7, 10], add9: [2, 4, 7],
 };
 
+export const chordIntervals = (quality: string) => CHORD_INTERVALS[quality] ?? [4, 7];
+
 export interface PracticeCueOptions {
   now: number;
   horizon: number;
@@ -46,7 +48,7 @@ export function practiceCues(
   }
   if (useChords) for (const chord of chords) {
     if (chord.root < 0 || !visible(chord.start, chord.end)) continue;
-    const intervals = CHORD_INTERVALS[chord.q] ?? [4, 7];
+    const intervals = chordIntervals(chord.q);
     for (const interval of [0, ...intervals])
       out.push({ pitch: 60 + chord.root + interval + shift, start: chord.start, end: chord.end, kind: 'chord' });
   }
