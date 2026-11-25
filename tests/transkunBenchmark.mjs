@@ -82,7 +82,7 @@ function score(predicted, reference) {
       const target = reference[i];
       if (target.pitch !== note.pitch) continue;
       const e = Math.abs(target.start - note.start);
-      if (e <= 0.1 && e < error) { best = i; error = e; }
+      if (e <= 0.05 && e < error) { best = i; error = e; }
     }
     if (best >= 0) {
       remaining.delete(best); tp++;
