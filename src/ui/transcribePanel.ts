@@ -137,7 +137,7 @@ function voiceFor(name: string): Voice {
 }
 
 /** A small "draft" tag: chord detection is a first attempt, roughly 60 to 75% right, so say so where the chords are shown. */
-const DRAFT = () => h('span', { class: 'draft-tag', title: 'Chord detection is a first draft: roughly 60 to 75% right. Click a chord to correct it by ear.' }, 'draft');
+const DRAFT = () => h('span', { class: 'draft-tag', title: 'Chord detection is an estimate, not a guaranteed transcription. Check the chords by ear and click one to correct it.' }, 'draft');
 
 export class Transcribe {
   private notesOn = false;
