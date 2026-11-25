@@ -18,6 +18,7 @@ import { detectKey, keyName } from '../src/analysis/key.ts';
 import { BINS, CQT_FPS, NOTE_LO, cqt } from '../src/analysis/cqt.ts';
 import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '../src/analysis/chords.ts';
 import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine } from '../src/analysis/basicPitch.ts';
+import { pianoKeyboardRange } from '../src/ui/pianoRange.ts';
 import { decimate2 } from '../src/analysis/resample.ts';
 import { writeMidi } from '../src/encode/midi.ts';
 import { centsFrom, detectPitch, freqToNote } from '../src/analysis/pitch.ts';
@@ -409,6 +410,19 @@ for (const [len, overlap, shifts] of [
   ok('chords: neighbours merge after an edit', merged.length === 2 && merged[0].end === 2);
   const sheet = chordSheet({ title: 'T', chords: ch, beats: b.beats, downbeat: 0, perBar: 4, markers: [{ name: 'Verse', time: 0 }] });
   ok('chord chart: one chord per bar, in sections', sheet.includes('[Verse]') && sheet.includes('| C       | G       | Am      | F       |'), sheet.split('\n')[3]);
+}
+
+// ---- piano practice keyboard must include every detected pitch
+{
+  const wide = pianoKeyboardRange([28, 36, 48, 60, 72, 84, 96]);
+  ok('practice keyboard includes wide two-hand bass and treble notes', wide.low <= 28 && wide.high > 96, JSON.stringify(wide));
+  const high = pianoKeyboardRange([96, 100, 108]);
+  ok('practice keyboard includes notes at the top of the piano range', high.low <= 96 && high.high > 108, JSON.stringify(high));
+  const low = pianoKeyboardRange([21, 24, 33]);
+  ok('practice keyboard includes notes at the bottom of the piano range', low.low <= 21 && low.high > 33, JSON.stringify(low));
+  const narrow = pianoKeyboardRange([60, 64, 67]);
+  ok('practice keyboard keeps a readable minimum of three octaves', narrow.high - narrow.low >= 36, JSON.stringify(narrow));
+  ok('practice keyboard has a safe default when no MIDI notes exist', pianoKeyboardRange([]).low === 36 && pianoKeyboardRange([]).high === 72);
 }
 
 // ---- audio clock: align visual practice cues with the audible output
