@@ -187,12 +187,12 @@ export function bpNotes(framesIn: Float32Array, onsetsIn: Float32Array, n: numbe
   const events = notes
     .map(([s, e, pitch, amp]) => ({ start: +bpFrameTime(s).toFixed(4), end: +bpFrameTime(e).toFixed(4), pitch, amp: +amp.toFixed(3) }))
     .sort((a, b) => a.start - b.start || a.pitch - b.pitch);
-  if (!o.suppressHarmonics) return events;
+  return o.suppressHarmonics ? suppressPianoHarmonics(events) : events;
+}
 
-  // A piano's upper partials can be mistaken for separate keys. Only suppress
-  // unusually weak, short notes at a harmonic interval whose onset coincides
-  // with a substantially stronger lower note. Octaves and two-octave doublings
-  // are deliberately retained because they are common real piano voicings.
+/** Remove only weak, short upper partials that coincide with a stronger piano note. */
+export function suppressPianoHarmonics(events: NoteEvent[]): NoteEvent[] {
+  // Octaves and two-octave doublings are retained because they are common real piano voicings.
   const harmonicIntervals = new Set([19, 28, 31, 34, 36, 38, 40]);
   return events.filter((high) => {
     const highDuration = high.end - high.start;
