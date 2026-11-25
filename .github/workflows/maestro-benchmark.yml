@@ -1,0 +1,43 @@
+name: MAESTRO real piano transcription benchmark
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tests/maestroBenchmark.mjs"
+      - ".github/workflows/maestro-benchmark.yml"
+      - "src/analysis/basicPitch.ts"
+      - "src/analysis/resample.ts"
+      - "src/analysis/models/basic-pitch.onnx"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: maestro-benchmark-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: Compare Basic Pitch with real piano audio and reference MIDI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Download a held-out MAESTRO v3 piano performance and MIDI reference
+        run: |
+          base="https://storage.googleapis.com/magentadata/datasets/maestro/v3.0.0"
+          audio="2009/MIDI-Unprocessed_02_R1_2009_03-06_ORIG_MID--AUDIO_02_R1_2009_02_R1_2009_04_WAV.wav"
+          midi="2009/MIDI-Unprocessed_02_R1_2009_03-06_ORIG_MID--AUDIO_02_R1_2009_02_R1_2009_04_WAV.midi"
+          curl --fail --location --retry 3 "$base/$audio" --output /tmp/maestro.wav
+          curl --fail --location --retry 3 "$base/$midi" --output /tmp/maestro.midi
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro.wav -ac 1 -ar 44100 -f s16le -acodec pcm_s16le /tmp/maestro.pcm
+          ls -lh /tmp/maestro.wav /tmp/maestro.midi /tmp/maestro.pcm
+      - name: Transcribe real piano audio and compare against reference MIDI
+        run: node --experimental-transform-types --no-warnings tests/maestroBenchmark.mjs /tmp/maestro.pcm /tmp/maestro.midi
