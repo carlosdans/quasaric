@@ -50,6 +50,10 @@ Object.assign(ES, {
  'Restore the selected part to the backing mix':'Restaurar la parte seleccionada a la mezcla de acompañamiento',
  'Mute the selected part in the mix and prepare its falling-note lesson':'Silencia la parte seleccionada en la mezcla y prepara su lección de notas',
  'Mute the part you play; the rest of the song keeps playing.':'Silencia la parte que vas a tocar; el resto de la canción seguirá sonando.',
+ 'No practice part is available in this separation.':'Esta separación no contiene ninguna pista adecuada para practicar.',
+ 'Using the Piano stem. It can still contain sound from other instruments; check it by ear.':'Usando la pista Piano. Aún puede contener sonido de otros instrumentos; compruébalo de oído.',
+ 'No dedicated Piano stem. This part may mix piano with other instruments; muting it removes the whole part. For a Piano stem, separate with HT Demucs 6-stem.':'No hay una pista Piano independiente. Esta pista puede mezclar piano con otros instrumentos; al silenciarla se elimina toda la pista. Para obtener una pista Piano, separa con HT Demucs 6-stem.',
+ 'This is not the dedicated Piano stem. Muting it removes the whole selected part.':'Esta no es la pista Piano independiente. Al silenciarla se elimina toda la pista seleccionada.',
 });
 
 const EN = Object.fromEntries(Object.entries(ES).map(([a,b]) => [b,a]));
