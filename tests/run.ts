@@ -384,6 +384,33 @@ for (const [len, overlap, shifts] of [
   ok('chords: C G Am F Dm E Am (with bass stem)', names.join(' ') === 'C G Am F Dm E Am', names.join(' '));
   const expectedChordStarts = [0, 4, 8, 12, 16, 20, 24].map((bar) => bar * beat);
   ok('chord changes land on their known musical bar boundaries', ch.filter((c) => c.root >= 0).length === expectedChordStarts.length && ch.filter((c) => c.root >= 0).every((c, i) => Math.abs(c.start - expectedChordStarts[i]) < 0.01), ch.filter((c) => c.root >= 0).map((c) => c.start.toFixed(3)).join(', '));
+  // A chord change halfway through a beat must not be rounded to the next beat.
+  {
+    const duration = 4 * beat;
+    const changeAt = 1.5 * beat;
+    const n = Math.ceil(duration * SR);
+    const harm = new Float32Array(n);
+    const bass = new Float32Array(n);
+    const addChord = (dst: Float32Array, root: number, intervals: number[], start: number, end: number, amp: number) => {
+      for (const iv of intervals) {
+        const midi = root + iv;
+        const f = 440 * 2 ** ((midi - 69) / 12);
+        for (let i = Math.floor(start * SR); i < Math.min(n, Math.ceil(end * SR)); i++) {
+          const t = i / SR;
+          const edge = Math.min(1, (t - start) / 0.025, (end - t) / 0.025);
+          dst[i] += amp * Math.max(0, edge) * Math.sin(2 * Math.PI * f * t);
+        }
+      }
+    };
+    addChord(harm, 60, [0, 4, 7], 0, changeAt, 0.16);
+    addChord(harm, 67, [0, 4, 7], changeAt, duration, 0.16);
+    addChord(bass, 36, [0], 0, changeAt, 0.4);
+    addChord(bass, 43, [0], changeAt, duration, 0.4);
+    const sync = detectChords(cqt(harm), Array.from({ length: 4 }, (_, i) => i * beat), cqt(bass), { downbeat: 0, perBar: 4 });
+    const meaningful = sync.filter((c) => c.root >= 0);
+    const change = meaningful.find((c) => c.root === 7);
+    ok('chords: detects a syncopated change halfway through a beat', !!change && Math.abs(change.start - changeAt) <= 0.08 && meaningful.some((c) => c.root === 0 && c.end <= change.start + 0.02), meaningful.map((c) => `${chordName(c)}@${c.start.toFixed(3)}`).join(' '));
+  }
   // Common chord extensions should survive the template match, not be flattened to triads.
   const colourChord = (root: number, intervals: number[]) => {
     const n = SR * 2;

@@ -177,6 +177,66 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     k = back[i * S + k];
   }
 
+  // Keep the stable beat-level chord path, then refine each detected boundary
+  // inside the preceding beat using short-window audio evidence. This allows
+  // syncopated changes without letting sixteenth-note noise create new chords.
+  const transitionTimes = segs.map(([start]) => start);
+  const refineWindow = 0.20;
+  const refineHop = 0.0232;
+  const localTemplateScore = (templateIndex: number, t0: number, t1: number) => {
+    const tr = unit(chromaOf(clean, t0, t1, 40, 84).map((x) => Math.sqrt(x)));
+    const bs = unit(chromaOf(bass ?? harm, t0, t1, 28, 52).map((x) => x * x));
+    const template = TEMPLATES[templateIndex];
+    let d = 0;
+    for (let p = 0; p < 12; p++) d += tr[p] * template.v[p];
+    return d + 0.25 * bs[template.root]
+      - (template.extension != null && tr[(template.root + template.extension) % 12] < 0.42 ? 0.16 : 0)
+      - (template.suspended && Math.max(tr[(template.root + 3) % 12], tr[(template.root + 4) % 12]) > 0.35 ? 0.2 : 0);
+  };
+  for (let i = 1; i < n; i++) {
+    const from = path[i - 1];
+    const to = path[i];
+    if (from === to || from >= S - 1 || to >= S - 1) continue;
+    const boundary = segs[i][0];
+    const beatIndex = Math.max(0, grid.findIndex((beatTime, index) => index + 1 < grid.length && boundary <= grid[index + 1] + 1e-6));
+    const scanStart = grid[beatIndex] ?? segs[i - 1][0];
+    let firstWinningTime = -1;
+    let consecutive = 0;
+    let previousDifference: number | null = null;
+    for (let time = scanStart; time < boundary - refineWindow * 0.25; time += refineHop) {
+      const t0 = Math.max(0, time * CQT_FPS);
+      const t1 = Math.min(harm.frames, (time + refineWindow) * CQT_FPS);
+      if (t1 - t0 < 3) continue;
+      const oldScore = localTemplateScore(from, t0, t1);
+      const newScore = localTemplateScore(to, t0, t1);
+      const difference = newScore - oldScore;
+      // Refine only at a genuine local crossover. If the incoming chord already
+      // scores better at the start of the preceding beat, it may share tones
+      // with the outgoing chord; don't pull a normal beat change backwards.
+      if (previousDifference !== null && previousDifference <= 0 && difference > 0) {
+        firstWinningTime = time;
+        consecutive = 1;
+      } else if (difference > 0 && consecutive > 0) {
+        consecutive++;
+        if (consecutive >= 2) {
+          const candidate = Math.min(boundary, firstWinningTime + refineWindow / 2);
+          const beatDuration = Math.max(0.001, boundary - scanStart);
+          // Ordinary on-beat changes can look slightly early because the analysis
+          // window straddles the boundary. Only move a cue off the beat when the
+          // evidence places it clearly inside the preceding beat (a syncopation).
+          if (boundary - candidate >= beatDuration * 0.20) {
+            transitionTimes[i] = +candidate.toFixed(3);
+          }
+          break;
+        }
+      } else {
+        consecutive = 0;
+        firstWinningTime = -1;
+      }
+      previousDifference = difference;
+    }
+  }
+
   // Merge into chords, with alternatives ranked over each chord's span.
   const chords: Chord[] = [];
   for (let i = 0; i < n;) {
@@ -188,8 +248,8 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     const ranked = [...avg.keys()].filter((s) => s < S - 1 && s !== st).sort((a, b) => avg[b] - avg[a]);
     const t = TEMPLATES[st];
     chords.push({
-      start: +segs[i][0].toFixed(3),
-      end: +segs[j][1].toFixed(3),
+      start: +transitionTimes[i].toFixed(3),
+      end: +(j + 1 < n ? transitionTimes[j + 1] : segs[j][1]).toFixed(3),
       root: st === S - 1 ? -1 : t.root,
       q: st === S - 1 ? '' : t.q,
       alts: ranked.slice(0, 4).map((s) => [TEMPLATES[s].root, TEMPLATES[s].q]),
