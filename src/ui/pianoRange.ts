@@ -15,7 +15,9 @@ export function pianoKeyboardRange(pitches: readonly number[]): { low: number; h
     high = low + 36;
     if (high > 109) {
       high = 109;
-      low = high - 36;
+      // Start on C5 (a white key); starting at C#5 leaves its preceding C key
+      // outside the range and clips the first black key at the left edge.
+      low = 72;
     }
   }
   return { low, high };
