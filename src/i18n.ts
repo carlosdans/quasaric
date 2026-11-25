@@ -42,6 +42,14 @@ Object.assign(ES, {
  'Choose stems…':'Elegir pistas…','Select one or more stems for chord analysis':'Selecciona una o varias pistas para analizar los acordes','Detect chords again using these stems? Your corrections will be lost.':'¿Volver a detectar los acordes con estas pistas? Se perderán tus correcciones.','Choose at least one stem for chord analysis.':'Elige al menos una pista para analizar los acordes.'
 });
 
+Object.assign(ES, {
+ 'Choose the piano part you want to learn':'Elige la parte de piano que quieres aprender',
+ 'Piano practice part':'Parte que quieres practicar',
+ 'Practise this part':'Practicar esta parte',
+ 'Mute the selected part in the mix and prepare its falling-note lesson':'Silencia la parte seleccionada en la mezcla y prepara su lección de notas',
+ 'Mute the part you play; the rest of the song keeps playing.':'Silencia la parte que vas a tocar; el resto de la canción seguirá sonando.',
+});
+
 const EN = Object.fromEntries(Object.entries(ES).map(([a,b]) => [b,a]));
 let current: Language = 'en';
 let observer: MutationObserver | undefined;
