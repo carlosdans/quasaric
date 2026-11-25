@@ -207,7 +207,7 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
       if (t1 - t0 < 3) continue;
       const oldScore = localTemplateScore(from, t0, t1);
       const newScore = localTemplateScore(to, t0, t1);
-      if (newScore > oldScore + 0.025) {
+      if (newScore > oldScore) {
         if (consecutive === 0) firstWinningTime = time;
         consecutive++;
         if (consecutive >= 2) {
