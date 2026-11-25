@@ -64,7 +64,7 @@ export function bpFrameTime(i: number) {
 
 /** Piano notes are often shorter than the generic Basic Pitch default.
  * Keep confidence thresholds conservative; lower only the minimum duration. */
-export const PIANO_NOTE_OPTIONS: NoteOptions = { minNoteMs: 65, suppressHarmonics: true };
+export const PIANO_NOTE_OPTIONS: NoteOptions = { minNoteMs: 65, suppressHarmonics: true, endOffsetMs: 80 };
 
 /** Use the piano-specific duration profile only for an explicitly named piano/keys stem. */
 export function noteOptionsForSource(source: string): NoteOptions | undefined {
@@ -80,6 +80,8 @@ export interface NoteOptions {
   maxPitch?: number;
   /** Suppress weak, short high partials that Basic Pitch mistakes for piano keys. */
   suppressHarmonics?: boolean;
+  /** Trim the model's post-release acoustic tail for key-hold timing, in milliseconds. */
+  endOffsetMs?: number;
 }
 
 /**
@@ -185,7 +187,12 @@ export function bpNotes(framesIn: Float32Array, onsetsIn: Float32Array, n: numbe
   }
 
   const events = notes
-    .map(([s, e, pitch, amp]) => ({ start: +bpFrameTime(s).toFixed(4), end: +bpFrameTime(e).toFixed(4), pitch, amp: +amp.toFixed(3) }))
+    .map(([s, e, pitch, amp]) => {
+      const start = bpFrameTime(s);
+      const rawEnd = bpFrameTime(e);
+      const end = Math.max(start + (o.minNoteMs ?? 127.7) / 1000, rawEnd - (o.endOffsetMs ?? 0) / 1000);
+      return { start: +start.toFixed(4), end: +end.toFixed(4), pitch, amp: +amp.toFixed(3) };
+    })
     .sort((a, b) => a.start - b.start || a.pitch - b.pitch);
   return o.suppressHarmonics ? suppressPianoHarmonics(events) : events;
 }
