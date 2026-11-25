@@ -767,8 +767,7 @@ export class Transcribe {
     const whites: number[] = [];
     for (let n = low; n < high; n++) if (white(n)) whites.push(n);
     const keyW = (right - left) / whites.length;
-    const xOf = (pitch: number) => {
-      const p = Math.max(low, Math.min(high - 1, pitch));
+    const xOf = (p: number) => {
       const wi = whites.indexOf(p);
       if (wi >= 0) return { x: left + wi * keyW, width: keyW, black: false };
       const prev = p - 1;
@@ -792,7 +791,9 @@ export class Transcribe {
       g.fillText(`+${sec}s`, left + 3 * dpr, y - 3 * dpr);
     }
     const falling = (pitch: number, start: number, end: number, colour: string) => {
-      const key = xOf(pitch + shift);
+      const shiftedPitch = pitch + shift;
+      if (shiftedPitch < low || shiftedPitch >= high) return;
+      const key = xOf(shiftedPitch);
       if (key.x + key.width < left || key.x > right) return;
       const y0 = keyTop - ((start - now) / horizon) * (keyTop - top);
       const y1 = keyTop - ((end - now) / horizon) * (keyTop - top);
