@@ -17,7 +17,7 @@ import { analyse } from '../src/analysis/beats.ts';
 import { detectKey, keyName } from '../src/analysis/key.ts';
 import { BINS, CQT_FPS, NOTE_LO, cqt } from '../src/analysis/cqt.ts';
 import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '../src/analysis/chords.ts';
-import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine } from '../src/analysis/basicPitch.ts';
+import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine, suppressPianoHarmonics } from '../src/analysis/basicPitch.ts';
 import { pianoKeyboardRange } from '../src/ui/pianoRange.ts';
 import { defaultPianoPracticeTarget } from '../src/ui/practiceTarget.ts';
 import { practiceCues } from '../src/ui/practiceCues.ts';
@@ -421,6 +421,18 @@ for (const [len, overlap, shifts] of [
   ok('chords: neighbours merge after an edit', merged.length === 2 && merged[0].end === 2);
   const sheet = chordSheet({ title: 'T', chords: ch, beats: b.beats, downbeat: 0, perBar: 4, markers: [{ name: 'Verse', time: 0 }] });
   ok('chord chart: one chord per bar, in sections', sheet.includes('[Verse]') && sheet.includes('| C       | G       | Am      | F       |'), sheet.split('\n')[3]);
+}
+
+// ---- conservative piano harmonic cleanup
+{
+  const clean = suppressPianoHarmonics([
+    { start: 0, end: 1, pitch: 60, amp: 0.8 },
+    { start: 0.01, end: 0.3, pitch: 79, amp: 0.3 }, // weak 12th harmonic
+    { start: 0, end: 1, pitch: 72, amp: 0.5 }, // real octave doubling
+    { start: 0.4, end: 0.8, pitch: 100, amp: 0.3 }, // independent high note
+  ]);
+  ok('piano MIDI suppresses weak short upper harmonics at the same onset', clean.map((n) => n.pitch).join() === '60,72,100', clean.map((n) => n.pitch).join());
+  ok('piano MIDI retains octave doublings and independent high notes', clean.some((n) => n.pitch === 72) && clean.some((n) => n.pitch === 100));
 }
 
 // ---- piano practice keyboard must include every detected pitch
