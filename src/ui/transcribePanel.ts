@@ -13,7 +13,7 @@ import { chordDiagram } from './chordDiagram.ts';
 import { QUALITIES, chordName, chordSheet, detectChords, mergeSame, noteLetter, prefersSharps, type Chord, type Quality } from '../analysis/chords.ts';
 import type { ChordMark } from '../lyrics/lyricChords.ts';
 import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
-import { singleLine, type NoteEvent } from '../analysis/basicPitch.ts';
+import { noteOptionsForSource, singleLine, type NoteEvent } from '../analysis/basicPitch.ts';
 import { monoOf } from '../analysis/resample.ts';
 import { programFor, writeMidi } from '../encode/midi.ts';
 import { renderMix } from '../player/mixcore.ts';
@@ -1585,7 +1585,7 @@ export class Transcribe {
         const el = (performance.now() - t0) / 1000;
         const left = done ? (el / done) * (total - done) : 0;
         this.noteStatus.textContent = `MIDI: ${Math.round((100 * done) / total)}%${done > 2 ? ` · ${Math.ceil(left)} s left` : ''}`;
-      });
+      }, noteOptionsForSource(this.source === HEAR ? '' : this.source));
       if (this.host.song() !== s) return;
       // Lead vocals and bass play one note at a time: drop overlapping extras.
       const mono = this.source !== HEAR && ['vocals', 'bass'].includes(role(this.source));
