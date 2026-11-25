@@ -1,6 +1,14 @@
 name: MAESTRO real piano transcription benchmark
 
 on:
+  push:
+    branches: [test/maestro-real-piano-benchmark]
+    paths:
+      - "tests/maestroBenchmark.mjs"
+      - ".github/workflows/maestro-benchmark.yml"
+      - "src/analysis/basicPitch.ts"
+      - "src/analysis/resample.ts"
+      - "src/analysis/models/basic-pitch.onnx"
   pull_request:
     branches: [main]
     paths:
@@ -15,7 +23,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: maestro-benchmark-\${{ github.ref }}
+  group: maestro-benchmark-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
