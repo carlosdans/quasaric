@@ -25,6 +25,9 @@ jobs:
         with:
           path: dist
           name: github-pages-${{ github.run_attempt }}
+      # GitHub's artifact metadata can lag behind the upload completion.
+      - name: Wait for Pages artifact indexing
+        run: sleep 10
       - id: deploy
         uses: actions/deploy-pages@v4
         with:
