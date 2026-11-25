@@ -116,7 +116,7 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
   const changeCost = (i: number) => {
     // Chord changes are more likely on a beat, but they are allowed between
     // beats when the audio evidence supports an anticipation/syncopation.
-    if (i % subdivisions !== 0) return 8.0;
+    if (i % subdivisions !== 0) return 16.0;
     if (!bar || bar.perBar < 2 || !onBeats) return 2.2;
     const beatIndex = Math.floor(i / subdivisions);
     const pos = (((beatIndex - shift - bar.downbeat) % bar.perBar) + bar.perBar) % bar.perBar;
