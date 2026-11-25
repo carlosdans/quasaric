@@ -101,7 +101,7 @@ function evaluate(predicted) {
       const target = reference[i];
       if (target.pitch !== note.pitch) continue;
       const e = Math.abs(target.start - note.start);
-      if (e <= 0.1 && e < error) { best = i; error = e; }
+      if (e <= 0.05 && e < error) { best = i; error = e; }
     }
     if (best >= 0) {
       remaining.delete(best); tp++;
@@ -138,7 +138,7 @@ const report = {
   dataset: 'MAESTRO v3.0.0 (held-out test performance)',
   audioSeconds: +duration.toFixed(2), inferenceWindows: windows.length,
   referenceNotes: reference.length,
-  onsetMatchToleranceMs: 100,
+  onsetMatchToleranceMs: 50,
   profiles: results,
 };
 console.log('MAESTRO REAL-PIANO BENCHMARK — NOTE-EXTRACTION PROFILE SWEEP');
