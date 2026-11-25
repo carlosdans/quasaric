@@ -444,7 +444,7 @@ for (const [len, overlap, shifts] of [
 // ---- Synthesia cues: the falling bars and lit keys share one exact event timeline
 {
   const notes = [{ start: 1.25, end: 1.5, pitch: 60, amp: 0.9 }];
-  const chords = [{ start: 2, end: 3, root: 0, q: '' }];
+  const chords = [{ start: 2, end: 3, root: 0, q: '' as const }];
   const cues = practiceCues(notes, chords, { now: 1.25, horizon: 5, shift: 2 });
   const note = cues.find((cue) => cue.kind === 'note');
   const chordPitches = cues.filter((cue) => cue.kind === 'chord').map((cue) => cue.pitch).sort((a, b) => a - b);
