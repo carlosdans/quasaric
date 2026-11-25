@@ -38,6 +38,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Install audio decoder
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Download a held-out MAESTRO v3 piano performance and MIDI reference
         run: |
           base="https://huggingface.co/datasets/ddPn08/maestro-v3.0.0/resolve/main"
