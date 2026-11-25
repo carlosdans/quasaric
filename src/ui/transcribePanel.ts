@@ -36,6 +36,8 @@ export interface TxHost {
   pans(): number[];
   eqs(): (EqParams | undefined)[];
   lanes(): { name: string; colour: string }[];
+  isStemMuted(name: string): boolean;
+  setStemMuted(name: string, muted: boolean): void;
   pitch(): number;
   loop(): { on: boolean; a: number; b: number };
   markers(): { name: string; pos: number }[];
@@ -77,6 +79,7 @@ export interface TxState {
   midiTimingVersion?: number;
   notesHeight?: number; // px; unset uses the CSS default
   practiceMode?: 'chords' | 'notes' | 'both';
+  practiceTarget?: string;
   /** The scrolling chord timeline: shown, plain major / minor only, and its zoom (1 = default width of a beat). */
   strip?: boolean;
   simple?: boolean;
@@ -183,6 +186,9 @@ export class Transcribe {
   private practiceLane: HTMLElement;
   private practiceCanvas: HTMLCanvasElement;
   private practiceModeSel: HTMLSelectElement;
+  private practiceTargetSel: HTMLSelectElement;
+  private practiceStartBtn: HTMLButtonElement;
+  private practiceTarget = '';
   private frozenAt = -1;
   private busy = '';
   private editing = -1;
@@ -220,9 +226,13 @@ export class Transcribe {
       this.host.changed();
       this.redraw();
     };
+    this.practiceTargetSel = h('select', { class: 'tiny', title: 'Choose the piano part you want to learn', 'aria-label': 'Piano practice part' }) as HTMLSelectElement;
+    this.practiceTargetSel.onchange = () => { this.practiceTarget = this.practiceTargetSel.value; this.refreshPracticeTargetUi(); };
+    this.practiceStartBtn = h('button', { class: 'btn tiny', type: 'button', title: 'Mute the selected part in the mix and prepare its falling-note lesson' }, 'Practise this part') as HTMLButtonElement;
+    this.practiceStartBtn.onclick = () => this.preparePianoPractice();
     this.practiceLane = h('div', { class: 'practice-lane' },
-      h('div', { class: 'practice-head' }, h('span', { class: 'name' }, 'Play along'), this.practiceModeSel,
-        h('span', { class: 'muted small' }, 'Notes fall onto the keys in time with the song')),
+      h('div', { class: 'practice-head' }, h('span', { class: 'name' }, 'Play along'), this.practiceTargetSel, this.practiceStartBtn, this.practiceModeSel,
+        h('span', { class: 'muted small' }, 'Mute the part you play; the rest of the song keeps playing.')),
       this.practiceCanvas,
     );
 
@@ -521,6 +531,39 @@ export class Transcribe {
     this.show({});
   }
 
+  /** Prepare a piano-learning session: transcribe the selected stem, silence only that stem in the backing mix, and leave every other part (including vocals) playing. */
+  private refreshPracticeTargetUi() {
+    const target = this.practiceTarget;
+    const muted = !!target && this.host.isStemMuted(target);
+    this.practiceStartBtn.disabled = !target;
+    this.practiceStartBtn.textContent = muted ? 'Restore part in mix' : 'Practise this part';
+    this.practiceStartBtn.title = muted ? 'Restore the selected part to the backing mix' : 'Mute the selected part in the mix and prepare its falling-note lesson';
+  }
+
+  private preparePianoPractice() {
+    const song = this.host.song();
+    const target = this.practiceTarget;
+    if (!song || !target || !song.stems.some((x) => x.name === target)) return;
+    if (this.host.isStemMuted(target)) {
+      this.host.setStemMuted(target, false);
+      this.refreshPracticeTargetUi();
+      return;
+    }
+    this.source = target;
+    this.sourceSel.value = target;
+    this.practiceMode = 'notes';
+    this.practiceModeSel.value = 'notes';
+    this.notesOn = true;
+    this.show({ notes: true });
+    this.refreshMidiButtons();
+    void this.ensureCqt([target]);
+    this.host.setStemMuted(target, true);
+    this.refreshPracticeTargetUi();
+    this.host.changed();
+    if (!song.midi?.[target]?.length) void this.toMidi();
+    else this.redraw();
+  }
+
   private redraw() {
     this.host.redraw();
   }
@@ -561,6 +604,10 @@ export class Transcribe {
       ...s.stems.map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)),
     );
     this.sourceSel.value = this.source;
+    this.practiceTarget = st?.practiceTarget && s.stems.some((x) => x.name === st.practiceTarget) ? st.practiceTarget : (s.stems.find((x) => /piano|keys|keyboard/i.test(x.name))?.name ?? s.stems.find((x) => /other|guitar|instrumental/i.test(x.name) && role(x.name) === 'harm')?.name ?? '');
+    this.practiceTargetSel.replaceChildren(...s.stems.filter((x) => role(x.name) !== 'drums' && role(x.name) !== 'vocals').map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)));
+    this.practiceTargetSel.value = this.practiceTarget;
+    this.refreshPracticeTargetUi();
     this.simple = st?.simple ?? false;
     this.simpleBox.checked = this.simple;
     this.shapes = st?.shapes === 'guitar' || st?.shapes === 'ukulele' || st?.shapes === 'piano' ? st.shapes : '';
@@ -578,7 +625,7 @@ export class Transcribe {
 
   getState(): TxState {
     const s = this.host.song();
-    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, midiTimingVersion: MIDI_TIMING_VERSION, notesHeight: this.notesHeight, practiceMode: this.practiceMode };
+    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, midiTimingVersion: MIDI_TIMING_VERSION, notesHeight: this.notesHeight, practiceMode: this.practiceMode, practiceTarget: this.practiceTarget };
   }
 
   private show(p: { notes?: boolean; chords?: boolean; strip?: boolean }, save = true) {
