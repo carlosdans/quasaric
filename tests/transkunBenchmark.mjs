@@ -102,11 +102,12 @@ function score(predicted, reference) {
   };
 }
 
-const pcm = readFileSync('/tmp/maestro-44k.pcm');
+const [audioPath = '/tmp/maestro-44k.pcm', midiPath = '/tmp/maestro.midi'] = process.argv.slice(2);
+const pcm = readFileSync(audioPath);
 if (pcm.length % 4) throw new Error('Invalid float32 PCM');
 const audio = new Float32Array(pcm.length / 4);
 for (let i = 0; i < audio.length; i++) audio[i] = pcm.readFloatLE(i * 4);
-const reference = parseMidi(readFileSync('/tmp/maestro.midi'));
+const reference = parseMidi(readFileSync(midiPath));
 const buffers = await loadTranskunBuffers('https://huggingface.co/TuesdayCrowd/transkun-onnx/resolve/main/');
 console.log('Transkun parameters:', buffers.params);
 const model = new TranskunModel(new Uint8Array(readFileSync('/tmp/transkun.onnx')));
@@ -123,7 +124,8 @@ const predicted = result.notes.map(n => ({
 }));
 const report = {
   dataset: 'MAESTRO v3.0.0 held-out test performance',
-  model: 'Transkun v2 ONNX + semi-CRF decoder (WASM CPU)',
+  model: 'Transkun v2 ONNX + semi-CRF decoder (CPU)',
+  referenceFile: midiPath,
   audioSeconds: +(audio.length / buffers.params.fs).toFixed(2),
   predictedPedalChanges: result.pedal.length,
   referenceNotes: reference.length,
