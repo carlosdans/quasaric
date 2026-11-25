@@ -66,17 +66,22 @@ gpuLinuxNote.onclick = () => {
 (async () => {
   let gpu = false;
   try {
-    gpu = !!(await (navigator as any).gpu?.requestAdapter());
+    const request = (navigator as any).gpu?.requestAdapter() as Promise<unknown> | undefined;
+    // Device discovery must never hold the app in its initial loading state.
+    gpu = request ? !!(await Promise.race([
+      request,
+      new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 5_000)),
+    ])) : false;
   } catch {
     /* no GPU */
   }
   if (chip.textContent === 'Checking device…') {
     chip.textContent = gpu
       ? settings.s.device === 'cpu' ? 'CPU selected' : settings.s.device === 'gpu' ? 'GPU selected' : 'WebGPU available'
-      : `CPU only · ${navigator.hardwareConcurrency || '?'} threads`;
+      : `CPU available · ${navigator.hardwareConcurrency || '?'} threads`;
     chip.title = gpu
       ? 'WebGPU is available. The actual execution backend follows Settings > Run on.'
-      : 'No usable GPU found; separation will run on the processor (slower)';
+      : 'GPU unavailable or its capability check timed out; separation can still run on the processor (slower)';
     chip.className = `chip${gpu && settings.s.device !== 'cpu' ? ' gpu' : ''}`;
     showGpuNote(gpu && settings.s.device !== 'cpu');
   }
