@@ -64,7 +64,7 @@ export function bpFrameTime(i: number) {
 
 /** Piano notes are often shorter than the generic Basic Pitch default.
  * Keep confidence thresholds conservative; lower only the minimum duration. */
-export const PIANO_NOTE_OPTIONS: NoteOptions = { minNoteMs: 65 };
+export const PIANO_NOTE_OPTIONS: NoteOptions = { minNoteMs: 65, suppressHarmonics: true };
 
 /** Use the piano-specific duration profile only for an explicitly named piano/keys stem. */
 export function noteOptionsForSource(source: string): NoteOptions | undefined {
@@ -78,6 +78,8 @@ export interface NoteOptions {
   /** Lowest and highest MIDI notes to keep. */
   minPitch?: number;
   maxPitch?: number;
+  /** Suppress weak, short high partials that Basic Pitch mistakes for piano keys. */
+  suppressHarmonics?: boolean;
 }
 
 /**
@@ -182,9 +184,28 @@ export function bpNotes(framesIn: Float32Array, onsetsIn: Float32Array, n: numbe
     notes.push([start, end, p + MIDI_OFFSET, meanAmp(start, end, p)]);
   }
 
-  return notes
+  const events = notes
     .map(([s, e, pitch, amp]) => ({ start: +bpFrameTime(s).toFixed(4), end: +bpFrameTime(e).toFixed(4), pitch, amp: +amp.toFixed(3) }))
     .sort((a, b) => a.start - b.start || a.pitch - b.pitch);
+  if (!o.suppressHarmonics) return events;
+
+  // A piano's upper partials can be mistaken for separate keys. Only suppress
+  // unusually weak, short notes at a harmonic interval whose onset coincides
+  // with a substantially stronger lower note. Octaves and two-octave doublings
+  // are deliberately retained because they are common real piano voicings.
+  const harmonicIntervals = new Set([19, 28, 31, 34, 36, 38, 40]);
+  return events.filter((high) => {
+    const highDuration = high.end - high.start;
+    return !events.some((low) => {
+      if (low.pitch >= high.pitch || !harmonicIntervals.has(high.pitch - low.pitch)) return false;
+      const lowDuration = low.end - low.start;
+      const overlap = Math.max(0, Math.min(high.end, low.end) - Math.max(high.start, low.start));
+      return Math.abs(high.start - low.start) <= 0.06 &&
+        highDuration <= lowDuration * 0.65 &&
+        overlap >= highDuration * 0.8 &&
+        high.amp <= low.amp * 0.7;
+    });
+  });
 }
 
 /**
