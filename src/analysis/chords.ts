@@ -1,6 +1,6 @@
 // Chord detection: a pitch-class profile per beat, matched against major
 // and minor triads (helped by the bass note), then smoothed with a Viterbi
-// pass so chords don't flicker. Expect roughly 60–75% right on real songs:
+// pass so chords don't flicker. Common triads, sevenths and suspended/extended forms are modelled;
 // it's a draft to correct by ear, which is why every chord is editable.
 
 import { BINS, chromaOf, type Cqt, CQT_FPS } from './cqt.ts';
@@ -67,19 +67,29 @@ export function chordName(c: Pick<Chord, 'root' | 'q' | 'bass'>, shift = 0, shar
   return c.bass != null && c.bass !== c.root ? `${name}/${noteLetter(c.bass + shift, sharps)}` : name;
 }
 
-// Detection vocabulary: major and minor triads (sevenths etc. are left to the ear).
+// Common chord colours as well as triads. Weights favour root and third,
+// while extensions add enough evidence to distinguish (for example) C7 from C.
+const CHORD_FORMS: { q: Quality; tones: [number, number][] }[] = [
+  { q: '', tones: [[0, 1], [4, 0.9], [7, 0.8]] },
+  { q: 'm', tones: [[0, 1], [3, 0.9], [7, 0.8]] },
+  { q: '7', tones: [[0, 1], [4, 0.9], [7, 0.8], [10, 0.62]] },
+  { q: 'm7', tones: [[0, 1], [3, 0.9], [7, 0.8], [10, 0.62]] },
+  { q: 'maj7', tones: [[0, 1], [4, 0.9], [7, 0.8], [11, 0.62]] },
+  { q: 'sus2', tones: [[0, 1], [2, 0.85], [7, 0.8]] },
+  { q: 'sus4', tones: [[0, 1], [5, 0.85], [7, 0.8]] },
+  { q: 'dim', tones: [[0, 1], [3, 0.9], [6, 0.8]] },
+  { q: 'aug', tones: [[0, 1], [4, 0.9], [8, 0.8]] },
+  { q: '6', tones: [[0, 1], [4, 0.9], [7, 0.8], [9, 0.58]] },
+  { q: 'm6', tones: [[0, 1], [3, 0.9], [7, 0.8], [9, 0.58]] },
+  { q: 'add9', tones: [[0, 1], [2, 0.55], [4, 0.9], [7, 0.8]] },
+];
 const TEMPLATES: { root: number; q: Quality; v: Float64Array }[] = [];
 for (let r = 0; r < 12; r++)
-  for (const [q, iv] of [
-    ['', [0, 4, 7]],
-    ['m', [0, 3, 7]],
-  ] as const) {
+  for (const form of CHORD_FORMS) {
     const v = new Float64Array(12);
-    v[r] = 1;
-    v[(r + iv[1]) % 12] = 0.9;
-    v[(r + iv[2]) % 12] = 0.8;
+    for (const [interval, weight] of form.tones) v[(r + interval) % 12] = weight;
     const n = Math.hypot(...v);
-    TEMPLATES.push({ root: r, q, v: v.map((x) => x / n) });
+    TEMPLATES.push({ root: r, q: form.q, v: v.map((x) => x / n) });
   }
 
 const unit = (v: Float64Array) => {
