@@ -219,7 +219,14 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
       } else if (difference > 0 && consecutive > 0) {
         consecutive++;
         if (consecutive >= 2) {
-          transitionTimes[i] = +Math.min(boundary, firstWinningTime + refineWindow / 2).toFixed(3);
+          const candidate = Math.min(boundary, firstWinningTime + refineWindow / 2);
+          const beatDuration = Math.max(0.001, boundary - scanStart);
+          // Ordinary on-beat changes can look slightly early because the analysis
+          // window straddles the boundary. Only move a cue off the beat when the
+          // evidence places it clearly inside the preceding beat (a syncopation).
+          if (boundary - candidate >= beatDuration * 0.20) {
+            transitionTimes[i] = +candidate.toFixed(3);
+          }
           break;
         }
       } else {
