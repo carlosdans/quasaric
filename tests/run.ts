@@ -27,6 +27,7 @@ import { splitLength, staffX, vexKey } from '../src/ui/staff.ts';
 import { acceptedMidis, timeAtCoord, fromUnrolled, repeatPlan, toUnrolled, addAnchor, charOffsetAt, coordAtBpm, coordToPlace, coordToStripX, findNoteAt, noteCols, noteGroupAt, parseScore, parseTab, setRhythmLetter, stripLayout, isLockedAt, moveAnchor, offsetToCoord, removeAnchor, rowCol, tabBlocks, tabPositionAt, toggleAnchorLock, type TabAnchor, type TabNote } from '../src/lyrics/tabSync.ts';
 import { moveItem, nextSong, parseSetlists, prevSong, pruneSongs, totalSeconds, uniqueName, type Setlist } from '../src/setlists.ts';
 import { detectLatency } from '../src/player/latency.ts';
+import { audibleSamplePosition } from '../src/player/clock.ts';
 import { placeTake, shiftTake } from '../src/player/placement.ts';
 import { StreamResampler } from '../src/player/resample.ts';
 import { withTimeout } from '../src/engine/timeout.ts';
@@ -408,6 +409,13 @@ for (const [len, overlap, shifts] of [
   ok('chords: neighbours merge after an edit', merged.length === 2 && merged[0].end === 2);
   const sheet = chordSheet({ title: 'T', chords: ch, beats: b.beats, downbeat: 0, perBar: 4, markers: [{ name: 'Verse', time: 0 }] });
   ok('chord chart: one chord per bar, in sections', sheet.includes('[Verse]') && sheet.includes('| C       | G       | Am      | F       |'), sheet.split('\n')[3]);
+}
+
+// ---- audio clock: align visual practice cues with the audible output
+{
+  ok('visual audio clock compensates browser output latency', audibleSamplePosition(441000, 0.08, 44100, 1) === 437472);
+  ok('visual audio clock scales latency with playback tempo', audibleSamplePosition(441000, 0.08, 44100, 0.5) === 439236);
+  ok('visual audio clock never goes before the song start', audibleSamplePosition(100, 1, 44100, 1) === 0);
 }
 
 // ---- 5i. audio to MIDI: windowing and note extraction (the model itself is checked in the browser)
