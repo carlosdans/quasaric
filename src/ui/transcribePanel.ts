@@ -541,9 +541,9 @@ export class Transcribe {
     this.practiceStartBtn.textContent = muted ? 'Restore part in mix' : 'Practise this part';
     this.practiceStartBtn.title = muted ? 'Restore the selected part to the backing mix' : 'Mute the selected part in the mix and prepare its falling-note lesson';
     const song = this.host.song();
-    const hasPiano = !!song?.stems.some((x) => /^piano$/i.test(x.name));
+    const hasPiano = !!song?.stems.some((x) => /piano|keys|keyboard/i.test(x.name));
     if (!target) this.practiceHint.textContent = 'No practice part is available in this separation.';
-    else if (/^piano$/i.test(target)) this.practiceHint.textContent = 'Using the Piano stem. It can still contain sound from other instruments; check it by ear.';
+    else if (/piano|keys|keyboard/i.test(target)) this.practiceHint.textContent = 'Using the Piano stem. It can still contain sound from other instruments; check it by ear.';
     else if (!hasPiano) this.practiceHint.textContent = 'No dedicated Piano stem. This part may mix piano with other instruments; muting it removes the whole part. For a Piano stem, separate with HT Demucs 6-stem.';
     else this.practiceHint.textContent = 'This is not the dedicated Piano stem. Muting it removes the whole selected part.';
   }
