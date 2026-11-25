@@ -885,3 +885,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .native-tip span { flex: 1 1 320px; }
 .tool.native-audio.attention { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 9px; animation: na-attn 1s ease-in-out 3; }
 @keyframes na-attn { 50% { outline-color: transparent; } }
+
+/* Compact bilingual language switch in the studio header. */
+.language-picker { display:inline-flex; align-items:center; }
+.language-picker select { min-width:54px; padding:6px 7px; border:1px solid var(--line); border-radius:8px; color:var(--text); background:var(--panel); font:600 12px/1.2 inherit; cursor:pointer; }
