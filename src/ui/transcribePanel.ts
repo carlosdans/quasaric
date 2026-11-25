@@ -25,6 +25,7 @@ import { $, fitCanvas, fmtTime, h, pressed, toast } from './dom.ts';
 
 const SR = 44100;
 const HEAR = '*'; // source id for "what you hear"
+const MIDI_TIMING_VERSION = 2; // bump when generated MIDI timestamps become incompatible with saved data
 
 /** What the deck lends the transcription tools. */
 export interface TxHost {
@@ -73,6 +74,7 @@ export interface TxState {
   chordSource?: 'auto' | 'piano' | 'accompaniment' | 'custom';
   chordStemSources?: string[];
   midi?: Record<string, NoteEvent[]>;
+  midiTimingVersion?: number;
   notesHeight?: number; // px; unset uses the CSS default
   practiceMode?: 'chords' | 'notes' | 'both';
   /** The scrolling chord timeline: shown, plain major / minor only, and its zoom (1 = default width of a beat). */
@@ -543,7 +545,9 @@ export class Transcribe {
     this.busy = '';
     this.closeEditor();
     if (st?.chordList && !s.chords) s.chords = st.chordList;
-    if (st?.midi && !s.midi) s.midi = st.midi;
+    // Old saved MIDI was generated with incorrect per-window timestamps. Discard it once so
+    // the user can regenerate it with the corrected Basic Pitch timeline.
+    s.midi = st?.midiTimingVersion === MIDI_TIMING_VERSION ? st.midi : undefined;
     this.source = st?.source && (st.source === HEAR || s.stems.some((x) => x.name === st.source)) ? st.source : HEAR;
     this.chordSource = st?.chordSource ?? 'auto';
     this.chordStemSources = (st?.chordStemSources ?? []).filter((n) => s.stems.some((x) => x.name === n));
@@ -574,7 +578,7 @@ export class Transcribe {
 
   getState(): TxState {
     const s = this.host.song();
-    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, notesHeight: this.notesHeight, practiceMode: this.practiceMode };
+    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, midiTimingVersion: MIDI_TIMING_VERSION, notesHeight: this.notesHeight, practiceMode: this.practiceMode };
   }
 
   private show(p: { notes?: boolean; chords?: boolean; strip?: boolean }, save = true) {
