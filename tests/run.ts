@@ -418,6 +418,7 @@ for (const [len, overlap, shifts] of [
   ok('practice keyboard includes wide two-hand bass and treble notes', wide.low <= 28 && wide.high > 96, JSON.stringify(wide));
   const high = pianoKeyboardRange([96, 100, 108]);
   ok('practice keyboard includes notes at the top of the piano range', high.low <= 96 && high.high > 108, JSON.stringify(high));
+  ok('practice keyboard starts on a white key when fitting the highest register', high.low % 12 === 0, JSON.stringify(high));
   const low = pianoKeyboardRange([21, 24, 33]);
   ok('practice keyboard includes notes at the bottom of the piano range', low.low <= 21 && low.high > 33, JSON.stringify(low));
   const narrow = pianoKeyboardRange([60, 64, 67]);
