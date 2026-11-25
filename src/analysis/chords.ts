@@ -207,13 +207,23 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
       if (t1 - t0 < 3) continue;
       const oldScore = localTemplateScore(from, t0, t1);
       const newScore = localTemplateScore(to, t0, t1);
+      const localChroma = unit(chromaOf(clean, t0, t1, 40, 84).map((x) => Math.sqrt(x)));
+      const oldTemplate = TEMPLATES[from];
+      const newTemplate = TEMPLATES[to];
+      let oldOnly = 0;
+      let newOnly = 0;
+      for (let pitch = 0; pitch < 12; pitch++) {
+        if (oldTemplate.v[pitch] > 0 && newTemplate.v[pitch] === 0) oldOnly += localChroma[pitch];
+        if (newTemplate.v[pitch] > 0 && oldTemplate.v[pitch] === 0) newOnly += localChroma[pitch];
+      }
       const bassEvidence = chromaOf(bass ?? harm, t0, t1, 28, 52);
-      const bassSupportsNewRoot = bassEvidence[TEMPLATES[to].root] > bassEvidence[TEMPLATES[from].root] * 1.05;
-      if (newScore > oldScore || bassSupportsNewRoot) {
+      const bassSupportsNewRoot = bassEvidence[newTemplate.root] > bassEvidence[oldTemplate.root] * 1.05;
+      const chordTonesSupportNew = newOnly > oldOnly + 0.015;
+      if (newScore > oldScore || bassSupportsNewRoot || chordTonesSupportNew) {
         if (consecutive === 0) firstWinningTime = time;
         consecutive++;
         if (consecutive >= 2) {
-          transitionTimes[i] = +firstWinningTime.toFixed(3);
+          transitionTimes[i] = +Math.min(boundary, firstWinningTime + refineWindow / 2).toFixed(3);
           break;
         }
       } else {
