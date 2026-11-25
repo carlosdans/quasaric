@@ -75,7 +75,6 @@ const CHORD_FORMS: { q: Quality; tones: [number, number][]; extension?: number; 
   { q: '7', tones: [[0, 1], [4, 0.9], [7, 0.8], [10, 0.62]], extension: 10 },
   { q: 'm7', tones: [[0, 1], [3, 0.9], [7, 0.8], [10, 0.62]], extension: 10 },
   { q: 'maj7', tones: [[0, 1], [4, 0.9], [7, 0.8], [11, 0.62]], extension: 11 },
-  { q: 'sus2', tones: [[0, 1], [2, 0.85], [7, 0.8]], suspended: true },
   { q: 'sus4', tones: [[0, 1], [5, 0.85], [7, 0.8]], suspended: true },
   { q: 'dim', tones: [[0, 1], [3, 0.9], [6, 0.8]] },
   { q: 'aug', tones: [[0, 1], [4, 0.9], [8, 0.8]] },
