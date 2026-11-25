@@ -200,17 +200,18 @@ export function bpNotes(framesIn: Float32Array, onsetsIn: Float32Array, n: numbe
 /** Remove only weak, short upper partials that coincide with a stronger piano note. */
 export function suppressPianoHarmonics(events: NoteEvent[]): NoteEvent[] {
   // Octaves and two-octave doublings are retained because they are common real piano voicings.
-  const harmonicIntervals = new Set([19, 28, 31, 34, 36, 38, 40]);
+  const harmonicIntervals = new Set([19, 24, 28, 31, 34, 36, 38, 40]);
   return events.filter((high) => {
     const highDuration = high.end - high.start;
     return !events.some((low) => {
       if (low.pitch >= high.pitch || !harmonicIntervals.has(high.pitch - low.pitch)) return false;
       const lowDuration = low.end - low.start;
       const overlap = Math.max(0, Math.min(high.end, low.end) - Math.max(high.start, low.start));
+      const maxRelativeAmp = high.pitch - low.pitch === 24 ? 0.6 : 0.7;
       return Math.abs(high.start - low.start) <= 0.06 &&
         highDuration <= lowDuration * 0.65 &&
         overlap >= highDuration * 0.8 &&
-        high.amp <= low.amp * 0.7;
+        high.amp <= low.amp * maxRelativeAmp;
     });
   });
 }
