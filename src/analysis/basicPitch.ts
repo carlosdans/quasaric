@@ -15,7 +15,6 @@ export const BP_FRAMES_PER_WINDOW = ANNOT_N_FRAMES - N_OVERLAP_FRAMES;
 export const BP_WINDOW = AUDIO_N_SAMPLES;
 export const BP_PITCHES = 88;
 const MIDI_OFFSET = 21;
-const FPS = BP_SR / FFT_HOP; // 86.1328125; keep the exact model frame rate to avoid cumulative drift.
 
 export interface NoteEvent {
   start: number; // seconds
