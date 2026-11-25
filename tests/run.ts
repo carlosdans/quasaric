@@ -409,7 +409,7 @@ for (const [len, overlap, shifts] of [
     const sync = detectChords(cqt(harm), Array.from({ length: 4 }, (_, i) => i * beat), cqt(bass), { downbeat: 0, perBar: 4 });
     const meaningful = sync.filter((c) => c.root >= 0);
     const change = meaningful.find((c) => c.root === 7);
-    ok('chords: detects a syncopated change halfway through a beat', !!change && Math.abs(change.start - changeAt) <= 0.08 && meaningful.some((c) => c.root === 0 && c.end <= change.start + 0.02), meaningful.map((c) => `${chordName(c)}@${c.start.toFixed(3)}`).join(' '));
+    ok('chords: detects a syncopated change halfway through a beat', !!change && Math.abs(change.start - changeAt) <= 0.06 && meaningful.some((c) => c.root === 0 && c.end <= change.start + 0.02), meaningful.map((c) => `${chordName(c)}@${c.start.toFixed(3)}`).join(' '));
   }
   // Sub-beat timing must remain accurate away from the midpoint too.
   for (const fraction of [0.25, 0.75]) {
@@ -434,7 +434,7 @@ for (const [len, overlap, shifts] of [
     addTone(bass, 43, changeAt, duration, 0.4);
     const sync = detectChords(cqt(harm), Array.from({ length: 4 }, (_, i) => i * beat), cqt(bass), { downbeat: 0, perBar: 4 });
     const change = sync.find((c) => c.root === 7);
-    ok(`chords: refines a change at ${fraction} of a beat without rounding it`, !!change && Math.abs(change.start - changeAt) <= 0.08, change ? change.start.toFixed(3) : 'not detected');
+    ok(`chords: refines a change at ${fraction} of a beat without rounding it`, !!change && Math.abs(change.start - changeAt) <= 0.06, change ? change.start.toFixed(3) : 'not detected');
   }
   // Common chord extensions should survive the template match, not be flattened to triads.
   const colourChord = (root: number, intervals: number[]) => {
