@@ -70,8 +70,11 @@ export interface TxState {
   chords: boolean;
   source: string;
   chordList?: Chord[];
+  chordSource?: 'auto' | 'piano' | 'accompaniment' | 'custom';
+  chordStemSources?: string[];
   midi?: Record<string, NoteEvent[]>;
   notesHeight?: number; // px; unset uses the CSS default
+  practiceMode?: 'chords' | 'notes' | 'both';
   /** The scrolling chord timeline: shown, plain major / minor only, and its zoom (1 = default width of a beat). */
   strip?: boolean;
   simple?: boolean;
@@ -106,6 +109,14 @@ const LUT = (() => {
 
 const isBlack = (n: number) => [1, 3, 6, 8, 10].includes(((n % 12) + 12) % 12);
 
+const CHORD_INTERVALS: Record<string, number[]> = {
+  '': [4, 7], m: [3, 7], '7': [4, 7, 10], m7: [3, 7, 10],
+  maj7: [4, 7, 11], sus2: [2, 7], sus4: [5, 7], dim: [3, 6],
+  aug: [4, 8], '5': [7], '6': [4, 7, 9], m6: [3, 7, 9],
+  '9': [2, 4, 7, 10], add9: [2, 4, 7],
+};
+const chordIntervals = (quality: string) => CHORD_INTERVALS[quality] ?? [4, 7];
+
 // Computer keyboard as a piano, while the Notes view is open: the bottom row is white keys,
 // the row above is black keys, offset to sit over the gaps between them (as on a real piano).
 const PIANO_BASE = 60; // C4
@@ -135,7 +146,7 @@ function voiceFor(name: string): Voice {
 }
 
 /** A small "draft" tag: chord detection is a first attempt, roughly 60 to 75% right, so say so where the chords are shown. */
-const DRAFT = () => h('span', { class: 'draft-tag', title: 'Chord detection is a first draft: roughly 60 to 75% right. Click a chord to correct it by ear.' }, 'draft');
+const DRAFT = () => h('span', { class: 'draft-tag', title: 'Chord detection is an estimate, not a guaranteed transcription. Check the chords by ear and click one to correct it.' }, 'draft');
 
 export class Transcribe {
   private notesOn = false;
@@ -157,6 +168,8 @@ export class Transcribe {
   /** Where the timeline last drew the playhead, so a click can be turned back into a beat. */
   private stripGeom = { cur: 0, hold: 0, cw: 78 };
   private source = HEAR;
+  private chordSource: 'auto' | 'piano' | 'accompaniment' | 'custom' = 'auto';
+  private chordStemSources: string[] = [];
   private img: { key: string; canvas: HTMLCanvasElement } | null = null;
   private hover: { row: number; t: number } | null = null;
   /** Visible pitch range, as rows (0 = NOTE_HI at the top, BINS = one past NOTE_LO). Scroll/zoom the piano to change it. */
@@ -164,6 +177,10 @@ export class Transcribe {
   private keyHover: number | null = null;
   private heldRows = new Set<number>();
   private notesHeight?: number; // px; unset uses the CSS default
+  private practiceMode: 'chords' | 'notes' | 'both' = 'chords';
+  private practiceLane: HTMLElement;
+  private practiceCanvas: HTMLCanvasElement;
+  private practiceModeSel: HTMLSelectElement;
   private frozenAt = -1;
   private busy = '';
   private editing = -1;
@@ -174,6 +191,9 @@ export class Transcribe {
   private chordCanvas: HTMLCanvasElement;
   private chordNow: HTMLElement;
   private chordStatus: HTMLElement;
+  private chordSourceSel: HTMLSelectElement;
+  private chordStemSel: HTMLSelectElement;
+  private chordStemHelp: HTMLElement;
   private editor: HTMLElement;
   private notesLane: HTMLElement;
   private noteCanvas: HTMLCanvasElement;
@@ -186,6 +206,24 @@ export class Transcribe {
   private midiSaveBtn: HTMLButtonElement;
 
   constructor(private host: TxHost) {
+    // ---- Synthesia-style practice keyboard, driven by the existing chord and MIDI events.
+    this.practiceCanvas = h('canvas', { class: 'practice-keyboard', role: 'img', 'aria-label': 'Falling notes piano keyboard' }) as HTMLCanvasElement;
+    this.practiceModeSel = h('select', { class: 'tiny', title: 'Choose what to practise', 'aria-label': 'Practice display' },
+      h('option', { value: 'chords' }, 'Chords'),
+      h('option', { value: 'notes' }, 'Notes'),
+      h('option', { value: 'both' }, 'Chords + notes'),
+    ) as HTMLSelectElement;
+    this.practiceModeSel.onchange = () => {
+      this.practiceMode = this.practiceModeSel.value as 'chords' | 'notes' | 'both';
+      this.host.changed();
+      this.redraw();
+    };
+    this.practiceLane = h('div', { class: 'practice-lane' },
+      h('div', { class: 'practice-head' }, h('span', { class: 'name' }, 'Play along'), this.practiceModeSel,
+        h('span', { class: 'muted small' }, 'Notes fall onto the keys in time with the song')),
+      this.practiceCanvas,
+    );
+
     // ---- chord timeline lane
     this.stripCanvas = h('canvas');
     const simpleBox = h('input', { type: 'checkbox' }) as HTMLInputElement;
@@ -245,6 +283,48 @@ export class Transcribe {
     // ---- chords lane
     this.chordCanvas = h('canvas');
     this.chordNow = h('span', { class: 'x-now' });
+    this.chordSourceSel = h(
+      'select',
+      { class: 'tiny', title: 'Choose which separated instrument is used to detect chords', 'aria-label': 'Chord source' },
+      h('option', { value: 'auto' }, 'Auto source'),
+      h('option', { value: 'piano' }, 'Piano stem'),
+      h('option', { value: 'accompaniment' }, 'All harmony'),
+      h('option', { value: 'custom' }, 'Choose stems…'),
+    ) as HTMLSelectElement;
+    this.chordStemSel = h('select', { class: 'tiny', title: 'Select one or more stems for chord analysis', 'aria-label': 'Chord analysis stems', multiple: true, size: 3, hidden: true }) as HTMLSelectElement;
+    this.chordStemHelp = h('span', { class: 'muted small', hidden: true }, 'The piano may be inside Guitar or Other. Select one or more harmonic stems; avoid drums and vocals.');
+    this.chordStemSel.onchange = () => {
+      const previous = this.chordStemSources;
+      const next = Array.from(this.chordStemSel.selectedOptions, (o) => o.value);
+      const song = this.host.song();
+      if (song?.chords?.some((ch) => ch.manual) && !confirm('Detect chords again using these stems? Your corrections will be lost.')) {
+        for (const option of this.chordStemSel.options) option.selected = previous.includes(option.value);
+        return;
+      }
+      this.chordStemSources = next;
+      if (song) song.chords = undefined;
+      this.show({ chords: true, strip: true });
+    };
+    this.chordSourceSel.onchange = () => {
+      const next = this.chordSourceSel.value as 'auto' | 'piano' | 'accompaniment' | 'custom';
+      const song = this.host.song();
+      if (song?.chords?.some((ch) => ch.manual) && !confirm('Detect chords again using this source? Your corrections will be lost.')) {
+        this.chordSourceSel.value = this.chordSource;
+        return;
+      }
+      this.chordSource = next;
+      this.chordStemSel.hidden = next !== 'custom';
+      this.chordStemHelp.hidden = next !== 'custom';
+      if (song) song.chords = undefined;
+      // Selecting the piano source should immediately expose the piano chord
+      // diagrams and the beat-aligned chord strip, not just change the analysis.
+      if (next === 'piano') {
+        this.shapes = 'piano';
+        this.shapeSel.value = 'piano';
+        this.shapeKey = '';
+      }
+      this.show({ chords: true, strip: true });
+    };
     this.chordStatus = h('span', { class: 'muted small x-status' });
     const redo = h('button', { class: 'btn tiny ghost', type: 'button', title: 'Detect the chords again (replaces your edits)' }, 'Redo');
     const sheet = h(
@@ -262,7 +342,7 @@ export class Transcribe {
     this.chordLane = h(
       'div',
       { class: 'lane x-lane chord-lane' },
-      h('div', { class: 'lane-ctl x-ctl' }, h('span', { class: 'name' }, 'Chords ', DRAFT()), this.chordNow, redo, sheet, this.chordStatus),
+      h('div', { class: 'lane-ctl x-ctl' }, h('span', { class: 'name' }, 'Chords ', DRAFT()), this.chordSourceSel, this.chordStemSel, this.chordStemHelp, this.chordNow, redo, sheet, this.chordStatus),
       chordWave,
     );
     this.editor = h('div', { class: 'chord-edit', hidden: true });
@@ -432,7 +512,7 @@ export class Transcribe {
       { capture: true },
     );
 
-    $('xlanes').append(this.stripLane, this.shapesRow, this.chordLane, this.editor, this.notesLane);
+    $('xlanes').append(this.practiceLane, this.stripLane, this.shapesRow, this.chordLane, this.editor, this.notesLane);
     $('stripBtn').onclick = () => this.show({ strip: !this.stripOn });
     $('chordsBtn').onclick = () => this.show({ chords: !this.chordsOn });
     $('notesBtn').onclick = () => this.show({ notes: !this.notesOn });
@@ -455,6 +535,8 @@ export class Transcribe {
   // ---------- song / state ----------
   open(s: TxSong, st?: TxState) {
     this.pitchView = { top: 0, bottom: BINS };
+    this.practiceMode = st?.practiceMode ?? 'chords';
+    this.practiceModeSel.value = this.practiceMode;
     this.heldRows.clear();
     this.unfreeze();
     cancelTranscribe();
@@ -463,6 +545,13 @@ export class Transcribe {
     if (st?.chordList && !s.chords) s.chords = st.chordList;
     if (st?.midi && !s.midi) s.midi = st.midi;
     this.source = st?.source && (st.source === HEAR || s.stems.some((x) => x.name === st.source)) ? st.source : HEAR;
+    this.chordSource = st?.chordSource ?? 'auto';
+    this.chordStemSources = (st?.chordStemSources ?? []).filter((n) => s.stems.some((x) => x.name === n));
+    this.chordSourceSel.value = this.chordSource;
+    this.chordStemSel.replaceChildren(...s.stems.map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)));
+    for (const option of this.chordStemSel.options) option.selected = this.chordStemSources.includes(option.value);
+    this.chordStemSel.hidden = this.chordSource !== 'custom';
+    this.chordStemHelp.hidden = this.chordSource !== 'custom';
     this.sourceSel.replaceChildren(
       h('option', { value: HEAR }, 'All parts (no drums)'),
       ...s.stems.map((x) => h('option', { value: x.name }, x.name.startsWith('no_') ? `No ${x.name.slice(3)}` : x.name)),
@@ -485,7 +574,7 @@ export class Transcribe {
 
   getState(): TxState {
     const s = this.host.song();
-    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, notesHeight: this.notesHeight };
+    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, notesHeight: this.notesHeight, practiceMode: this.practiceMode };
   }
 
   private show(p: { notes?: boolean; chords?: boolean; strip?: boolean }, save = true) {
@@ -493,6 +582,7 @@ export class Transcribe {
     if (p.chords != null) this.chordsOn = p.chords;
     if (p.strip != null) this.stripOn = p.strip;
     this.notesLane.hidden = !this.notesOn;
+    this.practiceLane.hidden = !(this.notesOn || this.chordsOn);
     this.chordLane.hidden = !this.chordsOn;
     this.stripLane.hidden = !this.stripOn;
     this.shapesRow.hidden = !this.stripOn || !this.shapes;
@@ -646,7 +736,123 @@ export class Transcribe {
     if (!s) return;
     if (this.chordsOn) this.drawChords(pos);
     if (this.notesOn) this.drawNotes(pos);
+    if (this.notesOn || this.chordsOn) this.drawPractice(pos);
     this.followFreeze(pos);
+  }
+
+  /**
+   * Synthesia-style keyboard. It consumes the already detected chord events and/or
+   * the existing Basic Pitch MIDI events; it never runs another audio analysis.
+   */
+  private drawPractice(pos: number) {
+    const c = this.practiceCanvas;
+    if (!c.clientWidth) return;
+    const g = fitCanvas(c);
+    const { width: w, height: hgt } = c;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const left = 8 * dpr, right = w - 8 * dpr;
+    const top = 8 * dpr, keyTop = hgt - 42 * dpr;
+    const horizon = 4.0; // seconds visible above the keyboard
+    const shift = this.host.pitch();
+    const notes = this.host.song()?.midi?.[this.midiKey()] ?? [];
+    const chords = this.host.song()?.chords ?? [];
+    // Keep a useful three-octave window centred on the transcribed register.
+    const pitches = notes.map(n => n.pitch + shift);
+    if (!pitches.length) pitches.push(...chords.filter(ch => ch.root >= 0).map(ch => 60 + ch.root + shift));
+    const centre = pitches.length ? pitches.reduce((a,b) => a+b, 0) / pitches.length : 60;
+    let low = Math.max(24, Math.min(72, Math.floor((centre - 18) / 12) * 12));
+    if (low + 36 > 108) low = 72;
+    const high = low + 36;
+    const white = (n: number) => !isBlack(n);
+    const whites: number[] = [];
+    for (let n = low; n < high; n++) if (white(n)) whites.push(n);
+    const keyW = (right - left) / whites.length;
+    const xOf = (p: number) => {
+      const wi = whites.indexOf(p);
+      if (wi >= 0) return { x: left + wi * keyW, width: keyW, black: false };
+      const prev = p - 1;
+      const base = whites.indexOf(prev);
+      return { x: left + (base + 1) * keyW - keyW * 0.31, width: keyW * 0.62, black: true };
+    };
+    const now = pos / SR;
+    const useChords = this.practiceMode !== 'notes';
+    const useNotes = this.practiceMode !== 'chords';
+    g.clearRect(0, 0, w, hgt);
+    g.fillStyle = 'rgba(9,9,13,0.96)';
+    g.fillRect(0, 0, w, hgt);
+    // Time grid.
+    for (let sec = 1; sec <= horizon; sec++) {
+      const y = keyTop - (sec / horizon) * (keyTop - top);
+      g.strokeStyle = 'rgba(255,255,255,0.09)';
+      g.lineWidth = Math.max(1, dpr);
+      g.beginPath(); g.moveTo(left, y); g.lineTo(right, y); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,0.38)';
+      g.font = `${9 * dpr}px system-ui, sans-serif`;
+      g.fillText(`+${sec}s`, left + 3 * dpr, y - 3 * dpr);
+    }
+    const falling = (pitch: number, start: number, end: number, colour: string) => {
+      const shiftedPitch = pitch + shift;
+      if (shiftedPitch < low || shiftedPitch >= high) return;
+      const key = xOf(shiftedPitch);
+      if (key.x + key.width < left || key.x > right) return;
+      const y0 = keyTop - ((start - now) / horizon) * (keyTop - top);
+      const y1 = keyTop - ((end - now) / horizon) * (keyTop - top);
+      // Later times sit higher on screen, so draw the interval from its upper
+      // (end) edge down to its lower (start) edge.
+      const y = Math.max(top, Math.min(keyTop, Math.min(y0, y1)));
+      const bottom = Math.max(top, Math.min(keyTop, Math.max(y0, y1)));
+      if (bottom <= top || y >= keyTop || bottom - y < 1) return;
+      g.fillStyle = colour;
+      g.globalAlpha = 0.9;
+      g.beginPath();
+      g.roundRect(key.x + key.width * 0.12, y, key.width * 0.76, bottom - y, 4 * dpr);
+      g.fill();
+      g.globalAlpha = 1;
+    };
+    if (useChords) for (const ch of chords) {
+      if (ch.root < 0 || ch.end < now || ch.start > now + horizon) continue;
+      for (const interval of [0, ...chordIntervals(ch.q)]) {
+        const pitch = 60 + ((ch.root + interval) % 12);
+        falling(pitch, ch.start, ch.end, ch.start <= now && ch.end > now ? '#f5a623' : '#8b7cf6');
+      }
+    }
+    if (useNotes) for (const n of notes) {
+      if (n.end < now || n.start > now + horizon) continue;
+      falling(n.pitch, n.start, n.end, '#22c7d6');
+    }
+    // Keyboard bed: white keys first, then black keys and active notes.
+    g.fillStyle = '#e9e9ef';
+    g.fillRect(left, keyTop, right - left, hgt - keyTop);
+    for (let i = 0; i < whites.length; i++) {
+      const n = whites[i], x = left + i * keyW;
+      const soundingChord = useChords && chords.some(ch => ch.root >= 0 && ch.start <= now && ch.end > now &&
+        [0, ...chordIntervals(ch.q)].some(i => (ch.root + i + shift) % 12 === n % 12));
+      const soundingNote = useNotes && notes.some(note => note.pitch + shift === n && note.start <= now && note.end > now);
+      g.fillStyle = soundingChord ? '#f5a623' : soundingNote ? '#22c7d6' : '#e9e9ef';
+      g.fillRect(x + dpr, keyTop, keyW - 2 * dpr, hgt - keyTop - dpr);
+      g.strokeStyle = 'rgba(0,0,0,0.28)'; g.strokeRect(x, keyTop, keyW, hgt - keyTop);
+      if (n % 12 === 0) { g.fillStyle = '#555'; g.font = `${9*dpr}px system-ui`; g.fillText(`C${Math.floor(n/12)-1}`, x+3*dpr, hgt-5*dpr); }
+    }
+    for (let n = low; n < high; n++) if (isBlack(n)) {
+      const key = xOf(n);
+      const activeChord = useChords && chords.some(ch => ch.root >= 0 && ch.start <= now && ch.end > now &&
+        [0, ...chordIntervals(ch.q)].some(i => (ch.root + i + shift) % 12 === n % 12));
+      const activeNote = useNotes && notes.some(note => note.pitch + shift === n && note.start <= now && note.end > now);
+      g.fillStyle = activeChord ? '#d88918' : activeNote ? '#1596a5' : '#24242c';
+      g.fillRect(key.x, keyTop, key.width, (hgt - keyTop) * 0.62);
+    }
+    // Fixed strike line: the falling notes meet the keyboard here.
+    g.strokeStyle = '#f5a623'; g.lineWidth = 2 * dpr;
+    g.beginPath(); g.moveTo(left, keyTop); g.lineTo(right, keyTop); g.stroke();
+    if (useNotes && !notes.length && useChords && chords.length) {
+      g.fillStyle = 'rgba(255,255,255,0.72)';
+      g.font = `${11*dpr}px system-ui`;
+      g.fillText(document.documentElement.lang === 'es' ? 'Usa Notas → To MIDI para ver notas individuales' : 'Use Notes → To MIDI to add individual falling notes', left + 8*dpr, top + 15*dpr);
+    } else if (useNotes && !notes.length) {
+      g.fillStyle = 'rgba(255,255,255,0.72)';
+      g.font = `${11*dpr}px system-ui`;
+      g.fillText(document.documentElement.lang === 'es' ? 'Genera el MIDI con «To MIDI» para ver notas individuales' : 'Generate MIDI with “To MIDI” to see individual notes', left + 8*dpr, top + 15*dpr);
+    }
   }
 
   private x(frame: number, w: number) {
@@ -1081,11 +1287,25 @@ export class Transcribe {
     this.chordStatus.textContent = 'Detecting…';
     try {
       const roles = s.stems.map((x) => role(x.name));
+      const pianoStem = s.stems.find((x) => /piano|keyboard|keys?/i.test(x.name));
       let harm = s.stems.filter((_, i) => roles[i] === 'harm');
       const bassStem = s.stems.find((_, i) => roles[i] === 'bass');
-      if (!harm.length) harm = s.stems.filter((_, i) => roles[i] !== 'drums');
-      if (!harm.length) harm = s.stems;
-      const useBass = bassStem && !harm.includes(bassStem) ? bassStem : undefined;
+      if (this.chordSource === 'piano' && !pianoStem) {
+        toast('No piano stem found. Separate the piano first, or choose Auto source.', true);
+        return;
+      }
+      if (this.chordSource === 'piano') harm = pianoStem ? [pianoStem] : [];
+      else if (this.chordSource === 'custom') {
+        harm = s.stems.filter((x) => this.chordStemSources.includes(x.name));
+        if (!harm.length) {
+          toast('Choose at least one stem for chord analysis.', true);
+          return;
+        }
+      } else {
+        if (!harm.length) harm = s.stems.filter((_, i) => roles[i] !== 'drums');
+        if (!harm.length) harm = s.stems;
+      }
+      const useBass = this.chordSource === 'piano' || this.chordSource === 'custom' ? undefined : bassStem && !harm.includes(bassStem) ? bassStem : undefined;
       await this.ensureCqt([...harm.map((x) => x.name), ...(useBass ? [useBass.name] : [])]);
       if (this.host.song() !== s) return;
       const parts = harm.map((x) => s.cqt!.get(x.name)!.c);

@@ -371,6 +371,26 @@ for (const [len, overlap, shifts] of [
   const ch = detectChords(cqt(b.harm), b.beats, cqt(b.bass), { downbeat: 0, perBar: 4 });
   const names = ch.filter((c) => c.root >= 0).map((c) => chordName(c));
   ok('chords: C G Am F Dm E Am (with bass stem)', names.join(' ') === 'C G Am F Dm E Am', names.join(' '));
+  // Common chord extensions should survive the template match, not be flattened to triads.
+  const colourChord = (root: number, intervals: number[]) => {
+    const n = SR * 2;
+    const audio = new Float32Array(n);
+    const bass = new Float32Array(n);
+    const tone = (buffer: Float32Array, midi: number, amp: number) => {
+      const f = 440 * 2 ** ((midi - 69) / 12);
+      for (let i = 0; i < n; i++) buffer[i] += amp * Math.sin((2 * Math.PI * f * i) / SR);
+    };
+    for (const iv of intervals) tone(audio, root + iv, 0.12);
+    tone(bass, root - 24, 0.25);
+    const beats = Array.from({ length: 4 }, (_, i) => i * 0.5);
+    return detectChords(cqt(audio), beats, cqt(bass), { downbeat: 0, perBar: 4 }).find((x) => x.root >= 0);
+  };
+  const c7 = colourChord(60, [0, 4, 7, 10]);
+  const am7 = colourChord(57, [0, 3, 7, 10]);
+  const csus4 = colourChord(60, [0, 5, 7]);
+  ok('chords: detects dominant seventh colour', !!c7 && chordName(c7) === 'C7', c7 ? chordName(c7) : 'none');
+  ok('chords: detects minor seventh colour', !!am7 && chordName(am7) === 'Am7', am7 ? chordName(am7) : 'none');
+  ok('chords: detects suspended fourth colour', !!csus4 && chordName(csus4) === 'Csus4', csus4 ? chordName(csus4) : 'none');
   const mix = b.harm.map((v, i) => v + b.bass[i]);
   const m2 = detectChords(cqt(mix), b.beats, undefined, { downbeat: 0, perBar: 4 })
     .filter((c) => c.root >= 0)
