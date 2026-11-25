@@ -25,7 +25,7 @@ import { $, fitCanvas, fmtTime, h, pressed, toast } from './dom.ts';
 
 const SR = 44100;
 const HEAR = '*'; // source id for "what you hear"
-const MIDI_TIMING_VERSION = 2; // bump when generated MIDI timestamps become incompatible with saved data
+const MIDI_TIMING_VERSION = 3; // bump when generated MIDI timestamps become incompatible with saved data
 
 /** What the deck lends the transcription tools. */
 export interface TxHost {
