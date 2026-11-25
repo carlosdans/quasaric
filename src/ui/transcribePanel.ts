@@ -16,7 +16,7 @@ import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
 import { noteOptionsForSource, singleLine, type NoteEvent } from '../analysis/basicPitch.ts';
 import { pianoKeyboardRange } from './pianoRange.ts';
 import { defaultPianoPracticeTarget } from './practiceTarget.ts';
-import { practiceCues } from './practiceCues.ts';
+import { chordIntervals, practiceCues } from './practiceCues.ts';
 import { monoOf } from '../analysis/resample.ts';
 import { programFor, writeMidi } from '../encode/midi.ts';
 import { renderMix } from '../player/mixcore.ts';
@@ -117,7 +117,7 @@ const LUT = (() => {
 
 const isBlack = (n: number) => [1, 3, 6, 8, 10].includes(((n % 12) + 12) % 12);
 
-const chordIntervals = (quality: string) => ({ '': [4, 7], m: [3, 7], '7': [4, 7, 10], m7: [3, 7, 10], maj7: [4, 7, 11], sus2: [2, 7], sus4: [5, 7], dim: [3, 6], aug: [4, 8], '5': [7], '6': [4, 7, 9], m6: [3, 7, 9], '9': [2, 4, 7, 10], add9: [2, 4, 7] } as Record<string, number[]>)[quality] ?? [4, 7];
+
 
 // Computer keyboard as a piano, while the Notes view is open: the bottom row is white keys,
 // the row above is black keys, offset to sit over the gaps between them (as on a real piano).
