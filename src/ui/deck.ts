@@ -2680,7 +2680,7 @@ export class Deck {
   private smoothStripPos(): number {
     const p = this.player;
     if (!p.state.playing) return (this.stripPos = p.state.pos);
-    const est = p.smoothPos();
+    const est = p.audiblePos();
     if (!(est < this.stripPos && this.stripPos - est < SR * 0.15)) this.stripPos = est;
     return this.stripPos;
   }
