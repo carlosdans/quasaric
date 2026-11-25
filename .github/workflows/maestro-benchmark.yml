@@ -1,14 +1,6 @@
 name: MAESTRO real piano transcription benchmark
 
 on:
-  push:
-    branches: [main, test/maestro-real-piano-benchmark]
-    paths:
-      - "tests/maestroBenchmark.mjs"
-      - ".github/workflows/maestro-benchmark.yml"
-      - "src/analysis/basicPitch.ts"
-      - "src/analysis/resample.ts"
-      - "src/analysis/models/basic-pitch.onnx"
   pull_request:
     branches: [main]
     paths:
