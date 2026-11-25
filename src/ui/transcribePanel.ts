@@ -547,11 +547,7 @@ export class Transcribe {
     if (st?.chordList && !s.chords) s.chords = st.chordList;
     // Old saved MIDI was generated with incorrect per-window timestamps. Discard it once so
     // the user can regenerate it with the corrected Basic Pitch timeline.
-    if (st?.midiTimingVersion === MIDI_TIMING_VERSION) {
-      if (st.midi && !s.midi) s.midi = st.midi;
-    } else {
-      s.midi = undefined;
-    }
+    s.midi = st?.midiTimingVersion === MIDI_TIMING_VERSION ? st.midi : undefined;
     this.source = st?.source && (st.source === HEAR || s.stems.some((x) => x.name === st.source)) ? st.source : HEAR;
     this.chordSource = st?.chordSource ?? 'auto';
     this.chordStemSources = (st?.chordStemSources ?? []).filter((n) => s.stems.some((x) => x.name === n));
