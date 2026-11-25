@@ -796,8 +796,10 @@ export class Transcribe {
       if (key.x + key.width < left || key.x > right) return;
       const y0 = keyTop - ((start - now) / horizon) * (keyTop - top);
       const y1 = keyTop - ((end - now) / horizon) * (keyTop - top);
-      const y = Math.max(top, Math.min(keyTop, y0));
-      const bottom = Math.max(top, Math.min(keyTop, y1));
+      // Later times sit higher on screen, so draw the interval from its upper
+      // (end) edge down to its lower (start) edge.
+      const y = Math.max(top, Math.min(keyTop, Math.min(y0, y1)));
+      const bottom = Math.max(top, Math.min(keyTop, Math.max(y0, y1)));
       if (bottom <= top || y >= keyTop || bottom - y < 1) return;
       g.fillStyle = colour;
       g.globalAlpha = 0.9;
