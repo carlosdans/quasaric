@@ -145,7 +145,7 @@ export function detectChords(harm: Cqt, beats: number[], bass?: Cqt, bar?: { dow
     TEMPLATES.forEach((t, k) => {
       let d = 0;
       for (let p = 0; p < 12; p++) d += treble[i][p] * t.v[p];
-      out[k] = d + 0.3 * low[i][t.root] - (t.extension != null && treble[i][(t.root + t.extension) % 12] < 0.42 ? 0.16 : 0) - (t.suspended && Math.max(treble[i][(t.root + 3) % 12], treble[i][(t.root + 4) % 12]) > 0.35 ? 0.2 : 0);
+      out[k] = d + 0.25 * low[i][t.root] - (t.extension != null && treble[i][(t.root + t.extension) % 12] < 0.42 ? 0.16 : 0) - (t.suspended && Math.max(treble[i][(t.root + 3) % 12], treble[i][(t.root + 4) % 12]) > 0.35 ? 0.2 : 0);
     });
     out[S - 1] = energy[i] < 0.04 * loud ? 2 : 0.45;
     return out;
