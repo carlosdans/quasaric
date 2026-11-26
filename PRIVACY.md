@@ -16,7 +16,7 @@ Los archivos de audio seleccionados por el usuario, las pistas separadas, notas 
 
 ## 3. Datos técnicos y proveedores
 
-- **Azure Static Web Apps:** al solicitar páginas y recursos, la infraestructura puede recibir y tratar datos técnicos como dirección IP, fecha/hora, URL o recurso solicitado, cabeceras e información del navegador. La finalidad, el rol jurídico, la ubicación y la conservación dependen del servicio, configuración y condiciones aplicables.
+- **Azure Static Web Apps:** al solicitar páginas y recursos, la infraestructura puede recibir y tratar datos técnicos como dirección IP, fecha/hora, URL o recurso solicitado, cabeceras e información del navegador. El recurso de Quasaric está configurado en la región **Spain Central (Madrid)**; esto no permite afirmar que todos los datos de servicio, registros, operaciones de red o servicios auxiliares se procesen exclusivamente en España. La finalidad, el rol jurídico y la conservación dependen del servicio, configuración y condiciones aplicables.
 - **Hugging Face:** cuando el usuario inicia la descarga de un modelo, el proveedor recibe la solicitud y los datos técnicos de conexión asociados. Los archivos de audio no se envían allí para su procesamiento por Quasaric.
 - **Servicios externos:** al abrir enlaces, el navegador se conecta directamente con esos servicios, sujetos a sus propias políticas.
 
