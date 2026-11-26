@@ -1098,9 +1098,9 @@ export class Transcribe {
     if (sounding.length || currentChord) {
       const names = [...new Set(sounding.map(cue => noteName(cue.pitch)))];
       const chordLabel = currentChord
-        ? `Ahora: ${chordName(currentChord, shift, this.sharps())}`
-        : `Ahora: ${names.slice(0, 6).join(' · ')}${names.length > 6 ? '…' : ''}`;
-      const nowFont = (focusMode ? (mobile ? 23 : 29) : (mobile ? 17 : 21)) * dpr;
+        ? chordName(currentChord, shift, this.sharps())
+        : names.slice(0, 6).join(' · ') + (names.length > 6 ? '…' : '');
+      const nowFont = (focusMode ? (mobile ? 30 : 36) : (mobile ? 22 : 27)) * dpr;
       g.font = `800 ${nowFont}px system-ui,sans-serif`;
       const maxNowWidth = Math.max(100*dpr, (right-left) * (mobile ? 0.56 : 0.58));
       const measured = Math.min(maxNowWidth, g.measureText(chordLabel).width + 24*dpr);
