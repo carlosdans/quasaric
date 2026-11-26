@@ -19,7 +19,7 @@ import { BINS, CQT_FPS, NOTE_LO, cqt } from '../src/analysis/cqt.ts';
 import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '../src/analysis/chords.ts';
 import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine, suppressPianoHarmonics, transcriptionEngineForSource } from '../src/analysis/basicPitch.ts';
 import { pianoKeyboardRange } from '../src/ui/pianoRange.ts';
-import { defaultPianoPracticeTarget } from '../src/ui/practiceTarget.ts';
+import { defaultPianoPracticeTarget, queuePracticeTarget } from '../src/ui/practiceTarget.ts';
 import { MIDI_TIMING_VERSION, PIANO_MIDI_ENGINE_VERSION, restoreMidiState } from '../src/ui/midiState.ts';
 import { practiceActivePitches, practiceCues, practicePitches } from '../src/ui/practiceCues.ts';
 import { decimate2 } from '../src/analysis/resample.ts';
@@ -526,6 +526,9 @@ for (const [len, overlap, shifts] of [
   ok('piano practice does not silently substitute guitar or other when piano is absent', defaultPianoPracticeTarget(['drums', 'guitar', 'other']) === '');
   ok('a stale saved Guitar fallback is not mistaken for a piano stem', defaultPianoPracticeTarget(['guitar', 'other'], 'guitar') === '');
   ok('an explicitly saved dedicated piano source is preserved', defaultPianoPracticeTarget(['keys', 'piano'], 'keys') === 'keys');
+  ok('practice target changes are queued behind a different active MIDI transcription', queuePracticeTarget('Piano', 'Guitar', false) === 'Piano');
+  ok('practice target queue is not created when the active job already matches', queuePracticeTarget('Piano', 'Piano', false) === '');
+  ok('practice target queue is not created when MIDI is already available', queuePracticeTarget('Piano', 'Guitar', true) === '');
 }
 
 // ---- saved MIDI migration: replace legacy piano Basic Pitch data with Transkun
