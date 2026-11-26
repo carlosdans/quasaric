@@ -15,6 +15,7 @@ import type { ChordMark } from '../lyrics/lyricChords.ts';
 import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
 import { noteOptionsForSource, singleLine, transcriptionEngineForSource, type NoteEvent } from '../analysis/basicPitch.ts';
 import { pianoKeyboardRange } from './pianoRange.ts';
+import { MIDI_TIMING_VERSION, PIANO_MIDI_ENGINE_VERSION, restoreMidiState } from './midiState.ts';
 import { defaultPianoPracticeTarget } from './practiceTarget.ts';
 import { practiceActivePitches, practiceCues, practicePitches } from './practiceCues.ts';
 import { monoOf } from '../analysis/resample.ts';
@@ -28,7 +29,6 @@ import { $, fitCanvas, fmtTime, h, pressed, toast } from './dom.ts';
 
 const SR = 44100;
 const HEAR = '*'; // source id for "what you hear"
-const MIDI_TIMING_VERSION = 3; // bump when generated MIDI timestamps become incompatible with saved data
 const NO_NOTES: NoteEvent[] = [];
 const NO_CHORDS: Chord[] = [];
 
@@ -82,6 +82,7 @@ export interface TxState {
   chordStemSources?: string[];
   midi?: Record<string, NoteEvent[]>;
   midiTimingVersion?: number;
+  midiEngineVersion?: number;
   notesHeight?: number; // px; unset uses the CSS default
   practiceMode?: 'chords' | 'notes' | 'both';
   practiceTarget?: string;
@@ -633,9 +634,10 @@ export class Transcribe {
     this.busy = '';
     this.closeEditor();
     if (st?.chordList && !s.chords) s.chords = st.chordList;
-    // Old saved MIDI was generated with incorrect per-window timestamps. Discard it once so
-    // the user can regenerate it with the corrected Basic Pitch timeline.
-    s.midi = st?.midiTimingVersion === MIDI_TIMING_VERSION ? st.midi : undefined;
+    // Keep valid MIDI for other instruments, but invalidate piano notes created before
+    // the Transkun engine version was recorded. Those old Basic Pitch events can be badly
+    // out of sync even though the current piano source now selects Transkun.
+    s.midi = restoreMidiState(st?.midi, st?.midiTimingVersion, st?.midiEngineVersion);
     this.source = st?.source && (st.source === HEAR || s.stems.some((x) => x.name === st.source)) ? st.source : HEAR;
     this.chordSource = st?.chordSource ?? 'auto';
     this.chordStemSources = (st?.chordStemSources ?? []).filter((n) => s.stems.some((x) => x.name === n));
@@ -674,7 +676,7 @@ export class Transcribe {
 
   getState(): TxState {
     const s = this.host.song();
-    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, midiTimingVersion: MIDI_TIMING_VERSION, notesHeight: this.notesHeight, practiceMode: this.practiceMode, practiceTarget: this.practiceTarget };
+    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, midiTimingVersion: MIDI_TIMING_VERSION, midiEngineVersion: PIANO_MIDI_ENGINE_VERSION, notesHeight: this.notesHeight, practiceMode: this.practiceMode, practiceTarget: this.practiceTarget };
   }
 
   private show(p: { notes?: boolean; chords?: boolean; strip?: boolean }, save = true) {
