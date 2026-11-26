@@ -272,6 +272,16 @@ settings.onChange = () => {
 };
 
 // ---------------------------------------------------------------- sidebar tabs
+const sidebarToggle = $<HTMLButtonElement>('sidebarToggle');
+const appLayout = document.querySelector<HTMLElement>('.layout');
+sidebarToggle.onclick = () => {
+  if (!appLayout) return;
+  const collapsed = appLayout.classList.toggle('sidebar-collapsed');
+  sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+  sidebarToggle.title = collapsed ? 'Show songs and settings panel' : 'Hide songs and settings panel';
+  sidebarToggle.setAttribute('aria-label', sidebarToggle.title);
+};
+
 function showSide(name: string) {
   for (const t of document.querySelectorAll<HTMLElement>('.stab')) t.setAttribute('aria-selected', String(t.dataset.side === name));
   for (const p of document.querySelectorAll<HTMLElement>('.side-pane')) p.hidden = p.dataset.sidepane !== name;
