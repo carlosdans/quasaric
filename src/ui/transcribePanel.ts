@@ -950,8 +950,13 @@ export class Transcribe {
       g.fillStyle=grad; g.fillRect(x+0.7*dpr,keyTop,keyW-1.4*dpr,keyBottom-keyTop);
       g.strokeStyle='rgba(12,15,25,0.65)'; g.lineWidth=dpr;
       g.strokeRect(x+0.5*dpr,keyTop,keyW-dpr,keyBottom-keyTop);
-      if(n%12===0) {
-        g.fillStyle=active.note||active.chord?'#101522':'#50576a';
+      if (active.note || active.chord) {
+        g.fillStyle='#101522'; g.font=`700 ${(mobile ? 8 : 9)*dpr}px system-ui,sans-serif`;
+        g.textAlign='center'; g.textBaseline='middle';
+        g.fillText(noteName(n).replace(/-?\d+/g, ''), x+keyW/2, keyTop+(keyBottom-keyTop)*0.58, keyW-2*dpr);
+        g.textAlign='start'; g.textBaseline='alphabetic';
+      } else if(n%12===0) {
+        g.fillStyle='#50576a';
         g.font=`700 ${(mobile ? 10 : 9)*dpr}px system-ui,sans-serif`;
         g.fillText(`C${Math.floor(n/12)-1}`,x+3*dpr,keyBottom-7*dpr);
       }
@@ -981,13 +986,18 @@ export class Transcribe {
     // A compact colour key explains what learners are seeing at a glance.
     const legendY = top + 13*dpr;
     g.font=`700 ${(mobile ? 10 : 9)*dpr}px system-ui,sans-serif`;
-    g.fillStyle='#28d7e5'; g.beginPath(); g.arc(left+5*dpr, legendY-3*dpr, 3.5*dpr, 0, Math.PI*2); g.fill();
-    g.fillStyle='rgba(235,240,255,0.92)';
-    g.fillText(useNotes ? 'Notas' : 'MIDI', left+12*dpr, legendY);
-    const chordLegendX = left + (mobile ? 66 : 58)*dpr;
-    g.fillStyle='#9a87ff'; g.beginPath(); g.arc(chordLegendX, legendY-3*dpr, 3.5*dpr, 0, Math.PI*2); g.fill();
-    g.fillStyle='rgba(235,240,255,0.92)';
-    g.fillText('Acordes', chordLegendX+7*dpr, legendY);
+    let legendX = left;
+    if (useNotes) {
+      g.fillStyle='#28d7e5'; g.beginPath(); g.arc(legendX+5*dpr, legendY-3*dpr, 3.5*dpr, 0, Math.PI*2); g.fill();
+      g.fillStyle='rgba(235,240,255,0.92)';
+      g.fillText('Notas', legendX+12*dpr, legendY);
+      legendX += (mobile ? 58 : 50)*dpr;
+    }
+    if (useChords) {
+      g.fillStyle='#9a87ff'; g.beginPath(); g.arc(legendX+5*dpr, legendY-3*dpr, 3.5*dpr, 0, Math.PI*2); g.fill();
+      g.fillStyle='rgba(235,240,255,0.92)';
+      g.fillText('Acordes', legendX+12*dpr, legendY);
+    }
     const sounding = cues.filter(cue => cue.start <= now && cue.end > now);
     if (sounding.length) {
       const names = [...new Set(sounding.map(cue => noteName(cue.pitch)))];
