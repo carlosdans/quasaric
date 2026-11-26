@@ -638,6 +638,7 @@ export class Transcribe {
     this.unfreeze();
     cancelTranscribe();
     this.busy = '';
+    this.queuedPracticeTarget = '';
     this.closeEditor();
     if (st?.chordList && !s.chords) s.chords = st.chordList;
     // Keep valid MIDI for other instruments, but invalidate piano notes created before
@@ -1661,6 +1662,7 @@ export class Transcribe {
 
   private async toMidi() {
     if (this.busy) {
+      this.queuedPracticeTarget = '';
       cancelTranscribe();
       return;
     }
