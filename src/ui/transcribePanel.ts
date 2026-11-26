@@ -16,7 +16,7 @@ import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
 import { noteOptionsForSource, singleLine, transcriptionEngineForSource, type NoteEvent } from '../analysis/basicPitch.ts';
 import { pianoKeyboardRange } from './pianoRange.ts';
 import { MIDI_TIMING_VERSION, PIANO_MIDI_ENGINE_VERSION, restoreMidiState } from './midiState.ts';
-import { defaultPianoPracticeTarget } from './practiceTarget.ts';
+import { defaultPianoPracticeTarget, queuePracticeTarget } from './practiceTarget.ts';
 import { practiceActivePitches, practiceCues, practicePitches } from './practiceCues.ts';
 import { monoOf } from '../analysis/resample.ts';
 import { programFor, writeMidi } from '../encode/midi.ts';
@@ -567,8 +567,7 @@ export class Transcribe {
     if (!song.midi?.[target]?.length) {
       this.practiceHint.textContent = 'Preparing piano notes…';
       if (!this.busy) void this.toMidi();
-      else if (this.busy !== target) this.queuedPracticeTarget = target;
-      else this.queuedPracticeTarget = '';
+      else this.queuedPracticeTarget = queuePracticeTarget(target, this.busy, !!song.midi?.[target]?.length);
     } else {
       this.queuedPracticeTarget = '';
       this.practiceHint.textContent = '';
