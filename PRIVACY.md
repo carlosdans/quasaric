@@ -24,7 +24,7 @@ Quasaric no incorpora intencionadamente analítica propia, píxeles publicitario
 
 ## 4. Almacenamiento local
 
-La aplicación puede utilizar Local Storage, IndexedDB, Cache Storage y un service worker para conservar preferencias, proyectos, modelos descargados y recursos necesarios. Estos datos permanecen en el dispositivo hasta que el usuario los elimina o limpia los datos del sitio.
+La aplicación puede utilizar Local Storage, Cache Storage, OPFS (Origin Private File System) y un service worker para conservar preferencias, proyectos, modelos descargados y recursos necesarios. Estos datos permanecen en el dispositivo hasta que el usuario los elimina o limpia los datos del sitio.
 
 ## 5. Finalidades y conservación
 
