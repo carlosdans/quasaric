@@ -897,7 +897,14 @@ export class Transcribe {
     const left = inset, right = w - inset;
     const top = 12 * dpr;
     const mobile = c.clientWidth <= 700;
-    const keyTop = H - (mobile ? 82 : 66) * dpr;
+    const focusMode = this.practiceLane.classList.contains('is-focus');
+    // Make the physical piano keys occupy a meaningful share of the canvas.
+    // The old fixed 66/82 CSS-pixel strip stayed tiny even in full-screen mode.
+    const keyHeight = Math.min(
+      H * (focusMode ? (mobile ? 0.30 : 0.34) : (mobile ? 0.25 : 0.22)),
+      (focusMode ? 280 : 190) * dpr,
+    );
+    const keyTop = H - keyHeight;
     const keyBottom = H - 3 * dpr;
     const horizon = 5;
     const shift = this.host.pitch();
