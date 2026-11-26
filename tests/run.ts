@@ -20,7 +20,7 @@ import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '.
 import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine, suppressPianoHarmonics, transcriptionEngineForSource } from '../src/analysis/basicPitch.ts';
 import { pianoKeyboardRange } from '../src/ui/pianoRange.ts';
 import { defaultPianoPracticeTarget } from '../src/ui/practiceTarget.ts';
-import { practiceCues } from '../src/ui/practiceCues.ts';
+import { practiceActivePitches, practiceCues, practicePitches } from '../src/ui/practiceCues.ts';
 import { decimate2 } from '../src/analysis/resample.ts';
 import { semiCrfDecode } from '../src/analysis/transkun/viterbi.ts';
 import { writeMidi } from '../src/encode/midi.ts';
@@ -539,6 +539,18 @@ for (const [len, overlap, shifts] of [
   ok('Synthesia excludes notes exactly at their end and activates chords exactly at their start', !practiceCues(notes, chords, { now: 1.5, horizon: 5 }).some((cue) => cue.kind === 'note') && practiceCues(notes, chords, { now: 2, horizon: 5 }).filter((cue) => cue.kind === 'chord').length === 3);
   ok('Synthesia respects the selected practice mode', practiceCues(notes, chords, { now: 1, horizon: 5, useNotes: true, useChords: false }).every((cue) => cue.kind === 'note') && practiceCues(notes, chords, { now: 1, horizon: 5, useNotes: false, useChords: true }).every((cue) => cue.kind === 'chord'));
   ok('Synthesia does not show cues outside the five-second look-ahead', practiceCues([{ start: 7, end: 8, pitch: 60, amp: 1 }], [], { now: 1, horizon: 5 }).length === 0);
+  const wholeSongPitches = practicePitches(
+    [{ start: 1, end: 1.2, pitch: 48, amp: 1 }, { start: 90, end: 91, pitch: 84, amp: 1 }],
+    [{ start: 20, end: 24, root: 0, q: '' as const }],
+    { shift: 2, useNotes: true, useChords: false },
+  );
+  ok('Synthesia stable range sees low and high notes across the entire song, not just the current window', wholeSongPitches.join() === '50,86', wholeSongPitches.join());
+  const chordOnly = practiceCues([], [{ start: 1, end: 3, root: 0, q: '' as const }], { now: 2, horizon: 5 });
+  const active = practiceActivePitches(chordOnly, 2);
+  ok('Synthesia chord lighting matches the exact octave of its falling bars', active.chords.has(60) && active.chords.has(64) && active.chords.has(67) && !active.chords.has(72) && active.chords.size === 3);
+  const noteAndChord = practiceCues([{ start: 1, end: 2, pitch: 72, amp: 1 }], [{ start: 1, end: 2, root: 0, q: '' as const }], { now: 1, horizon: 5 });
+  const bothActive = practiceActivePitches(noteAndChord, 1);
+  ok('Synthesia keeps note and chord pitch sets separate when both modes are shown', bothActive.notes.has(72) && !bothActive.chords.has(72) && bothActive.chords.has(60));
 }
 
 // ---- audio clock: align visual practice cues with the audible output

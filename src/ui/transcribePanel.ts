@@ -16,7 +16,7 @@ import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
 import { noteOptionsForSource, singleLine, transcriptionEngineForSource, type NoteEvent } from '../analysis/basicPitch.ts';
 import { pianoKeyboardRange } from './pianoRange.ts';
 import { defaultPianoPracticeTarget } from './practiceTarget.ts';
-import { practiceCues } from './practiceCues.ts';
+import { practiceActivePitches, practiceCues, practicePitches } from './practiceCues.ts';
 import { monoOf } from '../analysis/resample.ts';
 import { programFor, writeMidi } from '../encode/midi.ts';
 import { renderMix } from '../player/mixcore.ts';
@@ -29,6 +29,8 @@ import { $, fitCanvas, fmtTime, h, pressed, toast } from './dom.ts';
 const SR = 44100;
 const HEAR = '*'; // source id for "what you hear"
 const MIDI_TIMING_VERSION = 3; // bump when generated MIDI timestamps become incompatible with saved data
+const NO_NOTES: NoteEvent[] = [];
+const NO_CHORDS: Chord[] = [];
 
 /** What the deck lends the transcription tools. */
 export interface TxHost {
@@ -187,6 +189,16 @@ export class Transcribe {
   private practiceStartBtn: HTMLButtonElement;
   private practiceHint: HTMLElement;
   private practiceTarget = '';
+  /** Cached for the selected song/source/mode: never recalculate the full-song range per animation frame. */
+  private practiceRangeCache: {
+    notes: NoteEvent[];
+    chords: Chord[];
+    shift: number;
+    useNotes: boolean;
+    useChords: boolean;
+    low: number;
+    high: number;
+  } | null = null;
   private frozenAt = -1;
   private busy = '';
   private editing = -1;
@@ -852,20 +864,22 @@ export class Transcribe {
     const horizon = 5;
     const shift = this.host.pitch();
     const song = this.host.song();
-    const notes = song?.midi?.[this.midiKey()] ?? [];
-    const chords = song?.chords ?? [];
+    const notes = song?.midi?.[this.midiKey()] ?? NO_NOTES;
+    const chords = song?.chords ?? NO_CHORDS;
     const useChords = this.practiceMode !== 'notes';
     const useNotes = this.practiceMode !== 'chords';
     const cues = practiceCues(notes, chords, { now: pos / SR, horizon, shift, useNotes, useChords });
-    // Fit the keyboard to the notes visible in this five-second lesson window,
-    // not every note in the whole song. Using the full MIDI file made mobile keys
-    // microscopic whenever a song used a wide register, even if the current passage
-    // only needed two or three octaves.
-    const pitches = cues.map(cue => cue.pitch);
-    if (!pitches.length) pitches.push(60 + shift);
-    // Keep at least three octaves visible while ensuring every cue in this
-    // lesson window stays on-screen.
-    const { low, high } = pianoKeyboardRange(pitches);
+    // The full-song range is stable; cache it so a large MIDI file is not
+    // traversed and allocated again on every animation frame.
+    let range = this.practiceRangeCache;
+    if (!range || range.notes !== notes || range.chords !== chords || range.shift !== shift ||
+      range.useNotes !== useNotes || range.useChords !== useChords) {
+      const pitches = practicePitches(notes, chords, { shift, useNotes, useChords });
+      if (!pitches.length) pitches.push(60 + shift);
+      const { low, high } = pianoKeyboardRange(pitches);
+      range = this.practiceRangeCache = { notes, chords, shift, useNotes, useChords, low, high };
+    }
+    const { low, high } = range;
     const whites: number[] = [];
     for (let n = low; n < high; n++) if (!isBlack(n)) whites.push(n);
     const keyW = (right - left) / whites.length;
@@ -944,9 +958,10 @@ export class Transcribe {
 
     // Piano body and white keys: beveled edges, separators and octave labels.
     g.fillStyle = '#08090e'; g.fillRect(left, keyTop, right-left, keyBottom-keyTop);
+    const soundingPitches = practiceActivePitches(cues, now);
     const activePitch = (pitch: number) => ({
-      chord: cues.some(cue => cue.kind === 'chord' && cue.pitch % 12 === pitch % 12 && cue.start <= now && cue.end > now),
-      note: cues.some(cue => cue.kind === 'note' && cue.pitch === pitch && cue.start <= now && cue.end > now),
+      chord: soundingPitches.chords.has(pitch),
+      note: soundingPitches.notes.has(pitch),
     });
     for (let i=0; i<whites.length; i++) {
       const n=whites[i], x=left+i*keyW, active=activePitch(n);
