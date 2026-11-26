@@ -43,6 +43,8 @@ export interface TxHost {
   lanes(): { name: string; colour: string }[];
   isStemMuted(name: string): boolean;
   setStemMuted(name: string, muted: boolean): void;
+  /** Change song speed from the Play Along controls, keeping the current pitch shift. */
+  setTempo(tempo: number): void;
   pitch(): number;
   loop(): { on: boolean; a: number; b: number };
   markers(): { name: string; pos: number }[];
@@ -186,6 +188,9 @@ export class Transcribe {
   private practiceLane: HTMLElement;
   private practiceCanvas: HTMLCanvasElement;
   private practiceModeSel: HTMLSelectElement;
+  private practiceSpeedSel: HTMLSelectElement;
+  private practicePrevNoteBtn: HTMLButtonElement;
+  private practiceNextNoteBtn: HTMLButtonElement;
   private practiceTargetSel: HTMLSelectElement;
   private practiceStartBtn: HTMLButtonElement;
   private practiceFocusBtn: HTMLButtonElement;
@@ -241,6 +246,18 @@ export class Transcribe {
       h('option', { value: 'notes' }, 'Notes'),
       h('option', { value: 'both' }, 'Chords + notes'),
     ) as HTMLSelectElement;
+    this.practiceSpeedSel = h('select', { class: 'tiny practice-speed', title: 'Playback speed for piano practice', 'aria-label': 'Practice playback speed' },
+      ...[0.25, 0.5, 0.75, 1].map((rate) => h('option', { value: String(rate) }, `${Math.round(rate * 100)}%`)),
+    ) as HTMLSelectElement;
+    this.practiceSpeedSel.value = '1';
+    this.practiceSpeedSel.onchange = () => {
+      this.host.setTempo(Number(this.practiceSpeedSel.value));
+      this.redraw();
+    };
+    this.practicePrevNoteBtn = h('button', { class: 'btn tiny ghost', type: 'button', title: 'Pause and go to the previous piano note', 'aria-label': 'Previous note' }, '◀ Note') as HTMLButtonElement;
+    this.practiceNextNoteBtn = h('button', { class: 'btn tiny ghost', type: 'button', title: 'Pause and go to the next piano note', 'aria-label': 'Next note' }, 'Note ▶') as HTMLButtonElement;
+    this.practicePrevNoteBtn.onclick = () => this.stepPracticeNote(-1);
+    this.practiceNextNoteBtn.onclick = () => this.stepPracticeNote(1);
     this.practiceModeSel.onchange = () => {
       this.practiceMode = this.practiceModeSel.value as 'chords' | 'notes' | 'both';
       if (this.practiceMode === 'notes' || this.practiceMode === 'both') this.selectPracticeNotesSource();
@@ -278,6 +295,8 @@ export class Transcribe {
     this.practiceLane = h('div', { class: 'practice-lane' },
       h('div', { class: 'practice-head' }, h('span', { class: 'name' }, 'Play along'), this.practiceTargetSel, this.practiceStartBtn, this.practiceModeSel,
         h('span', { class: 'muted small' }, 'Mute the part you play; the rest of the song keeps playing.'), this.practiceHint,
+        h('span', { class: 'muted small practice-speed-label' }, 'Speed'), this.practiceSpeedSel,
+        this.practicePrevNoteBtn, this.practiceNextNoteBtn,
         this.practiceRangePrevBtn, this.practiceRangeLabel, this.practiceRangeNextBtn, this.practiceFocusBtn),
       this.practiceCanvas,
     );
@@ -867,6 +886,29 @@ export class Transcribe {
     return out;
   }
 
+  /** Pause playback and move the playhead to the adjacent MIDI note onset. */
+  private stepPracticeNote(direction: -1 | 1) {
+    const song = this.host.song();
+    const notes = song?.midi?.[this.midiKey()] ?? NO_NOTES;
+    if (!notes.length) {
+      toast('Generate the piano MIDI notes first');
+      return;
+    }
+    const now = this.host.player.state.pos / SR;
+    const ordered = [...notes].filter((note) => Number.isFinite(note.start)).sort((a, b) => a.start - b.start);
+    const epsilon = 0.04;
+    const target = direction > 0
+      ? ordered.find((note) => note.start > now + epsilon || (now <= epsilon && note.start >= 0))
+      : [...ordered].reverse().find((note) => note.start < now - epsilon);
+    if (!target) {
+      toast(direction > 0 ? 'You are at the last note' : 'You are at the first note');
+      return;
+    }
+    this.host.player.pause();
+    this.host.player.seek(Math.max(0, Math.round(target.start * SR)));
+    this.redraw();
+  }
+
   // ---------- drawing ----------
   /** Called by the deck whenever it redraws. */
   draw(pos: number) {
@@ -889,6 +931,9 @@ export class Transcribe {
    */
   private drawPractice(pos: number) {
     const c = this.practiceCanvas;
+    const currentTempo = this.host.player.state.tempo || 1;
+    if (this.practiceSpeedSel.value !== String(currentTempo) && [0.25, 0.5, 0.75, 1].includes(currentTempo))
+      this.practiceSpeedSel.value = String(currentTempo);
     if (!c.clientWidth) return;
     const g = fitCanvas(c);
     const { width: w, height: H } = c;
