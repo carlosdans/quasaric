@@ -1013,3 +1013,61 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .deck-actions .btn { flex: 1 1 calc(50% - 6px); }
   .dtab { font-size: 12px; padding-inline: 8px; }
 }
+
+
+/* ---------- Synthesia practice keyboard: mobile-first clarity ---------- */
+.practice-head {
+  gap: 8px 10px;
+}
+.practice-head .name {
+  font-size: 14px;
+  letter-spacing: .01em;
+}
+.practice-keyboard {
+  height: 240px;
+  background: #090b12;
+}
+@media (max-width: 700px) {
+  .practice-lane {
+    border-left-width: 4px;
+    margin-bottom: 12px;
+  }
+  .practice-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+  .practice-head .name {
+    grid-column: 1 / -1;
+    font-size: 16px;
+  }
+  .practice-head select,
+  .practice-head .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    font-size: 14px;
+  }
+  .practice-head .practice-hint,
+  .practice-head > .muted {
+    grid-column: 1 / -1;
+    line-height: 1.4;
+  }
+  .practice-keyboard {
+    height: 280px;
+  }
+}
+@media (max-width: 380px) {
+  .practice-head {
+    grid-template-columns: 1fr;
+  }
+  .practice-head .name,
+  .practice-head .practice-hint,
+  .practice-head > .muted {
+    grid-column: 1;
+  }
+  .practice-keyboard {
+    height: 300px;
+  }
+}
