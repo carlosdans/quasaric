@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#090b12" />
-  <meta name="description" content="Quasaric is a private, on-device music studio. Separate songs into stems, then slow down, loop and explore every part." />
+  <meta name="description" content="Quasaric is a private, on-device music studio. Separate songs, then learn piano parts with a Synthesia-style visual guide to notes and chords." />
   <title>Quasaric — Your music, in every layer</title>
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -24,7 +24,7 @@
     <a class="brand" href="/" aria-label="Quasaric home"><img src="/icon.svg" alt="" /> QUASARIC</a>
     <nav class="navlinks" aria-label="Main navigation">
       <label class="language-picker" title="Language"><select id="languageSelect" aria-label="Language"><option value="en">EN</option><option value="es">ES</option></select></label>
-      <a class="hide-mobile" href="#features">Features</a><a class="hide-mobile" href="#how">How it works</a>
+      <a class="hide-mobile" href="#features">Features</a><a class="hide-mobile" href="#piano">Piano</a><a class="hide-mobile" href="#how">How it works</a>
       <a href="https://github.com/carlosdans/quasaric" target="_blank" rel="noopener noreferrer">GitHub</a>
       <a class="button" href="/app">Open studio <span aria-hidden="true">↗</span></a>
     </nav>
@@ -34,7 +34,7 @@
       <div>
         <div class="eyebrow"><span class="dot"></span> A music studio that stays yours</div>
         <h1>Your music.<br/><span>Every layer.</span></h1>
-        <p class="lead">Separate songs into individual tracks, then slow them down, loop the tricky parts and explore the details. All in your browser, with audio processed on your device.</p>
+        <p class="lead">Separate songs into individual tracks, then learn the piano part with a Synthesia-style guide to notes and chords. Slow down, practise note by note and explore every detail — with audio processed on your device.</p>
         <div class="actions"><a class="button" href="/app">Open Quasaric <span aria-hidden="true">→</span></a><a class="button secondary" href="#features">Explore features</a></div>
         <div class="trust"><span><b class="check">✓</b> On-device processing</span><span><b class="check">✓</b> No account required</span><span><b class="check">✓</b> Free and open source</span></div>
       </div>
@@ -53,6 +53,32 @@
         <article class="card"><div class="ico">♫</div><h3>Separate into stems</h3><p>Split a song into vocals, drums, bass and other instruments with on-device AI models.</p></article>
         <article class="card"><div class="ico">↻</div><h3>Slow down and loop</h3><p>Work through a difficult passage at your own pace. Loop sections until every note feels right.</p></article>
         <article class="card"><div class="ico">⌁</div><h3>Explore the music</h3><p>Shape your practice with track controls, pitch and tempo tools, chords, tablature and more.</p></article>
+      </div>
+    </div></section>
+    <section class="section" id="piano"><div class="wrap piano-feature">
+      <div class="piano-copy">
+        <div class="kicker">Play the song on piano</div>
+        <h2>A Synthesia-style guide for the songs you love.</h2>
+        <p>Turn the piano part of a song into a visual practice guide. Follow the notes as they arrive at the keyboard, see the chords in time with the music and learn the melody at your own pace.</p>
+        <ul class="piano-points">
+          <li>Visual piano roll with notes moving towards the on-screen keyboard</li>
+          <li>Melody notes and chord names, synchronised with the song</li>
+          <li>Play Along: mute the piano part and play it yourself</li>
+          <li>Slow playback to 25%, 50% or 75%, or pause and move note by note</li>
+        </ul>
+        <a class="button piano-cta" href="/app">Practise a song on piano <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="piano-demo" role="img" aria-label="Illustration of notes falling towards a piano keyboard, with chord names">
+        <div class="piano-demo-head"><strong>PIANO PLAY ALONG</strong><span>● IN SYNC</span></div>
+        <div class="note-roll">
+          <i class="fall-note" style="left:8%;top:24px;width:19%"></i><i class="fall-note cyan" style="left:35%;top:67px;width:14%"></i><i class="fall-note purple" style="left:54%;top:12px;width:20%"></i><i class="fall-note" style="left:74%;top:104px;width:17%"></i><i class="fall-note cyan" style="left:19%;top:130px;width:12%"></i><i class="fall-note purple" style="left:44%;top:148px;width:18%"></i><i class="fall-note" style="left:83%;top:35px;width:12%"></i>
+        </div>
+        <div class="piano-label"><span>NOTES → KEYBOARD</span><span>FOLLOW THE MELODY</span></div>
+        <div class="keys-demo" aria-hidden="true">
+          <i class="white-key"></i><i class="white-key"></i><i class="white-key active"></i><i class="white-key"></i><i class="white-key"></i><i class="white-key active"></i><i class="white-key"></i><i class="white-key"></i><i class="white-key"></i><i class="white-key"></i><i class="white-key active"></i><i class="white-key"></i>
+          <i class="black-key" style="left:11%"></i><i class="black-key" style="left:19%"></i><i class="black-key" style="left:36%"></i><i class="black-key" style="left:44%"></i><i class="black-key" style="left:52%"></i><i class="black-key" style="left:69%"></i><i class="black-key" style="left:77%"></i><i class="black-key" style="left:94%"></i>
+        </div>
+        <div class="piano-chords"><span>C</span><span>Am</span><span>F</span><span>G</span></div>
       </div>
     </div></section>
     <section class="section" id="how"><div class="wrap">
