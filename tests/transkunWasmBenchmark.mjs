@@ -13,18 +13,18 @@ function readVar(b, s) {
   }
   throw new Error('Invalid MIDI variable value');
 }
-function parseMidi(buffer) {
+function parseMidi(buffer, extendSustainPedal = true) {
   if (buffer.toString('ascii', 0, 4) !== 'MThd') throw new Error('Invalid MIDI');
   const h = buffer.readUInt32BE(4), tracks = buffer.readUInt16BE(10), ppq = buffer.readUInt16BE(12);
   if (!ppq || (ppq & 0x8000)) throw new Error('Unsupported MIDI time division');
-  const tempos = [{ tick: 0, us: 500000 }], raw = [];
+  const tempos = [{ tick: 0, us: 500000 }], raw = [], pedals = [];
   let pos = 8 + h;
   for (let tr = 0; tr < tracks; tr++) {
     if (buffer.toString('ascii', pos, pos + 4) !== 'MTrk') throw new Error('Invalid MIDI track');
     const len = buffer.readUInt32BE(pos + 4), s = { pos: pos + 8, end: pos + 8 + len };
     pos = s.end;
     let tick = 0, running = 0;
-    const active = new Map();
+    const active = new Map(), pedalDown = new Map();
     while (s.pos < s.end) {
       tick += readVar(buffer, s);
       let status = buffer[s.pos];
@@ -39,15 +39,29 @@ function parseMidi(buffer) {
         s.pos += size; continue;
       }
       if (status === 240 || status === 247) { s.pos += readVar(buffer, s); running = 0; continue; }
-      const kind = status & 240, channel = status & 15, pitch = buffer[s.pos++];
-      const velocity = (kind === 192 || kind === 208) ? 0 : buffer[s.pos++];
-      const key = tr + ':' + channel + ':' + pitch;
-      if (kind === 144 && velocity > 0) {
-        const q = active.get(key) ?? []; q.push(tick); active.set(key, q);
-      } else if (kind === 128 || (kind === 144 && velocity === 0)) {
-        const q = active.get(key);
-        if (q?.length) { raw.push({ pitch, startTick: q.shift(), endTick: tick }); if (!q.length) active.delete(key); }
+      const kind = status & 240, channel = status & 15, data1 = buffer[s.pos++];
+      const data2 = (kind === 192 || kind === 208) ? 0 : buffer[s.pos++];
+      const channelKey = tr + ':' + channel;
+      if (kind === 176 && data1 === 64) {
+        if (data2 >= 64 && !pedalDown.has(channelKey)) pedalDown.set(channelKey, tick);
+        else if (data2 < 64 && pedalDown.has(channelKey)) {
+          pedals.push({ track: tr, channel, startTick: pedalDown.get(channelKey), endTick: tick });
+          pedalDown.delete(channelKey);
+        }
+        continue;
       }
+      const key = channelKey + ':' + data1;
+      if (kind === 144 && data2 > 0) {
+        const q = active.get(key) ?? []; q.push(tick); active.set(key, q);
+      } else if (kind === 128 || (kind === 144 && data2 === 0)) {
+        const q = active.get(key);
+        if (q?.length) { raw.push({ track: tr, channel, pitch: data1, startTick: q.shift(), endTick: tick }); if (!q.length) active.delete(key); }
+      }
+    }
+    const lastNoteTick = raw.filter(n => n.track === tr).reduce((m, n) => Math.max(m, n.endTick), tick);
+    for (const [key, startTick] of pedalDown) {
+      const channel = Number(key.split(':')[1]);
+      pedals.push({ track: tr, channel, startTick, endTick: lastNoteTick });
     }
   }
   tempos.sort((a, b) => a.tick - b.tick);
@@ -63,7 +77,22 @@ function parseMidi(buffer) {
     while (lo < hi) { const m = Math.ceil((lo + hi) / 2); if (segs[m].tick <= target) lo = m; else hi = m - 1; }
     const x = segs[lo]; return x.seconds + (target - x.tick) * x.us / (ppq * 1e6);
   };
-  return raw.filter(n => n.pitch >= 21 && n.pitch <= 108 && n.endTick > n.startTick)
+  const notes = raw.filter(n => n.pitch >= 21 && n.pitch <= 108 && n.endTick > n.startTick);
+  if (extendSustainPedal) {
+    for (const note of notes) {
+      const pedal = pedals.find(p => p.track === note.track && p.channel === note.channel &&
+        note.endTick > p.startTick && note.endTick < p.endTick);
+      if (pedal) note.endTick = pedal.endTick;
+    }
+    notes.sort((a, b) => a.startTick - b.startTick || a.endTick - b.endTick || a.pitch - b.pitch);
+    const lastByPitch = new Map();
+    for (const note of notes) {
+      const previous = lastByPitch.get(note.track + ':' + note.channel + ':' + note.pitch);
+      if (previous && previous.endTick > note.startTick) previous.endTick = note.startTick;
+      lastByPitch.set(note.track + ':' + note.channel + ':' + note.pitch, note);
+    }
+  }
+  return notes.filter(n => n.endTick > n.startTick)
     .map(n => ({ pitch: n.pitch, start: time(n.startTick), end: time(n.endTick) }))
     .sort((a, b) => a.start - b.start || a.pitch - b.pitch);
 }
@@ -133,7 +162,7 @@ const pcm = readFileSync(audioPath);
 if (pcm.length % 4) throw new Error('Invalid float32 PCM');
 const audio = new Float32Array(pcm.length / 4);
 for (let i = 0; i < audio.length; i++) audio[i] = pcm.readFloatLE(i * 4);
-const reference = parseMidi(readFileSync(midiPath));
+const midiBytes = readFileSync(midiPath);\nconst reference = parseMidi(midiBytes, true);\nconst referenceKeyRelease = parseMidi(midiBytes, false);
 const buffers = await loadTranskunBuffers('https://huggingface.co/TuesdayCrowd/transkun-onnx/resolve/main/');
 console.log('Transkun parameters:', buffers.params);
 const model = new TranskunModel(new Uint8Array(readFileSync('/tmp/transkun.onnx')));
