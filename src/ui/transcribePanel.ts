@@ -1049,12 +1049,19 @@ export class Transcribe {
     for(let n=low;n<high;n++) if(isBlack(n)) {
       const key=xOf(n), active=activePitch(n);
       const grad=g.createLinearGradient(key.x,keyTop,key.x+key.width,keyTop+34*dpr);
-      grad.addColorStop(0,active.note?'#1ba8b7':active.chord?'#b87520':'#454958');
-      grad.addColorStop(0.5,active.note?'#116b79':active.chord?'#805016':'#171a24');
-      grad.addColorStop(1,'#080a10');
-      g.fillStyle=grad; g.shadowColor='rgba(0,0,0,0.65)'; g.shadowBlur=4*dpr;
+      // Active black keys need a much brighter treatment than their dark idle
+      // surface; otherwise the note/chord state is almost invisible.
+      grad.addColorStop(0,active.note?'#8bfbff':active.chord?'#ffe0a0':'#454958');
+      grad.addColorStop(0.42,active.note?'#20cbdc':active.chord?'#e6a43b':'#171a24');
+      grad.addColorStop(1,active.note?'#075b70':active.chord?'#75400e':'#080a10');
+      g.fillStyle=grad;
+      g.shadowColor=active.note?'#28d7e5':active.chord?'#ffd27a':'rgba(0,0,0,0.65)';
+      g.shadowBlur=(active.note || active.chord ? 16 : 4)*dpr;
       g.beginPath(); g.roundRect(key.x,keyTop,key.width,(keyBottom-keyTop)*0.64,3*dpr); g.fill();
-      g.shadowBlur=0; g.strokeStyle='rgba(255,255,255,0.28)'; g.stroke();
+      g.shadowBlur=0;
+      g.strokeStyle=active.note?'#9cfcff':active.chord?'#ffe0a0':'rgba(255,255,255,0.28)';
+      g.lineWidth=(active.note || active.chord ? 1.6 : 1)*dpr;
+      g.stroke();
       if (active.note || active.chord) {
         g.fillStyle='#fff'; g.font=`800 ${(mobile ? 11 : 12)*dpr}px system-ui,sans-serif`;
         g.textAlign='center'; g.textBaseline='middle';
