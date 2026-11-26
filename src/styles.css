@@ -928,3 +928,88 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .practice-head .muted { flex-basis: 100%; }
   .practice-keyboard { height: 245px; min-height: 210px; }
 }
+
+
+/* ---------- phone layout ---------- */
+/* Keep the desktop two-pane layout intact. On phones, controls must wrap instead of imposing
+   desktop-sized minimum widths on the viewport. The player remains first, with the song library
+   immediately below it. */
+@media (max-width: 700px) {
+  html, body { min-width: 320px; overflow-x: clip; }
+  .top {
+    position: sticky;
+    flex-wrap: wrap;
+    gap: 7px 10px;
+    padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
+  }
+  .brand { flex: 1 1 auto; min-width: 0; }
+  .chips { order: 3; flex: 1 1 100%; min-width: 0; gap: 5px; }
+  .top-actions {
+    order: 2;
+    flex: 1 1 100%;
+    min-width: 0;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .top-actions .btn { padding: 7px 9px; }
+  #helpBtn { display: none; }
+
+  .layout {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px max(8px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+  .side, .stage, .side-pane, .dpane, .card { min-width: 0; max-width: 100%; }
+  .card { padding: 10px; }
+  .side-tabs { position: static; }
+
+  /* Song title and action buttons get separate rows instead of squeezing one another. */
+  .deck-head { align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+  .deck-head > div:first-child { flex: 1 1 100%; min-width: 0; }
+  .deck-head h1, .deck-head p { max-width: 100%; overflow-wrap: anywhere; }
+  .deck-actions { width: 100%; flex: 1 1 100%; flex-wrap: wrap; gap: 6px; }
+  .deck-actions .btn { flex: 1 1 auto; }
+
+  /* Transport, loop and marker controls can wrap; no fixed desktop-width loop row on a phone. */
+  .transport-bar { flex-wrap: wrap; gap: 6px; }
+  .transport-bar > * { min-width: 0; max-width: 100%; }
+  .transport-bar > .tool.loop { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; }
+  .tool.loop #loopInfo { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+  .markers-bar { flex-wrap: wrap; gap: 6px; }
+  .markers-bar > .markers { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; overflow: visible; }
+  .markers-bar > .x-toggles { flex: 1 1 auto; flex-wrap: wrap; }
+
+  /* Put the three main sliders on separate full-width rows for reliable touch operation. */
+  .tools-sliders { flex-direction: column; flex-wrap: nowrap; gap: 7px; }
+  .tools-sliders > .tool { width: 100%; min-width: 0; flex: 1 1 auto; flex-wrap: wrap; }
+  .tools-sliders > .tool input[type='range'] { flex: 1 1 100%; min-width: 0; }
+  .drawer-tabs { flex-wrap: wrap; gap: 6px; }
+  .drawer-tabs .dtab { flex: 1 1 auto; justify-content: center; min-width: 0; }
+
+  /* Prevent dense settings and track controls from creating page-wide horizontal scrolling. */
+  .tool, .tool > *, .lane, .lane-ctl, .x-lane, .practice-lane { min-width: 0; max-width: 100%; }
+  .tool select, .tool input[type='number'] { max-width: 100%; }
+  .trainer-cfg, .trainer-gate { flex-wrap: wrap; }
+  .practice-keyboard { width: 100%; max-width: 100%; }
+  .chord-shapes { gap: 8px 12px; padding-inline: 8px; }
+  .chord-shape { min-width: min(120px, 100%); }
+  dialog {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 24px);
+    padding: 12px;
+    margin: auto;
+  }
+}
+
+/* Very narrow phones: preserve usable tap targets without letting header buttons overflow. */
+@media (max-width: 380px) {
+  .top-actions { justify-content: space-between; }
+  .top-actions .btn { padding: 7px; }
+  .layout { padding-inline: 6px; }
+  .deck-actions .btn { flex: 1 1 calc(50% - 6px); }
+  .dtab { font-size: 12px; padding-inline: 8px; }
+}
