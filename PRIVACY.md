@@ -6,6 +6,8 @@ Quasaric es un proyecto personal y gratuito diseñado para procesar música en e
 
 ## 1. Sobre el proyecto y el contacto
 
+**Nombre del titular del proyecto: quasaric.com.**
+
 Para consultas relacionadas con privacidad: **contacto@quasaric.com**.
 
 Quasaric no dispone de cuentas, formularios de registro ni una biblioteca musical alojada en servidores propios. Esta política distingue el procesamiento local del audio de los datos técnicos que pueden tratar los proveedores que entregan la web y los modelos. El papel jurídico concreto de cada proveedor depende del servicio y la configuración efectiva.
