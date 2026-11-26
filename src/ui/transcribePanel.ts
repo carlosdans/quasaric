@@ -901,8 +901,8 @@ export class Transcribe {
     // Make the physical piano keys occupy a meaningful share of the canvas.
     // The old fixed 66/82 CSS-pixel strip stayed tiny even in full-screen mode.
     const keyHeight = Math.min(
-      H * (focusMode ? (mobile ? 0.48 : 0.50) : (mobile ? 0.42 : 0.40)),
-      (focusMode ? 480 : 260) * dpr,
+      H * (focusMode ? 0.52 : 0.50),
+      (focusMode ? 520 : 300) * dpr,
     );
     const keyTop = H - keyHeight;
     const keyBottom = H - 3 * dpr;
