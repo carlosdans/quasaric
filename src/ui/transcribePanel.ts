@@ -191,6 +191,7 @@ export class Transcribe {
   private practiceSpeedSel: HTMLSelectElement;
   private practicePrevNoteBtn: HTMLButtonElement;
   private practiceNextNoteBtn: HTMLButtonElement;
+  private practiceStepIndex = -1;
   private practiceTargetSel: HTMLSelectElement;
   private practiceStartBtn: HTMLButtonElement;
   private practiceFocusBtn: HTMLButtonElement;
@@ -896,14 +897,24 @@ export class Transcribe {
     }
     const now = this.host.player.state.pos / SR;
     const ordered = [...notes].filter((note) => Number.isFinite(note.start)).sort((a, b) => a.start - b.start);
+    if (!ordered.length) return;
     const epsilon = 0.04;
-    const target = direction > 0
-      ? ordered.find((note) => note.start > now + epsilon || (now <= epsilon && note.start >= 0))
-      : [...ordered].reverse().find((note) => note.start < now - epsilon);
-    if (!target) {
+    const cursorStillCurrent = this.practiceStepIndex >= 0 &&
+      Math.abs((ordered[this.practiceStepIndex]?.start ?? Number.POSITIVE_INFINITY) - now) < 0.12;
+    let targetIndex: number;
+    if (cursorStillCurrent) {
+      targetIndex = this.practiceStepIndex + direction;
+    } else if (direction > 0) {
+      targetIndex = ordered.findIndex((note) => note.start >= now - epsilon);
+    } else {
+      targetIndex = ordered.findLastIndex((note) => note.start < now - epsilon);
+    }
+    if (targetIndex < 0 || targetIndex >= ordered.length) {
       toast(direction > 0 ? 'You are at the last note' : 'You are at the first note');
       return;
     }
+    const target = ordered[targetIndex];
+    this.practiceStepIndex = targetIndex;
     this.host.player.pause();
     this.host.player.seek(Math.max(0, Math.round(target.start * SR)));
     this.redraw();
