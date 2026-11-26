@@ -119,8 +119,8 @@ function score(predicted, reference) {
   const fp = predicted.length - tp, fn = reference.length - tp;
   const precision = tp / Math.max(1, tp + fp), recall = tp / Math.max(1, tp + fn);
 
-  // Official Transkun/mir_eval-style onset+offset criterion: 50 ms onset
-  // tolerance, and offset tolerance max(100 ms, 20% of reference duration).
+  // mir_eval-style note matching: 50 ms onset tolerance and offset
+  // tolerance max(50 ms, 20% of the unextended key-press duration).
   // Keep this separate from the onset-only match so duration quality cannot be
   // hidden by a correct note start.
   const remainingWithOffset = new Set(reference.map((_, i) => i));
@@ -131,7 +131,7 @@ function score(predicted, reference) {
       const target = reference[i];
       if (target.pitch !== note.pitch) continue;
       const onsetError = Math.abs(target.start - note.start);
-      const offsetTolerance = Math.max(0.1, 0.2 * (target.end - target.start));
+      const offsetTolerance = Math.max(0.05, 0.2 * (target.end - target.start));
       if (onsetError <= 0.05 && Math.abs(target.end - note.end) <= offsetTolerance && onsetError < bestOnset) {
         best = i; bestOnset = onsetError;
       }
@@ -147,7 +147,7 @@ function score(predicted, reference) {
     precision: +precision.toFixed(4), recall: +recall.toFixed(4),
     f1: +(2 * precision * recall / Math.max(1e-9, precision + recall)).toFixed(4),
     onsetOffset: {
-      criterion: 'onset <= 50 ms; offset <= max(100 ms, 20% of reference duration)',
+      criterion: 'onset <= 50 ms; key-release offset <= max(50 ms, 20% of reference duration)',
       truePositives: offsetTp, falsePositives: offsetFp, falseNegatives: offsetFn,
       precision: +offsetPrecision.toFixed(4), recall: +offsetRecall.toFixed(4),
       f1: +(2 * offsetPrecision * offsetRecall / Math.max(1e-9, offsetPrecision + offsetRecall)).toFixed(4),
@@ -163,8 +163,8 @@ if (pcm.length % 4) throw new Error('Invalid float32 PCM');
 const audio = new Float32Array(pcm.length / 4);
 for (let i = 0; i < audio.length; i++) audio[i] = pcm.readFloatLE(i * 4);
 const midiBytes = readFileSync(midiPath);
-const reference = parseMidi(midiBytes, true);
-const referenceKeyRelease = parseMidi(midiBytes, false);
+const reference = parseMidi(midiBytes, false);
+const referencePedalExtended = parseMidi(midiBytes, true);
 const buffers = await loadTranskunBuffers('https://huggingface.co/TuesdayCrowd/transkun-onnx/resolve/main/');
 console.log('Transkun parameters:', buffers.params);
 const model = new TranskunModel(new Uint8Array(readFileSync('/tmp/transkun.onnx')));
@@ -187,6 +187,7 @@ const report = {
   predictedPedalChanges: result.pedal.length,
   referenceNotes: reference.length,
   metrics: score(predicted, reference),
+  pedalExtendedDiagnostic: score(predicted, referencePedalExtended),
 };
 console.log('TRANSKUN REAL-PIANO BENCHMARK');
 console.log(JSON.stringify(report, null, 2));
