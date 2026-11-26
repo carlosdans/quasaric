@@ -907,7 +907,8 @@ export class Transcribe {
     } else if (direction > 0) {
       targetIndex = ordered.findIndex((note) => note.start >= now - epsilon);
     } else {
-      targetIndex = ordered.findLastIndex((note) => note.start < now - epsilon);
+      targetIndex = -1;
+      for (let i = 0; i < ordered.length; i++) if (ordered[i].start < now - epsilon) targetIndex = i;
     }
     if (targetIndex < 0 || targetIndex >= ordered.length) {
       toast(direction > 0 ? 'You are at the last note' : 'You are at the first note');
