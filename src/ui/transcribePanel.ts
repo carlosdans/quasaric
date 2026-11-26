@@ -945,11 +945,21 @@ export class Transcribe {
     const whites: number[] = [];
     for (let n = low; n < high; n++) if (!isBlack(n)) whites.push(n);
     const keyW = (right - left) / whites.length;
-    const xOf = (pitch: number) => {
+    // MIDI pitches are integer semitones. Normalize at the geometry boundary so
+    // fractional values from chord/transcription processing cannot fall through
+    // the white-key lookup and be positioned as a black key at the lane edge.
+    const xOf = (rawPitch: number) => {
+      const pitch = Math.round(rawPitch);
       const whiteIndex = whites.indexOf(pitch);
-      if (whiteIndex >= 0) return { x: left + whiteIndex * keyW, width: keyW, black: false };
-      const base = whites.indexOf(pitch - 1);
-      return { x: left + (base + 1) * keyW - keyW * 0.31, width: keyW * 0.62, black: true };
+      if (!isBlack(pitch) && whiteIndex >= 0)
+        return { x: left + whiteIndex * keyW, width: keyW, black: false };
+      const blackWidth = keyW * 0.58;
+      // Every black key sits on the seam immediately after its preceding white
+      // key. Compute its centre first, then derive the left edge; the same
+      // geometry is used by both the falling cue and the rendered keyboard.
+      const precedingWhite = whites.indexOf(pitch - 1);
+      const centre = left + (precedingWhite + 1) * keyW;
+      return { x: centre - blackWidth / 2, width: blackWidth, black: true };
     };
     const now = pos / SR;
     const strikeY = keyTop;
@@ -1057,7 +1067,7 @@ export class Transcribe {
       g.fillStyle=grad;
       g.shadowColor=active.note?'#28d7e5':active.chord?'#ffd27a':'rgba(0,0,0,0.65)';
       g.shadowBlur=(active.note || active.chord ? 16 : 4)*dpr;
-      g.beginPath(); g.roundRect(key.x,keyTop,key.width,(keyBottom-keyTop)*0.64,3*dpr); g.fill();
+      g.beginPath(); g.roundRect(key.x,keyTop,key.width,(keyBottom-keyTop)*0.54,3*dpr); g.fill();
       g.shadowBlur=0;
       g.strokeStyle=active.note?'#9cfcff':active.chord?'#ffe0a0':'rgba(255,255,255,0.28)';
       g.lineWidth=(active.note || active.chord ? 1.6 : 1)*dpr;
