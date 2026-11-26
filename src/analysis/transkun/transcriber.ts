@@ -102,6 +102,10 @@ export class TranskunTranscriber {
     this.lastFrameIdx = Math.round(this.segSamples / this.hop)
   }
 
+  async dispose(): Promise<void> {
+    await Promise.all([this.model.release(), this.heads.release()]);
+  }
+
   async transcribe(
     audio: Float32Array,
     onProgress?: (p: TranscribeProgress) => void
