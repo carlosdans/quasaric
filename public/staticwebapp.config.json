@@ -1,13 +1,11 @@
 {
   "routes": [
-    {
-      "route": "/app",
-      "rewrite": "/app.html"
-    },
-    {
-      "route": "/app/*",
-      "rewrite": "/app.html"
-    }
+    { "route": "/app", "rewrite": "/app.html" },
+    { "route": "/app/*", "rewrite": "/app.html" },
+    { "route": "/privacy", "rewrite": "/privacy/index.html" },
+    { "route": "/legal", "rewrite": "/legal/index.html" },
+    { "route": "/cookies", "rewrite": "/cookies/index.html" },
+    { "route": "/license", "rewrite": "/license/index.html" }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
@@ -16,7 +14,12 @@
       "/icons/*",
       "/sw.js",
       "/manifest.webmanifest",
-      "/app.html"
+      "/app.html",
+      "/privacy/*",
+      "/legal/*",
+      "/cookies/*",
+      "/license/*",
+      "/legal.css"
     ]
   },
   "globalHeaders": {

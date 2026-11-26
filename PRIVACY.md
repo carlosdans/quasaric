@@ -1,32 +1,43 @@
-# Privacy
+# Política de privacidad de Quasaric
 
-**Steminize does not collect, send or sell anything about you or your music.** Your songs are separated on your own computer and are
-never uploaded. There is no account, no tracking, no analytics and no advertising.
+**Última actualización: 26 de noviembre de 2026**
 
-## What stays on your computer
-- Your songs and the separated parts, takes you record, tabs, lyrics and notes: in the app's own storage (the browser's private storage
-  for the web app, a folder in your user data for the desktop app).
-- Your settings and choices (theme, panels, devices, latency, setlists).
-- The separation models, once downloaded, so the app works offline afterwards.
+Quasaric es un proyecto personal y gratuito diseñado para procesar música en el dispositivo del usuario. No ofrece cuentas, publicidad, analítica propia ni seguimiento del comportamiento.
 
-## When the app uses the internet
-Only in these cases, each started by something you do:
-1. **First use of a separation model:** it is downloaded from Hugging Face and kept on the device. After that no connection is needed.
-2. **Desktop app, From YouTube… (off until you turn it on in Settings):** the first time, it downloads the yt-dlp tool from GitHub; then it fetches the audio you picked from YouTube.
-3. **Desktop app, Check for updates:** asks GitHub for the latest release number, and only when you press the button.
-4. **Links you click** (Search lyrics, Support, the project page) open in your own browser, on those sites' terms.
-5. **The web app itself** is loaded from GitHub Pages when you open it (and cached so it works offline).
+## 1. Sobre el proyecto y el contacto
 
-Nothing else is sent anywhere. The sites above see the usual things any website sees (your internet address and the file being asked
-for), which is outside Steminize's control.
+**Nombre del titular del proyecto: quasaric.com.**
 
-## Diagnostic info
-**Copy diagnostic info** (in About) builds a plain-text summary of your setup and recent errors and puts it on your clipboard. It contains
-no songs, file names or personal information, and nothing is sent: you choose whether to paste it into a bug report.
+Para consultas relacionadas con privacidad: **contacto@quasaric.com**.
 
-## Your music and copyright
-You are responsible for having the right to use any audio you open or download. Steminize only processes the files you give it, on your
-own machine.
+Quasaric no dispone de cuentas, formularios de registro ni una biblioteca musical alojada en servidores propios. Esta política distingue el procesamiento local del audio de los datos técnicos que pueden tratar los proveedores que entregan la web y los modelos. El papel jurídico concreto de cada proveedor depende del servicio y la configuración efectiva.
 
-## Questions
-Open an issue at https://github.com/Gerschwin/steminize/issues.
+## 2. Archivos y proyectos musicales
+
+Los archivos de audio seleccionados por el usuario, las pistas separadas, notas MIDI, acordes, tablaturas, proyectos y preferencias se procesan en el navegador o dispositivo. Quasaric no incorpora una función para subir esos archivos a un servidor propio ni los envía a sus propios servidores para procesarlos.
+
+## 3. Datos técnicos y proveedores
+
+- **Azure Static Web Apps:** al solicitar páginas y recursos, la infraestructura puede recibir y tratar datos técnicos como dirección IP, fecha/hora, URL o recurso solicitado, cabeceras e información del navegador. El recurso de Quasaric está configurado en la región **Spain Central (Madrid)**; esto no permite afirmar que todos los datos de servicio, registros, operaciones de red o servicios auxiliares se procesen exclusivamente en España. La finalidad, el rol jurídico y la conservación dependen del servicio, configuración y condiciones aplicables.
+- **Hugging Face:** cuando el usuario inicia la descarga de un modelo, el proveedor recibe la solicitud y los datos técnicos de conexión asociados. Los archivos de audio no se envían allí para su procesamiento por Quasaric.
+- **Servicios externos:** al abrir enlaces, el navegador se conecta directamente con esos servicios, sujetos a sus propias políticas.
+
+Quasaric no incorpora intencionadamente analítica propia, píxeles publicitarios ni seguimiento entre sitios. No se afirma que todos los datos de conexión permanezcan en el Espacio Económico Europeo.
+
+## 4. Almacenamiento local
+
+La aplicación puede utilizar Local Storage, Cache Storage, OPFS (Origin Private File System) y un service worker para conservar preferencias, proyectos, modelos descargados y recursos necesarios. Estos datos permanecen en el dispositivo hasta que el usuario los elimina o limpia los datos del sitio.
+
+## 5. Finalidades y conservación
+
+El almacenamiento local permite las funciones que el usuario solicita. Las conexiones a proveedores permiten entregar la web, descargar modelos y mantener la seguridad y disponibilidad de la infraestructura. Quasaric no mantiene cuentas ni bibliotecas musicales centralizadas. Los registros técnicos de proveedores se conservan conforme a sus políticas, funciones y configuración.
+
+## 6. Contacto y derechos
+
+Para consultas relacionadas con el proyecto y la privacidad: **contacto@quasaric.com**. Cuando un proveedor actúe como responsable independiente de un tratamiento, las solicitudes sobre ese tratamiento deben dirigirse a dicho proveedor. También puede acudirse a la [Agencia Española de Protección de Datos](https://www.aepd.es/).
+
+## 7. Cambios
+
+Esta política se actualizará si cambian las funciones, los proveedores o los tratamientos descritos.
+
+Consulta también el [aviso informativo](https://quasaric.com/legal/) y la [política de cookies y almacenamiento local](https://quasaric.com/cookies/).
