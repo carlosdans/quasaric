@@ -16,7 +16,7 @@ import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
 import { noteOptionsForSource, singleLine, transcriptionEngineForSource, type NoteEvent } from '../analysis/basicPitch.ts';
 import { pianoKeyboardRange } from './pianoRange.ts';
 import { defaultPianoPracticeTarget } from './practiceTarget.ts';
-import { chordIntervals, practiceCues } from './practiceCues.ts';
+import { practiceCues } from './practiceCues.ts';
 import { monoOf } from '../analysis/resample.ts';
 import { programFor, writeMidi } from '../encode/midi.ts';
 import { renderMix } from '../player/mixcore.ts';
@@ -863,8 +863,8 @@ export class Transcribe {
     // only needed two or three octaves.
     const pitches = cues.map(cue => cue.pitch);
     if (!pitches.length) pitches.push(60 + shift);
-    // Fit the keyboard to the full detected register. A fixed three-octave window
-    // silently hid notes in bass-heavy or wide two-hand piano passages.
+    // Keep at least three octaves visible while ensuring every cue in this
+    // lesson window stays on-screen.
     const { low, high } = pianoKeyboardRange(pitches);
     const whites: number[] = [];
     for (let n = low; n < high; n++) if (!isBlack(n)) whites.push(n);
