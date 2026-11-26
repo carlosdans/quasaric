@@ -188,6 +188,11 @@ export class Transcribe {
   private practiceModeSel: HTMLSelectElement;
   private practiceTargetSel: HTMLSelectElement;
   private practiceStartBtn: HTMLButtonElement;
+  private practiceFocusBtn: HTMLButtonElement;
+  private practiceRangePrevBtn: HTMLButtonElement;
+  private practiceRangeNextBtn: HTMLButtonElement;
+  private practiceRangeLabel: HTMLElement;
+  private practiceRangeOffset = 0;
   private practiceHint: HTMLElement;
   private practiceTarget = '';
   /** Cached for the selected song/source/mode: never recalculate the full-song range per animation frame. */
@@ -252,9 +257,28 @@ export class Transcribe {
     this.practiceStartBtn = h('button', { class: 'btn tiny', type: 'button', title: 'Mute the selected part in the mix and prepare its falling-note lesson' }, 'Practise this part') as HTMLButtonElement;
     this.practiceStartBtn.onclick = () => this.preparePianoPractice();
     this.practiceHint = h('span', { class: 'muted small practice-hint', 'aria-live': 'polite' });
+    this.practiceRangePrevBtn = h('button', { class: 'btn tiny ghost practice-range-step', type: 'button', title: 'Show the lower octave', 'aria-label': 'Show the lower octave' }, '◀') as HTMLButtonElement;
+    this.practiceRangeNextBtn = h('button', { class: 'btn tiny ghost practice-range-step', type: 'button', title: 'Show the higher octave', 'aria-label': 'Show the higher octave' }, '▶') as HTMLButtonElement;
+    this.practiceRangeLabel = h('span', { class: 'muted small practice-range-label', 'aria-live': 'polite' }, 'Piano range');
+    this.practiceRangePrevBtn.onclick = () => { this.practiceRangeOffset = Math.max(0, this.practiceRangeOffset - 1); this.redraw(); };
+    this.practiceRangeNextBtn.onclick = () => { this.practiceRangeOffset += 1; this.redraw(); };
+    this.practiceFocusBtn = h('button', { class: 'btn tiny ghost practice-focus-btn', type: 'button', title: 'Expand the piano practice view', 'aria-label': 'Expand the piano practice view', 'aria-pressed': 'false' }, 'Expand') as HTMLButtonElement;
+    this.practiceFocusBtn.onclick = () => {
+      const focused = this.practiceLane.classList.toggle('is-focus');
+      document.body.classList.toggle('practice-focus', focused);
+      this.practiceFocusBtn.textContent = focused ? 'Exit expanded view' : 'Expand';
+      this.practiceFocusBtn.title = focused ? 'Return to the full studio' : 'Expand the piano practice view';
+      this.practiceFocusBtn.setAttribute('aria-label', this.practiceFocusBtn.title);
+      this.practiceFocusBtn.setAttribute('aria-pressed', String(focused));
+      this.redraw();
+    };
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && this.practiceLane.classList.contains('is-focus')) this.practiceFocusBtn.click();
+    });
     this.practiceLane = h('div', { class: 'practice-lane' },
       h('div', { class: 'practice-head' }, h('span', { class: 'name' }, 'Play along'), this.practiceTargetSel, this.practiceStartBtn, this.practiceModeSel,
-        h('span', { class: 'muted small' }, 'Mute the part you play; the rest of the song keeps playing.'), this.practiceHint),
+        h('span', { class: 'muted small' }, 'Mute the part you play; the rest of the song keeps playing.'), this.practiceHint,
+        this.practiceRangePrevBtn, this.practiceRangeLabel, this.practiceRangeNextBtn, this.practiceFocusBtn),
       this.practiceCanvas,
     );
 
@@ -892,8 +916,25 @@ export class Transcribe {
       if (!pitches.length) pitches.push(60 + shift);
       const { low, high } = pianoKeyboardRange(pitches);
       range = this.practiceRangeCache = { notes, chords, shift, useNotes, useChords, low, high };
+      this.practiceRangeOffset = 0;
     }
-    const { low, high } = range;
+    const fullLow = range.low, fullHigh = range.high;
+    // Keep individual keys large enough to learn on narrow screens. The full
+    // detected range remains available through the octave navigation controls.
+    const maxVisibleSemitones = c.clientWidth <= 520 ? 24 : c.clientWidth <= 900 ? 36 : 48;
+    const span = Math.min(fullHigh - fullLow, maxVisibleSemitones);
+    const centredLow = Math.max(fullLow, Math.min(fullHigh - span,
+      Math.floor((((fullLow + fullHigh) / 2) - span / 2) / 12) * 12));
+    const maxOffset = Math.max(0, Math.floor((fullHigh - span - centredLow) / 12));
+    this.practiceRangeOffset = Math.max(0, Math.min(maxOffset, this.practiceRangeOffset));
+    const low = centredLow + this.practiceRangeOffset * 12;
+    const high = Math.min(fullHigh, low + span);
+    this.practiceRangeLabel.textContent = `${noteName(low)}–${noteName(high - 1)}`;
+    this.practiceRangePrevBtn.disabled = this.practiceRangeOffset <= 0;
+    this.practiceRangeNextBtn.disabled = this.practiceRangeOffset >= maxOffset;
+    this.practiceRangePrevBtn.hidden = maxOffset === 0;
+    this.practiceRangeNextBtn.hidden = maxOffset === 0;
+    this.practiceRangeLabel.hidden = maxOffset === 0;
     const whites: number[] = [];
     for (let n = low; n < high; n++) if (!isBlack(n)) whites.push(n);
     const keyW = (right - left) / whites.length;
