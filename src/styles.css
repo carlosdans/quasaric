@@ -1077,11 +1077,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    destroying the song/player state underneath it. */
 .practice-head .practice-focus-btn { margin-left: auto; }
 .practice-keyboard {
-  height: clamp(280px, 42vh, 480px);
-  min-height: 250px;
+  height: clamp(360px, 48vh, 560px);
+  min-height: 320px;
 }
 @media (max-width: 700px) {
-  .practice-keyboard { height: clamp(260px, 44svh, 390px); min-height: 230px; }
+  .practice-keyboard { height: clamp(320px, 48svh, 460px); min-height: 300px; }
   .practice-head .practice-focus-btn { margin-left: 0; }
 }
 
