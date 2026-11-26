@@ -30,6 +30,7 @@ const getBasicSession = () =>
 
 const TRANSKUN_BASE = 'https://huggingface.co/TuesdayCrowd/transkun-onnx/resolve/main/';
 let transkunEngine: Promise<TranskunTranscriber> | null = null;
+let transkunInstance: TranskunTranscriber | null = null;
 const fetchModel = async (name: string) => {
   const response = await fetch(TRANSKUN_BASE + name);
   if (!response.ok) throw new Error(`Couldn't download Transkun model ${name} (${response.status})`);
@@ -51,7 +52,8 @@ const getTranskun = () =>
       await model.release();
       throw error;
     }
-    return new TranskunTranscriber(buffers, model, heads);
+    transkunInstance = new TranskunTranscriber(buffers, model, heads);
+    return transkunInstance;
   })());
 
 async function transcribeBasic(m: TranscribeIn) {
@@ -95,7 +97,11 @@ if (!(self.name ?? '').startsWith('em-pthread'))
     try {
       post({ type: 'done', id: m.id, notes: await transcribe(m) });
     } catch (err) {
-      if (m.engine === 'transkun') transkunEngine = null;
+      if (m.engine === 'transkun') {
+        await transkunInstance?.dispose().catch(() => {});
+        transkunInstance = null;
+        transkunEngine = null;
+      }
       post({ type: 'error', id: m.id, message: String((err as Error)?.message ?? err) });
     }
   };
