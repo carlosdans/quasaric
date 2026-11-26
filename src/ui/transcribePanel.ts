@@ -13,7 +13,7 @@ import { chordDiagram } from './chordDiagram.ts';
 import { QUALITIES, chordName, chordSheet, detectChords, mergeSame, noteLetter, prefersSharps, type Chord, type Quality } from '../analysis/chords.ts';
 import type { ChordMark } from '../lyrics/lyricChords.ts';
 import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
-import { noteOptionsForSource, singleLine, type NoteEvent } from '../analysis/basicPitch.ts';
+import { noteOptionsForSource, singleLine, transcriptionEngineForSource, type NoteEvent } from '../analysis/basicPitch.ts';
 import { pianoKeyboardRange } from './pianoRange.ts';
 import { defaultPianoPracticeTarget } from './practiceTarget.ts';
 import { practiceCues } from './practiceCues.ts';
@@ -380,7 +380,7 @@ export class Transcribe {
     );
     this.freezeBtn.onclick = () => this.toggleFreeze();
     pressed(this.freezeBtn, false);
-    this.midiBtn = h('button', { class: 'btn tiny ghost', type: 'button', title: 'Work out the notes of this part as MIDI (Basic Pitch)' }, 'To MIDI');
+    this.midiBtn = h('button', { class: 'btn tiny ghost', type: 'button', title: 'Convert this part to MIDI (Transkun for piano, Basic Pitch for other parts)' }, 'To MIDI');
     this.midiBtn.onclick = () => void this.toMidi();
     this.midiClearBtn = h('button', { class: 'btn tiny ghost', type: 'button', title: 'Remove the MIDI notes for this part', hidden: true }, '×');
     this.midiClearBtn.onclick = () => this.clearMidi();
@@ -1577,7 +1577,7 @@ export class Transcribe {
         const el = (performance.now() - t0) / 1000;
         const left = done ? (el / done) * (total - done) : 0;
         this.noteStatus.textContent = `MIDI: ${Math.round((100 * done) / total)}%${done > 2 ? ` · ${Math.ceil(left)} s left` : ''}`;
-      }, noteOptionsForSource(this.source === HEAR ? '' : this.source));
+      }, noteOptionsForSource(this.source === HEAR ? '' : this.source), transcriptionEngineForSource(this.source));
       if (this.host.song() !== s) return;
       // Lead vocals and bass play one note at a time: drop overlapping extras.
       const mono = this.source !== HEAR && ['vocals', 'bass'].includes(role(this.source));
