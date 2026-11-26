@@ -1126,3 +1126,12 @@ body.practice-focus { overflow: hidden !important; }
   .practice-lane.is-focus .practice-head .muted { flex-basis: auto; }
   .practice-lane.is-focus .practice-head { gap: 6px; padding: 8px; }
 }
+
+.practice-range-label {
+  min-width: 62px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.practice-range-step { min-width: 30px; }
+.practice-range-step:disabled { opacity: .28; cursor: default; }
+.practice-lane.is-focus .practice-range-label { color: rgba(235,238,255,.82); }
