@@ -20,6 +20,7 @@ import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '.
 import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine, suppressPianoHarmonics, transcriptionEngineForSource } from '../src/analysis/basicPitch.ts';
 import { pianoKeyboardRange } from '../src/ui/pianoRange.ts';
 import { defaultPianoPracticeTarget } from '../src/ui/practiceTarget.ts';
+import { MIDI_TIMING_VERSION, PIANO_MIDI_ENGINE_VERSION, restoreMidiState } from '../src/ui/midiState.ts';
 import { practiceActivePitches, practiceCues, practicePitches } from '../src/ui/practiceCues.ts';
 import { decimate2 } from '../src/analysis/resample.ts';
 import { semiCrfDecode } from '../src/analysis/transkun/viterbi.ts';
@@ -525,6 +526,21 @@ for (const [len, overlap, shifts] of [
   ok('piano practice does not silently substitute guitar or other when piano is absent', defaultPianoPracticeTarget(['drums', 'guitar', 'other']) === '');
   ok('a stale saved Guitar fallback is not mistaken for a piano stem', defaultPianoPracticeTarget(['guitar', 'other'], 'guitar') === '');
   ok('an explicitly saved dedicated piano source is preserved', defaultPianoPracticeTarget(['keys', 'piano'], 'keys') === 'keys');
+}
+
+// ---- saved MIDI migration: replace legacy piano Basic Pitch data with Transkun
+{
+  const note = { start: 0, end: 1, pitch: 60, amp: 1 };
+  const saved = { Piano: [note], Keyboard: [note], Keys: [note], Guitar: [note], mix: [note] };
+  const migrated = restoreMidiState(saved, MIDI_TIMING_VERSION, undefined);
+  ok('legacy piano MIDI is invalidated when the Transkun engine version is first recorded',
+    !!migrated && !('Piano' in migrated) && !('Keyboard' in migrated) && !('Keys' in migrated));
+  ok('legacy MIDI for non-piano sources is preserved during the piano-engine migration',
+    !!migrated && 'Guitar' in migrated && 'mix' in migrated);
+  ok('MIDI generated with the current piano engine is retained on restore',
+    restoreMidiState(saved, MIDI_TIMING_VERSION, PIANO_MIDI_ENGINE_VERSION) === saved);
+  ok('MIDI with an obsolete timing version is still discarded',
+    restoreMidiState(saved, MIDI_TIMING_VERSION - 1, PIANO_MIDI_ENGINE_VERSION) === undefined);
 }
 
 // ---- Synthesia cues: the falling bars and lit keys share one exact event timeline
