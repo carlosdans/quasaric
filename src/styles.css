@@ -866,6 +866,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .practice-lane[hidden] { display: none; }
 .practice-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 7px 10px; min-height: 38px; }
 .practice-head .name { font-weight: 700; }
+.practice-head .practice-speed-label { margin-left: 4px; }
+.practice-head .practice-speed { min-width: 68px; }
+.practice-head .practice-speed-label, .practice-head .practice-speed { flex: 0 0 auto; }
 .practice-keyboard { display: block; width: 100%; height: 220px; }
 @media (max-width: 700px) { .practice-keyboard { height: 190px; } }
 
