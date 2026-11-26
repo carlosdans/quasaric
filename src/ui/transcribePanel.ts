@@ -917,7 +917,7 @@ export class Transcribe {
       const visibleY = Math.max(top, Math.min(y, bottom - minBarHeight));
       const x = key.x + key.width * (key.black ? 0.13 : 0.10);
       const width = key.width * (key.black ? 0.74 : 0.80);
-      const grad = g.createLinearGradient(x, y, x + width, bottom);
+      const grad = g.createLinearGradient(x, visibleY, x + width, bottom);
       grad.addColorStop(0, colour); grad.addColorStop(1, colour === '#28d7e5' ? '#137bba' : '#6555d9');
       g.save();
       g.shadowColor = colour; g.shadowBlur = 9*dpr;
