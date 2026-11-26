@@ -1702,16 +1702,17 @@ export class Transcribe {
       if ((e as Error).name !== 'Cancelled') toast(`Couldn't make MIDI: ${(e as Error).message}`, true);
     } finally {
       // A song change may already have started a newer job; an old finalizer must not clear its busy state.
-      if (jobGeneration !== this.midiJobGeneration) return;
-      this.busy = '';
-      this.refreshMidiButtons();
-      this.redraw();
-      // A target change during transcription must not leave the new practice lane empty.
-      const queuedTarget = this.queuedPracticeTarget;
-      this.queuedPracticeTarget = '';
-      if (queuedTarget && queuedTarget === this.practiceTarget &&
-        (this.practiceMode === 'notes' || this.practiceMode === 'both')) {
-        this.selectPracticeNotesSource();
+      if (jobGeneration === this.midiJobGeneration) {
+        this.busy = '';
+        this.refreshMidiButtons();
+        this.redraw();
+        // A target change during transcription must not leave the new practice lane empty.
+        const queuedTarget = this.queuedPracticeTarget;
+        this.queuedPracticeTarget = '';
+        if (queuedTarget && queuedTarget === this.practiceTarget &&
+          (this.practiceMode === 'notes' || this.practiceMode === 'both')) {
+          this.selectPracticeNotesSource();
+        }
       }
     }
   }
