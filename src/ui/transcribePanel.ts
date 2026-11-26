@@ -16,7 +16,7 @@ import { cancelTranscribe, transcribe } from '../analysis/transcribe.ts';
 import { noteOptionsForSource, singleLine, transcriptionEngineForSource, type NoteEvent } from '../analysis/basicPitch.ts';
 import { pianoKeyboardRange } from './pianoRange.ts';
 import { defaultPianoPracticeTarget } from './practiceTarget.ts';
-import { practiceCues } from './practiceCues.ts';
+import { chordIntervals, practiceCues } from './practiceCues.ts';
 import { monoOf } from '../analysis/resample.ts';
 import { programFor, writeMidi } from '../encode/midi.ts';
 import { renderMix } from '../player/mixcore.ts';
@@ -221,6 +221,18 @@ export class Transcribe {
     ) as HTMLSelectElement;
     this.practiceModeSel.onchange = () => {
       this.practiceMode = this.practiceModeSel.value as 'chords' | 'notes' | 'both';
+      // Notes mode needs MIDI for the selected practice part. Start that analysis
+      // automatically instead of leaving an apparently empty keyboard.
+      if (this.practiceMode === 'notes') {
+        const song = this.host.song();
+        const target = this.practiceTarget;
+        if (song && target && !song.midi?.[target]?.length && !this.busy) {
+          this.source = target;
+          this.sourceSel.value = target;
+          this.refreshMidiButtons();
+          void this.toMidi();
+        }
+      }
       this.host.changed();
       this.redraw();
     };
@@ -828,8 +840,15 @@ export class Transcribe {
     const useChords = this.practiceMode !== 'notes';
     const useNotes = this.practiceMode !== 'chords';
     const cues = practiceCues(notes, chords, { now: pos / SR, horizon, shift, useNotes, useChords });
-    const pitches = notes.map(n => n.pitch + shift);
-    if (!pitches.length) pitches.push(...chords.filter(ch => ch.root >= 0).map(ch => 60 + ch.root + shift));
+    // Fit the keyboard to the pitches actually selected for display. In chords-only
+    // mode, using the MIDI note range here could put every chord outside the keyboard.
+    const pitches = [
+      ...(useNotes ? notes.map(n => n.pitch + shift) : []),
+      ...(useChords ? chords.filter(ch => ch.root >= 0).flatMap(ch =>
+        [0, ...chordIntervals(ch.q)].map(interval => 60 + ((ch.root + interval) % 12) + shift),
+      ) : []),
+    ];
+    if (!pitches.length) pitches.push(60 + shift);
     // Fit the keyboard to the full detected register. A fixed three-octave window
     // silently hid notes in bass-heavy or wide two-hand piano passages.
     const { low, high } = pianoKeyboardRange(pitches);
