@@ -907,7 +907,14 @@ export class Transcribe {
       const yEnd = strikeY - ((end - now) / horizon) * laneH;
       const y = Math.max(top, Math.min(yStart, yEnd));
       const bottom = Math.min(strikeY, Math.max(yStart, yEnd));
-      if (bottom <= top || bottom - y < 2*dpr) return;
+      if (bottom <= top) return;
+      // Very short MIDI notes can map to less than two physical pixels in the
+      // five-second overview. Dropping those bars makes the piano key light up
+      // with no falling cue beforehand. Preserve every onset and give short
+      // notes a small, readable minimum height, extending upward from the
+      // onset edge so the bar still reaches the correct strike time.
+      const minBarHeight = (mobile ? 4 : 3) * dpr;
+      const visibleY = Math.max(top, Math.min(y, bottom - minBarHeight));
       const x = key.x + key.width * (key.black ? 0.13 : 0.10);
       const width = key.width * (key.black ? 0.74 : 0.80);
       const grad = g.createLinearGradient(x, y, x + width, bottom);
@@ -915,17 +922,17 @@ export class Transcribe {
       g.save();
       g.shadowColor = colour; g.shadowBlur = 9*dpr;
       g.fillStyle = grad;
-      g.beginPath(); g.roundRect(x, y, width, bottom-y, 5*dpr); g.fill();
+      g.beginPath(); g.roundRect(x, visibleY, width, bottom-visibleY, 5*dpr); g.fill();
       g.shadowBlur = 0;
       g.strokeStyle = 'rgba(255,255,255,0.72)'; g.lineWidth = Math.max(1,dpr);
       g.stroke();
-      if (label && bottom-y > (mobile ? 27 : 19)*dpr && width > (mobile ? 12 : 22)*dpr) {
+      if (label && bottom-visibleY > (mobile ? 27 : 19)*dpr && width > (mobile ? 12 : 22)*dpr) {
         // On narrow screens abbreviate to the note name (without octave) so it
         // remains legible inside a piano key instead of squeezing a long label.
         const shortLabel = mobile ? label.replace(/-?\d+/g, '') : label;
         g.fillStyle = '#fff'; g.font = `700 ${(mobile ? 8 : 9)*dpr}px system-ui,sans-serif`;
         g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.fillText(shortLabel, x + width/2, y + Math.min(13*dpr,(bottom-y)/2), width-3*dpr);
+        g.fillText(shortLabel, x + width/2, visibleY + Math.min(13*dpr,(bottom-visibleY)/2), width-3*dpr);
         g.textAlign = 'start'; g.textBaseline = 'alphabetic';
       }
       g.restore();
