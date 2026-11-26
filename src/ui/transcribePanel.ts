@@ -922,7 +922,7 @@ export class Transcribe {
       if (label && bottom-y > (mobile ? 27 : 19)*dpr && width > (mobile ? 12 : 22)*dpr) {
         // On narrow screens abbreviate to the note name (without octave) so it
         // remains legible inside a piano key instead of squeezing a long label.
-        const shortLabel = mobile ? label.replace(/-?\\d+/g, '') : label;
+        const shortLabel = mobile ? label.replace(/-?\d+/g, '') : label;
         g.fillStyle = '#fff'; g.font = `700 ${(mobile ? 8 : 9)*dpr}px system-ui,sans-serif`;
         g.textAlign = 'center'; g.textBaseline = 'middle';
         g.fillText(shortLabel, x + width/2, y + Math.min(13*dpr,(bottom-y)/2), width-3*dpr);
@@ -974,7 +974,7 @@ export class Transcribe {
       if (active.note || active.chord) {
         g.fillStyle='#fff'; g.font=`700 ${(mobile ? 8 : 9)*dpr}px system-ui,sans-serif`;
         g.textAlign='center'; g.textBaseline='middle';
-        g.fillText(noteName(n).replace(/-?\\d+/g, ''), key.x+key.width/2, keyTop+(keyBottom-keyTop)*0.43, key.width-2*dpr);
+        g.fillText(noteName(n).replace(/-?\d+/g, ''), key.x+key.width/2, keyTop+(keyBottom-keyTop)*0.43, key.width-2*dpr);
         g.textAlign='start'; g.textBaseline='alphabetic';
       }
     }
