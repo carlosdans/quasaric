@@ -229,3 +229,8 @@ export function singleLine(notes: NoteEvent[]): NoteEvent[] {
   }
   return kept.sort((a, b) => a.start - b.start);
 }
+
+/** Select the piano-specialized engine only for a dedicated piano/keys stem. */
+export function transcriptionEngineForSource(source: string): 'transkun' | 'basic-pitch' {
+  return /piano|keys|keyboard/i.test(source) ? 'transkun' : 'basic-pitch';
+}
