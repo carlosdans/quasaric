@@ -221,23 +221,16 @@ export class Transcribe {
     ) as HTMLSelectElement;
     this.practiceModeSel.onchange = () => {
       this.practiceMode = this.practiceModeSel.value as 'chords' | 'notes' | 'both';
-      // Notes mode needs MIDI for the selected practice part. Start that analysis
-      // automatically instead of leaving an apparently empty keyboard.
-      if (this.practiceMode === 'notes') {
-        const song = this.host.song();
-        const target = this.practiceTarget;
-        if (song && target && !song.midi?.[target]?.length && !this.busy) {
-          this.source = target;
-          this.sourceSel.value = target;
-          this.refreshMidiButtons();
-          void this.toMidi();
-        }
-      }
+      if (this.practiceMode === 'notes' || this.practiceMode === 'both') this.selectPracticeNotesSource();
       this.host.changed();
       this.redraw();
     };
     this.practiceTargetSel = h('select', { class: 'tiny', title: 'Choose the piano part you want to learn', 'aria-label': 'Piano practice part' }) as HTMLSelectElement;
-    this.practiceTargetSel.onchange = () => { this.practiceTarget = this.practiceTargetSel.value; this.refreshPracticeTargetUi(); };
+    this.practiceTargetSel.onchange = () => {
+      this.practiceTarget = this.practiceTargetSel.value;
+      this.refreshPracticeTargetUi();
+      if (this.practiceMode === 'notes' || this.practiceMode === 'both') this.selectPracticeNotesSource();
+    };
     this.practiceStartBtn = h('button', { class: 'btn tiny', type: 'button', title: 'Mute the selected part in the mix and prepare its falling-note lesson' }, 'Practise this part') as HTMLButtonElement;
     this.practiceStartBtn.onclick = () => this.preparePianoPractice();
     this.practiceHint = h('span', { class: 'muted small practice-hint', 'aria-live': 'polite' });
@@ -540,6 +533,29 @@ export class Transcribe {
     $('chordsBtn').onclick = () => this.show({ chords: !this.chordsOn });
     $('notesBtn').onclick = () => this.show({ notes: !this.notesOn });
     this.show({});
+  }
+
+  /**
+   * Keep the MIDI source used by the falling-note lane aligned with the selected
+   * practice target. Do this even when MIDI already exists: otherwise the canvas
+   * can keep reading the unrelated "mix" track and appear completely empty.
+   */
+  private selectPracticeNotesSource() {
+    const song = this.host.song();
+    const target = this.practiceTarget;
+    if (!song || !target || !song.stems.some((stem) => stem.name === target)) return;
+    const sourceChanged = this.source !== target;
+    this.source = target;
+    this.sourceSel.value = target;
+    this.refreshMidiButtons();
+    if (!song.midi?.[target]?.length && !this.busy) {
+      this.practiceHint.textContent = 'Preparing piano notes…';
+      void this.toMidi();
+    } else {
+      this.practiceHint.textContent = '';
+      if (sourceChanged) this.host.changed();
+      this.redraw();
+    }
   }
 
   /** Prepare a piano-learning session: transcribe the selected stem, silence only that stem in the backing mix, and leave every other part (including vocals) playing. */
