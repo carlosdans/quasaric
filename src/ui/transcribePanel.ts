@@ -202,6 +202,8 @@ export class Transcribe {
   } | null = null;
   private frozenAt = -1;
   private busy = '';
+  /** Invalidates async finalizers when a new song replaces the active transcription. */
+  private midiJobGeneration = 0;
   /** Target selected while another source is being transcribed; process it after the current job. */
   private queuedPracticeTarget = '';
   private editing = -1;
@@ -635,6 +637,7 @@ export class Transcribe {
     this.practiceModeSel.value = this.practiceMode;
     this.heldRows.clear();
     this.unfreeze();
+    this.midiJobGeneration++;
     cancelTranscribe();
     this.busy = '';
     this.queuedPracticeTarget = '';
@@ -1667,6 +1670,7 @@ export class Transcribe {
     }
     const s = this.host.song();
     if (!s) return;
+    const jobGeneration = ++this.midiJobGeneration;
     const key = this.midiKey();
     const g = this.host.gains();
     const pick = s.stems.map((x, i) => ({ x, g: g[i] })).filter(({ x }) => (this.source === HEAR ? role(x.name) !== 'drums' : x.name === this.source));
@@ -1694,18 +1698,23 @@ export class Transcribe {
         if (!this.busy) this.noteStatus.textContent = '';
       }, 4000);
     } catch (e) {
-      this.noteStatus.textContent = '';
-      if ((e as Error).name !== 'Cancelled') toast(`Couldn't make MIDI: ${(e as Error).message}`, true);
+      if (jobGeneration === this.midiJobGeneration) {
+        this.noteStatus.textContent = '';
+        if ((e as Error).name !== 'Cancelled') toast(`Couldn't make MIDI: ${(e as Error).message}`, true);
+      }
     } finally {
-      this.busy = '';
-      this.refreshMidiButtons();
-      this.redraw();
-      // A target change during transcription must not leave the new practice lane empty.
-      const queuedTarget = this.queuedPracticeTarget;
-      this.queuedPracticeTarget = '';
-      if (queuedTarget && queuedTarget === this.practiceTarget &&
-        (this.practiceMode === 'notes' || this.practiceMode === 'both')) {
-        this.selectPracticeNotesSource();
+      // A song change may already have started a newer job; an old finalizer must not clear its busy state.
+      if (jobGeneration === this.midiJobGeneration) {
+        this.busy = '';
+        this.refreshMidiButtons();
+        this.redraw();
+        // A target change during transcription must not leave the new practice lane empty.
+        const queuedTarget = this.queuedPracticeTarget;
+        this.queuedPracticeTarget = '';
+        if (queuedTarget && queuedTarget === this.practiceTarget &&
+          (this.practiceMode === 'notes' || this.practiceMode === 'both')) {
+          this.selectPracticeNotesSource();
+        }
       }
     }
   }
