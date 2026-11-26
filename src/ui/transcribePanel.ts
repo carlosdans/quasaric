@@ -1067,29 +1067,51 @@ export class Transcribe {
     g.beginPath(); g.moveTo(left,strikeY); g.lineTo(right,strikeY); g.stroke();
     g.fillStyle='rgba(255,209,102,0.95)';
     g.beginPath(); g.moveTo(left,strikeY); g.lineTo(left+7*dpr,strikeY-4*dpr); g.lineTo(left+7*dpr,strikeY+4*dpr); g.fill();
-    // A compact colour key explains what learners are seeing at a glance.
-    const legendY = top + 13*dpr;
-    g.font=`700 ${(mobile ? 10 : 9)*dpr}px system-ui,sans-serif`;
+    // Large, high-contrast labels keep the chord legend and current chord
+    // readable while practising, especially when the keyboard is expanded.
+    const legendY = top + (focusMode ? (mobile ? 25 : 28) : 18) * dpr;
+    const legendFont = (focusMode ? (mobile ? 16 : 19) : (mobile ? 12 : 14)) * dpr;
+    g.font = `800 ${legendFont}px system-ui,sans-serif`;
     let legendX = left;
     if (useNotes) {
-      g.fillStyle='#28d7e5'; g.beginPath(); g.arc(legendX+5*dpr, legendY-3*dpr, 3.5*dpr, 0, Math.PI*2); g.fill();
-      g.fillStyle='rgba(235,240,255,0.92)';
-      g.fillText('Notas', legendX+12*dpr, legendY);
-      legendX += (mobile ? 58 : 50)*dpr;
+      g.fillStyle = 'rgba(40,215,229,0.18)';
+      g.beginPath(); g.roundRect(legendX, legendY - legendFont * 1.05, (mobile ? 66 : 76) * dpr, legendFont * 1.65, 6 * dpr); g.fill();
+      g.fillStyle = '#55e8f0';
+      g.beginPath(); g.arc(legendX + 10*dpr, legendY - 3*dpr, 4*dpr, 0, Math.PI*2); g.fill();
+      g.fillStyle = 'rgba(245,250,255,0.98)';
+      g.fillText('Notas', legendX + 20*dpr, legendY);
+      legendX += (mobile ? 76 : 88) * dpr;
     }
     if (useChords) {
-      g.fillStyle='#9a87ff'; g.beginPath(); g.arc(legendX+5*dpr, legendY-3*dpr, 3.5*dpr, 0, Math.PI*2); g.fill();
-      g.fillStyle='rgba(235,240,255,0.92)';
-      g.fillText('Acordes', legendX+12*dpr, legendY);
+      const labelWidth = (focusMode ? (mobile ? 104 : 126) : (mobile ? 76 : 92)) * dpr;
+      g.fillStyle = 'rgba(154,135,255,0.24)';
+      g.beginPath(); g.roundRect(legendX, legendY - legendFont * 1.05, labelWidth, legendFont * 1.65, 6 * dpr); g.fill();
+      g.fillStyle = '#b7a8ff';
+      g.beginPath(); g.arc(legendX + 10*dpr, legendY - 3*dpr, 4*dpr, 0, Math.PI*2); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.98)';
+      g.fillText('Acordes', legendX + 20*dpr, legendY);
     }
     const sounding = cues.filter(cue => cue.start <= now && cue.end > now);
-    if (sounding.length) {
+    const currentChord = useChords
+      ? chords.find(ch => ch.root >= 0 && now >= ch.start && now < ch.end)
+      : undefined;
+    if (sounding.length || currentChord) {
       const names = [...new Set(sounding.map(cue => noteName(cue.pitch)))];
-      const label = `Ahora: ${names.slice(0, 6).join(' · ')}${names.length > 6 ? '…' : ''}`;
-      g.textAlign='right';
-      g.fillStyle='rgba(255,255,255,0.95)';
-      g.fillText(label, right-3*dpr, legendY, Math.max(70*dpr, right-left-125*dpr));
-      g.textAlign='start';
+      const chordLabel = currentChord
+        ? `Ahora: ${chordName(currentChord, shift, this.sharps())}`
+        : `Ahora: ${names.slice(0, 6).join(' · ')}${names.length > 6 ? '…' : ''}`;
+      const nowFont = (focusMode ? (mobile ? 17 : 21) : (mobile ? 12 : 15)) * dpr;
+      g.font = `800 ${nowFont}px system-ui,sans-serif`;
+      const maxNowWidth = Math.max(80*dpr, (right-left) * (mobile ? 0.58 : 0.52));
+      const measured = Math.min(maxNowWidth, g.measureText(chordLabel).width + 24*dpr);
+      const pillHeight = nowFont * 1.75;
+      const pillX = right - measured;
+      g.fillStyle = currentChord ? 'rgba(154,135,255,0.34)' : 'rgba(255,255,255,0.12)';
+      g.beginPath(); g.roundRect(pillX, legendY - nowFont * 1.05, measured, pillHeight, 7*dpr); g.fill();
+      g.textAlign = 'right';
+      g.fillStyle = '#fff';
+      g.fillText(chordLabel, right - 10*dpr, legendY, Math.max(50*dpr, measured - 18*dpr));
+      g.textAlign = 'start';
     }
     g.font=`600 ${9*dpr}px system-ui,sans-serif`;
     g.fillStyle='rgba(220,225,240,0.82)';
