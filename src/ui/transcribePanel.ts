@@ -901,8 +901,8 @@ export class Transcribe {
     // Make the physical piano keys occupy a meaningful share of the canvas.
     // The old fixed 66/82 CSS-pixel strip stayed tiny even in full-screen mode.
     const keyHeight = Math.min(
-      H * (focusMode ? (mobile ? 0.30 : 0.34) : (mobile ? 0.25 : 0.22)),
-      (focusMode ? 280 : 190) * dpr,
+      H * (focusMode ? (mobile ? 0.48 : 0.50) : (mobile ? 0.42 : 0.40)),
+      (focusMode ? 480 : 260) * dpr,
     );
     const keyTop = H - keyHeight;
     const keyBottom = H - 3 * dpr;
@@ -1035,13 +1035,13 @@ export class Transcribe {
       g.strokeStyle='rgba(12,15,25,0.65)'; g.lineWidth=dpr;
       g.strokeRect(x+0.5*dpr,keyTop,keyW-dpr,keyBottom-keyTop);
       if (active.note || active.chord) {
-        g.fillStyle='#101522'; g.font=`700 ${(mobile ? 8 : 9)*dpr}px system-ui,sans-serif`;
+        g.fillStyle='#101522'; g.font=`800 ${(mobile ? 12 : 13)*dpr}px system-ui,sans-serif`;
         g.textAlign='center'; g.textBaseline='middle';
         g.fillText(noteName(n).replace(/-?\d+/g, ''), x+keyW/2, keyTop+(keyBottom-keyTop)*0.58, keyW-2*dpr);
         g.textAlign='start'; g.textBaseline='alphabetic';
       } else if(n%12===0) {
         g.fillStyle='#50576a';
-        g.font=`700 ${(mobile ? 10 : 9)*dpr}px system-ui,sans-serif`;
+        g.font=`800 ${(mobile ? 12 : 12)*dpr}px system-ui,sans-serif`;
         g.fillText(`C${Math.floor(n/12)-1}`,x+3*dpr,keyBottom-7*dpr);
       }
     }
@@ -1056,7 +1056,7 @@ export class Transcribe {
       g.beginPath(); g.roundRect(key.x,keyTop,key.width,(keyBottom-keyTop)*0.64,3*dpr); g.fill();
       g.shadowBlur=0; g.strokeStyle='rgba(255,255,255,0.28)'; g.stroke();
       if (active.note || active.chord) {
-        g.fillStyle='#fff'; g.font=`700 ${(mobile ? 8 : 9)*dpr}px system-ui,sans-serif`;
+        g.fillStyle='#fff'; g.font=`800 ${(mobile ? 11 : 12)*dpr}px system-ui,sans-serif`;
         g.textAlign='center'; g.textBaseline='middle';
         g.fillText(noteName(n).replace(/-?\d+/g, ''), key.x+key.width/2, keyTop+(keyBottom-keyTop)*0.43, key.width-2*dpr);
         g.textAlign='start'; g.textBaseline='alphabetic';
@@ -1069,8 +1069,8 @@ export class Transcribe {
     g.beginPath(); g.moveTo(left,strikeY); g.lineTo(left+7*dpr,strikeY-4*dpr); g.lineTo(left+7*dpr,strikeY+4*dpr); g.fill();
     // Large, high-contrast labels keep the chord legend and current chord
     // readable while practising, especially when the keyboard is expanded.
-    const legendY = top + (focusMode ? (mobile ? 25 : 28) : 18) * dpr;
-    const legendFont = (focusMode ? (mobile ? 16 : 19) : (mobile ? 12 : 14)) * dpr;
+    const legendY = top + (focusMode ? (mobile ? 34 : 38) : 24) * dpr;
+    const legendFont = (focusMode ? (mobile ? 24 : 28) : (mobile ? 17 : 20)) * dpr;
     g.font = `800 ${legendFont}px system-ui,sans-serif`;
     let legendX = left;
     if (useNotes) {
@@ -1083,7 +1083,7 @@ export class Transcribe {
       legendX += (mobile ? 76 : 88) * dpr;
     }
     if (useChords) {
-      const labelWidth = (focusMode ? (mobile ? 104 : 126) : (mobile ? 76 : 92)) * dpr;
+      const labelWidth = (focusMode ? (mobile ? 126 : 148) : (mobile ? 96 : 112)) * dpr;
       g.fillStyle = 'rgba(154,135,255,0.24)';
       g.beginPath(); g.roundRect(legendX, legendY - legendFont * 1.05, labelWidth, legendFont * 1.65, 6 * dpr); g.fill();
       g.fillStyle = '#b7a8ff';
@@ -1100,9 +1100,9 @@ export class Transcribe {
       const chordLabel = currentChord
         ? `Ahora: ${chordName(currentChord, shift, this.sharps())}`
         : `Ahora: ${names.slice(0, 6).join(' · ')}${names.length > 6 ? '…' : ''}`;
-      const nowFont = (focusMode ? (mobile ? 17 : 21) : (mobile ? 12 : 15)) * dpr;
+      const nowFont = (focusMode ? (mobile ? 23 : 29) : (mobile ? 17 : 21)) * dpr;
       g.font = `800 ${nowFont}px system-ui,sans-serif`;
-      const maxNowWidth = Math.max(80*dpr, (right-left) * (mobile ? 0.58 : 0.52));
+      const maxNowWidth = Math.max(100*dpr, (right-left) * (mobile ? 0.56 : 0.58));
       const measured = Math.min(maxNowWidth, g.measureText(chordLabel).width + 24*dpr);
       const pillHeight = nowFont * 1.75;
       const pillX = right - measured;
