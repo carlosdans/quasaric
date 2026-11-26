@@ -857,14 +857,20 @@ export class Transcribe {
     const useChords = this.practiceMode !== 'notes';
     const useNotes = this.practiceMode !== 'chords';
     const cues = practiceCues(notes, chords, { now: pos / SR, horizon, shift, useNotes, useChords });
-    // Fit the keyboard to the notes visible in this five-second lesson window,
-    // not every note in the whole song. Using the full MIDI file made mobile keys
-    // microscopic whenever a song used a wide register, even if the current passage
-    // only needed two or three octaves.
-    const pitches = cues.map(cue => cue.pitch);
+    // Keep the keyboard range fixed for the whole song. Fitting it to the
+    // five-second look-ahead window makes the keys expand and contract as
+    // different registers enter and leave that window. Use every valid event
+    // in the selected source/mode to choose one stable range; only the falling
+    // cues themselves are time-windowed.
+    const allCues = practiceCues(notes, chords, {
+      now: -1_000_000_000,
+      horizon: 2_000_000_000,
+      shift,
+      useNotes,
+      useChords,
+    });
+    const pitches = allCues.map(cue => cue.pitch);
     if (!pitches.length) pitches.push(60 + shift);
-    // Keep at least three octaves visible while ensuring every cue in this
-    // lesson window stays on-screen.
     const { low, high } = pianoKeyboardRange(pitches);
     const whites: number[] = [];
     for (let n = low; n < high; n++) if (!isBlack(n)) whites.push(n);
