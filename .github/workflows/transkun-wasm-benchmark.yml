@@ -1,0 +1,52 @@
+name: Transkun browser-WASM piano benchmark
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/analysis/transkun/**"
+      - "src/analysis/transcribeWorker.ts"
+      - "src/analysis/transcribe.ts"
+      - "src/ui/transcribePanel.ts"
+      - "tests/transkunWasmBenchmark.mjs"
+      - ".github/workflows/transkun-wasm-benchmark.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: transkun-wasm-benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: Validate Quasaric Transkun WASM on real piano audio
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install audio decoder
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Download held-out MAESTRO audio and paired MIDI
+        run: |
+          base="https://huggingface.co/datasets/ddPn08/maestro-v3.0.0/resolve/main"
+          audio="2009/MIDI-Unprocessed_02_R1_2009_03-06_ORIG_MID--AUDIO_02_R1_2009_02_R1_2009_04_WAV.wav"
+          midi="2009/MIDI-Unprocessed_02_R1_2009_03-06_ORIG_MID--AUDIO_02_R1_2009_02_R1_2009_04_WAV.midi"
+          curl --fail --location --retry 3 "$base/$audio" --output /tmp/maestro.wav
+          curl --fail --location --retry 3 "$base/$midi" --output /tmp/maestro.midi
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro.wav -ac 1 -ar 44100 -f f32le -acodec pcm_f32le /tmp/maestro-44k.pcm
+          ls -lh /tmp/maestro.wav /tmp/maestro.midi /tmp/maestro-44k.pcm
+      - name: Download Transkun ONNX weights
+        run: |
+          base="https://huggingface.co/TuesdayCrowd/transkun-onnx/resolve/main"
+          curl --fail --location --retry 3 "$base/transkun.onnx" --output /tmp/transkun.onnx
+          curl --fail --location --retry 3 "$base/transkun-heads.onnx" --output /tmp/transkun-heads.onnx
+          ls -lh /tmp/transkun.onnx /tmp/transkun-heads.onnx
+      - name: Run Quasaric's actual WASM/CPU engine against the reference MIDI
+        run: node --experimental-transform-types --no-warnings tests/transkunWasmBenchmark.mjs
