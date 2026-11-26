@@ -1071,3 +1071,58 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     height: 300px;
   }
 }
+
+
+/* Synthesia learning workspace: use the whole screen for the piano without
+   destroying the song/player state underneath it. */
+.practice-head .practice-focus-btn { margin-left: auto; }
+.practice-keyboard {
+  height: clamp(280px, 42vh, 480px);
+  min-height: 250px;
+}
+@media (max-width: 700px) {
+  .practice-keyboard { height: clamp(260px, 44svh, 390px); min-height: 230px; }
+  .practice-head .practice-focus-btn { margin-left: 0; }
+}
+
+/* The sidebar is removed from the grid, not merely narrowed: all available
+   width goes to the song workspace. The header button always restores it. */
+.layout.sidebar-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+  padding-left: 14px;
+}
+.layout.sidebar-collapsed > .side { display: none; }
+@media (max-width: 900px) {
+  .layout.sidebar-collapsed { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Focus mode is an app-level overlay, so it also works in a narrow mobile
+   viewport and does not depend on browser Fullscreen API permissions. */
+body.practice-focus { overflow: hidden !important; }
+.practice-lane.is-focus {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  border: 0;
+  border-radius: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: #090b12;
+}
+.practice-lane.is-focus .practice-head { gap: 10px; }
+.practice-lane.is-focus .practice-keyboard {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  align-self: stretch;
+}
+@media (max-width: 700px) {
+  .practice-lane.is-focus .practice-head .muted { flex-basis: auto; }
+  .practice-lane.is-focus .practice-head { gap: 6px; padding: 8px; }
+}
