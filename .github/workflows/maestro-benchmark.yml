@@ -1,0 +1,91 @@
+name: MAESTRO real piano transcription benchmark
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tests/maestroBenchmark.mjs"
+      - ".github/workflows/maestro-benchmark.yml"
+      - "src/analysis/basicPitch.ts"
+      - "src/analysis/resample.ts"
+      - "src/analysis/models/basic-pitch.onnx"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: maestro-benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: Compare Basic Pitch with real piano audio and reference MIDI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install audio decoder
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Download a held-out MAESTRO v3 piano performance and MIDI reference
+        run: |
+          base="https://huggingface.co/datasets/ddPn08/maestro-v3.0.0/resolve/main"
+          audio="2009/MIDI-Unprocessed_02_R1_2009_03-06_ORIG_MID--AUDIO_02_R1_2009_02_R1_2009_04_WAV.wav"
+          midi="2009/MIDI-Unprocessed_02_R1_2009_03-06_ORIG_MID--AUDIO_02_R1_2009_02_R1_2009_04_WAV.midi"
+          curl --fail --location --retry 3 "$base/$audio" --output /tmp/maestro.wav
+          curl --fail --location --retry 3 "$base/$midi" --output /tmp/maestro.midi
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro.wav -ac 1 -ar 44100 -f s16le -acodec pcm_s16le /tmp/maestro.pcm
+          ls -lh /tmp/maestro.wav /tmp/maestro.midi /tmp/maestro.pcm
+      - name: Transcribe real piano audio and compare against reference MIDI
+        run: node --experimental-transform-types --no-warnings tests/maestroBenchmark.mjs /tmp/maestro.pcm /tmp/maestro.midi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ONNX CPU runtime and MIDI parser
+        run: python -m pip install --disable-pip-version-check onnxruntime mido numpy
+      - name: Download dedicated piano ONNX model and convert MAESTRO audio to 16 kHz
+        run: |
+          base="https://huggingface.co/baroned/musicnote-ondevice-models/resolve/main"
+          curl --fail --location --retry 3 "$base/piano_kong.onnx" --output /tmp/piano_kong.onnx
+          curl --fail --location --retry 3 "$base/piano_kong.onnx.data" --output /tmp/piano_kong.onnx.data
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro.wav -ac 1 -ar 16000 -f f32le -acodec pcm_f32le /tmp/maestro-16k.pcm
+          ls -lh /tmp/piano_kong.onnx /tmp/piano_kong.onnx.data /tmp/maestro-16k.pcm
+      - name: Benchmark dedicated piano model against the same reference MIDI
+        run: python tests/maestroKongBenchmark.py /tmp/maestro-16k.pcm /tmp/maestro.midi /tmp/piano_kong.onnx
+      - name: Prepare Transkun v2 browser decoder for CPU-only Node benchmark
+        run: |
+          git clone --depth 1 https://github.com/manh9011/TranskunWeb.git /tmp/TranskunWeb
+          cd /tmp/TranskunWeb && npm ci
+          npm install --no-save onnxruntime-node@1.27.0
+          sed -i 's@onnxruntime-web/webgpu@onnxruntime-node@' src/transkun/onnxModel.ts
+          sed -i '/ort.env.wasm/d' src/transkun/onnxModel.ts
+          sed -i 's/private readonly url: string/private readonly url: string | Uint8Array/g' src/transkun/onnxModel.ts
+          find src/transkun -name '*.ts' -type f -exec sed -i -E "s/from '(\\.\\/[^']+)'/from '\\1.ts'/g" {} +
+      - name: Download Transkun v2 ONNX models and convert MAESTRO audio to 44.1 kHz
+        run: |
+          base="https://huggingface.co/TuesdayCrowd/transkun-onnx/resolve/main"
+          curl --fail --location --retry 3 "$base/transkun.onnx" --output /tmp/transkun.onnx
+          curl --fail --location --retry 3 "$base/transkun-heads.onnx" --output /tmp/transkun-heads.onnx
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro.wav -ac 1 -ar 44100 -f f32le -acodec pcm_f32le /tmp/maestro-44k.pcm
+          ls -lh /tmp/transkun.onnx /tmp/transkun-heads.onnx /tmp/maestro-44k.pcm
+      - name: Benchmark Transkun v2 against the same reference MIDI
+        run: node --experimental-transform-types --no-warnings tests/transkunBenchmark.mjs
+      - name: Download a second held-out MAESTRO test performance (Scarlatti Sonata K. 525)
+        run: |
+          base="https://huggingface.co/datasets/ddPn08/maestro-v3.0.0/resolve/main"
+          audio="2008/MIDI-Unprocessed_09_R3_2008_01-07_ORIG_MID--AUDIO_09_R3_2008_wav--2.wav"
+          midi="2008/MIDI-Unprocessed_09_R3_2008_01-07_ORIG_MID--AUDIO_09_R3_2008_wav--2.midi"
+          curl --fail --location --retry 3 "$base/$audio" --output /tmp/maestro2.wav
+          curl --fail --location --retry 3 "$base/$midi" --output /tmp/maestro2.midi
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro2.wav -ac 1 -ar 16000 -f f32le -acodec pcm_f32le /tmp/maestro2-16k.pcm
+          ffmpeg -hide_banner -loglevel error -i /tmp/maestro2.wav -ac 1 -ar 44100 -f f32le -acodec pcm_f32le /tmp/maestro2-44k.pcm
+          ls -lh /tmp/maestro2.wav /tmp/maestro2.midi /tmp/maestro2-16k.pcm /tmp/maestro2-44k.pcm
+      - name: Validate dedicated piano model on second reference
+        run: python tests/maestroKongBenchmark.py /tmp/maestro2-16k.pcm /tmp/maestro2.midi /tmp/piano_kong.onnx
+      - name: Validate Transkun v2 on second reference
+        run: node --experimental-transform-types --no-warnings tests/transkunBenchmark.mjs /tmp/maestro2-44k.pcm /tmp/maestro2.midi
