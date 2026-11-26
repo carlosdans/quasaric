@@ -17,11 +17,12 @@ import { analyse } from '../src/analysis/beats.ts';
 import { detectKey, keyName } from '../src/analysis/key.ts';
 import { BINS, CQT_FPS, NOTE_LO, cqt } from '../src/analysis/cqt.ts';
 import { chordName, chordSheet, detectChords, mergeSame, prefersSharps } from '../src/analysis/chords.ts';
-import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine, suppressPianoHarmonics } from '../src/analysis/basicPitch.ts';
+import { BP_FRAMES_PER_WINDOW, BP_PITCHES, BP_SR, BP_WINDOW, BP_WINDOW_HOP, bpFrameTime, bpNotes, bpUnwrap, bpWindows, noteOptionsForSource, singleLine, suppressPianoHarmonics, transcriptionEngineForSource } from '../src/analysis/basicPitch.ts';
 import { pianoKeyboardRange } from '../src/ui/pianoRange.ts';
 import { defaultPianoPracticeTarget } from '../src/ui/practiceTarget.ts';
 import { practiceCues } from '../src/ui/practiceCues.ts';
 import { decimate2 } from '../src/analysis/resample.ts';
+import { semiCrfDecode } from '../src/analysis/transkun/viterbi.ts';
 import { writeMidi } from '../src/encode/midi.ts';
 import { centsFrom, detectPitch, freqToNote } from '../src/analysis/pitch.ts';
 import { isNewer, parseVersion, pickUpdate } from '../src/version.ts';
@@ -473,6 +474,24 @@ for (const [len, overlap, shifts] of [
   ok('chords: neighbours merge after an edit', merged.length === 2 && merged[0].end === 2);
   const sheet = chordSheet({ title: 'T', chords: ch, beats: b.beats, downbeat: 0, perBar: 4, markers: [{ name: 'Verse', time: 0 }] });
   ok('chord chart: one chord per bar, in sections', sheet.includes('[Verse]') && sheet.includes('| C       | G       | Am      | F       |'), sheet.split('\n')[3]);
+}
+
+// ---- Transkun routing and semi-CRF decoding
+{
+  ok('piano stem selects the specialist Transkun engine', transcriptionEngineForSource('Piano') === 'transkun');
+  ok('keyboard/keys aliases select Transkun', transcriptionEngineForSource('Keyboard') === 'transkun' && transcriptionEngineForSource('Keys') === 'transkun');
+  ok('mixes and non-piano stems retain Basic Pitch', transcriptionEngineForSource('mix') === 'basic-pitch' && transcriptionEngineForSource('Guitar') === 'basic-pitch');
+  const score = new Float32Array(4 * 4 * 2);
+  score[(2 * 4 + 1) * 2] = 8; // track 0: one interval from frame 1 to 2
+  score[(3 * 4 + 2) * 2 + 1] = 9; // track 1: one interval from frame 2 to 3
+  const decoded = semiCrfDecode(score, 4, 2);
+  ok('Transkun semi-CRF decodes independent note intervals per pitch track',
+    JSON.stringify(decoded) === JSON.stringify([[{ begin: 1, end: 2 }], [{ begin: 2, end: 3 }]]),
+    JSON.stringify(decoded));
+  const resumed = semiCrfDecode(score, 4, 2, new Int32Array([2, 0]));
+  ok('Transkun semi-CRF honours per-track segment continuation positions',
+    JSON.stringify(resumed) === JSON.stringify([[], [{ begin: 2, end: 3 }]]),
+    JSON.stringify(resumed));
 }
 
 // ---- conservative piano harmonic cleanup
