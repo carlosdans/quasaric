@@ -89,10 +89,40 @@ function score(predicted, reference) {
   }
   const fp = predicted.length - tp, fn = reference.length - tp;
   const precision = tp / Math.max(1, tp + fp), recall = tp / Math.max(1, tp + fn);
+
+  // Official Transkun/mir_eval-style onset+offset criterion: 50 ms onset
+  // tolerance, and offset tolerance max(100 ms, 20% of reference duration).
+  // Keep this separate from the onset-only match so duration quality cannot be
+  // hidden by a correct note start.
+  const remainingWithOffset = new Set(reference.map((_, i) => i));
+  let offsetTp = 0;
+  for (const note of [...predicted].sort((a, b) => a.start - b.start)) {
+    let best = -1, bestOnset = Infinity;
+    for (const i of remainingWithOffset) {
+      const target = reference[i];
+      if (target.pitch !== note.pitch) continue;
+      const onsetError = Math.abs(target.start - note.start);
+      const offsetTolerance = Math.max(0.1, 0.2 * (target.end - target.start));
+      if (onsetError <= 0.05 && Math.abs(target.end - note.end) <= offsetTolerance && onsetError < bestOnset) {
+        best = i; bestOnset = onsetError;
+      }
+    }
+    if (best >= 0) { remainingWithOffset.delete(best); offsetTp++; }
+  }
+  const offsetFp = predicted.length - offsetTp, offsetFn = reference.length - offsetTp;
+  const offsetPrecision = offsetTp / Math.max(1, offsetTp + offsetFp);
+  const offsetRecall = offsetTp / Math.max(1, offsetTp + offsetFn);
+
   return {
     predictedNotes: predicted.length, truePositives: tp, falsePositives: fp, falseNegatives: fn,
     precision: +precision.toFixed(4), recall: +recall.toFixed(4),
     f1: +(2 * precision * recall / Math.max(1e-9, precision + recall)).toFixed(4),
+    onsetOffset: {
+      criterion: 'onset <= 50 ms; offset <= max(100 ms, 20% of reference duration)',
+      truePositives: offsetTp, falsePositives: offsetFp, falseNegatives: offsetFn,
+      precision: +offsetPrecision.toFixed(4), recall: +offsetRecall.toFixed(4),
+      f1: +(2 * offsetPrecision * offsetRecall / Math.max(1e-9, offsetPrecision + offsetRecall)).toFixed(4),
+    },
     onsetAbsMs: { median: percentile(onsetAbs, 0.5), p95: percentile(onsetAbs, 0.95), signedMedian: percentile(onsetSigned, 0.5) },
     keyReleaseAbsMs: { median: percentile(endAbs, 0.5), p95: percentile(endAbs, 0.95), signedMedian: percentile(endSigned, 0.5) },
   };
