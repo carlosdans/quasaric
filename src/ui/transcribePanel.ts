@@ -188,6 +188,7 @@ export class Transcribe {
   private practiceModeSel: HTMLSelectElement;
   private practiceTargetSel: HTMLSelectElement;
   private practiceStartBtn: HTMLButtonElement;
+  private practiceFocusBtn: HTMLButtonElement;
   private practiceHint: HTMLElement;
   private practiceTarget = '';
   /** Cached for the selected song/source/mode: never recalculate the full-song range per animation frame. */
@@ -252,9 +253,22 @@ export class Transcribe {
     this.practiceStartBtn = h('button', { class: 'btn tiny', type: 'button', title: 'Mute the selected part in the mix and prepare its falling-note lesson' }, 'Practise this part') as HTMLButtonElement;
     this.practiceStartBtn.onclick = () => this.preparePianoPractice();
     this.practiceHint = h('span', { class: 'muted small practice-hint', 'aria-live': 'polite' });
+    this.practiceFocusBtn = h('button', { class: 'btn tiny ghost practice-focus-btn', type: 'button', title: 'Expand the piano practice view', 'aria-label': 'Expand the piano practice view', 'aria-pressed': 'false' }, 'Expand') as HTMLButtonElement;
+    this.practiceFocusBtn.onclick = () => {
+      const focused = this.practiceLane.classList.toggle('is-focus');
+      document.body.classList.toggle('practice-focus', focused);
+      this.practiceFocusBtn.textContent = focused ? 'Exit expanded view' : 'Expand';
+      this.practiceFocusBtn.title = focused ? 'Return to the full studio' : 'Expand the piano practice view';
+      this.practiceFocusBtn.setAttribute('aria-label', this.practiceFocusBtn.title);
+      this.practiceFocusBtn.setAttribute('aria-pressed', String(focused));
+      this.redraw();
+    };
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && this.practiceLane.classList.contains('is-focus')) this.practiceFocusBtn.click();
+    });
     this.practiceLane = h('div', { class: 'practice-lane' },
       h('div', { class: 'practice-head' }, h('span', { class: 'name' }, 'Play along'), this.practiceTargetSel, this.practiceStartBtn, this.practiceModeSel,
-        h('span', { class: 'muted small' }, 'Mute the part you play; the rest of the song keeps playing.'), this.practiceHint),
+        h('span', { class: 'muted small' }, 'Mute the part you play; the rest of the song keeps playing.'), this.practiceHint, this.practiceFocusBtn),
       this.practiceCanvas,
     );
 
