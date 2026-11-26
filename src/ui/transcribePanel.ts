@@ -845,8 +845,9 @@ export class Transcribe {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const inset = 10 * dpr;
     const left = inset, right = w - inset;
-    const top = 10 * dpr;
-    const keyTop = H - 54 * dpr;
+    const top = 12 * dpr;
+    const mobile = c.clientWidth <= 700;
+    const keyTop = H - (mobile ? 82 : 66) * dpr;
     const keyBottom = H - 3 * dpr;
     const horizon = 5;
     const shift = this.host.pitch();
@@ -856,14 +857,11 @@ export class Transcribe {
     const useChords = this.practiceMode !== 'notes';
     const useNotes = this.practiceMode !== 'chords';
     const cues = practiceCues(notes, chords, { now: pos / SR, horizon, shift, useNotes, useChords });
-    // Fit the keyboard to the pitches actually selected for display. In chords-only
-    // mode, using the MIDI note range here could put every chord outside the keyboard.
-    const pitches = [
-      ...(useNotes ? notes.map(n => n.pitch + shift) : []),
-      ...(useChords ? chords.filter(ch => ch.root >= 0).flatMap(ch =>
-        [0, ...chordIntervals(ch.q)].map(interval => 60 + ((ch.root + interval) % 12) + shift),
-      ) : []),
-    ];
+    // Fit the keyboard to the notes visible in this five-second lesson window,
+    // not every note in the whole song. Using the full MIDI file made mobile keys
+    // microscopic whenever a song used a wide register, even if the current passage
+    // only needed two or three octaves.
+    const pitches = cues.map(cue => cue.pitch);
     if (!pitches.length) pitches.push(60 + shift);
     // Fit the keyboard to the full detected register. A fixed three-octave window
     // silently hid notes in bass-heavy or wide two-hand piano passages.
@@ -921,10 +919,13 @@ export class Transcribe {
       g.shadowBlur = 0;
       g.strokeStyle = 'rgba(255,255,255,0.72)'; g.lineWidth = Math.max(1,dpr);
       g.stroke();
-      if (label && bottom-y > 19*dpr && width > 22*dpr) {
-        g.fillStyle = '#fff'; g.font = `700 ${9*dpr}px system-ui,sans-serif`;
+      if (label && bottom-y > (mobile ? 27 : 19)*dpr && width > (mobile ? 12 : 22)*dpr) {
+        // On narrow screens abbreviate to the note name (without octave) so it
+        // remains legible inside a piano key instead of squeezing a long label.
+        const shortLabel = mobile ? label.replace(/-?\\d+/g, '') : label;
+        g.fillStyle = '#fff'; g.font = `700 ${(mobile ? 8 : 9)*dpr}px system-ui,sans-serif`;
         g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.fillText(label, x + width/2, y + Math.min(13*dpr,(bottom-y)/2), width-5*dpr);
+        g.fillText(shortLabel, x + width/2, y + Math.min(13*dpr,(bottom-y)/2), width-3*dpr);
         g.textAlign = 'start'; g.textBaseline = 'alphabetic';
       }
       g.restore();
@@ -951,8 +952,8 @@ export class Transcribe {
       g.strokeRect(x+0.5*dpr,keyTop,keyW-dpr,keyBottom-keyTop);
       if(n%12===0) {
         g.fillStyle=active.note||active.chord?'#101522':'#50576a';
-        g.font=`700 ${9*dpr}px system-ui,sans-serif`;
-        g.fillText(`C${Math.floor(n/12)-1}`,x+4*dpr,keyBottom-6*dpr);
+        g.font=`700 ${(mobile ? 10 : 9)*dpr}px system-ui,sans-serif`;
+        g.fillText(`C${Math.floor(n/12)-1}`,x+3*dpr,keyBottom-7*dpr);
       }
     }
     // Black keys are drawn last so they overlap the white-key seams like a real piano.
@@ -964,15 +965,40 @@ export class Transcribe {
       grad.addColorStop(1,'#080a10');
       g.fillStyle=grad; g.shadowColor='rgba(0,0,0,0.65)'; g.shadowBlur=4*dpr;
       g.beginPath(); g.roundRect(key.x,keyTop,key.width,(keyBottom-keyTop)*0.64,3*dpr); g.fill();
-      g.shadowBlur=0; g.strokeStyle='rgba(255,255,255,0.18)'; g.stroke();
+      g.shadowBlur=0; g.strokeStyle='rgba(255,255,255,0.28)'; g.stroke();
+      if (active.note || active.chord) {
+        g.fillStyle='#fff'; g.font=`700 ${(mobile ? 8 : 9)*dpr}px system-ui,sans-serif`;
+        g.textAlign='center'; g.textBaseline='middle';
+        g.fillText(noteName(n).replace(/-?\\d+/g, ''), key.x+key.width/2, keyTop+(keyBottom-keyTop)*0.43, key.width-2*dpr);
+        g.textAlign='start'; g.textBaseline='alphabetic';
+      }
     }
     // Strike line and a compact legend make the two sources easy to distinguish.
     g.strokeStyle='#ffd166'; g.lineWidth=2*dpr;
     g.beginPath(); g.moveTo(left,strikeY); g.lineTo(right,strikeY); g.stroke();
     g.fillStyle='rgba(255,209,102,0.95)';
     g.beginPath(); g.moveTo(left,strikeY); g.lineTo(left+7*dpr,strikeY-4*dpr); g.lineTo(left+7*dpr,strikeY+4*dpr); g.fill();
+    // A compact colour key explains what learners are seeing at a glance.
+    const legendY = top + 13*dpr;
+    g.font=`700 ${(mobile ? 10 : 9)*dpr}px system-ui,sans-serif`;
+    g.fillStyle='#28d7e5'; g.beginPath(); g.arc(left+5*dpr, legendY-3*dpr, 3.5*dpr, 0, Math.PI*2); g.fill();
+    g.fillStyle='rgba(235,240,255,0.92)';
+    g.fillText(useNotes ? 'Notas' : 'MIDI', left+12*dpr, legendY);
+    const chordLegendX = left + (mobile ? 66 : 58)*dpr;
+    g.fillStyle='#9a87ff'; g.beginPath(); g.arc(chordLegendX, legendY-3*dpr, 3.5*dpr, 0, Math.PI*2); g.fill();
+    g.fillStyle='rgba(235,240,255,0.92)';
+    g.fillText('Acordes', chordLegendX+7*dpr, legendY);
+    const sounding = cues.filter(cue => cue.start <= now && cue.end > now);
+    if (sounding.length) {
+      const names = [...new Set(sounding.map(cue => noteName(cue.pitch)))];
+      const label = `Ahora: ${names.slice(0, 6).join(' · ')}${names.length > 6 ? '…' : ''}`;
+      g.textAlign='right';
+      g.fillStyle='rgba(255,255,255,0.95)';
+      g.fillText(label, right-3*dpr, legendY, Math.max(70*dpr, right-left-125*dpr));
+      g.textAlign='start';
+    }
     g.font=`600 ${9*dpr}px system-ui,sans-serif`;
-    g.fillStyle='rgba(220,225,240,0.72)';
+    g.fillStyle='rgba(220,225,240,0.82)';
     g.fillText(useNotes ? (notes.length ? `MIDI · ${notes.length} notas` : 'MIDI sin generar') : 'Acordes detectados', left+12*dpr, H-7*dpr);
     if (useNotes && !notes.length) {
       g.fillStyle='rgba(255,255,255,0.9)';
