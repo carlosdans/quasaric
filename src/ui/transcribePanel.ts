@@ -1698,8 +1698,10 @@ export class Transcribe {
         if (!this.busy) this.noteStatus.textContent = '';
       }, 4000);
     } catch (e) {
-      this.noteStatus.textContent = '';
-      if ((e as Error).name !== 'Cancelled') toast(`Couldn't make MIDI: ${(e as Error).message}`, true);
+      if (jobGeneration === this.midiJobGeneration) {
+        this.noteStatus.textContent = '';
+        if ((e as Error).name !== 'Cancelled') toast(`Couldn't make MIDI: ${(e as Error).message}`, true);
+      }
     } finally {
       // A song change may already have started a newer job; an old finalizer must not clear its busy state.
       if (jobGeneration === this.midiJobGeneration) {
