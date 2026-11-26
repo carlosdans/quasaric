@@ -1,7 +1,7 @@
 // Transcription tools above the stem lanes:
 //  - Notes: which notes are sounding over time (one row per semitone), with a
 //    keyboard to hear any pitch, "freeze" to hold the sound at the playhead,
-//    and audio-to-MIDI (Basic Pitch) drawn on top and exportable.
+//    and audio-to-MIDI (Transkun for piano, Basic Pitch for other parts) drawn on top and exportable.
 //  - Chords: a detected, editable chord lane and a printable chord chart.
 // Everything is shown as you hear it: a pitch shift moves notes and chords too.
 
@@ -672,6 +672,9 @@ export class Transcribe {
     this.notesHeight = st?.notesHeight;
     if (this.notesHeight) (this.notesLane.querySelector('.notes-wave') as HTMLElement).style.height = `${this.notesHeight}px`;
     this.invalidate();
+    // If the saved lesson was using note cues, regenerate any piano MIDI removed
+    // by the engine migration immediately instead of leaving an empty lesson.
+    if (this.practiceMode === 'notes' || this.practiceMode === 'both') this.selectPracticeNotesSource();
   }
 
   getState(): TxState {
@@ -849,7 +852,7 @@ export class Transcribe {
 
   /**
    * Synthesia-style keyboard. It consumes the already detected chord events and/or
-   * the existing Basic Pitch MIDI events; it never runs another audio analysis.
+   * the existing MIDI events; piano uses Transkun and other parts use Basic Pitch.
    */
   private drawPractice(pos: number) {
     const c = this.practiceCanvas;
