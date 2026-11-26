@@ -26,6 +26,46 @@ export interface PracticeCueOptions {
   useChords?: boolean;
 }
 
+export interface PracticePitchOptions {
+  shift?: number;
+  useNotes?: boolean;
+  useChords?: boolean;
+}
+
+const validInterval = (start: number, end: number) =>
+  Number.isFinite(start) && Number.isFinite(end) && end > start;
+
+/** All pitches used by a lesson, independent of the current playhead. */
+export function practicePitches(
+  notes: NoteEvent[],
+  chords: Chord[],
+  options: PracticePitchOptions = {},
+): number[] {
+  const { shift = 0, useNotes = true, useChords = true } = options;
+  const pitches: number[] = [];
+  if (useNotes) for (const note of notes) {
+    if (validInterval(note.start, note.end) && Number.isFinite(note.pitch))
+      pitches.push(note.pitch + shift);
+  }
+  if (useChords) for (const chord of chords) {
+    if (!Number.isFinite(chord.root) || chord.root < 0 || !validInterval(chord.start, chord.end)) continue;
+    for (const interval of [0, ...chordIntervals(chord.q)])
+      pitches.push(60 + ((chord.root + interval) % 12) + shift);
+  }
+  return pitches;
+}
+
+/** Exact pitches sounding now; chord tones do not light every octave of a pitch class. */
+export function practiceActivePitches(cues: PracticeCue[], now: number): { notes: Set<number>; chords: Set<number> } {
+  const notes = new Set<number>();
+  const chords = new Set<number>();
+  for (const cue of cues) {
+    if (cue.start > now || cue.end <= now) continue;
+    (cue.kind === 'note' ? notes : chords).add(cue.pitch);
+  }
+  return { notes, chords };
+}
+
 /**
  * The single source of truth for Synthesia falling bars and lit piano keys.
  * Times stay in song seconds; only pitches are transposed for the displayed key.
@@ -40,14 +80,14 @@ export function practiceCues(
   const { now, horizon, shift = 0, useNotes = true, useChords = true } = options;
   const out: PracticeCue[] = [];
   const visible = (start: number, end: number) =>
-    Number.isFinite(start) && Number.isFinite(end) && end > start && end > now && start <= now + horizon;
+    validInterval(start, end) && end > now && start <= now + horizon;
 
   if (useNotes) for (const note of notes) {
-    if (visible(note.start, note.end))
+    if (visible(note.start, note.end) && Number.isFinite(note.pitch) && Number.isFinite(shift))
       out.push({ pitch: note.pitch + shift, start: note.start, end: note.end, kind: 'note' });
   }
   if (useChords) for (const chord of chords) {
-    if (chord.root < 0 || !visible(chord.start, chord.end)) continue;
+    if (!Number.isFinite(chord.root) || chord.root < 0 || !visible(chord.start, chord.end) || !Number.isFinite(shift)) continue;
     const intervals = chordIntervals(chord.q);
     for (const interval of [0, ...intervals])
       out.push({ pitch: 60 + ((chord.root + interval) % 12) + shift, start: chord.start, end: chord.end, kind: 'chord' });
