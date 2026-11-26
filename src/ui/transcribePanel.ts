@@ -202,6 +202,8 @@ export class Transcribe {
   } | null = null;
   private frozenAt = -1;
   private busy = '';
+  /** Target selected while another source is being transcribed; process it after the current job. */
+  private queuedPracticeTarget = '';
   private editing = -1;
   private editAt = 0;
 
@@ -235,6 +237,7 @@ export class Transcribe {
     this.practiceModeSel.onchange = () => {
       this.practiceMode = this.practiceModeSel.value as 'chords' | 'notes' | 'both';
       if (this.practiceMode === 'notes' || this.practiceMode === 'both') this.selectPracticeNotesSource();
+      else this.queuedPracticeTarget = '';
       this.host.changed();
       this.redraw();
     };
@@ -561,10 +564,13 @@ export class Transcribe {
     this.source = target;
     this.sourceSel.value = target;
     this.refreshMidiButtons();
-    if (!song.midi?.[target]?.length && !this.busy) {
+    if (!song.midi?.[target]?.length) {
       this.practiceHint.textContent = 'Preparing piano notes…';
-      void this.toMidi();
+      if (!this.busy) void this.toMidi();
+      else if (this.busy !== target) this.queuedPracticeTarget = target;
+      else this.queuedPracticeTarget = '';
     } else {
+      this.queuedPracticeTarget = '';
       this.practiceHint.textContent = '';
       if (sourceChanged) this.host.changed();
       this.redraw();
@@ -1693,6 +1699,13 @@ export class Transcribe {
       this.busy = '';
       this.refreshMidiButtons();
       this.redraw();
+      // A target change during transcription must not leave the new practice lane empty.
+      const queuedTarget = this.queuedPracticeTarget;
+      this.queuedPracticeTarget = '';
+      if (queuedTarget && queuedTarget === this.practiceTarget &&
+        (this.practiceMode === 'notes' || this.practiceMode === 'both')) {
+        this.selectPracticeNotesSource();
+      }
     }
   }
 
