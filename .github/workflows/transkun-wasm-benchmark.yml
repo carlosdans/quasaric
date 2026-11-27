@@ -21,9 +21,9 @@ concurrency:
 
 jobs:
   benchmark:
-    name: Validate Quasaric Transkun WASM on real piano audio
+    name: Validate Quasaric Transkun WASM on MAESTRO piano recordings
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,20 +33,36 @@ jobs:
       - run: npm ci
       - name: Install audio decoder
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - name: Download held-out MAESTRO audio and paired MIDI
+      - name: Download held-out MAESTRO test recordings and paired MIDI
+        shell: bash
         run: |
+          set -euo pipefail
           base="https://huggingface.co/datasets/ddPn08/maestro-v3.0.0/resolve/main"
-          audio="2009/MIDI-Unprocessed_02_R1_2009_03-06_ORIG_MID--AUDIO_02_R1_2009_02_R1_2009_04_WAV.wav"
-          midi="2009/MIDI-Unprocessed_02_R1_2009_03-06_ORIG_MID--AUDIO_02_R1_2009_02_R1_2009_04_WAV.midi"
-          curl --fail --location --retry 3 "$base/$audio" --output /tmp/maestro.wav
-          curl --fail --location --retry 3 "$base/$midi" --output /tmp/maestro.midi
-          ffmpeg -hide_banner -loglevel error -i /tmp/maestro.wav -ac 1 -ar 44100 -f f32le -acodec pcm_f32le /tmp/maestro-44k.pcm
-          ls -lh /tmp/maestro.wav /tmp/maestro.midi /tmp/maestro-44k.pcm
+          mkdir -p /tmp/maestro
+          while IFS='|' read -r id audio midi; do
+            echo "::group::Download $id"
+            curl --fail --location --retry 3 "$base/$audio" --output "/tmp/maestro/$id.wav"
+            curl --fail --location --retry 3 "$base/$midi" --output "/tmp/maestro/$id.midi"
+            ffmpeg -hide_banner -loglevel error -i "/tmp/maestro/$id.wav" -ac 1 -ar 44100 -f f32le -acodec pcm_f32le "/tmp/maestro/$id.pcm"
+            ls -lh "/tmp/maestro/$id.wav" "/tmp/maestro/$id.midi" "/tmp/maestro/$id.pcm"
+            echo "::endgroup::"
+          done <<'RECORDINGS'
+          baseline-2009|2009/MIDI-Unprocessed_02_R1_2009_03-06_ORIG_MID--AUDIO_02_R1_2009_02_R1_2009_04_WAV.wav|2009/MIDI-Unprocessed_02_R1_2009_03-06_ORIG_MID--AUDIO_02_R1_2009_02_R1_2009_04_WAV.midi
+          liszt-etude-2013|2013/ORIG-MIDI_01_7_7_13_Group__MID--AUDIO_13_R1_2013_wav--3.wav|2013/ORIG-MIDI_01_7_7_13_Group__MID--AUDIO_13_R1_2013_wav--3.midi
+          rachmaninoff-prelude-2008|2008/MIDI-Unprocessed_12_R3_2008_01-04_ORIG_MID--AUDIO_12_R3_2008_wav--3.wav|2008/MIDI-Unprocessed_12_R3_2008_01-04_ORIG_MID--AUDIO_12_R3_2008_wav--3.midi
+          RECORDINGS
       - name: Download Transkun ONNX weights
         run: |
           base="https://huggingface.co/TuesdayCrowd/transkun-onnx/resolve/main"
           curl --fail --location --retry 3 "$base/transkun.onnx" --output /tmp/transkun.onnx
           curl --fail --location --retry 3 "$base/transkun-heads.onnx" --output /tmp/transkun-heads.onnx
           ls -lh /tmp/transkun.onnx /tmp/transkun-heads.onnx
-      - name: Run Quasaric's actual WASM/CPU engine against the reference MIDI
-        run: node --experimental-transform-types --no-warnings tests/transkunWasmBenchmark.mjs
+      - name: Run Quasaric's actual WASM/CPU engine against each reference MIDI
+        shell: bash
+        run: |
+          set -euo pipefail
+          for id in baseline-2009 liszt-etude-2013 rachmaninoff-prelude-2008; do
+            echo "::group::Transkun benchmark: $id"
+            node --experimental-transform-types --no-warnings tests/transkunWasmBenchmark.mjs "/tmp/maestro/$id.pcm" "/tmp/maestro/$id.midi"
+            echo "::endgroup::"
+          done
