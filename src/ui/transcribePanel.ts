@@ -1187,13 +1187,17 @@ export class Transcribe {
       const strings = tuning.length;
       const laneW = (right - left) / strings;
       const frets = 15;
-      const positions = (pitch: number) => {
-        let best: { string: number; fret: number } | null = null;
+      const positions = (pitch: number): { string: number; fret: number } | null => {
+        let bestString = -1;
+        let bestFret = Infinity;
         for (let string = 0; string < tuning.length; string++) {
           const fret = Math.round(pitch) - tuning[string];
-          if (fret >= 0 && fret <= frets && (!best || fret < best.fret)) best = { string, fret };
+          if (fret >= 0 && fret <= frets && fret < bestFret) {
+            bestString = string;
+            bestFret = fret;
+          }
         }
-        return best;
+        return bestString < 0 ? null : { string: bestString, fret: bestFret };
       };
       for (const cue of cues) {
         const pos = positions(cue.pitch);
