@@ -97,47 +97,50 @@ function parseMidi(buffer, extendSustainPedal = true) {
     .sort((a, b) => a.start - b.start || a.pitch - b.pitch);
 }
 const percentile = (a, p) => a.length ? [...a].sort((x, y) => x - y)[Math.min(a.length - 1, Math.ceil(p * a.length) - 1)] : null;
-function score(predicted, reference) {
-  const remaining = new Set(reference.map((_, i) => i));
-  const onsetAbs = [], onsetSigned = [], endAbs = [], endSigned = [];
-  let tp = 0;
-  for (const note of [...predicted].sort((a, b) => a.start - b.start)) {
-    let best = -1, error = Infinity;
-    for (const i of remaining) {
-      const target = reference[i];
-      if (target.pitch !== note.pitch) continue;
-      const e = Math.abs(target.start - note.start);
-      if (e <= 0.05 && e < error) { best = i; error = e; }
-    }
-    if (best >= 0) {
-      remaining.delete(best); tp++;
-      const on = (note.start - reference[best].start) * 1000;
-      const off = (note.end - reference[best].end) * 1000;
-      onsetAbs.push(Math.abs(on)); onsetSigned.push(on); endAbs.push(Math.abs(off)); endSigned.push(off);
-    }
-  }
-  const fp = predicted.length - tp, fn = reference.length - tp;
-  const precision = tp / Math.max(1, tp + fp), recall = tp / Math.max(1, tp + fn);
-
-  // mir_eval-style note matching: 50 ms onset tolerance and offset
-  // tolerance max(50 ms, 20% of the unextended key-press duration).
-  // Keep this separate from the onset-only match so duration quality cannot be
-  // hidden by a correct note start.
-  const remainingWithOffset = new Set(reference.map((_, i) => i));
-  let offsetTp = 0;
-  for (const note of [...predicted].sort((a, b) => a.start - b.start)) {
-    let best = -1, bestOnset = Infinity;
-    for (const i of remainingWithOffset) {
-      const target = reference[i];
-      if (target.pitch !== note.pitch) continue;
-      const onsetError = Math.abs(target.start - note.start);
-      const offsetTolerance = Math.max(0.05, 0.2 * (target.end - target.start));
-      if (onsetError <= 0.05 && Math.abs(target.end - note.end) <= offsetTolerance && onsetError < bestOnset) {
-        best = i; bestOnset = onsetError;
+function matchNotes(predicted, reference, accepts) {
+  // Maximum-cardinality one-to-one matching. A greedy nearest-note pass can
+  // consume the only valid reference for a later prediction and undercount TP.
+  const candidates = predicted.map((note, pi) => reference
+    .map((target, ri) => ({ ri, error: Math.abs(note.start - target.start) }))
+    .filter(({ ri, error }) => accepts(note, reference[ri], error))
+    .sort((a, b) => a.error - b.error || a.ri - b.ri));
+  const order = predicted.map((_, i) => i)
+    .sort((a, b) => candidates[a].length - candidates[b].length || predicted[a].start - predicted[b].start);
+  const owner = new Int32Array(reference.length).fill(-1);
+  const visit = (pi, seen) => {
+    for (const { ri } of candidates[pi]) {
+      if (seen[ri]) continue;
+      seen[ri] = 1;
+      if (owner[ri] < 0 || visit(owner[ri], seen)) {
+        owner[ri] = pi;
+        return true;
       }
     }
-    if (best >= 0) { remainingWithOffset.delete(best); offsetTp++; }
+    return false;
+  };
+  for (const pi of order) visit(pi, new Uint8Array(reference.length));
+  const pairs = [];
+  for (let ri = 0; ri < owner.length; ri++) if (owner[ri] >= 0) pairs.push({ predictedIndex: owner[ri], referenceIndex: ri });
+  return pairs;
+}
+function score(predicted, reference) {
+  const pairs = matchNotes(predicted, reference, (note, target, error) =>
+    note.pitch === target.pitch && error <= 0.05);
+  const onsetAbs = [], onsetSigned = [], endAbs = [], endSigned = [];
+  for (const { predictedIndex, referenceIndex } of pairs) {
+    const note = predicted[predictedIndex], target = reference[referenceIndex];
+    const on = (note.start - target.start) * 1000;
+    const off = (note.end - target.end) * 1000;
+    onsetAbs.push(Math.abs(on)); onsetSigned.push(on);
+    endAbs.push(Math.abs(off)); endSigned.push(off);
   }
+  const tp = pairs.length, fp = predicted.length - tp, fn = reference.length - tp;
+  const precision = tp / Math.max(1, tp + fp), recall = tp / Math.max(1, tp + fn);
+
+  const offsetPairs = matchNotes(predicted, reference, (note, target, onsetError) =>
+    note.pitch === target.pitch && onsetError <= 0.05 &&
+    Math.abs(target.end - note.end) <= Math.max(0.05, 0.2 * (target.end - target.start)));
+  const offsetTp = offsetPairs.length;
   const offsetFp = predicted.length - offsetTp, offsetFn = reference.length - offsetTp;
   const offsetPrecision = offsetTp / Math.max(1, offsetTp + offsetFp);
   const offsetRecall = offsetTp / Math.max(1, offsetTp + offsetFn);
