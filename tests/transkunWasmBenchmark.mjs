@@ -135,15 +135,32 @@ function score(predicted, reference) {
   const offsetPrecision = offsetTp / Math.max(1, offsetTp + offsetFp);
   const offsetRecall = offsetTp / Math.max(1, offsetTp + offsetFn);
 
+  // Transkun's published note metric accepts a 100 ms minimum offset tolerance,
+  // or 20% of the reference note duration when that is larger. Keep the stricter
+  // 50 ms diagnostic above, but report this separately for a fair comparison.
+  const officialOffsetPairs = matchNotes(predicted, reference, (note, target, onsetError) =>
+    note.pitch === target.pitch && onsetError <= 0.05 &&
+    Math.abs(target.end - note.end) <= Math.max(0.1, 0.2 * (target.end - target.start)));
+  const officialTp = officialOffsetPairs.length;
+  const officialFp = predicted.length - officialTp, officialFn = reference.length - officialTp;
+  const officialPrecision = officialTp / Math.max(1, officialTp + officialFp);
+  const officialRecall = officialTp / Math.max(1, officialTp + officialFn);
+
   return {
     predictedNotes: predicted.length, truePositives: tp, falsePositives: fp, falseNegatives: fn,
     precision: +precision.toFixed(4), recall: +recall.toFixed(4),
     f1: +(2 * precision * recall / Math.max(1e-9, precision + recall)).toFixed(4),
-    onsetOffset: {
+    onsetOffsetStrict: {
       criterion: 'onset <= 50 ms; key-release offset <= max(50 ms, 20% of reference duration)',
       truePositives: offsetTp, falsePositives: offsetFp, falseNegatives: offsetFn,
       precision: +offsetPrecision.toFixed(4), recall: +offsetRecall.toFixed(4),
       f1: +(2 * offsetPrecision * offsetRecall / Math.max(1e-9, offsetPrecision + offsetRecall)).toFixed(4),
+    },
+    onsetOffsetOfficial: {
+      criterion: 'onset <= 50 ms; key-release offset <= max(100 ms, 20% of reference duration)',
+      truePositives: officialTp, falsePositives: officialFp, falseNegatives: officialFn,
+      precision: +officialPrecision.toFixed(4), recall: +officialRecall.toFixed(4),
+      f1: +(2 * officialPrecision * officialRecall / Math.max(1e-9, officialPrecision + officialRecall)).toFixed(4),
     },
     onsetAbsMs: { median: percentile(onsetAbs, 0.5), p95: percentile(onsetAbs, 0.95), signedMedian: percentile(onsetSigned, 0.5) },
     keyReleaseAbsMs: { median: percentile(endAbs, 0.5), p95: percentile(endAbs, 0.95), signedMedian: percentile(endSigned, 0.5) },
@@ -214,7 +231,7 @@ const predicted = result.notes.map(n => ({
   end: (n.onsetSample + n.durationSample) / buffers.params.fs,
 }));
 const report = {
-  dataset: 'MAESTRO v3.0.0 held-out test performance',
+  dataset: 'MAESTRO v3.0.0 test split',
   model: 'Quasaric Transkun v2 + ONNX Runtime WebAssembly (CPU)',
   referenceFile: midiPath,
   audioSeconds: +(audio.length / buffers.params.fs).toFixed(2),
