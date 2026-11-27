@@ -609,7 +609,6 @@ export class Transcribe {
     this.practiceStartBtn.disabled = !target;
     this.practiceStartBtn.textContent = muted ? 'Restore part in mix' : 'Practise this part';
     this.practiceStartBtn.title = muted ? 'Restore the selected part to the backing mix' : 'Mute the selected part in the mix and prepare its instrument practice lesson';
-    const song = this.host.song();
     if (!target) this.practiceHint.textContent = 'Choose the instrument part you want to practise.';
     else {
       const instrument = /bass/i.test(target) ? 'Bass' : /guitar/i.test(target) ? 'Guitar' : /piano|keys|keyboard/i.test(target) ? 'Piano' : target;
