@@ -234,8 +234,8 @@ export class Transcribe {
   private midiSaveBtn: HTMLButtonElement;
 
   constructor(private host: TxHost) {
-    // ---- Synthesia-style practice keyboard, driven by the existing chord and MIDI events.
-    this.practiceCanvas = h('canvas', { class: 'practice-keyboard', role: 'img', 'aria-label': 'Falling notes piano keyboard' }) as HTMLCanvasElement;
+    // ---- Instrument-aware play-along view, driven by the existing chord and MIDI events.
+    this.practiceCanvas = h('canvas', { class: 'practice-keyboard', role: 'img', 'aria-label': 'Instrument practice display' }) as HTMLCanvasElement;
     this.practiceModeSel = h('select', { class: 'tiny', title: 'Choose what to practise', 'aria-label': 'Practice display' },
       h('option', { value: 'chords' }, 'Chords'),
       h('option', { value: 'notes' }, 'Notes'),
@@ -248,7 +248,7 @@ export class Transcribe {
       this.host.changed();
       this.redraw();
     };
-    this.practiceTargetSel = h('select', { class: 'tiny', title: 'Choose the piano part you want to learn', 'aria-label': 'Piano practice part' }) as HTMLSelectElement;
+    this.practiceTargetSel = h('select', { class: 'tiny', title: 'Choose the instrument part you want to practise', 'aria-label': 'Instrument practice part' }) as HTMLSelectElement;
     this.practiceTargetSel.onchange = () => {
       this.practiceTarget = this.practiceTargetSel.value;
       this.refreshPracticeTargetUi();
@@ -259,15 +259,15 @@ export class Transcribe {
     this.practiceHint = h('span', { class: 'muted small practice-hint', 'aria-live': 'polite' });
     this.practiceRangePrevBtn = h('button', { class: 'btn tiny ghost practice-range-step', type: 'button', title: 'Show the lower octave', 'aria-label': 'Show the lower octave' }, '◀') as HTMLButtonElement;
     this.practiceRangeNextBtn = h('button', { class: 'btn tiny ghost practice-range-step', type: 'button', title: 'Show the higher octave', 'aria-label': 'Show the higher octave' }, '▶') as HTMLButtonElement;
-    this.practiceRangeLabel = h('span', { class: 'muted small practice-range-label', 'aria-live': 'polite' }, 'Piano range');
+    this.practiceRangeLabel = h('span', { class: 'muted small practice-range-label', 'aria-live': 'polite' }, 'Note range');
     this.practiceRangePrevBtn.onclick = () => { this.practiceRangeOffset = Math.max(0, this.practiceRangeOffset - 1); this.redraw(); };
     this.practiceRangeNextBtn.onclick = () => { this.practiceRangeOffset += 1; this.redraw(); };
-    this.practiceFocusBtn = h('button', { class: 'btn tiny ghost practice-focus-btn', type: 'button', title: 'Expand the piano practice view', 'aria-label': 'Expand the piano practice view', 'aria-pressed': 'false' }, 'Expand') as HTMLButtonElement;
+    this.practiceFocusBtn = h('button', { class: 'btn tiny ghost practice-focus-btn', type: 'button', title: 'Expand the practice view', 'aria-label': 'Expand the practice view', 'aria-pressed': 'false' }, 'Expand') as HTMLButtonElement;
     this.practiceFocusBtn.onclick = () => {
       const focused = this.practiceLane.classList.toggle('is-focus');
       document.body.classList.toggle('practice-focus', focused);
       this.practiceFocusBtn.textContent = focused ? 'Exit expanded view' : 'Expand';
-      this.practiceFocusBtn.title = focused ? 'Return to the full studio' : 'Expand the piano practice view';
+      this.practiceFocusBtn.title = focused ? 'Return to the full studio' : 'Expand the practice view';
       this.practiceFocusBtn.setAttribute('aria-label', this.practiceFocusBtn.title);
       this.practiceFocusBtn.setAttribute('aria-pressed', String(focused));
       this.redraw();
@@ -591,7 +591,7 @@ export class Transcribe {
     this.sourceSel.value = target;
     this.refreshMidiButtons();
     if (!song.midi?.[target]?.length) {
-      this.practiceHint.textContent = 'Preparing piano notes…';
+      this.practiceHint.textContent = 'Preparing notes…';
       if (!this.busy) void this.toMidi();
       else this.queuedPracticeTarget = queuePracticeTarget(target, this.busy, !!song.midi?.[target]?.length);
     } else {
@@ -602,7 +602,7 @@ export class Transcribe {
     }
   }
 
-  /** Prepare a piano-learning session: transcribe the selected stem, silence only that stem in the backing mix, and leave every other part (including vocals) playing. */
+  /** Prepare an instrument-learning session: transcribe the selected stem, silence only that stem in the backing mix, and leave every other part (including vocals) playing. */
   private refreshPracticeTargetUi() {
     const target = this.practiceTarget;
     const muted = !!target && this.host.isStemMuted(target);
@@ -914,6 +914,13 @@ export class Transcribe {
     const useChords = this.practiceMode !== 'notes';
     const useNotes = this.practiceMode !== 'chords';
     const cues = practiceCues(notes, chords, { now: pos / SR, horizon, shift, useNotes, useChords });
+    const selected = this.practiceTarget.toLowerCase();
+    const isPiano = /piano|keys|keyboard/.test(selected);
+    if (!isPiano) {
+      const instrument = /bass/.test(selected) ? 'bass' : /guitar|ukulele|banjo/.test(selected) ? 'guitar' : 'generic';
+      this.drawInstrumentPractice(g, w, H, cues, pos / SR, dpr, instrument, horizon);
+      return;
+    }
     // The full-song range is stable; cache it so a large MIDI file is not
     // traversed and allocated again on every animation frame.
     let range = this.practiceRangeCache;
@@ -1138,6 +1145,134 @@ export class Transcribe {
       g.font=`600 ${11*dpr}px system-ui,sans-serif`;
       g.fillText(document.documentElement.lang === 'es' ? 'Abre Notas y pulsa «To MIDI» para generar las notas que se tocan' : 'Open Notes and choose “To MIDI” to generate the played notes', left+8*dpr, top+17*dpr);
     }
+  }
+
+  /**
+   * Non-keyboard instruments get a representation that matches how they are played:
+   * guitar/bass use a fretboard; other instruments use a neutral chromatic note staff.
+   */
+  private drawInstrumentPractice(
+    g: CanvasRenderingContext2D,
+    w: number,
+    H: number,
+    cues: ReturnType<typeof practiceCues>,
+    now: number,
+    dpr: number,
+    instrument: 'guitar' | 'bass' | 'generic',
+    horizon: number,
+  ) {
+    const left = 12 * dpr, right = w - 12 * dpr, top = 14 * dpr;
+    const mobile = this.practiceCanvas.clientWidth <= 700;
+    const focus = this.practiceLane.classList.contains('is-focus');
+    const boardTop = H * (focus ? 0.53 : 0.56);
+    const boardBottom = H - 5 * dpr;
+    g.clearRect(0, 0, w, H);
+    const bg = g.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#11131d'); bg.addColorStop(1, '#090b12');
+    g.fillStyle = bg; g.fillRect(0, 0, w, H);
+
+    for (let sec = 1; sec <= horizon; sec++) {
+      const y = boardTop - (sec / horizon) * (boardTop - top);
+      g.strokeStyle = sec === 1 ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.08)';
+      g.lineWidth = Math.max(1, dpr);
+      g.beginPath(); g.moveTo(left, y); g.lineTo(right, y); g.stroke();
+      g.fillStyle = 'rgba(210,215,235,.55)';
+      g.font = `600 ${9*dpr}px system-ui,sans-serif`;
+      g.fillText(`+${sec}s`, left + 4*dpr, y - 4*dpr);
+    }
+
+    const isString = instrument === 'guitar' || instrument === 'bass';
+    if (isString) {
+      const tuning = instrument === 'bass' ? [28, 33, 38, 43] : [40, 45, 50, 55, 59, 64];
+      const strings = tuning.length;
+      const laneW = (right - left) / strings;
+      const frets = 15;
+      const positions = (pitch: number) => {
+        let best: { string: number; fret: number } | null = null;
+        tuning.forEach((open, string) => {
+          const fret = Math.round(pitch) - open;
+          if (fret >= 0 && fret <= frets && (!best || fret < best.fret)) best = { string, fret };
+        });
+        return best;
+      };
+      for (const cue of cues) {
+        const pos = positions(cue.pitch);
+        if (!pos || cue.end <= now || cue.start > now + horizon) continue;
+        const x = left + (pos.string + 0.5) * laneW;
+        const y1 = boardTop - ((cue.start - now) / horizon) * (boardTop - top);
+        const y2 = boardTop - ((cue.end - now) / horizon) * (boardTop - top);
+        const y = Math.max(top, Math.min(y1, y2));
+        const bottom = Math.min(boardTop, Math.max(y1, y2));
+        const bw = Math.max(10*dpr, laneW * 0.55);
+        if (bottom <= y) continue;
+        g.fillStyle = cue.kind === 'note' ? '#20cbdc' : '#9a87ff';
+        g.globalAlpha = 0.88;
+        g.beginPath(); g.roundRect(x-bw/2, y, bw, Math.max(4*dpr,bottom-y), 5*dpr); g.fill();
+        g.globalAlpha = 1;
+        g.fillStyle = '#fff'; g.font = `700 ${10*dpr}px system-ui,sans-serif`;
+        g.textAlign = 'center'; g.fillText(`${pos.fret}`, x, y + 13*dpr); g.textAlign = 'start';
+      }
+      // Fretboard body, strings and fret wires.
+      const body = g.createLinearGradient(0, boardTop, 0, boardBottom);
+      body.addColorStop(0, '#9a673d'); body.addColorStop(1, '#3c241b');
+      g.fillStyle = body; g.fillRect(left, boardTop, right-left, boardBottom-boardTop);
+      for (let fret = 0; fret <= frets; fret++) {
+        const x = left + (fret / frets) * (right-left);
+        g.strokeStyle = fret === 0 ? '#e5d7bd' : 'rgba(238,225,205,.55)';
+        g.lineWidth = (fret === 0 ? 4 : 1.2) * dpr;
+        g.beginPath(); g.moveTo(x, boardTop); g.lineTo(x, boardBottom); g.stroke();
+      }
+      for (let string = 0; string < strings; string++) {
+        const y = boardTop + ((string + 0.5) / strings) * (boardBottom-boardTop);
+        g.strokeStyle = 'rgba(235,225,210,.88)';
+        g.lineWidth = (1 + string * 0.22) * dpr;
+        g.beginPath(); g.moveTo(left, y); g.lineTo(right, y); g.stroke();
+        g.fillStyle = 'rgba(255,255,255,.82)';
+        g.font = `600 ${9*dpr}px system-ui,sans-serif`;
+        g.fillText(noteName(tuning[strings-1-string]).replace(/-?\\d+/g,''), left+3*dpr, y-3*dpr);
+      }
+      g.fillStyle = 'rgba(255,255,255,.72)';
+      g.font = `600 ${9*dpr}px system-ui,sans-serif`;
+      g.fillText(instrument === 'bass' ? 'BAJO · DIAPASÓN' : 'GUITARRA · DIAPASÓN', left, top + 10*dpr);
+      g.textAlign = 'center';
+      for (const fret of [3,5,7,9,12,15]) {
+        const x = left + ((fret-0.5)/frets)*(right-left);
+        g.fillStyle = 'rgba(255,255,255,.45)';
+        g.fillText(String(fret), x, boardBottom-4*dpr);
+      }
+      g.textAlign = 'start';
+    } else {
+      // Neutral note lanes for instruments without a physical keyboard/fretboard.
+      const pitches = [...new Set(cues.map(c => Math.round(c.pitch)))].sort((a,b)=>a-b);
+      const low = Math.max(24, Math.min(96, (pitches[0] ?? 48) - 2));
+      const high = Math.min(108, Math.max(low+12, (pitches[pitches.length-1] ?? 72) + 3));
+      const count = high-low+1, rowH = (boardBottom-boardTop)/count;
+      for (let pitch=low; pitch<=high; pitch++) {
+        const y = boardBottom - (pitch-low+1)*rowH;
+        if (pitch%12===0) {
+          g.strokeStyle='rgba(255,255,255,.16)'; g.lineWidth=dpr;
+          g.beginPath(); g.moveTo(left,y); g.lineTo(right,y); g.stroke();
+          g.fillStyle='rgba(255,255,255,.5)'; g.font=`600 ${9*dpr}px system-ui,sans-serif`;
+          g.fillText(noteName(pitch),left+3*dpr,y-2*dpr);
+        }
+      }
+      for (const cue of cues) {
+        const pitch=Math.round(cue.pitch);
+        if(pitch<low||pitch>high||cue.end<=now||cue.start>now+horizon) continue;
+        const x1=left+((cue.start-now)/horizon)*(right-left);
+        const x2=left+((cue.end-now)/horizon)*(right-left);
+        const y=boardBottom-(pitch-low+1)*rowH;
+        g.fillStyle=cue.kind==='note'?'#20cbdc':'#9a87ff';
+        g.globalAlpha=.9; g.beginPath(); g.roundRect(Math.max(left,x1),y+1*dpr,Math.max(5*dpr,x2-x1),Math.max(3*dpr,rowH-2*dpr),3*dpr); g.fill(); g.globalAlpha=1;
+        if(rowH>13*dpr){g.fillStyle='#fff';g.font=`700 ${9*dpr}px system-ui,sans-serif`;g.fillText(noteName(pitch),Math.max(left,x1)+4*dpr,y+rowH*.72);}
+      }
+      g.fillStyle='rgba(255,255,255,.75)';
+      g.font=`700 ${mobile?12:14}*dpr}px system-ui,sans-serif`;
+      g.fillText('NOTAS · VISTA POR ALTURA',left,top+10*dpr);
+    }
+    const label = instrument === 'generic' ? 'Vista de notas' : instrument === 'bass' ? 'Diapasón de bajo' : 'Diapasón de guitarra';
+    g.fillStyle='rgba(220,225,240,.78)'; g.font=`600 ${9*dpr}px system-ui,sans-serif`;
+    g.fillText(`${label} · MIDI y acordes`,left,H-7*dpr);
   }
 
   private x(frame: number, w: number) {
