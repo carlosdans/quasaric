@@ -1,7 +1,7 @@
 // Main-thread handle on the audio-to-MIDI worker. One job at a time;
 // cancelling throws the worker away (a model run can't be interrupted).
 
-import type { NoteEvent, NoteOptions } from './basicPitch.ts';
+import type { NoteOptions } from './basicPitch.ts';
 import type { TranscribeOut, TranscriptionEngine, TranscriptionResult } from './transcribeWorker.ts';
 
 let worker: Worker | null = null;
