@@ -69,6 +69,7 @@ export interface TxSong {
   stems: { name: string; data: Float32Array[] }[];
   chords?: Chord[];
   midi?: Record<string, NoteEvent[]>;
+  midiPedal?: Record<string, { time: number; on: boolean }[]>;
   /** Note energy per stem, kept in memory only (quick to recompute). */
   cqt?: Map<string, { c: Cqt; peak: number }>;
 }
@@ -81,6 +82,7 @@ export interface TxState {
   chordSource?: 'auto' | 'piano' | 'accompaniment' | 'custom';
   chordStemSources?: string[];
   midi?: Record<string, NoteEvent[]>;
+  midiPedal?: Record<string, { time: number; on: boolean }[]>;
   midiTimingVersion?: number;
   midiEngineVersion?: number;
   notesHeight?: number; // px; unset uses the CSS default
@@ -670,6 +672,7 @@ export class Transcribe {
     // the Transkun engine version was recorded. Those old Basic Pitch events can be badly
     // out of sync even though the current piano source now selects Transkun.
     s.midi = restoreMidiState(st?.midi, st?.midiTimingVersion, st?.midiEngineVersion);
+    s.midiPedal = st?.midiPedal;
     this.source = st?.source && (st.source === HEAR || s.stems.some((x) => x.name === st.source)) ? st.source : HEAR;
     this.chordSource = st?.chordSource ?? 'auto';
     this.chordStemSources = (st?.chordStemSources ?? []).filter((n) => s.stems.some((x) => x.name === n));
@@ -711,7 +714,7 @@ export class Transcribe {
 
   getState(): TxState {
     const s = this.host.song();
-    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, midiTimingVersion: MIDI_TIMING_VERSION, midiEngineVersion: PIANO_MIDI_ENGINE_VERSION, notesHeight: this.notesHeight, practiceMode: this.practiceMode, practiceTarget: this.practiceTarget };
+    return { notes: this.notesOn, chords: this.chordsOn, strip: this.stripOn, chordSource: this.chordSource, chordStemSources: this.chordStemSources, simple: this.simple, stripZoom: this.stripZoom, shapes: this.shapes, capo: this.capo, source: this.source, chordList: s?.chords, midi: s?.midi, midiPedal: s?.midiPedal, midiTimingVersion: MIDI_TIMING_VERSION, midiEngineVersion: PIANO_MIDI_ENGINE_VERSION, notesHeight: this.notesHeight, practiceMode: this.practiceMode, practiceTarget: this.practiceTarget };
   }
 
   private show(p: { notes?: boolean; chords?: boolean; strip?: boolean }, save = true) {
@@ -1885,6 +1888,10 @@ export class Transcribe {
     if (!s?.midi?.[this.midiKey()]) return;
     const { [this.midiKey()]: _, ...rest } = s.midi;
     s.midi = rest;
+    if (s.midiPedal) {
+      const { [this.midiKey()]: __, ...pedalRest } = s.midiPedal;
+      s.midiPedal = pedalRest;
+    }
     this.host.changed();
     this.refreshMidiButtons();
     this.redraw();
@@ -1910,7 +1917,7 @@ export class Transcribe {
     this.noteStatus.textContent = `MIDI: ${label}…`;
     const t0 = performance.now();
     try {
-      const notes = await transcribe(monoOf(stems, gains), (done, total) => {
+      const result = await transcribe(monoOf(stems, gains), (done, total) => {
         const el = (performance.now() - t0) / 1000;
         const left = done ? (el / done) * (total - done) : 0;
         this.noteStatus.textContent = `MIDI: ${Math.round((100 * done) / total)}%${done > 2 ? ` · ${Math.ceil(left)} s left` : ''}`;
@@ -1918,8 +1925,9 @@ export class Transcribe {
       if (this.host.song() !== s) return;
       // Lead vocals and bass play one note at a time: drop overlapping extras.
       const mono = this.source !== HEAR && ['vocals', 'bass'].includes(role(this.source));
-      const final = mono ? singleLine(notes) : notes;
+      const final = mono ? singleLine(result.notes) : result.notes;
       s.midi = { ...s.midi, [key]: final };
+      s.midiPedal = { ...s.midiPedal, [key]: result.pedal };
       this.host.changed();
       this.noteStatus.textContent = `${final.length} notes${mono ? ' (one at a time)' : ''}`;
       setTimeout(() => {
@@ -1957,6 +1965,7 @@ export class Transcribe {
         name: name === 'mix' ? 'Mix' : name,
         program: programFor(name),
         notes: notes.map((n) => ({ ...n, pitch: Math.max(0, Math.min(127, n.pitch + shift)) })),
+        pedal: s.midiPedal?.[name],
       }));
     const bytes = writeMidi(tracks, this.host.bpm() ?? 120);
     void saveFile(`${this.host.baseName()}${shift ? ` ${shift > 0 ? '+' : ''}${shift}st` : ''}.mid`, bytes, 'audio/midi');
