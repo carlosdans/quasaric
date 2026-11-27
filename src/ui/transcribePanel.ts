@@ -254,7 +254,7 @@ export class Transcribe {
       this.refreshPracticeTargetUi();
       if (this.practiceMode === 'notes' || this.practiceMode === 'both') this.selectPracticeNotesSource();
     };
-    this.practiceStartBtn = h('button', { class: 'btn tiny', type: 'button', title: 'Mute the selected part in the mix and prepare its falling-note lesson' }, 'Practise this part') as HTMLButtonElement;
+    this.practiceStartBtn = h('button', { class: 'btn tiny', type: 'button', title: 'Mute the selected part in the mix and prepare its instrument practice lesson' }, 'Practise this part') as HTMLButtonElement;
     this.practiceStartBtn.onclick = () => this.preparePianoPractice();
     this.practiceHint = h('span', { class: 'muted small practice-hint', 'aria-live': 'polite' });
     this.practiceRangePrevBtn = h('button', { class: 'btn tiny ghost practice-range-step', type: 'button', title: 'Show the lower octave', 'aria-label': 'Show the lower octave' }, '◀') as HTMLButtonElement;
@@ -608,13 +608,13 @@ export class Transcribe {
     const muted = !!target && this.host.isStemMuted(target);
     this.practiceStartBtn.disabled = !target;
     this.practiceStartBtn.textContent = muted ? 'Restore part in mix' : 'Practise this part';
-    this.practiceStartBtn.title = muted ? 'Restore the selected part to the backing mix' : 'Mute the selected part in the mix and prepare its falling-note lesson';
+    this.practiceStartBtn.title = muted ? 'Restore the selected part to the backing mix' : 'Mute the selected part in the mix and prepare its instrument practice lesson';
     const song = this.host.song();
-    const hasPiano = !!song?.stems.some((x) => /piano|keys|keyboard/i.test(x.name));
-    if (!target) this.practiceHint.textContent = hasPiano ? 'Choose the Piano stem to practise it.' : 'No dedicated Piano stem was detected. Choose another part manually only if you accept that its notes may belong to other instruments.';
-    else if (/piano|keys|keyboard/i.test(target)) this.practiceHint.textContent = 'Using the Piano stem. It can still contain sound from other instruments; check it by ear.';
-    else if (!hasPiano) this.practiceHint.textContent = 'No dedicated Piano stem. This part may mix piano with other instruments; muting it removes the whole part. For a Piano stem, separate with HT Demucs 6-stem.';
-    else this.practiceHint.textContent = 'This is not the dedicated Piano stem. Muting it removes the whole selected part.';
+    if (!target) this.practiceHint.textContent = 'Choose the instrument part you want to practise.';
+    else {
+      const instrument = /bass/i.test(target) ? 'Bass' : /guitar/i.test(target) ? 'Guitar' : /piano|keys|keyboard/i.test(target) ? 'Piano' : target;
+      this.practiceHint.textContent = `Using the ${instrument} part. Its detected notes may include sound from other instruments; check them by ear.`;
+    }
   }
 
   private preparePianoPractice() {
@@ -918,6 +918,9 @@ export class Transcribe {
     const isPiano = /piano|keys|keyboard/.test(selected);
     if (!isPiano) {
       const instrument = /bass/.test(selected) ? 'bass' : /guitar|ukulele|banjo/.test(selected) ? 'guitar' : 'generic';
+      this.practiceRangePrevBtn.hidden = true;
+      this.practiceRangeNextBtn.hidden = true;
+      this.practiceRangeLabel.hidden = true;
       this.drawInstrumentPractice(g, w, H, cues, pos / SR, dpr, instrument, horizon);
       return;
     }
