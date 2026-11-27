@@ -1889,7 +1889,8 @@ export class Transcribe {
     const { [this.midiKey()]: _, ...rest } = s.midi;
     s.midi = rest;
     if (s.midiPedal) {
-      const { [this.midiKey()]: __, ...pedalRest } = s.midiPedal;
+      const pedalRest = { ...s.midiPedal };
+      delete pedalRest[this.midiKey()];
       s.midiPedal = pedalRest;
     }
     this.host.changed();
