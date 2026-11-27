@@ -17,9 +17,12 @@ function chunk(id: string, body: number[]) {
   return [...text(id), (n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255, ...body];
 }
 
+export interface MidiPedalEvent { time: number; on: boolean; }
+
 export interface MidiTrack {
   name: string;
   notes: NoteEvent[];
+  pedal?: MidiPedalEvent[];
   /** General MIDI program (0 = piano, 33 = fingered bass, 52 = choir aahs…). */
   program?: number;
   /** 9 for drums. */
@@ -37,12 +40,15 @@ export function writeMidi(tracks: MidiTrack[], bpm = 120): Uint8Array {
   tracks.forEach((t, i) => {
     const ch = t.channel ?? (i >= 9 ? i + 1 : i) % 16;
     const events: { at: number; bytes: number[]; order: number }[] = [];
+    for (const p of t.pedal ?? []) {
+      events.push({ at: tick(p.time), bytes: [0xb0 | ch, 64, p.on ? 127 : 0], order: p.on ? 2 : 0 });
+    }
     for (const n of t.notes) {
       const vel = Math.max(1, Math.min(127, Math.round(n.amp * 127)));
       const s = tick(n.start);
       const e = Math.max(s + 1, tick(n.end));
-      events.push({ at: s, bytes: [0x90 | ch, n.pitch, vel], order: 1 });
-      events.push({ at: e, bytes: [0x80 | ch, n.pitch, 0], order: 0 }); // note-offs first at equal times
+      events.push({ at: s, bytes: [0x90 | ch, n.pitch, vel], order: 3 });
+      events.push({ at: e, bytes: [0x80 | ch, n.pitch, 0], order: 1 }); // note-offs first at equal times
     }
     events.sort((a, b) => a.at - b.at || a.order - b.order);
     const name = text(t.name).slice(0, 120);
