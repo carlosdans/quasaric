@@ -2,7 +2,7 @@
 // cancelling throws the worker away (a model run can't be interrupted).
 
 import type { NoteEvent, NoteOptions } from './basicPitch.ts';
-import type { TranscribeOut, TranscriptionEngine } from './transcribeWorker.ts';
+import type { TranscribeOut, TranscriptionEngine, TranscriptionResult } from './transcribeWorker.ts';
 
 let worker: Worker | null = null;
 let id = 0;
@@ -23,7 +23,7 @@ export function transcribe(mono: Float32Array, onProgress: (done: number, total:
   worker ??= new Worker(new URL('./transcribeWorker.ts', import.meta.url), { type: 'module' });
   const w = worker;
   const my = ++id;
-  return new Promise<NoteEvent[]>((resolve, reject) => {
+  return new Promise<TranscriptionResult>((resolve, reject) => {
     current = { id: my, reject };
     w.onmessage = (e: MessageEvent<TranscribeOut>) => {
       const m = e.data;
@@ -31,7 +31,7 @@ export function transcribe(mono: Float32Array, onProgress: (done: number, total:
       if (m.type === 'progress') onProgress(m.done, m.total);
       else {
         current = null;
-        if (m.type === 'done') resolve(m.notes);
+        if (m.type === 'done') resolve({ notes: m.notes, pedal: m.pedal });
         else reject(new Error(m.message));
       }
     };
