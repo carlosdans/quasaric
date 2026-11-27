@@ -604,6 +604,7 @@ export class Deck {
         const lane = this.lanes.find((l) => l.name === name);
         if (lane) this.setLaneRecorded(lane, { mute: muted });
       },
+      setTempo: (tempo) => this.setTempoPitch(tempo, this.pitch),
       pitch: () => this.pitch,
       loop: () => this.loop,
       markers: () => this.markers,
