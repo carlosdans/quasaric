@@ -1189,10 +1189,10 @@ export class Transcribe {
       const frets = 15;
       const positions = (pitch: number) => {
         let best: { string: number; fret: number } | null = null;
-        tuning.forEach((open, string) => {
-          const fret = Math.round(pitch) - open;
+        for (let string = 0; string < tuning.length; string++) {
+          const fret = Math.round(pitch) - tuning[string];
           if (fret >= 0 && fret <= frets && (!best || fret < best.fret)) best = { string, fret };
-        });
+        }
         return best;
       };
       for (const cue of cues) {
@@ -1267,7 +1267,7 @@ export class Transcribe {
         if(rowH>13*dpr){g.fillStyle='#fff';g.font=`700 ${9*dpr}px system-ui,sans-serif`;g.fillText(noteName(pitch),Math.max(left,x1)+4*dpr,y+rowH*.72);}
       }
       g.fillStyle='rgba(255,255,255,.75)';
-      g.font=`700 ${mobile?12:14}*dpr}px system-ui,sans-serif`;
+      g.font=`700 ${(mobile ? 12 : 14)*dpr}px system-ui,sans-serif`;
       g.fillText('NOTAS · VISTA POR ALTURA',left,top+10*dpr);
     }
     const label = instrument === 'generic' ? 'Vista de notas' : instrument === 'bass' ? 'Diapasón de bajo' : 'Diapasón de guitarra';
