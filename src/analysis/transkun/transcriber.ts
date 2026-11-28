@@ -20,10 +20,21 @@ export interface TranscribeProgress {
   stage: 'mel' | 'onnx' | 'viterbi' | 'heads' | 'merge'
 }
 
+export interface TranscribeDiagnostics {
+  segmentStartClamps: number
+  segmentStartClampMs: number[]
+  segmentOverlapReplacements: number
+  segmentOverlapReplacementTailMs: number[]
+  segmentContinuationMerges: number
+  finalOverlapTruncations: number
+  finalOverlapTruncatedMs: number[]
+}
+
 export interface TranscribeResult {
   notes: MidiNote[]
   pedal: PedalChange[]
   noteCount: number
+  diagnostics: TranscribeDiagnostics
 }
 
 function compareByTime(a: TkNote, b: TkNote): number {
@@ -80,6 +91,19 @@ export class TranskunTranscriber {
   private readonly padSeconds: number
   private readonly nMels: number
   private readonly nWindows: number
+  private diagnostics: TranscribeDiagnostics = this.emptyDiagnostics()
+
+  private emptyDiagnostics(): TranscribeDiagnostics {
+    return {
+      segmentStartClamps: 0,
+      segmentStartClampMs: [],
+      segmentOverlapReplacements: 0,
+      segmentOverlapReplacementTailMs: [],
+      segmentContinuationMerges: 0,
+      finalOverlapTruncations: 0,
+      finalOverlapTruncatedMs: [],
+    }
+  }
 
   constructor(
     private readonly buffers: TranskunBuffers,
@@ -110,11 +134,13 @@ export class TranskunTranscriber {
     audio: Float32Array,
     onProgress?: (p: TranscribeProgress) => void
   ): Promise<TranscribeResult> {
+    this.diagnostics = this.emptyDiagnostics()
     const events = await this.decodeAllSegments(audio, onProgress)
     return {
       notes: this.buildNotes(events),
       pedal: this.buildPedal(events),
-      noteCount: events.filter((e) => e.pitch > 0).length
+      noteCount: events.filter((e) => e.pitch > 0).length,
+      diagnostics: this.diagnostics
     }
   }
 
@@ -224,7 +250,12 @@ export class TranskunTranscriber {
 
         let start = (iv.begin + of0) * this.frameDur
         let end = (iv.end + of1) * this.frameDur
+        const rawStart = start
         start = Math.max(start, lastEnd)
+        if (start - rawStart > 1e-6) {
+          this.diagnostics.segmentStartClamps++
+          this.diagnostics.segmentStartClampMs.push((start - rawStart) * 1000)
+        }
         end = Math.max(end, start + 1e-8)
         lastEnd = end
 
@@ -261,9 +292,16 @@ export class TranskunTranscriber {
 
       if (list.length > 0 && e.start < list[list.length - 1].end) {
         if (e.hasOnset) {
+          const last = list[list.length - 1]
+          const replacedTailMs = (last.end - e.start) * 1000
+          if (replacedTailMs > 0) {
+            this.diagnostics.segmentOverlapReplacements++
+            this.diagnostics.segmentOverlapReplacementTailMs.push(replacedTailMs)
+          }
           list[list.length - 1] = e
         } else {
           const last = list[list.length - 1]
+          this.diagnostics.segmentContinuationMerges++
           last.end = Math.max(e.end, last.end)
           last.hasOffset = e.hasOffset
         }
@@ -281,7 +319,11 @@ export class TranskunTranscriber {
     const lastByPitch = new Map<number, TkNote>()
     for (const e of events) {
       const prev = lastByPitch.get(e.pitch)
-      if (prev && e.start < prev.end) prev.end = e.start
+      if (prev && e.start < prev.end) {
+        this.diagnostics.finalOverlapTruncations++
+        this.diagnostics.finalOverlapTruncatedMs.push((prev.end - e.start) * 1000)
+        prev.end = e.start
+      }
       lastByPitch.set(e.pitch, e)
     }
     const kept = events.filter((e) => e.start < e.end)
