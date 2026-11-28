@@ -140,6 +140,7 @@ function score(predicted, reference) {
       const note = predicted[predictedIndex], target = reference[referenceIndex];
       return {
         duration: target.end - target.start,
+        predictedDuration: note.end - note.start,
         signedMs: (note.end - target.end) * 1000,
         absMs: Math.abs(note.end - target.end) * 1000,
         toleranceMs: Math.max(50, 0.2 * (target.end - target.start) * 1000),
@@ -149,6 +150,30 @@ function score(predicted, reference) {
     const absolute = rows.map(row => row.absMs);
     return {
       referenceDuration: group.label,
+      notes: rows.length,
+      medianSignedMs: percentile(signed, 0.5),
+      medianAbsMs: percentile(absolute, 0.5),
+      p95AbsMs: percentile(absolute, 0.95),
+      tooLong: rows.filter(row => row.signedMs > row.toleranceMs).length,
+      tooShort: rows.filter(row => row.signedMs < -row.toleranceMs).length,
+      withinOfficialOffsetTolerance: rows.filter(row => row.absMs <= row.toleranceMs).length,
+    };
+  });
+
+  const predictedDurationDiagnostics = durationGroups.map(group => {
+    const rows = pairs.map(({ predictedIndex, referenceIndex }) => {
+      const note = predicted[predictedIndex], target = reference[referenceIndex];
+      return {
+        predictedDuration: note.end - note.start,
+        signedMs: (note.end - target.end) * 1000,
+        absMs: Math.abs(note.end - target.end) * 1000,
+        toleranceMs: Math.max(50, 0.2 * (target.end - target.start) * 1000),
+      };
+    }).filter(row => row.predictedDuration >= group.min && row.predictedDuration < group.max);
+    const signed = rows.map(row => row.signedMs);
+    const absolute = rows.map(row => row.absMs);
+    return {
+      predictedDuration: group.label,
       notes: rows.length,
       medianSignedMs: percentile(signed, 0.5),
       medianAbsMs: percentile(absolute, 0.5),
@@ -205,6 +230,7 @@ function score(predicted, reference) {
       tooShortOver100ms: endSigned.filter(x => x < -100).length,
     },
     keyReleaseByReferenceDuration: durationDiagnostics,
+    keyReleaseByPredictedDuration: predictedDurationDiagnostics,
   };
 }
 
