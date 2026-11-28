@@ -113,7 +113,7 @@ function matchNotes(predicted, reference, accepts) {
   for (let ri = 0; ri < owner.length; ri++) if (owner[ri] >= 0) pairs.push({ predictedIndex: owner[ri], referenceIndex: ri });
   return pairs;
 }
-function score(predicted, reference) {
+function score(predicted, reference, pedalIntervals = []) {
   const pairs = matchNotes(predicted, reference, (note, target, error) =>
     note.pitch === target.pitch && error <= 0.05);
   const onsetAbs = [], onsetSigned = [], endAbs = [], endSigned = [];
@@ -124,6 +124,32 @@ function score(predicted, reference) {
     onsetAbs.push(Math.abs(on)); onsetSigned.push(on);
     endAbs.push(Math.abs(off)); endSigned.push(off);
   }
+  const pedalStateDiagnostics = [true, false].map(pedalDown => {
+    const rows = pairs.map(({ predictedIndex, referenceIndex }) => {
+      const note = predicted[predictedIndex], target = reference[referenceIndex];
+      const held = pedalIntervals.some(p =>
+        p.track === target.track && p.channel === target.channel &&
+        p.start <= target.end && p.end > target.end
+      );
+      return { held, duration: target.end - target.start,
+        signedMs: (note.end - target.end) * 1000,
+        absMs: Math.abs(note.end - target.end) * 1000,
+        toleranceMs: Math.max(50, 0.2 * (target.end - target.start) * 1000) };
+    }).filter(row => row.held === pedalDown);
+    const signed = rows.map(row => row.signedMs), absolute = rows.map(row => row.absMs);
+    const mid = rows.filter(row => row.duration >= 0.25 && row.duration < 0.5);
+    return {
+      referenceEndsWithSustainDown: pedalDown, notes: rows.length,
+      medianSignedMs: percentile(signed, 0.5), medianAbsMs: percentile(absolute, 0.5),
+      p95AbsMs: percentile(absolute, 0.95),
+      tooShortOverTolerance: rows.filter(row => row.signedMs < -row.toleranceMs).length,
+      tooLongOverTolerance: rows.filter(row => row.signedMs > row.toleranceMs).length,
+      duration250to500ms: { notes: mid.length,
+        medianSignedMs: percentile(mid.map(row => row.signedMs), 0.5),
+        tooShortOverTolerance: mid.filter(row => row.signedMs < -row.toleranceMs).length },
+    };
+  });
+
   const tp = pairs.length, fp = predicted.length - tp, fn = reference.length - tp;
   const precision = tp / Math.max(1, tp + fp), recall = tp / Math.max(1, tp + fn);
 
@@ -266,6 +292,7 @@ function score(predicted, reference) {
     keyReleaseByReferenceDuration: durationDiagnostics,
     keyReleaseByPredictedDuration: predictedDurationDiagnostics,
     keyReleaseDurationCrossTab,
+    keyReleaseByReferencePedalState: pedalStateDiagnostics,
   };
 }
 
@@ -377,7 +404,7 @@ const report = {
   referencePedalChanges: referencePedal.length,
   referenceNotes: reference.length,
   referencePedalContext: diagnoseReferencePedalContext(reference, referenceData.pedalIntervals),
-  metrics: score(predicted, reference),
+  metrics: score(predicted, reference, referenceData.pedalIntervals),
   pedalMetrics: scorePedal(result.pedal.map(p => ({ time: p.sample / buffers.params.fs, on: p.on })), referencePedal),
 };
 console.log('TRANSKUN REAL-PIANO BENCHMARK');
