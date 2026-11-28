@@ -25,6 +25,17 @@ export interface TranscribeDiagnostics {
   segmentStartClampMs: number[]
   segmentOverlapReplacements: number
   segmentOverlapReplacementTailMs: number[]
+  segmentOverlapReplacementRows: Array<{
+    segmentIndex: number
+    pitch: number
+    previousStart: number
+    previousEnd: number
+    previousHasOffset: boolean
+    incomingStart: number
+    incomingEnd: number
+    incomingHasOffset: boolean
+    replacedTailMs: number
+  }>
   segmentContinuationMerges: number
   finalOverlapTruncations: number
   finalOverlapTruncatedMs: number[]
@@ -99,6 +110,7 @@ export class TranskunTranscriber {
       segmentStartClampMs: [],
       segmentOverlapReplacements: 0,
       segmentOverlapReplacementTailMs: [],
+      segmentOverlapReplacementRows: [],
       segmentContinuationMerges: 0,
       finalOverlapTruncations: 0,
       finalOverlapTruncatedMs: [],
@@ -183,7 +195,7 @@ export class TranskunTranscriber {
       const curEvents = await this.buildSegmentEvents(intervals, ctx, t, beginTime, startPos)
 
       onProgress?.({ segmentsDone: segIdx, segmentsTotal, stage: 'merge' })
-      this.mergeSegment(curEvents, eventsByType)
+      this.mergeSegment(curEvents, eventsByType, segIdx)
 
       segIdx++
       onProgress?.({ segmentsDone: segIdx, segmentsTotal, stage: 'merge' })
@@ -282,7 +294,7 @@ export class TranskunTranscriber {
 
   // Overlap + new onset replaces; overlap + no onset extends (stitches a continuation);
   // no overlap + onset appends; no overlap + no onset drops.
-  private mergeSegment(curEvents: TkNote[], eventsByType: Map<number, TkNote[]>): void {
+  private mergeSegment(curEvents: TkNote[], eventsByType: Map<number, TkNote[]>, segmentIndex: number): void {
     for (const e of curEvents) {
       let list = eventsByType.get(e.pitch)
       if (!list) {
@@ -297,6 +309,17 @@ export class TranskunTranscriber {
           if (replacedTailMs > 0) {
             this.diagnostics.segmentOverlapReplacements++
             this.diagnostics.segmentOverlapReplacementTailMs.push(replacedTailMs)
+            this.diagnostics.segmentOverlapReplacementRows.push({
+              segmentIndex,
+              pitch: e.pitch,
+              previousStart: last.start,
+              previousEnd: last.end,
+              previousHasOffset: last.hasOffset,
+              incomingStart: e.start,
+              incomingEnd: e.end,
+              incomingHasOffset: e.hasOffset,
+              replacedTailMs,
+            })
           }
           list[list.length - 1] = e
         } else {
