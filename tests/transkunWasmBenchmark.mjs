@@ -297,8 +297,9 @@ const predicted = result.notes.map(n => ({
   pitch: n.pitch, start: n.onsetSample / buffers.params.fs,
   end: (n.onsetSample + n.durationSample) / buffers.params.fs,
 }));
+const datasetSplit = process.env.MAESTRO_SPLIT === 'validation' ? 'validation' : 'test';
 const report = {
-  dataset: 'MAESTRO v3.0.0 test split',
+  dataset: `MAESTRO v3.0.0 ${datasetSplit} split`,
   model: 'Quasaric Transkun v2 + ONNX Runtime WebAssembly (CPU)',
   referenceFile: midiPath,
   audioSeconds: +(audio.length / buffers.params.fs).toFixed(2),
