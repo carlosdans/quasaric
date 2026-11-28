@@ -142,7 +142,7 @@ function score(predicted, reference) {
         duration: target.end - target.start,
         signedMs: (note.end - target.end) * 1000,
         absMs: Math.abs(note.end - target.end) * 1000,
-        toleranceMs: Math.max(100, 0.2 * (target.end - target.start) * 1000),
+        toleranceMs: Math.max(50, 0.2 * (target.end - target.start) * 1000),
       };
     }).filter(row => row.duration >= group.min && row.duration < group.max);
     const signed = rows.map(row => row.signedMs);
@@ -167,22 +167,22 @@ function score(predicted, reference) {
   const offsetPrecision = offsetTp / Math.max(1, offsetTp + offsetFp);
   const offsetRecall = offsetTp / Math.max(1, offsetTp + offsetFn);
 
-  // Transkun's published note metric accepts a 100 ms minimum offset tolerance,
-  // or 20% of the reference note duration when that is larger. Keep the stricter
-  // 50 ms diagnostic above, but report this separately for a fair comparison.
-  const officialOffsetPairs = matchNotes(predicted, reference, (note, target, onsetError) =>
+  // The published mir_eval note+offset metric uses a 50 ms minimum offset tolerance,
+  // or 20% of the reference note duration when that is larger. Keep the 100 ms minimum
+  // as a separate, more permissive sensitivity metric.
+  const relaxedOffsetPairs = matchNotes(predicted, reference, (note, target, onsetError) =>
     note.pitch === target.pitch && onsetError <= 0.05 &&
     Math.abs(target.end - note.end) <= Math.max(0.1, 0.2 * (target.end - target.start)));
-  const officialTp = officialOffsetPairs.length;
-  const officialFp = predicted.length - officialTp, officialFn = reference.length - officialTp;
-  const officialPrecision = officialTp / Math.max(1, officialTp + officialFp);
-  const officialRecall = officialTp / Math.max(1, officialTp + officialFn);
+  const relaxedTp = relaxedOffsetPairs.length;
+  const relaxedFp = predicted.length - relaxedTp, relaxedFn = reference.length - relaxedTp;
+  const relaxedPrecision = relaxedTp / Math.max(1, relaxedTp + relaxedFp);
+  const relaxedRecall = relaxedTp / Math.max(1, relaxedTp + relaxedFn);
 
   return {
     predictedNotes: predicted.length, truePositives: tp, falsePositives: fp, falseNegatives: fn,
     precision: +precision.toFixed(4), recall: +recall.toFixed(4),
     f1: +(2 * precision * recall / Math.max(1e-9, precision + recall)).toFixed(4),
-    onsetOffsetStrict: {
+    onsetOffset100ms: {
       criterion: 'onset <= 50 ms; key-release offset <= max(50 ms, 20% of reference duration)',
       truePositives: offsetTp, falsePositives: offsetFp, falseNegatives: offsetFn,
       precision: +offsetPrecision.toFixed(4), recall: +offsetRecall.toFixed(4),
@@ -190,9 +190,9 @@ function score(predicted, reference) {
     },
     onsetOffsetOfficial: {
       criterion: 'onset <= 50 ms; key-release offset <= max(100 ms, 20% of reference duration)',
-      truePositives: officialTp, falsePositives: officialFp, falseNegatives: officialFn,
-      precision: +officialPrecision.toFixed(4), recall: +officialRecall.toFixed(4),
-      f1: +(2 * officialPrecision * officialRecall / Math.max(1e-9, officialPrecision + officialRecall)).toFixed(4),
+      truePositives: relaxedTp, falsePositives: relaxedFp, falseNegatives: relaxedFn,
+      precision: +relaxedPrecision.toFixed(4), recall: +relaxedRecall.toFixed(4),
+      f1: +(2 * relaxedPrecision * relaxedRecall / Math.max(1e-9, relaxedPrecision + relaxedRecall)).toFixed(4),
     },
     onsetAbsMs: { median: percentile(onsetAbs, 0.5), p95: percentile(onsetAbs, 0.95), signedMedian: percentile(onsetSigned, 0.5) },
     keyReleaseAbsMs: {
