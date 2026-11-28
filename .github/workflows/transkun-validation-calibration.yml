@@ -1,0 +1,65 @@
+name: Transkun duration calibration (MAESTRO validation)
+
+on:
+  push:
+    branches:
+      - calibration/transkun-duration
+
+permissions:
+  contents: read
+
+concurrency:
+  group: transkun-duration-calibration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calibrate:
+    name: Measure note-release bias on MAESTRO validation recordings
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MAESTRO_SPLIT: validation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run project tests
+        run: npm test
+      - name: Install audio decoder
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Download MAESTRO validation recordings and paired MIDI
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://huggingface.co/datasets/ddPn08/maestro-v3.0.0/resolve/main"
+          mkdir -p /tmp/maestro
+          while IFS='|' read -r id audio midi; do
+            echo "::group::Download $id"
+            curl --fail --location --retry 3 "$base/$audio" --output "/tmp/maestro/$id.wav"
+            curl --fail --location --retry 3 "$base/$midi" --output "/tmp/maestro/$id.midi"
+            ffmpeg -hide_banner -loglevel error -i "/tmp/maestro/$id.wav" -ac 1 -ar 44100 -f f32le -acodec pcm_f32le "/tmp/maestro/$id.pcm"
+            ls -lh "/tmp/maestro/$id.wav" "/tmp/maestro/$id.midi" "/tmp/maestro/$id.pcm"
+            echo "::endgroup::"
+          done <<'RECORDINGS'
+          liszt-prelude-2008|2008/MIDI-Unprocessed_04_R3_2008_01-07_ORIG_MID--AUDIO_04_R3_2008_wav--2.wav|2008/MIDI-Unprocessed_04_R3_2008_01-07_ORIG_MID--AUDIO_04_R3_2008_wav--2.midi
+          chopin-nocturne-2011|2011/MIDI-Unprocessed_06_R3_2011_MID--AUDIO_R3-D3_05_Track05_wav.wav|2011/MIDI-Unprocessed_06_R3_2011_MID--AUDIO_R3-D3_05_Track05_wav.midi
+          rachmaninoff-etude-2008|2008/MIDI-Unprocessed_09_R1_2008_01-05_ORIG_MID--AUDIO_09_R1_2008_wav--4.wav|2008/MIDI-Unprocessed_09_R1_2008_01-05_ORIG_MID--AUDIO_09_R1_2008_wav--4.midi
+          RECORDINGS
+      - name: Download Transkun ONNX weights
+        run: |
+          base="https://huggingface.co/TuesdayCrowd/transkun-onnx/resolve/main"
+          curl --fail --location --retry 3 "$base/transkun.onnx" --output /tmp/transkun.onnx
+          curl --fail --location --retry 3 "$base/transkun-heads.onnx" --output /tmp/transkun-heads.onnx
+          ls -lh /tmp/transkun.onnx /tmp/transkun-heads.onnx
+      - name: Run Quasaric's actual WASM/CPU engine against validation references
+        shell: bash
+        run: |
+          set -euo pipefail
+          for id in liszt-prelude-2008 chopin-nocturne-2011 rachmaninoff-etude-2008; do
+            echo "::group::Transkun validation calibration: $id"
+            node --experimental-transform-types --no-warnings tests/transkunWasmBenchmark.mjs "/tmp/maestro/$id.pcm" "/tmp/maestro/$id.midi"
+            echo "::endgroup::"
+          done
