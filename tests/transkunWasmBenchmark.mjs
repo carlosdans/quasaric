@@ -464,6 +464,7 @@ const report = {
     segmentStartClampMs: summarizeSamples(result.diagnostics.segmentStartClampMs),
     segmentOverlapReplacements: result.diagnostics.segmentOverlapReplacements,
     segmentOverlapReplacementTailMs: summarizeSamples(result.diagnostics.segmentOverlapReplacementTailMs),
+    segmentOverlapReplacementRows: result.diagnostics.segmentOverlapReplacementRows,
     segmentContinuationMerges: result.diagnostics.segmentContinuationMerges,
     finalOverlapTruncations: result.diagnostics.finalOverlapTruncations,
     finalOverlapTruncatedMs: summarizeSamples(result.diagnostics.finalOverlapTruncatedMs),
