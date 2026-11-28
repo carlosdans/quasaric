@@ -182,13 +182,13 @@ function score(predicted, reference) {
     predictedNotes: predicted.length, truePositives: tp, falsePositives: fp, falseNegatives: fn,
     precision: +precision.toFixed(4), recall: +recall.toFixed(4),
     f1: +(2 * precision * recall / Math.max(1e-9, precision + recall)).toFixed(4),
-    onsetOffset100ms: {
+    onsetOffsetOfficial: {
       criterion: 'onset <= 50 ms; key-release offset <= max(50 ms, 20% of reference duration)',
       truePositives: offsetTp, falsePositives: offsetFp, falseNegatives: offsetFn,
       precision: +offsetPrecision.toFixed(4), recall: +offsetRecall.toFixed(4),
       f1: +(2 * offsetPrecision * offsetRecall / Math.max(1e-9, offsetPrecision + offsetRecall)).toFixed(4),
     },
-    onsetOffsetOfficial: {
+    onsetOffset100ms: {
       criterion: 'onset <= 50 ms; key-release offset <= max(100 ms, 20% of reference duration)',
       truePositives: relaxedTp, falsePositives: relaxedFp, falseNegatives: relaxedFn,
       precision: +relaxedPrecision.toFixed(4), recall: +relaxedRecall.toFixed(4),
