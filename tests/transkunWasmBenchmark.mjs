@@ -124,6 +124,54 @@ function score(predicted, reference, pedalIntervals = []) {
     onsetAbs.push(Math.abs(on)); onsetSigned.push(on);
     endAbs.push(Math.abs(off)); endSigned.push(off);
   }
+  // Diagnose whether same-pitch re-articulation forces an otherwise longer
+  // reference key hold to be truncated at the next predicted onset.
+  const samePitchReleaseRows = pairs.map(({ predictedIndex, referenceIndex }) => {
+    const note = predicted[predictedIndex], target = reference[referenceIndex];
+    const nextReference = reference
+      .filter(other => other.pitch === target.pitch &&
+        other.track === target.track && other.channel === target.channel &&
+        other.start > target.start)
+      .sort((a, b) => a.start - b.start)[0] ?? null;
+    const nextPredicted = predicted
+      .filter(other => other.pitch === note.pitch && other.start > note.start)
+      .sort((a, b) => a.start - b.start)[0] ?? null;
+    const clippedAtNextPredictedOnset = !!nextPredicted &&
+      Math.abs(note.end - nextPredicted.start) <= 1 / 44100 &&
+      target.end > nextPredicted.start + 0.05;
+    const referenceOverlap = !!nextReference && target.end > nextReference.start;
+    const nextGapMs = nextReference ? (nextReference.start - target.end) * 1000 : null;
+    return {
+      referenceOverlap,
+      clippedAtNextPredictedOnset,
+      nextGapMs,
+      signedMs: (note.end - target.end) * 1000,
+      absMs: Math.abs(note.end - target.end) * 1000,
+      toleranceMs: Math.max(50, 0.2 * (target.end - target.start) * 1000),
+      duration: target.end - target.start,
+    };
+  });
+  const summarizeSamePitchRows = rows => ({
+    notes: rows.length,
+    medianSignedMs: percentile(rows.map(row => row.signedMs), 0.5),
+    medianAbsMs: percentile(rows.map(row => row.absMs), 0.5),
+    tooShortOverTolerance: rows.filter(row => row.signedMs < -row.toleranceMs).length,
+    duration250to500ms: (() => {
+      const mid = rows.filter(row => row.duration >= 0.25 && row.duration < 0.5);
+      return {
+        notes: mid.length,
+        medianSignedMs: percentile(mid.map(row => row.signedMs), 0.5),
+        tooShortOverTolerance: mid.filter(row => row.signedMs < -row.toleranceMs).length,
+      };
+    })(),
+  });
+  const samePitchReleaseDiagnostics = {
+    allMatched: summarizeSamePitchRows(samePitchReleaseRows),
+    referenceSamePitchOverlap: summarizeSamePitchRows(samePitchReleaseRows.filter(row => row.referenceOverlap)),
+    clippedAtNextPredictedOnset: summarizeSamePitchRows(samePitchReleaseRows.filter(row => row.clippedAtNextPredictedOnset)),
+    notClippedAtNextPredictedOnset: summarizeSamePitchRows(samePitchReleaseRows.filter(row => !row.clippedAtNextPredictedOnset)),
+  };
+
   const pedalStateDiagnostics = [true, false].map(pedalDown => {
     const rows = pairs.map(({ predictedIndex, referenceIndex }) => {
       const note = predicted[predictedIndex], target = reference[referenceIndex];
@@ -293,6 +341,7 @@ function score(predicted, reference, pedalIntervals = []) {
     keyReleaseByPredictedDuration: predictedDurationDiagnostics,
     keyReleaseDurationCrossTab,
     keyReleaseByReferencePedalState: pedalStateDiagnostics,
+    keyReleaseBySamePitchContext: samePitchReleaseDiagnostics,
   };
 }
 
