@@ -184,6 +184,40 @@ function score(predicted, reference) {
     };
   });
 
+  // Cross-tab predicted vs reference duration to expose regression-to-the-mean
+  // effects that separate one-dimensional duration buckets can hide.
+  const keyReleaseDurationCrossTab = durationGroups.map(predGroup => ({
+    predictedDuration: predGroup.label,
+    byReferenceDuration: durationGroups.map(refGroup => {
+      const rows = pairs.map(({ predictedIndex, referenceIndex }) => {
+        const note = predicted[predictedIndex], target = reference[referenceIndex];
+        return {
+          predictedDuration: note.end - note.start,
+          referenceDuration: target.end - target.start,
+          signedMs: (note.end - target.end) * 1000,
+          absMs: Math.abs(note.end - target.end) * 1000,
+          toleranceMs: Math.max(50, 0.2 * (target.end - target.start) * 1000),
+        };
+      }).filter(row =>
+        row.predictedDuration >= predGroup.min && row.predictedDuration < predGroup.max &&
+        row.referenceDuration >= refGroup.min && row.referenceDuration < refGroup.max
+      );
+      const signed = rows.map(row => row.signedMs);
+      const absolute = rows.map(row => row.absMs);
+      const referenceDurations = rows.map(row => row.referenceDuration * 1000);
+      return {
+        referenceDuration: refGroup.label,
+        notes: rows.length,
+        medianReferenceDurationMs: percentile(referenceDurations, 0.5),
+        medianSignedMs: percentile(signed, 0.5),
+        medianAbsMs: percentile(absolute, 0.5),
+        p95AbsMs: percentile(absolute, 0.95),
+        tooLong: rows.filter(row => row.signedMs > row.toleranceMs).length,
+        tooShort: rows.filter(row => row.signedMs < -row.toleranceMs).length,
+      };
+    }),
+  }));
+
   const offsetPairs = matchNotes(predicted, reference, (note, target, onsetError) =>
     note.pitch === target.pitch && onsetError <= 0.05 &&
     Math.abs(target.end - note.end) <= Math.max(0.05, 0.2 * (target.end - target.start)));
@@ -231,6 +265,7 @@ function score(predicted, reference) {
     },
     keyReleaseByReferenceDuration: durationDiagnostics,
     keyReleaseByPredictedDuration: predictedDurationDiagnostics,
+    keyReleaseDurationCrossTab,
   };
 }
 
