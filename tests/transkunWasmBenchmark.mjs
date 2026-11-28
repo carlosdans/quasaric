@@ -127,6 +127,38 @@ function score(predicted, reference) {
   const tp = pairs.length, fp = predicted.length - tp, fn = reference.length - tp;
   const precision = tp / Math.max(1, tp + fp), recall = tp / Math.max(1, tp + fn);
 
+  // Diagnose duration errors by reference-note length. Signed offset is
+  // predicted key release minus reference key release: positive = too long.
+  const durationGroups = [
+    { label: '<100ms', min: 0, max: 0.1 },
+    { label: '100-250ms', min: 0.1, max: 0.25 },
+    { label: '250-500ms', min: 0.25, max: 0.5 },
+    { label: '>=500ms', min: 0.5, max: Infinity },
+  ];
+  const durationDiagnostics = durationGroups.map(group => {
+    const rows = pairs.map(({ predictedIndex, referenceIndex }) => {
+      const note = predicted[predictedIndex], target = reference[referenceIndex];
+      return {
+        duration: target.end - target.start,
+        signedMs: (note.end - target.end) * 1000,
+        absMs: Math.abs(note.end - target.end) * 1000,
+        toleranceMs: Math.max(100, 0.2 * (target.end - target.start) * 1000),
+      };
+    }).filter(row => row.duration >= group.min && row.duration < group.max);
+    const signed = rows.map(row => row.signedMs);
+    const absolute = rows.map(row => row.absMs);
+    return {
+      referenceDuration: group.label,
+      notes: rows.length,
+      medianSignedMs: percentile(signed, 0.5),
+      medianAbsMs: percentile(absolute, 0.5),
+      p95AbsMs: percentile(absolute, 0.95),
+      tooLong: rows.filter(row => row.signedMs > row.toleranceMs).length,
+      tooShort: rows.filter(row => row.signedMs < -row.toleranceMs).length,
+      withinOfficialOffsetTolerance: rows.filter(row => row.absMs <= row.toleranceMs).length,
+    };
+  });
+
   const offsetPairs = matchNotes(predicted, reference, (note, target, onsetError) =>
     note.pitch === target.pitch && onsetError <= 0.05 &&
     Math.abs(target.end - note.end) <= Math.max(0.05, 0.2 * (target.end - target.start)));
@@ -163,7 +195,16 @@ function score(predicted, reference) {
       f1: +(2 * officialPrecision * officialRecall / Math.max(1e-9, officialPrecision + officialRecall)).toFixed(4),
     },
     onsetAbsMs: { median: percentile(onsetAbs, 0.5), p95: percentile(onsetAbs, 0.95), signedMedian: percentile(onsetSigned, 0.5) },
-    keyReleaseAbsMs: { median: percentile(endAbs, 0.5), p95: percentile(endAbs, 0.95), signedMedian: percentile(endSigned, 0.5) },
+    keyReleaseAbsMs: {
+      median: percentile(endAbs, 0.5),
+      p95: percentile(endAbs, 0.95),
+      signedMedian: percentile(endSigned, 0.5),
+      signedP90: percentile(endSigned, 0.9),
+      signedP95: percentile(endSigned, 0.95),
+      tooLongOver100ms: endSigned.filter(x => x > 100).length,
+      tooShortOver100ms: endSigned.filter(x => x < -100).length,
+    },
+    keyReleaseByReferenceDuration: durationDiagnostics,
   };
 }
 
