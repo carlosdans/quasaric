@@ -11,9 +11,11 @@ import { TranskunTranscriber } from './transkun/transcriber.ts';
 
 export type TranscriptionEngine = 'basic-pitch' | 'transkun';
 export type TranscribeIn = { type: 'transcribe'; id: number; mono: Float32Array; opts?: NoteOptions; engine?: TranscriptionEngine };
+export interface PedalEvent { time: number; on: boolean; }
+export interface TranscriptionResult { notes: NoteEvent[]; pedal: PedalEvent[]; }
 export type TranscribeOut =
   | { type: 'progress'; id: number; done: number; total: number }
-  | { type: 'done'; id: number; notes: NoteEvent[] }
+  | { type: 'done'; id: number; notes: NoteEvent[]; pedal: PedalEvent[] }
   | { type: 'error'; id: number; message: string };
 
 const post = (m: TranscribeOut) => (self as DedicatedWorkerGlobalScope).postMessage(m);
@@ -56,7 +58,7 @@ const getTranskun = () =>
     return transkunInstance;
   })());
 
-async function transcribeBasic(m: TranscribeIn) {
+async function transcribeBasic(m: TranscribeIn): Promise<TranscriptionResult> {
   const s = await getBasicSession();
   const audio = decimate2(m.mono, 63);
   const windows = bpWindows(audio);
@@ -70,20 +72,23 @@ async function transcribeBasic(m: TranscribeIn) {
   }
   const n = bpUnwrap(notes, BP_PITCHES, audio.length);
   const o = bpUnwrap(onsets, BP_PITCHES, audio.length);
-  return bpNotes(n.data, o.data, n.frames, m.opts);
+  return { notes: bpNotes(n.data, o.data, n.frames, m.opts), pedal: [] };
 }
 
-async function transcribePiano(m: TranscribeIn) {
+async function transcribePiano(m: TranscribeIn): Promise<TranscriptionResult> {
   const engine = await getTranskun();
   const result = await engine.transcribe(m.mono, (p) => {
     if (p.stage === 'merge') post({ type: 'progress', id: m.id, done: p.segmentsDone, total: p.segmentsTotal });
   });
-  return result.notes.map((n) => ({
-    start: +(n.onsetSample / 44100).toFixed(4),
-    end: +((n.onsetSample + n.durationSample) / 44100).toFixed(4),
-    pitch: n.pitch,
-    amp: +(n.velocity / 127).toFixed(3),
-  }));
+  return {
+    notes: result.notes.map((n) => ({
+      start: +(n.onsetSample / 44100).toFixed(4),
+      end: +((n.onsetSample + n.durationSample) / 44100).toFixed(4),
+      pitch: n.pitch,
+      amp: +(n.velocity / 127).toFixed(3),
+    })),
+    pedal: result.pedal.map((p) => ({ time: +(p.sample / 44100).toFixed(4), on: p.on })),
+  };
 }
 
 async function transcribe(m: TranscribeIn) {
@@ -95,7 +100,8 @@ if (!(self.name ?? '').startsWith('em-pthread'))
   self.onmessage = async (e: MessageEvent<TranscribeIn>) => {
     const m = e.data;
     try {
-      post({ type: 'done', id: m.id, notes: await transcribe(m) });
+      const result = await transcribe(m);
+      post({ type: 'done', id: m.id, ...result });
     } catch (err) {
       if (m.engine === 'transkun') {
         await transkunInstance?.dispose().catch(() => {});

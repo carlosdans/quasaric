@@ -671,6 +671,28 @@ for (const [len, overlap, shifts] of [
   const mid = writeMidi([{ name: 'Bass', notes: [{ start: 0, end: 0.5, pitch: 40, amp: 1 }] }], 120);
   const txt = String.fromCharCode(...mid.subarray(0, 4));
   ok('MIDI file header', txt === 'MThd' && mid[9] === 1 && mid[11] === 2 && mid[mid.length - 3] === 0xff && mid[mid.length - 2] === 0x2f);
+  const withPedal = writeMidi([{
+    name: 'Piano',
+    notes: [{ start: 0.25, end: 0.75, pitch: 60, amp: 0.8 }],
+    pedal: [{ time: 0.2, on: true }, { time: 1, on: false }],
+  }], 120);
+  const contains = (bytes: Uint8Array, seq: number[]) =>
+    bytes.some((_, i) => seq.every((v, j) => bytes[i + j] === v));
+  ok('MIDI exports sustain pedal down as CC64 value 127', contains(withPedal, [0xb0, 64, 127]));
+  ok('MIDI exports sustain pedal up as CC64 value 0', contains(withPedal, [0xb0, 64, 0]));
+  const orderedPedal = writeMidi([{
+    name: 'Piano',
+    notes: [{ start: 0.25, end: 0.75, pitch: 60, amp: 0.8 }],
+    pedal: [{ time: 0.25, on: true }, { time: 0.75, on: false }],
+  }], 120);
+  const indexOfSeq = (bytes: Uint8Array, seq: number[]) =>
+    bytes.findIndex((_, i) => seq.every((v, j) => bytes[i + j] === v));
+  const pedalDownAtNoteOn = indexOfSeq(orderedPedal, [0xb0, 64, 127]);
+  const noteOnAtPedalDown = indexOfSeq(orderedPedal, [0x90, 60, 102]);
+  const pedalUpAtNoteOff = indexOfSeq(orderedPedal, [0xb0, 64, 0]);
+  const noteOffAtPedalUp = indexOfSeq(orderedPedal, [0x80, 60, 0]);
+  ok('MIDI pedal-down is ordered before a simultaneous note-on', pedalDownAtNoteOn >= 0 && noteOnAtPedalDown > pedalDownAtNoteOn);
+  ok('MIDI pedal-up is ordered before a simultaneous note-off', pedalUpAtNoteOff >= 0 && noteOffAtPedalUp > pedalUpAtNoteOff);
 }
 
 // ---- 5f. key detection on synthetic chord progressions
