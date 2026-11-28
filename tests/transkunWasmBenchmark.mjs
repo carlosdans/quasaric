@@ -78,11 +78,11 @@ function parseMidi(buffer) {
     const x = segs[lo]; return x.seconds + (target - x.tick) * x.us / (ppq * 1e6);
   };
   const notes = raw.filter(n => n.pitch >= 21 && n.pitch <= 108 && n.endTick > n.startTick)
-    .map(n => ({ pitch: n.pitch, start: time(n.startTick), end: time(n.endTick) }))
+    .map(n => ({ pitch: n.pitch, track: n.track, channel: n.channel, start: time(n.startTick), end: time(n.endTick) }))
     .sort((a, b) => a.start - b.start || a.pitch - b.pitch);
   const pedalIntervals = pedals
     .filter(p => p.endTick > p.startTick)
-    .map(p => ({ start: time(p.startTick), end: time(p.endTick) }));
+    .map(p => ({ track: p.track, channel: p.channel, start: time(p.startTick), end: time(p.endTick) }));
   return { notes, pedalIntervals };
 
 }
@@ -270,6 +270,41 @@ function score(predicted, reference) {
 }
 
 
+function diagnoseReferencePedalContext(notes, pedals) {
+  const held = [];
+  for (const note of notes) {
+    const interval = pedals.find(p =>
+      p.track === note.track && p.channel === note.channel &&
+      p.start <= note.end && p.end > note.end
+    );
+    if (interval) held.push({
+      pitch: note.pitch,
+      durationMs: (note.end - note.start) * 1000,
+      pedalRemainingMs: (interval.end - note.end) * 1000,
+    });
+  }
+  const tails = held.map(x => x.pedalRemainingMs);
+  return {
+    notesEndingWhileSustainPedalDown: held.length,
+    fractionOfReferenceNotes: +(held.length / Math.max(1, notes.length)).toFixed(4),
+    medianPedalTailMs: percentile(tails, 0.5),
+    p95PedalTailMs: percentile(tails, 0.95),
+    byReferenceDuration: [
+      { label: "<100ms", min: 0, max: 100 },
+      { label: "100-250ms", min: 100, max: 250 },
+      { label: "250-500ms", min: 250, max: 500 },
+      { label: ">=500ms", min: 500, max: Infinity },
+    ].map(group => {
+      const rows = held.filter(x => x.durationMs >= group.min && x.durationMs < group.max);
+      return {
+        duration: group.label,
+        notes: rows.length,
+        medianPedalTailMs: percentile(rows.map(x => x.pedalRemainingMs), 0.5),
+      };
+    }),
+  };
+}
+
 function scorePedal(predicted, reference, toleranceSeconds = 0.1) {
   const candidates = predicted.map((event, pi) => reference
     .map((target, ri) => ({ ri, error: Math.abs(event.time - target.time) }))
@@ -341,6 +376,7 @@ const report = {
   predictedPedalChanges: result.pedal.length,
   referencePedalChanges: referencePedal.length,
   referenceNotes: reference.length,
+  referencePedalContext: diagnoseReferencePedalContext(reference, referenceData.pedalIntervals),
   metrics: score(predicted, reference),
   pedalMetrics: scorePedal(result.pedal.map(p => ({ time: p.sample / buffers.params.fs, on: p.on })), referencePedal),
 };
