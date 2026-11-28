@@ -87,6 +87,12 @@ function parseMidi(buffer) {
 
 }
 const percentile = (a, p) => a.length ? [...a].sort((x, y) => x - y)[Math.min(a.length - 1, Math.ceil(p * a.length) - 1)] : null;
+const summarizeSamples = values => ({
+  count: values.length,
+  medianMs: percentile(values, 0.5),
+  p95Ms: percentile(values, 0.95),
+  maxMs: values.length ? Math.max(...values) : null,
+});
 function matchNotes(predicted, reference, accepts) {
   // Maximum-cardinality one-to-one matching. A greedy nearest-note pass can
   // consume the only valid reference for a later prediction and undercount TP.
@@ -453,6 +459,15 @@ const report = {
   referencePedalChanges: referencePedal.length,
   referenceNotes: reference.length,
   referencePedalContext: diagnoseReferencePedalContext(reference, referenceData.pedalIntervals),
+  transcriberDiagnostics: {
+    segmentStartClamps: result.diagnostics.segmentStartClamps,
+    segmentStartClampMs: summarizeSamples(result.diagnostics.segmentStartClampMs),
+    segmentOverlapReplacements: result.diagnostics.segmentOverlapReplacements,
+    segmentOverlapReplacementTailMs: summarizeSamples(result.diagnostics.segmentOverlapReplacementTailMs),
+    segmentContinuationMerges: result.diagnostics.segmentContinuationMerges,
+    finalOverlapTruncations: result.diagnostics.finalOverlapTruncations,
+    finalOverlapTruncatedMs: summarizeSamples(result.diagnostics.finalOverlapTruncatedMs),
+  },
   metrics: score(predicted, reference, referenceData.pedalIntervals),
   pedalMetrics: scorePedal(result.pedal.map(p => ({ time: p.sample / buffers.params.fs, on: p.on })), referencePedal),
 };
